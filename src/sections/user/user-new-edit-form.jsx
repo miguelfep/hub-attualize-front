@@ -1,250 +1,247 @@
 import { z as zod } from 'zod';
-import { useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, Controller } from 'react-hook-form';
 import { isValidPhoneNumber } from 'react-phone-number-input/input';
 
 import Box from '@mui/material/Box';
+import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import MenuItem from '@mui/material/MenuItem';
+import Switch from '@mui/material/Switch';
+import Grid from '@mui/material/Unstable_Grid2';
+import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
+import { fData } from 'src/utils/format-number';
+
+import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
 import { Form, Field, schemaHelper } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
-export const USER_STATUS_OPTIONS = [
-  { value: true, label: 'Ativo' },
-  { value: false, label: 'Inativo' },
-];
-
-export const REGIME_TRIBUTARIO_OPTIONS = [
-  { value: 'simples', label: 'Simples' },
-  { value: 'presumido', label: 'Presumido' },
-  { value: 'real', label: 'Real' },
-  { value: 'pf', label: 'PF' },
-];
-
-export const PLANO_EMPRESA_OPTIONS = [
-  { value: 'carneleao', label: 'Carnê Leão' },
-  { value: 'mei', label: 'MEI' },
-  { value: 'start', label: 'Start' },
-  { value: 'pleno', label: 'Pleno' },
-  { value: 'premium', label: 'Premium' },
-  { value: 'plus', label: 'Plus' },
-];
-
-export const TRIBUTACAO_OPTIONS = [
-  { value: 'anexo1', label: 'Anexo I' },
-  { value: 'anexo2', label: 'Anexo II' },
-  { value: 'anexo3', label: 'Anexo III' },
-  { value: 'anexo4', label: 'Anexo IV' },
-  { value: 'anexo5', label: 'Anexo V' },
-  { value: 'simei', label: 'SIMEI' },
-  { value: 'autonomo', label: 'Autônomo' },
-];
-
-export const ClienteQuickEditSchema = zod.object({
-  nome: zod.string().min(1, { message: 'Nome é obrigatório!' }),
+export const NewUserSchema = zod.object({
+  avatarUrl: schemaHelper.file({
+    message: { required_error: 'Avatar is required!' },
+  }),
+  name: zod.string().min(1, { message: 'Name is required!' }),
   email: zod
     .string()
-    .min(1, { message: 'Email é obrigatório!' })
-    .email({ message: 'Email deve ser um endereço válido!' }),
-  whatsapp: schemaHelper.phoneNumber({ isValidPhoneNumber }),
-  address: zod.string().min(1, { message: 'Endereço é obrigatório!' }),
-  estado: zod.string().min(1, { message: 'Estado é obrigatório!' }),
-  cidade: zod.string().min(1, { message: 'Cidade é obrigatória!' }),
-  cep: zod.string().min(1, { message: 'CEP é obrigatório!' }),
-  razaoSocial: zod.string().optional(),
-  cnpj: zod.string().min(1, { message: 'CNPJ é obrigatório!' }),
-  codigo: zod.number().min(1, { message: 'Código é obrigatório!' }),
-  emailFinanceiro: zod.string().optional(),
-  telefoneComercial: zod.string().optional(),
-  observacao: zod.string().optional(),
-  dataEntrada: zod.date().optional(),
-  dataSaida: zod.date().optional(),
-  status: zod.boolean(),
-  regimeTributario: zod.string().min(1, { message: 'Regime Tributário é obrigatório!' }),
-  planoEmpresa: zod.string().min(1, { message: 'Plano Empresa é obrigatório!' }),
-  tributacao: zod.array(zod.string()).min(1, { message: 'Tributação é obrigatória!' }),
+    .min(1, { message: 'Email is required!' })
+    .email({ message: 'Email must be a valid email address!' }),
+  phoneNumber: schemaHelper.phoneNumber({ isValidPhoneNumber }),
+  country: schemaHelper.objectOrNull({
+    message: { required_error: 'Country is required!' },
+  }),
+  address: zod.string().min(1, { message: 'Address is required!' }),
+  company: zod.string().min(1, { message: 'Company is required!' }),
+  state: zod.string().min(1, { message: 'State is required!' }),
+  city: zod.string().min(1, { message: 'City is required!' }),
+  role: zod.string().min(1, { message: 'Role is required!' }),
+  zipCode: zod.string().min(1, { message: 'Zip code is required!' }),
+  // Not required
+  status: zod.string(),
+  isVerified: zod.boolean(),
 });
 
 // ----------------------------------------------------------------------
 
-export function ClienteQuickEditForm({ currentUser, open, onClose }) {
-  const enderecoAtual = currentUser.endereco[0];
-  const [cepValue, setCepValue] = useState(enderecoAtual?.cep || '');
+export function UserNewEditForm({ currentUser }) {
+  const router = useRouter();
 
   const defaultValues = useMemo(
     () => ({
-      nome: currentUser?.nome || '',
+      status: currentUser?.status || '',
+      avatarUrl: currentUser?.avatarUrl || null,
+      isVerified: currentUser?.isVerified || true,
+      name: currentUser?.name || '',
       email: currentUser?.email || '',
-      whatsapp: currentUser?.whatsapp || '',
-      address: enderecoAtual?.rua || '',
-      estado: enderecoAtual?.estado || '',
-      cidade: enderecoAtual?.cidade || '',
-      cep: enderecoAtual?.cep || '',
-      status: currentUser?.status,
-      razaoSocial: currentUser?.razaoSocial || '',
-      cnpj: currentUser?.cnpj || '',
-      codigo: currentUser?.codigo || 0,
-      emailFinanceiro: currentUser?.emailFinanceiro || '',
-      telefoneComercial: currentUser?.telefoneComercial || '',
-      observacao: currentUser?.observacao || '',
-      dataEntrada: currentUser?.dataEntrada || '',
-      dataSaida: currentUser?.dataSaida || '',
-      regimeTributario: currentUser?.regimeTributario || '',
-      planoEmpresa: currentUser?.planoEmpresa || '',
-      tributacao: currentUser?.tributacao || [],
+      phoneNumber: currentUser?.phoneNumber || '',
+      country: currentUser?.country || '',
+      state: currentUser?.state || '',
+      city: currentUser?.city || '',
+      address: currentUser?.address || '',
+      zipCode: currentUser?.zipCode || '',
+      company: currentUser?.company || '',
+      role: currentUser?.role || '',
     }),
     [currentUser]
   );
 
   const methods = useForm({
-    mode: 'all',
-    resolver: zodResolver(ClienteQuickEditSchema),
+    mode: 'onSubmit',
+    resolver: zodResolver(NewUserSchema),
     defaultValues,
   });
 
   const {
     reset,
+    watch,
+    control,
     handleSubmit,
-    setValue,
     formState: { isSubmitting },
   } = methods;
 
+  const values = watch();
+
   const onSubmit = handleSubmit(async (data) => {
-    const promise = new Promise((resolve) => setTimeout(resolve, 1000));
-
     try {
+      await new Promise((resolve) => setTimeout(resolve, 500));
       reset();
-      onClose();
-
-      toast.promise(promise, {
-        loading: 'Loading...',
-        success: 'Update success!',
-        error: 'Update error!',
-      });
-
-      await promise;
+      toast.success(currentUser ? 'Update success!' : 'Create success!');
+      router.push(paths.dashboard.user.list);
+      console.info('DATA', data);
     } catch (error) {
       console.error(error);
     }
   });
 
-  const handleCepChange = async (event) => {
-    const cep = event.target.value;
-    setCepValue(cep);
-    if (cep.length === 8) {
-      try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await response.json();
-        if (data.erro) {
-          throw new Error('CEP não encontrado');
-        }
-        setValue('address', data.logradouro);
-        setValue('cidade', data.localidade);
-        setValue('estado', data.uf);
-      } catch (error) {
-        console.error(error);
-        toast.error('CEP não encontrado ou inválido');
-      }
-    }
-  };
-
   return (
-    <Dialog
-      fullWidth
-      maxWidth={false}
-      open={open}
-      onClose={onClose}
-      PaperProps={{ sx: { maxWidth: 720 } }}
-    >
-      <Form methods={methods} onSubmit={onSubmit}>
-        <DialogTitle>Atualização Rápida</DialogTitle>
+    <Form methods={methods} onSubmit={onSubmit}>
+      <Grid container spacing={3}>
+        <Grid xs={12} md={4}>
+          <Card sx={{ pt: 10, pb: 5, px: 3 }}>
+            {currentUser && (
+              <Label
+                color={
+                  (values.status === 'active' && 'success') ||
+                  (values.status === 'banned' && 'error') ||
+                  'warning'
+                }
+                sx={{ position: 'absolute', top: 24, right: 24 }}
+              >
+                {values.status}
+              </Label>
+            )}
 
-        <DialogContent>
-          <Box
-            rowGap={3}
-            columnGap={2}
-            display="grid"
-            gridTemplateColumns={{ xs: 'repeat(1, 1fr)', sm: 'repeat(2, 1fr)' }}
-          >
-            <Field.Select name="status" label="Status">
-              {USER_STATUS_OPTIONS.map((status) => (
-                <MenuItem key={status.value} value={status.value}>
-                  {status.label}
-                </MenuItem>
-              ))}
-            </Field.Select>
+            <Box sx={{ mb: 5 }}>
+              <Field.UploadAvatar
+                name="avatarUrl"
+                maxSize={3145728}
+                helperText={
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      mt: 3,
+                      mx: 'auto',
+                      display: 'block',
+                      textAlign: 'center',
+                      color: 'text.disabled',
+                    }}
+                  >
+                    Allowed *.jpeg, *.jpg, *.png, *.gif
+                    <br /> max size of {fData(3145728)}
+                  </Typography>
+                }
+              />
+            </Box>
 
-            <Box sx={{ display: { xs: 'none', sm: 'block' } }} />
+            {currentUser && (
+              <FormControlLabel
+                labelPlacement="start"
+                control={
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <Switch
+                        {...field}
+                        checked={field.value !== 'active'}
+                        onChange={(event) =>
+                          field.onChange(event.target.checked ? 'banned' : 'active')
+                        }
+                      />
+                    )}
+                  />
+                }
+                label={
+                  <>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      Banned
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      Apply disable account
+                    </Typography>
+                  </>
+                }
+                sx={{
+                  mx: 0,
+                  mb: 3,
+                  width: 1,
+                  justifyContent: 'space-between',
+                }}
+              />
+            )}
 
-            <Field.Text name="nome" label="Nome Completo" />
-            <Field.Text name="email" label="Email" />
-            <Field.Text name="whatsapp" label="Telefone" />
-            <Field.Text name="razaoSocial" label="Razão Social" />
-            <Field.Text name="cnpj" label="CNPJ" />
-            <Field.Text name="codigo" label="Código" type="number" />
-            <Field.Text name="emailFinanceiro" label="Email Financeiro" />
-            <Field.Text name="telefoneComercial" label="Telefone Comercial" />
-            <Field.DatePicker name="dataEntrada" label="Data de Entrada" />
-            <Field.DatePicker name="dataSaida" label="Data de Saída" />
-
-            <Field.Select name="regimeTributario" label="Regime Tributário">
-              {REGIME_TRIBUTARIO_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Field.Select>
-
-            <Field.Select name="planoEmpresa" label="Plano Empresa">
-              {PLANO_EMPRESA_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Field.Select>
-
-            <Field.MultiSelect name="tributacao" label="Tributação" value={TRIBUTACAO_OPTIONS}>
-              {TRIBUTACAO_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Field.MultiSelect>
-
-            <Field.Text name="cep" label="CEP" value={cepValue} onChange={handleCepChange} />
-            <Field.Text name="address" label="Endereço" />
-            <Field.Text name="estado" label="Estado" />
-            <Field.Text name="cidade" label="Cidade" />
-          </Box>
-          <Box sx={{ mt: 3 }}>
-            <Field.Editor
-              fullWidth
-              name="observacao"
-              label="Observação"
-              sx={{ gridColumn: 'span 2' }}
+            <Field.Switch
+              name="isVerified"
+              labelPlacement="start"
+              label={
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    Email verified
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Disabling this will automatically send the user a verification email
+                  </Typography>
+                </>
+              }
+              sx={{ mx: 0, width: 1, justifyContent: 'space-between' }}
             />
-          </Box>
-        </DialogContent>
 
-        <DialogActions>
-          <Button variant="outlined" onClick={onClose}>
-            Cancelar
-          </Button>
+            {currentUser && (
+              <Stack justifyContent="center" alignItems="center" sx={{ mt: 3 }}>
+                <Button variant="soft" color="error">
+                  Delete user
+                </Button>
+              </Stack>
+            )}
+          </Card>
+        </Grid>
 
-          <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-            Atualizar
-          </LoadingButton>
-        </DialogActions>
-      </Form>
-    </Dialog>
+        <Grid xs={12} md={8}>
+          <Card sx={{ p: 3 }}>
+            <Box
+              rowGap={3}
+              columnGap={2}
+              display="grid"
+              gridTemplateColumns={{
+                xs: 'repeat(1, 1fr)',
+                sm: 'repeat(2, 1fr)',
+              }}
+            >
+              <Field.Text name="name" label="Full name" />
+              <Field.Text name="email" label="Email address" />
+              <Field.Phone name="phoneNumber" label="Phone number" />
+
+              <Field.CountrySelect
+                fullWidth
+                name="country"
+                label="Country"
+                placeholder="Choose a country"
+              />
+
+              <Field.Text name="state" label="State/region" />
+              <Field.Text name="city" label="City" />
+              <Field.Text name="address" label="Address" />
+              <Field.Text name="zipCode" label="Zip/code" />
+              <Field.Text name="company" label="Company" />
+              <Field.Text name="role" label="Role" />
+            </Box>
+
+            <Stack alignItems="flex-end" sx={{ mt: 3 }}>
+              <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
+                {!currentUser ? 'Create user' : 'Save changes'}
+              </LoadingButton>
+            </Stack>
+          </Card>
+        </Grid>
+      </Grid>
+    </Form>
   );
 }
