@@ -25,12 +25,16 @@ export async function deleteCliente(id) {
 
 export async function updateCliente(id, clienteDta) {
   const res = await axios.put(`${endpoints.clientes.update}/${id}`, clienteDta);
-  return res;
+
+  const response = res;
+  return response;
 }
 
 // ----------------------------------------------------------------------
 
 export async function criarCliente(clienteDta) {
   const res = await axios.post(`${endpoints.clientes.list}`, clienteDta);
-  return res;
+  const response = res;
+
+  return response;
 }
