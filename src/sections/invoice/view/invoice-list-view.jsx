@@ -21,13 +21,12 @@ import { RouterLink } from 'src/routes/components';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
 
-import { getInvoices, deleteInvoiceById } from 'src/actions/invoices';
-
 import { sumBy } from 'src/utils/helper';
 import { fIsAfter, fIsBetween } from 'src/utils/format-time';
 
 import { varAlpha } from 'src/theme/styles';
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getInvoices, deleteInvoiceById } from 'src/actions/invoices';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
@@ -75,22 +74,26 @@ export function InvoiceListView() {
 
   const table = useTable({ defaultOrderBy: 'dataVencimento' });
 
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        const invoices = await getInvoices();
-        console.log(invoices);
-        setTableData(invoices.invoices);
-      } catch (error) {
-        setFetchError('Failed to fetch invoices');
-        toast.error('Failed to fetch invoices');
-      } finally {
-        setLoading(false);
+  const fetchInvoices = useCallback(async () => {
+    try {
+      const invoices = await getInvoices();
+      if (Array.isArray(invoices)) {
+        setTableData(invoices);
+      } else {
+        setTableData([]);
+        console.error("Expected 'getInvoices' to return an array.");
       }
-    };
-
-    fetchInvoices();
+    } catch (error) {
+      setFetchError('Failed to fetch invoices');
+      toast.error('Failed to fetch invoices');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
 
   const filters = useSetState({
     name: '',
@@ -119,13 +122,18 @@ export function InvoiceListView() {
 
   const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
 
-  const getInvoiceLength = (status) => tableData.filter((item) => item.status === status).length;
+  const getInvoiceLength = (status) => {
+    if (!Array.isArray(tableData)) return 0;
+    return tableData.filter((item) => item.status === status).length;
+  };
 
-  const getTotalAmount = (status) =>
-    sumBy(
+  const getTotalAmount = (status) => {
+    if (!Array.isArray(tableData)) return 0;
+    return sumBy(
       tableData.filter((item) => item.status === status),
       (invoice) => invoice.total
     );
+  };
 
   const getPercentByStatus = (status) => (getInvoiceLength(status) / tableData.length) * 100;
 
@@ -174,7 +182,7 @@ export function InvoiceListView() {
 
       table.onUpdatePageDeleteRow(dataInPage.length);
     },
-    [dataInPage.length, table]
+    [dataInPage.length, table, fetchInvoices]
   );
 
   const handleDeleteRows = useCallback(async () => {
@@ -197,7 +205,7 @@ export function InvoiceListView() {
       totalRowsInPage: dataInPage.length,
       totalRowsFiltered: dataFiltered.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table]);
+  }, [dataFiltered.length, dataInPage.length, table, fetchInvoices]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -428,7 +436,7 @@ export function InvoiceListView() {
         title="Delete"
         content={
           <>
-            Tem certeza que quer deletar <strong> {table.selected.length} </strong> items?
+            Tem certeza que quer deletar <strong> {table.selected.length} </strong> itens?
           </>
         }
         action={

@@ -4,7 +4,7 @@ import axios, { endpoints } from 'src/utils/axios';
 
 export async function getInvoices() {
   const res = await axios.get(endpoints.invoices.list);
-  return res.data;
+  return res.data.invoices;
 }
 
 // ----------------------------------------------------------------------
