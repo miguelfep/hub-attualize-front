@@ -32,8 +32,13 @@ export { dynamic };
  */
 export async function generateStaticParams() {
   if (CONFIG.isStaticExport) {
-    const clientes = await getClientes(); // Assumindo que há uma função para obter todas as invoices
-    return clientes.map((cliente) => ({ id: cliente._id }));
+    try {
+      const clientes = await getClientes(); // Assumindo que há uma função para obter todas as invoices
+      return clientes.map((cliente) => ({ id: cliente._id }));
+    } catch (error) {
+      console.error('Failed to generate static params:', error);
+      return [];
+    }
   }
   return [];
 }
