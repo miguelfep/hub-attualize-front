@@ -1,21 +1,24 @@
 import React from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+
 import {
-  Box,
-  Typography,
-  Container,
   Grid,
   Card,
-  CardContent,
+  Stack,
   Button,
   Divider,
-  Stack,
+  Container,
+  Typography,
+  CardContent,
 } from '@mui/material';
-import { fCurrency } from 'src/utils/format-number';
-import { Iconify } from 'src/components/iconify';
-import { toast } from 'sonner';
-import axios from 'axios';
+
 import { useCopyToClipboard } from 'src/hooks/use-copy-to-clipboard';
+
+import { fCurrency } from 'src/utils/format-number';
+
 import { Label } from 'src/components/label';
+import { Iconify } from 'src/components/iconify';
 
 const statusColors = {
   EMABERTO: 'success',
@@ -61,7 +64,7 @@ export function CobrancaExistente({ invoice }) {
   return (
     <Container sx={{ pt: 5, pb: 10, maxWidth: '800px' }}>
       <Typography variant="h4" align="center" sx={{ mb: 2 }}>
-        {`Detalhes da Cobrança`}
+        Detalhes da Cobrança
       </Typography>
       {invoice.cobrancas.map((cobranca, index) => (
         <Grid container spacing={3} justifyContent="center" key={cobranca._id || index}>
@@ -143,12 +146,12 @@ export function CobrancaExistente({ invoice }) {
                     <Divider sx={{ mb: 2 }} />
                     <Stack spacing={2}>
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="h6">{`Chave PIX:`}</Typography>
-                        <Typography variant="h6">{`32.610.190/0001-55`}</Typography>
+                        <Typography variant="h6">Chave PIX:</Typography>
+                        <Typography variant="h6">32.610.190/0001-55</Typography>
                       </Stack>
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="h6">{`Beneficiário:`}</Typography>
-                        <Typography variant="h6">{`Attualize Contabil LTDA`}</Typography>
+                        <Typography variant="h6">Beneficiário:</Typography>
+                        <Typography variant="h6">Attualize Contabil LTDA</Typography>
                       </Stack>
                     </Stack>
                     <Stack spacing={2} sx={{ mt: 3 }}>

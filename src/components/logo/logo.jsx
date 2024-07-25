@@ -30,7 +30,7 @@ export const Logo = forwardRef(
      */
 
     const logo = (
-      <Box alt="logo" component="img" src={`/logo/hub-tt.png`} width={width} height={height} />
+      <Box alt="logo" component="img" src="/logo/hub-tt.png" width={width} height={height} />
     );
 
     return (

@@ -1,27 +1,25 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { CopyToClipboard } from 'react-copy-to-clipboard';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { fDate } from 'src/utils/format-time';
-import Container from '@mui/material/Container';
+import { useState, useEffect } from 'react';
+
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
+import Button from '@mui/material/Button';
+import Container from '@mui/material/Container';
+import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-import { Label } from 'src/components/label';
+
+import { updateInvoice, getInvoiceById } from 'src/actions/invoices';
+
 import { Iconify } from 'src/components/iconify';
+
 import { CheckoutSteps } from '../checkout/checkout-steps';
-import { CheckoutOrderComplete } from '../checkout/checkout-order-complete';
+import { CheckoutOrderComplete } from '../checkout/checkout-order-complete'; // Adicione getInvoiceById
 
-import { updateInvoice, getInvoiceById } from 'src/actions/invoices'; // Adicione getInvoiceById
-
-import { OrcamentoAprovado } from './orcamento-aprovado';
 import { OrcamentoPago } from './orcamento-pago';
+import { OrcamentoAprovado } from './orcamento-aprovado';
 import { OrcamentoPendente } from './orcamento-pendente';
 
 const ORCAMENTO_CHECKOUT_STEPS = ['Aprovação', 'Pagamento'];

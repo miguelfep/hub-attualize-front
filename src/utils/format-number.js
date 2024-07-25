@@ -37,7 +37,7 @@ export function fCurrency(inputValue, options) {
 
   const fm = new Intl.NumberFormat(locale, {
     style: 'currency',
-    currency: currency,
+    currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
     ...options,

@@ -82,7 +82,7 @@ export function JwtSignInView() {
 
       <Stack direction="row" spacing={0.5}>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {`Não possui uma conta?`}
+          Não possui uma conta?
         </Typography>
 
         <Link component={RouterLink} href={paths.auth.jwt.signUp} variant="subtitle2">

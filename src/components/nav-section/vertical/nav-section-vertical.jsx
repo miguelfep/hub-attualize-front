@@ -4,11 +4,12 @@ import Stack from '@mui/material/Stack';
 import Collapse from '@mui/material/Collapse';
 import { useTheme } from '@mui/material/styles';
 
+import { getUser } from 'src/auth/context/jwt';
+
 import { NavList } from './nav-list';
 import { navSectionClasses } from '../classes';
 import { navSectionCssVars } from '../css-vars';
 import { NavUl, NavLi, Subheader } from '../styles';
-import { getUser } from 'src/auth/context/jwt';
 
 // ----------------------------------------------------------------------
 

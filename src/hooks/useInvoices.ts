@@ -1,19 +1,10 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-interface Invoice {
-  _id: string;
-  client: string;
-  items: string[];
-  amount: number;
-  recurring: boolean;
-  date: string;
-}
-
 const useInvoices = () => {
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchInvoices = async () => {
     setLoading(true);

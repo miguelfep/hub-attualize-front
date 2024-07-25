@@ -1,7 +1,7 @@
 import { CONFIG } from 'src/config-global';
+import { getClienteById } from 'src/actions/clientes';
 
 import { ClienteEditView } from 'src/sections/cliente/view';
-import { getClienteById } from 'src/actions/clientes';
 
 // ----------------------------------------------------------------------
 

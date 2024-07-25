@@ -1,15 +1,17 @@
-import { useState } from 'react';
+import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
+import { cpf as cpfValidator, cnpj as cnpjValidator } from 'cpf-cnpj-validator';
+
 import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import { cpf as cpfValidator, cnpj as cnpjValidator } from 'cpf-cnpj-validator';
-import { criarCliente } from 'src/actions/clientes';
-import { toast } from 'sonner';
+
 import { formatCpfCnpj } from 'src/utils/format-number';
+
+import { criarCliente } from 'src/actions/clientes';
 
 export function NewClientDialog({ open, onClose, onAddClient }) {
   const {
@@ -43,7 +45,7 @@ export function NewClientDialog({ open, onClose, onAddClient }) {
 
       const dataToSend = {
         ...data,
-        cnpj: cnpj,
+        cnpj,
         razaoSocial: data.nome,
       };
       const response = await criarCliente(dataToSend);

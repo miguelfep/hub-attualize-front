@@ -1,7 +1,5 @@
-import axios, { endpoints } from 'src/utils/axios';
 
 import { CONFIG } from 'src/config-global';
-import { getProduct } from 'src/actions/product-ssr';
 import { getInvoiceById } from 'src/actions/invoices';
 
 import { OrcamentoView } from 'src/sections/orcamento/orcamento-view';

@@ -1,32 +1,34 @@
 import { z as zod } from 'zod';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
+
+import Grid from '@mui/material/Unstable_Grid2';
+import { DatePicker } from '@mui/x-date-pickers';
+import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
+  Tab,
   Card,
+  Tabs,
   Stack,
   Button,
-  Typography,
-  Tabs,
-  Tab,
   MenuItem,
-  CircularProgress,
   TextField,
+  Typography,
+  CircularProgress,
 } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2';
-import LoadingButton from '@mui/lab/LoadingButton';
-import { DatePicker } from '@mui/x-date-pickers';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { buscarCep } from 'src/actions/cep';
+import { criarCliente, updateCliente, getClienteById } from 'src/actions/clientes';
+
 import { toast } from 'src/components/snackbar';
 import { Form, Field } from 'src/components/hook-form';
-import SociosForm from './cliete-socios-form';
 
-import { criarCliente, updateCliente, getClienteById } from 'src/actions/clientes';
-import { buscarCep } from 'src/actions/cep';
+import SociosForm from './cliete-socios-form';
 
 export const TRIBUTACAO_OPTIONS = [
   { value: 'anexo1', label: 'Anexo I' },

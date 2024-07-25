@@ -43,8 +43,6 @@ export function NavVertical() {
 
   const canReset = !isEqual(defaultConfig, config);
 
-  console.log('config:', config);
-
   const handleChangeConfig = useCallback((name, value) => {
     setConfig((prevState) => ({ ...prevState, [name]: value }));
   }, []);

@@ -2,7 +2,7 @@ import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
 
-import { STORAGE_KEY, USER_DATA } from './constant';
+import { USER_DATA, STORAGE_KEY } from './constant';
 
 // ----------------------------------------------------------------------
 

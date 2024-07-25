@@ -1,5 +1,7 @@
 import React from 'react';
-import { Box, Typography, Card, CardContent } from '@mui/material';
+
+import { Box, Card, Typography, CardContent } from '@mui/material';
+
 import { Iconify } from 'src/components/iconify';
 
 export function OrcamentoPago() {

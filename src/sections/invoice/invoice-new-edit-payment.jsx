@@ -1,22 +1,22 @@
-import { useEffect, useState } from 'react';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
 import Radio from '@mui/material/Radio';
-import RadioGroup from '@mui/material/RadioGroup';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import FormControl from '@mui/material/FormControl';
 import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
+import { TextField } from '@mui/material';
 import Accordion from '@mui/material/Accordion';
+import Typography from '@mui/material/Typography';
+import RadioGroup from '@mui/material/RadioGroup';
+import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
+
 import { Iconify } from 'src/components/iconify';
-import axios from 'axios';
-import { toast } from 'sonner';
-import { TextField } from '@mui/material';
 
 export function InvoiceNewEditPayment({ currentInvoice }) {
   const { setValue, watch } = useFormContext();
@@ -62,9 +62,9 @@ export function InvoiceNewEditPayment({ currentInvoice }) {
   const handleSendWhatsApp = (boleto) => {
     const message = `Boleto gerado com sucesso:
 
-Código de Barras: ${boleto.codigoBarras}
-Linha Digitável: ${boleto.linhaDigitavel}
-Nosso Número: ${boleto.nossoNumero}`;
+  Código de Barras: ${boleto.codigoBarras}
+  Linha Digitável: ${boleto.linhaDigitavel}
+  Nosso Número: ${boleto.nossoNumero}`;
 
     const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');

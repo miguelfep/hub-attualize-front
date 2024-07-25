@@ -16,8 +16,8 @@ export async function getClienteById(id) {
 
 // ----------------------------------------------------------------------
 
-export async function deleteCliente(clienteDta) {
-  const res = await axios.post(endpoints.clientes.create, invoiceData);
+export async function deleteCliente(id) {
+  const res = await axios.post(endpoints.clientes.create, id);
   return res.data;
 }
 

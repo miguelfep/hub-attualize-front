@@ -1,8 +1,7 @@
 import { z as zod } from 'zod';
-import { useMemo, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useMemo, useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { isValidPhoneNumber } from 'react-phone-number-input/input';
 
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -14,9 +13,10 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { updateCliente } from 'src/actions/clientes';
+
 import { toast } from 'src/components/snackbar';
 import { Form, Field } from 'src/components/hook-form';
-import { updateCliente, getClientes } from 'src/actions/clientes';
 
 // ----------------------------------------------------------------------
 
@@ -269,7 +269,7 @@ export function ClienteQuickEditForm({ currentUser, open, onClose, onUpdate }) {
               name="tributacao"
               label="Tributação"
               options={TRIBUTACAO_OPTIONS}
-            ></Field.MultiSelect>
+             />
           </Box>
           <Box sx={{ mt: 3 }}>
             <Field.Editor

@@ -1,17 +1,19 @@
 import React from 'react';
+
+import Stack from '@mui/material/Stack';
 import {
+  Box,
+  Grid,
   Table,
-  TableHead,
   TableRow,
+  TableHead,
   TableCell,
   TableBody,
-  Box,
   Typography,
-  Grid,
 } from '@mui/material';
-import { fCurrency } from 'src/utils/format-number';
-import Stack from '@mui/material/Stack';
+
 import { fDate } from 'src/utils/format-time';
+import { fCurrency } from 'src/utils/format-number';
 
 export function OrcamentoPendente({ invoice }) {
   const renderTotal = (

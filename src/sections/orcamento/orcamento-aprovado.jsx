@@ -1,27 +1,32 @@
 'use client';
 
-import { useState } from 'react';
-import axios from 'axios';
 import { z } from 'zod';
+import axios from 'axios';
+import { toast } from 'sonner';
+import { useState } from 'react';
+
 import {
   Box,
-  Container,
   Grid,
-  Typography,
-  TextField,
-  FormControl,
-  RadioGroup,
-  FormControlLabel,
   Radio,
-  Button,
   Stack,
+  Button,
   Divider,
+  Container,
+  TextField,
+  Typography,
+  RadioGroup,
+  FormControl,
+  FormControlLabel,
   CircularProgress,
 } from '@mui/material';
+
 import { fCurrency } from 'src/utils/format-number';
-import { toast } from 'sonner';
-import { Iconify } from 'src/components/iconify';
+
 import { crirarPedidoOrcamento } from 'src/actions/invoices';
+
+import { Iconify } from 'src/components/iconify';
+
 import { CobrancaExistente } from './orcamento-cobranca';
 
 // Função para remover formatação do CEP
@@ -169,10 +174,10 @@ export function OrcamentoAprovado({
   return (
     <Container sx={{ pt: 5, pb: 10 }}>
       <Typography variant="h3" align="center" sx={{ mb: 2 }}>
-        {`Pronto para simplificar sua contabilidade?`}
+        Pronto para simplificar sua contabilidade?
       </Typography>
       <Typography variant="h4" align="center" sx={{ mb: 2 }}>
-        {`Conclua seu orçamento agora!`}
+        Conclua seu orçamento agora!
       </Typography>
       <Grid container rowSpacing={{ xs: 5, md: 0 }} columnSpacing={{ xs: 0, md: 5 }}>
         <Grid xs={12} md={8}>

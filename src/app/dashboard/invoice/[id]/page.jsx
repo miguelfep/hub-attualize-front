@@ -1,5 +1,4 @@
 import { CONFIG } from 'src/config-global';
-import { _invoices } from 'src/_mock/_invoice';
 import { getInvoiceById } from 'src/actions/invoices';
 
 import { InvoiceDetailsView } from 'src/sections/invoice/view';

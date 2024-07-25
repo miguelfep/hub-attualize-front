@@ -1,6 +1,7 @@
+import 'react-phone-number-input/style.css';
+
 import React from 'react';
 import PhoneInput from 'react-phone-number-input/input';
-import 'react-phone-number-input/style.css';
 
 export function CustomPhoneInput({ value, onChange, error, helperText, ...props }) {
   return (

@@ -1,10 +1,11 @@
 'use client';
 
-import axios, { endpoints } from 'src/utils/axios';
-import Cookies from 'js-cookie'; // Certifique-se de ter a biblioteca js-cookie instalada
+import Cookies from 'js-cookie';
 
-import { setSession, setUser } from './utils';
+import axios, { endpoints } from 'src/utils/axios'; // Certifique-se de ter a biblioteca js-cookie instalada
+
 import { STORAGE_KEY } from './constant';
+import { setUser, setSession } from './utils';
 
 /** **************************************
  * Sign in

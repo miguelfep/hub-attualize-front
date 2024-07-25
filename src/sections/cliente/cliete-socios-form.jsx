@@ -1,27 +1,29 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
-import { useFormContext, useFieldArray } from 'react-hook-form';
+import { useFieldArray, useFormContext } from 'react-hook-form';
+
+import FormControlLabel from '@mui/material/FormControlLabel';
 import {
   Box,
-  Button,
   Card,
-  IconButton,
+  Grid,
   Modal,
   Stack,
-  Switch,
   Table,
+  Button,
+  Switch,
+  Tooltip,
+  TableRow,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
-  TableRow,
   TextField,
-  Tooltip,
+  IconButton,
   Typography,
-  Grid,
+  TableContainer,
 } from '@mui/material';
+
 import { Iconify } from 'src/components/iconify';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import { toast } from 'sonner';
 
 function SociosForm() {
   const { control, setValue } = useFormContext();
@@ -91,6 +93,13 @@ function SociosForm() {
                   <Tooltip title="Copiar CPF">
                     <span
                       onClick={() => handleCopyToClipboard(field.cpf, 'CPF')}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleCopyToClipboard(field.cpf, 'CPF');
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                       style={{ cursor: 'pointer', textDecoration: 'underline' }}
                     >
                       {field.cpf}
@@ -101,6 +110,13 @@ function SociosForm() {
                   <Tooltip title="Copiar RG">
                     <span
                       onClick={() => handleCopyToClipboard(field.rg, 'RG')}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleCopyToClipboard(field.rg, 'RG');
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                       style={{ cursor: 'pointer', textDecoration: 'underline' }}
                     >
                       {field.rg}
@@ -111,12 +127,19 @@ function SociosForm() {
                   <Tooltip title="Copiar CNH">
                     <span
                       onClick={() => handleCopyToClipboard(field.cnh, 'CNH')}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleCopyToClipboard(field.cnh, 'CNH');
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                       style={{ cursor: 'pointer', textDecoration: 'underline' }}
                     >
                       {field.cnh}
                     </span>
                   </Tooltip>
-                </TableCell>{' '}
+                </TableCell>
                 <TableCell>
                   <Switch
                     checked={field.administrador}

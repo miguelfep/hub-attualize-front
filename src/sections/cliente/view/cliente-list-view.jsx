@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -115,7 +115,7 @@ export function ClienteListView() {
         confirm.onFalse();
       }
     },
-    [fetchClientes]
+    [fetchClientes, confirm]
   );
 
   const handleDeleteRows = useCallback(async () => {
@@ -126,6 +126,7 @@ export function ClienteListView() {
     } catch (error) {
       toast.error('Erro ao inativar clientes');
     } finally {
+      confirm.onFalse();
     }
   }, [table.selected, fetchClientes, confirm]);
 
@@ -206,7 +207,7 @@ export function ClienteListView() {
               />
             ))}
           </Tabs>
-          {<ClienteTableToolbar filters={filters} onResetPage={table.onResetPage} />}
+          <ClienteTableToolbar filters={filters} onResetPage={table.onResetPage} />
 
           {canReset && (
             <ClienteTableFiltersResult

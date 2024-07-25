@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useFieldArray, useFormContext } from 'react-hook-form';
 
 import Box from '@mui/material/Box';
@@ -93,7 +93,7 @@ export function InvoiceNewEditDetails() {
   const handleChangeQuantity = useCallback(
     (event, index) => {
       const quantidade = Number(event.target.value);
-      const preco = values.items[index].preco;
+      const {preco} = values.items[index];
       setValue(`items[${index}].quantidade`, quantidade);
       setValue(`items[${index}].total`, quantidade * preco);
     },
@@ -103,7 +103,7 @@ export function InvoiceNewEditDetails() {
   const handleChangePrice = useCallback(
     (event, index) => {
       const preco = Number(event.target.value);
-      const quantidade = values.items[index].quantidade;
+      const {quantidade} = values.items[index];
       setValue(`items[${index}].preco`, preco);
       setValue(`items[${index}].total`, quantidade * preco);
     },

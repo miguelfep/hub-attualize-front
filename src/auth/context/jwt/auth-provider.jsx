@@ -4,9 +4,9 @@ import { useMemo, useEffect, useCallback } from 'react';
 
 import { useSetState } from 'src/hooks/use-set-state';
 
-import { STORAGE_KEY, USER_DATA } from './constant';
+import { STORAGE_KEY } from './constant';
 import { AuthContext } from '../auth-context';
-import { setSession, isValidToken, getUser } from './utils';
+import { getUser, setSession, isValidToken } from './utils';
 
 // ----------------------------------------------------------------------
 
