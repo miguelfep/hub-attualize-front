@@ -1,5 +1,5 @@
 import { CONFIG } from 'src/config-global';
-import { getInvoiceById } from 'src/actions/invoices';
+import { getInvoices, getInvoiceById } from 'src/actions/invoices';
 
 import { InvoiceDetailsView } from 'src/sections/invoice/view';
 
@@ -24,3 +24,15 @@ export default async function Page({ params }) {
 const dynamic = CONFIG.isStaticExport ? 'auto' : 'force-dynamic';
 
 export { dynamic };
+
+/**
+ * [2] Static exports
+ * https://nextjs.org/docs/app/building-your-application/deploying/static-exports
+ */
+export async function generateStaticParams() {
+  if (CONFIG.isStaticExport) {
+    const invoices = await getInvoices();
+    return invoices.map((invoice) => ({ id: invoice.id }));
+  }
+  return [];
+}

@@ -1,5 +1,5 @@
 import { CONFIG } from 'src/config-global';
-import { getClienteById } from 'src/actions/clientes';
+import { getClientes, getClienteById } from 'src/actions/clientes';
 
 import { ClienteEditView } from 'src/sections/cliente/view';
 
@@ -25,3 +25,15 @@ export default async function Page({ params }) {
 const dynamic = CONFIG.isStaticExport ? 'auto' : 'force-dynamic';
 
 export { dynamic };
+
+/**
+ * [2] Static exports
+ * https://nextjs.org/docs/app/building-your-application/deploying/static-exports
+ */
+export async function generateStaticParams() {
+  if (CONFIG.isStaticExport) {
+    const clientes = await getClientes(); // Assumindo que há uma função para obter todas as invoices
+    return clientes.map((cliente) => ({ id: cliente._id }));
+  }
+  return [];
+}
