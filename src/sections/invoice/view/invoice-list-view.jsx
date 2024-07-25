@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
@@ -22,14 +21,13 @@ import { RouterLink } from 'src/routes/components';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
 
-import useInvoices from 'src/hooks/use-invoices';
+import { getInvoices, deleteInvoiceById } from 'src/actions/invoices';
 
 import { sumBy } from 'src/utils/helper';
 import { fIsAfter, fIsBetween } from 'src/utils/format-time';
 
 import { varAlpha } from 'src/theme/styles';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { deleteInvoiceById } from 'src/actions/invoices';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
@@ -68,22 +66,31 @@ const TABLE_HEAD = [
 
 export function InvoiceListView() {
   const theme = useTheme();
-
   const router = useRouter();
-
-  const { invoices, loading, error: fetchError, fetchInvoices } = useInvoices();
-
-  const table = useTable({ defaultOrderBy: 'dataVencimento' });
-
   const confirm = useBoolean();
 
   const [tableData, setTableData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+
+  const table = useTable({ defaultOrderBy: 'dataVencimento' });
 
   useEffect(() => {
-    if (Array.isArray(invoices)) {
-      setTableData(invoices);
-    }
-  }, [invoices]);
+    const fetchInvoices = async () => {
+      try {
+        const invoices = await getInvoices();
+        console.log(invoices);
+        setTableData(invoices.invoices);
+      } catch (error) {
+        setFetchError('Failed to fetch invoices');
+        toast.error('Failed to fetch invoices');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchInvoices();
+  }, []);
 
   const filters = useSetState({
     name: '',
@@ -167,7 +174,7 @@ export function InvoiceListView() {
 
       table.onUpdatePageDeleteRow(dataInPage.length);
     },
-    [dataInPage.length, table, fetchInvoices]
+    [dataInPage.length, table]
   );
 
   const handleDeleteRows = useCallback(async () => {
@@ -190,7 +197,7 @@ export function InvoiceListView() {
       totalRowsInPage: dataInPage.length,
       totalRowsFiltered: dataFiltered.length,
     });
-  }, [dataFiltered.length, dataInPage.length, table, fetchInvoices]);
+  }, [dataFiltered.length, dataInPage.length, table]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -209,7 +216,6 @@ export function InvoiceListView() {
   const handleFilterStatus = useCallback(
     (event, newValue) => {
       table.onResetPage();
-      console.log(newValue);
       filters.setState({ status: newValue });
     },
     [filters, table]
@@ -422,7 +428,7 @@ export function InvoiceListView() {
         title="Delete"
         content={
           <>
-            Tem certeza que quer delete <strong> {table.selected.length} </strong> items?
+            Tem certeza que quer deletar <strong> {table.selected.length} </strong> items?
           </>
         }
         action={
