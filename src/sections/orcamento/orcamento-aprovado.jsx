@@ -74,13 +74,11 @@ export function OrcamentoAprovado({
   loading,
   updateInvoiceData, // Nova prop para atualizar a invoice
 }) {
-  // Verificar se a invoice tem cobranças
-  if (invoice.cobrancas && invoice.cobrancas.length > 0) {
-    return <CobrancaExistente invoice={invoice} />;
-  }
-
   const enderecoInicial = invoice?.cliente.endereco?.[0] || {};
   const [method, setMethod] = useState(paymentMethod);
+  const [errors, setErrors] = useState({});
+  const [loadingCep, setLoadingCep] = useState(false);
+  const [cepNotFound, setCepNotFound] = useState(false);
   const [formData, setFormData] = useState({
     nome: invoice?.cliente.nome || '',
     email: invoice?.cliente.email || '',
@@ -94,9 +92,10 @@ export function OrcamentoAprovado({
     estado: enderecoInicial.estado || '',
   });
 
-  const [errors, setErrors] = useState({});
-  const [loadingCep, setLoadingCep] = useState(false);
-  const [cepNotFound, setCepNotFound] = useState(false);
+  // Verificar se a invoice tem cobranças
+  if (invoice.cobrancas && invoice.cobrancas.length > 0) {
+    return <CobrancaExistente invoice={invoice} />;
+  }
 
   const handleChangeMethod = (event) => {
     setMethod(event.target.value);

@@ -57,15 +57,18 @@ const cobrancaStatusTexts = {
 export function InvoiceDetails({ invoice }) {
   const [currentStatus, setCurrentStatus] = useState(invoice?.status);
 
-  const handleChangeStatus = useCallback(async (event) => {
-    const dataUpdate = {
-      status: event.target.value,
-    };
+  const handleChangeStatus = useCallback(
+    async (event) => {
+      const dataUpdate = {
+        status: event.target.value,
+      };
 
-    const res = await updateInvoice(invoice._id, dataUpdate);
-    toast.success('Venda atualizada');
-    setCurrentStatus(res.status);
-  }, []);
+      const res = await updateInvoice(invoice._id, dataUpdate);
+      toast.success('Venda atualizada');
+      setCurrentStatus(res.status);
+    },
+    [invoice._id]
+  );
 
   const renderTotal = (
     <>

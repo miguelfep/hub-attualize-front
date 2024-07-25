@@ -100,47 +100,37 @@ export function InvoiceNewEditForm({ currentInvoice }) {
     formState: { isSubmitting, errors },
   } = methods;
 
-  const handleSaveAsDraft = handleSubmit(
-    async (data) => {
-      try {
-        loadingSave.onTrue();
-        const res = await updateInvoice(currentInvoice._id, data);
+  const handleSaveAsDraft = handleSubmit(async (data) => {
+    try {
+      loadingSave.onTrue();
+      const res = await updateInvoice(currentInvoice._id, data);
+      reset();
+      loadingSave.onFalse();
+      router.push(paths.dashboard.invoice.root);
+      console.info('DATA', JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error(error);
+      loadingSave.onFalse();
+    }
+  });
+
+  const handleCreateAndSend = handleSubmit(async (data) => {
+    loadingSend.onTrue();
+    try {
+      const response = await createInvoice(data);
+      if (response.status === 201) {
         reset();
-        loadingSave.onFalse();
+        loadingSend.onFalse();
         router.push(paths.dashboard.invoice.root);
         console.info('DATA', JSON.stringify(data, null, 2));
-      } catch (error) {
-        console.error(error);
-        loadingSave.onFalse();
+      } else {
+        toast.error('Erro ao gerar Venda');
       }
-    },
-    (errors) => {
-      console.log('Validation errors:', errors);
+    } catch (error) {
+      console.error(error);
+      loadingSend.onFalse();
     }
-  );
-
-  const handleCreateAndSend = handleSubmit(
-    async (data) => {
-      loadingSend.onTrue();
-      try {
-        const response = await createInvoice(data);
-        if (response.status === 201) {
-          reset();
-          loadingSend.onFalse();
-          router.push(paths.dashboard.invoice.root);
-          console.info('DATA', JSON.stringify(data, null, 2));
-        } else {
-          toast.error('Erro ao gerar Venda');
-        }
-      } catch (error) {
-        console.error(error);
-        loadingSend.onFalse();
-      }
-    },
-    (errors) => {
-      console.log('Validation errors:', errors);
-    }
-  );
+  });
 
   return (
     <Form methods={methods}>

@@ -29,7 +29,7 @@ export function InvoiceNewEditAddress() {
 
   const values = watch();
 
-  const { cliente } = values;
+  const { cliente: clienteValue } = values;
 
   const to = useBoolean();
   const newClientDialog = useBoolean();
@@ -89,19 +89,19 @@ export function InvoiceNewEditAddress() {
             </Typography>
 
             <IconButton onClick={to.onTrue}>
-              <Iconify icon={cliente ? 'solar:pen-bold' : 'mingcute:add-line'} />
+              <Iconify icon={clienteValue ? 'solar:pen-bold' : 'mingcute:add-line'} />
             </IconButton>
           </Stack>
 
-          {cliente ? (
+          {clienteValue ? (
             <Stack spacing={1}>
-              <Typography variant="subtitle2">{cliente.razaoSocial}</Typography>
-              <Typography variant="body2">{cliente.nome}</Typography>
-              <Typography variant="body2"> {cliente.whatsapp}</Typography>
+              <Typography variant="subtitle2">{clienteValue.razaoSocial}</Typography>
+              <Typography variant="body2">{clienteValue.nome}</Typography>
+              <Typography variant="body2"> {clienteValue.whatsapp}</Typography>
             </Stack>
           ) : (
             <Typography typography="caption" sx={{ color: 'error.main' }}>
-              {errors.cliente?.message}
+              {errors.clienteValue?.message}
             </Typography>
           )}
         </Stack>
@@ -110,7 +110,7 @@ export function InvoiceNewEditAddress() {
         title="Clientes"
         open={to.value}
         onClose={to.onFalse}
-        selected={(selectedId) => cliente?.id === selectedId}
+        selected={(selectedId) => clienteValue?.id === selectedId}
         onSelect={(cliente) => setValue('cliente', cliente)}
         list={clientes}
         action={

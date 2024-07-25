@@ -19,9 +19,10 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
-import useInvoices from 'src/hooks/useInvoices';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
+
+import useInvoices from 'src/hooks/use-invoices';
 
 import { sumBy } from 'src/utils/helper';
 import { fIsAfter, fIsBetween } from 'src/utils/format-time';
@@ -70,7 +71,7 @@ export function InvoiceListView() {
 
   const router = useRouter();
 
-  const { invoices, loading, error, fetchInvoices } = useInvoices();
+  const { invoices, loading, error: fetchError, fetchInvoices } = useInvoices();
 
   const table = useTable({ defaultOrderBy: 'dataVencimento' });
 
@@ -181,8 +182,8 @@ export function InvoiceListView() {
       await Promise.all(promises);
       toast.success('Vendas deletadas com sucesso!');
       await fetchInvoices();
-    } catch (error) {
-      toast.error(error.message);
+    } catch (deleteError) {
+      toast.error(deleteError.message);
     }
 
     table.onUpdatePageDeleteRows({
@@ -214,8 +215,8 @@ export function InvoiceListView() {
     [filters, table]
   );
 
-  if (error) {
-    return <div>{error}</div>;
+  if (fetchError) {
+    return <div>{fetchError}</div>;
   }
 
   return (
