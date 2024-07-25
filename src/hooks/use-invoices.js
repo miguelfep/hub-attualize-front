@@ -9,7 +9,9 @@ const useInvoices = () => {
   const fetchInvoices = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('http://localhost:9443/api/financeiro/invoices');
+      const response = await axios.get(
+        'https://api.attualizecontabil.com.br/api/financeiro/invoices'
+      );
       setInvoices(response.data.invoices);
     } catch (err) {
       setError('Error fetching invoices');
