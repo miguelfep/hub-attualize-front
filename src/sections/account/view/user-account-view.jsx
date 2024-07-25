@@ -16,7 +16,6 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { AccountGeneral } from '../account-general';
 import { AccountBilling } from '../account-billing';
 import { AccountSocialLinks } from '../account-social-links';
-import { AccountNotifications } from '../account-notifications';
 import { AccountChangePassword } from '../account-change-password';
 
 // ----------------------------------------------------------------------
@@ -66,8 +65,6 @@ export function AccountView() {
           addressBook={_userAddressBook}
         />
       )}
-
-      {tabs.value === 'notifications' && <AccountNotifications />}
 
       {tabs.value === 'social' && <AccountSocialLinks socialLinks={_userAbout.socialLinks} />}
 
