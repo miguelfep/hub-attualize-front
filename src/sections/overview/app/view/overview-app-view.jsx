@@ -11,7 +11,6 @@ import { _appAuthors, _appRelated, _appFeatured, _appInvoices, _appInstalled } f
 
 import { svgColorClasses } from 'src/components/svg-color';
 
-import { useMockedUser } from 'src/auth/hooks';
 import { getUser } from 'src/auth/context/jwt';
 
 import { AppWidget } from '../app-widget';

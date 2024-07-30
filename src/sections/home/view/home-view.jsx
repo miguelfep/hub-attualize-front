@@ -6,14 +6,13 @@ import { BackToTop } from 'src/components/animate/back-to-top';
 import { ScrollProgress, useScrollProgress } from 'src/components/animate/scroll-progress';
 
 import { HomeFAQs } from '../home-faqs';
-import { HomeZoneUI } from '../home-zone-ui';
+import  HomeBanner  from '../home-banner';
 import { HomeMinimal } from '../home-minimal';
 import { HomePricing } from '../home-pricing';
-import { HomeTestimonials } from '../home-testimonials';
-import { HomeIntegrations } from '../home-integrations';
-import { HomeAdvertisement } from '../home-advertisement';
 import HomeServicesSection  from '../home-atuacao';
-import  HomeBanner  from '../home-banner';
+import { HomeTestimonials } from '../home-testimonials';
+import { HomeAdvertisement } from '../home-advertisement';
+
 
 // ----------------------------------------------------------------------
 

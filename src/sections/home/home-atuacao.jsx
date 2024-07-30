@@ -1,6 +1,8 @@
 import React from 'react';
 import { m } from 'framer-motion';
-import { Box, Container, Grid, Stack, Typography } from '@mui/material';
+
+import { Box, Grid, Stack, Container, Typography } from '@mui/material';
+
 import { varFade, MotionViewport } from 'src/components/animate'; // Ajuste o caminho conforme sua estrutura de arquivos
 import { CONFIG } from 'src/config-global'; // Ajuste o caminho conforme sua estrutura de arquivos
 import { SvgColor } from 'src/components/svg-color';

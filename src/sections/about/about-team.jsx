@@ -7,10 +7,11 @@ import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import { Image } from 'src/components/image';
-import { Iconify, SocialIcon } from 'src/components/iconify';
-import { varFade, MotionViewport } from 'src/components/animate';
 import { CONFIG } from 'src/config-global';
+
+import { Image } from 'src/components/image';
+import { SocialIcon } from 'src/components/iconify';
+import { varFade, MotionViewport } from 'src/components/animate';
 
 const { assetURL } = CONFIG.site;
 

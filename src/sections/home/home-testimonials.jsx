@@ -159,7 +159,7 @@ export function HomeTestimonials({ sx, ...other }) {
             <m.div variants={varFade({ distance: 24 }).inUp}>
               <AnimateCountUp
                 to={item.value}
-                unit={'+'}
+                unit="+"
                 toFixed={item.label === 'Clientes' ? 0 : 0}
                 sx={{
                   fontWeight: 'fontWeightBold',

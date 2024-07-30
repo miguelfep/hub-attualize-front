@@ -4,9 +4,9 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import COLORS from 'src/theme/core/colors.json';
 
-import { varAlpha, textGradient } from 'src/theme/styles';
+import COLORS from 'src/theme/core/colors.json';
+import { textGradient } from 'src/theme/styles';
 
 import { varFade } from 'src/components/animate';
 

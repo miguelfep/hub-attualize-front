@@ -1,5 +1,3 @@
-import { CONFIG } from 'src/config-global';
-
 import { FormWizardViewAbertura } from 'src/sections/abertura/form-wizard-abertura-view';
 
 

@@ -1,15 +1,16 @@
 import { m } from 'framer-motion';
+import ReactPlayer from 'react-player';
 import React, { useState } from 'react';
 
 import Fab from '@mui/material/Fab';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Dialog from '@mui/material/Dialog';
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
 import IconButton from '@mui/material/IconButton';
+import DialogContent from '@mui/material/DialogContent';
 
 import { CONFIG } from 'src/config-global';
 import { varAlpha } from 'src/theme/styles';
@@ -17,7 +18,6 @@ import { varAlpha } from 'src/theme/styles';
 import { Image } from 'src/components/image';
 import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
-import ReactPlayer from 'react-player';
 
 // ----------------------------------------------------------------------
 
@@ -129,30 +129,30 @@ export function AboutVision() {
           },
         }}
       >
-        <DialogContent>
-          <Box sx={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden' }}>
-            <ReactPlayer
-              url="https://www.youtube.com/embed/gfee734lGcs?si=quv_ZsDF74PXR-BW"
-              width="100%"
-              height="100%"
-              style={{ position: 'absolute', top: 0, left: 0 }}
-              controls
-              playing
-            />
-          </Box>
-          <IconButton
-            aria-label="close"
-            onClick={handleClose}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (theme) => theme.palette.grey[500],
-            }}
-          >
-            <Iconify icon="solar:close-square-bold-duotone"/>
-          </IconButton>
-        </DialogContent>
+       <DialogContent>
+    <Box sx={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden' }}>
+      <ReactPlayer
+        url="https://www.youtube.com/embed/gfee734lGcs?si=quv_ZsDF74PXR-BW"
+        width="100%"
+        height="100%"
+        style={{ position: 'absolute', top: 0, left: 0 }}
+        controls
+        playing
+      />
+    </Box>
+    <IconButton
+      aria-label="close"
+      onClick={handleClose}
+      sx={{
+        position: 'absolute',
+        right: 8,
+        top: 8,
+        color: (localTheme) => localTheme.palette.grey[500],
+      }}
+    >
+      <Iconify icon="solar:close-square-bold-duotone"/>
+    </IconButton>
+  </DialogContent>
       </Dialog>
     </Box>
   );

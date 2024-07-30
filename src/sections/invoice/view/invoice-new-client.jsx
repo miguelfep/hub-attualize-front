@@ -1,6 +1,5 @@
 import { toast } from 'sonner';
 import { useForm, Controller } from 'react-hook-form';
-import { cpf as cpfValidator, cnpj as cnpjValidator } from 'cpf-cnpj-validator';
 
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';

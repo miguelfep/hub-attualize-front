@@ -1,14 +1,18 @@
 import React from 'react';
 import { m } from 'framer-motion';
-import { Box, Container, Grid, Stack, Tabs, Tab, Typography, Button, Divider } from '@mui/material';
+
 import { useTheme } from '@mui/material/styles';
-import { varFade, varScale, MotionViewport } from 'src/components/animate';
+import { Box, Tab, Tabs, Stack, Button, Divider, Container, Typography } from '@mui/material';
+
 import { useTabs } from 'src/hooks/use-tabs';
-import { CONFIG } from 'src/config-global';
+
 import { varAlpha } from 'src/theme/styles';
+
+import { Iconify } from 'src/components/iconify';
+import { varFade, varScale, MotionViewport } from 'src/components/animate';
+
 import { SectionTitle } from './components/section-title';
 import { FloatLine, FloatXIcon } from './components/svg-elements';
-import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 

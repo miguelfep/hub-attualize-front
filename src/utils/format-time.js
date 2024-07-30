@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import 'dayjs/locale/pt-br';
 
 
 // ----------------------------------------------------------------------

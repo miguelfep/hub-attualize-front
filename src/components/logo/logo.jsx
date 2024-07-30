@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, forwardRef } from 'react';
+import { forwardRef } from 'react';
 
 import Box from '@mui/material/Box';
 import NoSsr from '@mui/material/NoSsr';

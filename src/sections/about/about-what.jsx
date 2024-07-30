@@ -2,7 +2,6 @@ import { m } from 'framer-motion';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
 import { useTheme } from '@mui/material/styles';
@@ -15,7 +14,6 @@ import { CONFIG } from 'src/config-global';
 import { varAlpha, stylesMode } from 'src/theme/styles';
 
 import { Image } from 'src/components/image';
-import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
 
 // ----------------------------------------------------------------------
@@ -97,7 +95,7 @@ export function AboutWhat() {
 
               Um dos valores mais importantes é o respeito com nossos clientes e isso significa entregar qualidade.
               <br/>
-              Aqui não existe o "nunca eterno", sempre nos questionamos e perguntamos para tudo "por que não?"
+              Aqui não existe o &quot;nunca eterno&quot;, sempre nos questionamos e perguntamos para tudo &quot;por que não?&quot;
             </Typography>
           </m.div>
 
