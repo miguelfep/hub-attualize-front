@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
+import COLORS from 'src/theme/core/colors.json';
 
 import { varAlpha, textGradient } from 'src/theme/styles';
 
@@ -37,7 +38,7 @@ export function SectionTitle({ title, caption, slotProps, txtGradient, descripti
             opacity: 0.4,
             display: 'inline-block',
             ...textGradient(
-              `to right, ${theme.vars.palette.text.primary}, ${varAlpha(theme.vars.palette.text.primaryChannel, 0.2)}`
+              `to right, ${COLORS.primary.dark}, ${COLORS.primary.main}`
             ),
           }}
         >

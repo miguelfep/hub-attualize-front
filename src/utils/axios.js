@@ -36,7 +36,7 @@ export const endpoints = {
   kanban: '/api/kanban',
   calendar: '/api/calendar',
   auth: {
-    signIn: 'https://api.attualizecontabil.com.br/api/users/authenticate',
+    signIn: 'http://localhost:9443/api/users/authenticate',
     signUp: '/api/auth/sign-up',
   },
   mail: {
@@ -56,15 +56,15 @@ export const endpoints = {
     search: '/api/product/search',
   },
   clientes: {
-    list: 'https://api.attualizecontabil.com.br/api/clientes',
-    create: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/create',
-    update: 'https://api.attualizecontabil.com.br/api/clientes',
+    list: 'http://localhost:9443/api/clientes',
+    create: 'http://localhost:9443/api/financeiro/invoice/create',
+    update: 'http://localhost:9443/api/clientes',
   },
   invoices: {
-    list: 'https://api.attualizecontabil.com.br/api/financeiro/invoices',
-    create: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/create',
-    update: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/update',
-    delete: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/',
-    checkout: 'https://api.attualizecontabil.com.br/api/checkout/orcamento',
+    list: 'http://localhost:9443/api/financeiro/invoices',
+    create: 'http://localhost:9443/api/financeiro/invoice/create',
+    update: 'http://localhost:9443/api/financeiro/invoice/update',
+    delete: 'http://localhost:9443/api/financeiro/invoice/',
+    checkout: 'http://localhost:9443/api/checkout/orcamento',
   },
 };

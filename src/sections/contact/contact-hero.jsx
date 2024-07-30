@@ -13,18 +13,8 @@ import { varFade, AnimateText, MotionContainer, animateTextClasses } from 'src/c
 // ----------------------------------------------------------------------
 
 const CONTACTS = [
-  { country: 'Bali', address: '508 Bridle Avenue Newnan, GA 30263', phoneNumber: '(239) 555-0108' },
-  {
-    country: 'London',
-    address: '508 Bridle Avenue Newnan, GA 30263',
-    phoneNumber: '(319) 555-0115',
-  },
-  {
-    country: 'Prague',
-    address: '508 Bridle Avenue Newnan, GA 30263',
-    phoneNumber: '(252) 555-0126',
-  },
-  { country: 'Moscow', address: '508 Bridle', phoneNumber: '(307) 555-0133' },
+  { country: 'Curitiba', address: 'R. Dias da Rocha Filho, 670 - Alto da XV, Curitiba - PR, 80045-275', phoneNumber: '(41) 3068-1800' },
+  
 ];
 
 // ----------------------------------------------------------------------
@@ -37,7 +27,7 @@ export function ContactHero() {
       sx={{
         ...bgGradient({
           color: `0deg, ${varAlpha(theme.vars.palette.grey['900Channel'], 0.8)}, ${varAlpha(theme.vars.palette.grey['900Channel'], 0.8)}`,
-          imgUrl: `${CONFIG.site.basePath}/assets/images/contact/hero.webp`,
+          imgUrl: `${CONFIG.site.basePath}/assets/images/about/banner-6.png`,
         }),
         height: { md: 560 },
         py: { xs: 10, md: 0 },
@@ -56,7 +46,7 @@ export function ContactHero() {
           <AnimateText
             component="h1"
             variant="h1"
-            text={['Where', 'to find us?']}
+            text={['Onde', 'nos encontrar?']}
             variants={varFade({ distance: 24 }).inUp}
             sx={{
               color: 'common.white',

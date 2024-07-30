@@ -57,9 +57,9 @@ export function HomeTestimonials({ sx, ...other }) {
 
   const renderDescription = (
     <SectionTitle
-      caption="testimonials"
-      title="Rumors are flying"
-      txtGradient="that..."
+      caption="Avaliações"
+      title="O que nossos clientes"
+      txtGradient="Dizem..."
       sx={{ mb: { xs: 5, md: 8 }, textAlign: 'center' }}
     />
   );
@@ -151,16 +151,16 @@ export function HomeTestimonials({ sx, ...other }) {
 
       <Stack spacing={5} direction={{ xs: 'column', md: 'row' }} divider={verticalDivider}>
         {[
-          { label: 'Purchased order', value: 12.121 },
-          { label: 'Happy customers', value: 160 },
-          { label: 'Review rate', value: 4.9 },
+          { label: 'Clientes', value: 500 },
+          { label: 'Profissionais Regularizados', value: 800 },
+          { label: 'Estados atendidos', value: 21 },
         ].map((item) => (
           <Stack key={item.label} spacing={2} sx={{ textAlign: 'center', width: 1 }}>
             <m.div variants={varFade({ distance: 24 }).inUp}>
               <AnimateCountUp
                 to={item.value}
-                unit={item.label === 'Purchased order' ? 'k+' : '+'}
-                toFixed={item.label === 'Happy customers' ? 0 : 1}
+                unit={'+'}
+                toFixed={item.label === 'Clientes' ? 0 : 0}
                 sx={{
                   fontWeight: 'fontWeightBold',
                   fontSize: { xs: 40, md: 64 },
@@ -175,7 +175,7 @@ export function HomeTestimonials({ sx, ...other }) {
                 component="span"
                 sx={{
                   ...textGradient(
-                    `90deg, ${theme.vars.palette.text.primary}, ${varAlpha(theme.vars.palette.text.primaryChannel, 0.2)}`
+                    `90deg, ${theme.vars.palette.text.primary}, ${varAlpha('0 0 0', 0.9)}`
                   ),
                   opacity: 0.4,
                   typography: 'h6',
@@ -220,54 +220,42 @@ const base = (index) => ({
 
 const TESTIMONIALS = [
   {
-    ...base(1),
-    category: 'Design Quality',
-    content: `The quality of this template is very good, the TypeScript files are neat and the communication with the team behind this template is very good! I would recommend this template for any kind of project, as they implement new features every now and then and enhance their design. I will definitely be using more templates from this team and re-purchasing this template for other projects.`,
+    name: "Monica Camozele",
     postedAt: 'April 20, 2024 23:15:30',
+    rating: 5,
+    avatarUrl: _mock.image.avatar(1),
+    content: `“A Attualize foi muito importante ao valorizar o que eu tinha pra contar sobre o meu trabalho. Um outro contador mal me ouviu e disse que não valeria a pena eu abrir empresa. Senti um desdém, não sabia se pelo meu trabalho, por mim, ou por eu ser mulher. A disponibilidade em tirar minhas dúvidas, mesmo que eu pergunte 5 vezes a mesma coisa por não ter entendido ainda, é uma das coisas que me mantém com vocês. A atenção e cuidado de vocês com o cliente, é um baita diferencial. Me sinto respeitada e segura com vocês. Só tenho a agradecer.”`,
   },
   {
-    ...base(2),
-    category: 'Design Quality',
-    content: `Amazing. I've never purchased complete front ends before, but I'll definitely be doing this again!`,
-    postedAt: 'March 19, 2024 23:15:30',
+    name: "Juliana Romualdo",
+    postedAt: 'April 20, 2024 23:15:30',
+    category: "Contabilidade",
+    rating:5,
+    avatarUrl: _mock.image.avatar(2),
+    content: `Sou nova por aqui, estou em fase de migração, estou aliviada de ter vcs. Mas preocupadas com as informações que nunca tive acesso. Enfim eu estou me sentindo segura e amparada. Adoro a página, as dicas. Foi através disso que pensei, tem algo errado na minha empresa e procurei vocês.`,
   },
   {
-    ...base(3),
-    category: 'Code Quality',
-    content: `Clean & Complete (Design & Code). Thansk Minimal team :)`,
-    postedAt: 'April 19, 2023 23:15:30',
+    name: "Celso Marchioretto",
+    postedAt: 'April 20, 2024 23:15:30',
+    category: "Contabilidade",
+    rating: 5,
+    avatarUrl: _mock.image.avatar(3),
+    content: `Sempre sou muito bem atendido, parabenizo a todo equipe. O Serviço é muito bom, sempre tivemos um ótimo atendimento.`,
   },
   {
-    ...base(4),
-    category: 'Customer Support',
-    content: `Thanks to Minimal for customer support with email. I solved the problem. And the code quality is good, too.`,
-    postedAt: 'May 19, 2023 23:15:30',
+    name: "Mauricio Penteado",
+    postedAt: 'April 20, 2024 23:15:30',
+    category: "Contabilidade",
+    rating: 5,
+    avatarUrl: _mock.image.avatar(4),
+    content: `Um estritório com ótimo atendimento e pessoas super atenciosas.`,
   },
   {
-    ...base(5),
-    category: 'Customer Support',
-    content:
-      'Great UI kit, really beautiful as well. Also the customer support is very warm-hearted. However, I hope the components and themes can be provided as a separated project (package).',
-    postedAt: 'June 19, 2023 23:15:30',
-  },
-  {
-    ...base(6),
-    category: 'Design Quality',
-    content: 'I would never have been able to create all these beautifull components myself!',
-    postedAt: 'July 19, 2023 23:15:30',
-  },
-  {
-    ...base(7),
-    category: 'Code Quality',
-    content:
-      'The quality of this template is excellent. However, as an individual, the cost of obtaining the TypeScript Source version is beyond my means. Despite my strong desire to acquire it, my limited personal budget does not allow me to do so.',
-    postedAt: 'August 19, 2023 23:15:30',
-  },
-  {
-    ...base(8),
-    category: 'Customizability',
-    content:
-      'The design and code quality are impressive. Regular updates and excellent customer support are major advantages.',
-    postedAt: 'September 19, 2023 23:15:30',
-  },
+    name: "Tamara resi",
+    postedAt: 'April 20, 2024 23:15:30',
+    category: "Contabilidade",
+    rating: 5,
+    avatarUrl: _mock.image.avatar(5),
+    content: `A empresa sempre nos atendeu com agilidade e cordialidade, demonstrando conhecimento técnico superior às outras que buscamos. A equipe é proativa e sempre nos oferece informações sobre os processos e pontuam eventuais desconformidades, trazendo também a forma mais viável e fácil de adequar. Muito organizados com as nossas documentações, o que facilita resolver tudo rapidamente e de acordo com o que exige as leis. Ficamos extremamente satisfeitos e indicamos o serviço da Atualize para todos os nossos parceiros.`,
+  }, 
 ];

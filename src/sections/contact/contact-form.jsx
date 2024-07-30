@@ -9,19 +9,18 @@ export function ContactForm() {
   return (
     <div>
       <Typography variant="h3">
-        Feel free to contact us. <br />
-        We&apos;ll be glad to hear from you buddy.
+        Fale com nosso time agora mesmo. <br />
       </Typography>
 
       <Box gap={3} display="flex" flexDirection="column" sx={{ my: 5 }}>
-        <TextField fullWidth label="Name" />
+        <TextField fullWidth label="Nome" />
         <TextField fullWidth label="Email" />
-        <TextField fullWidth label="Subject" />
-        <TextField fullWidth label="Enter your message here." multiline rows={4} />
+        <TextField fullWidth label="Assunto" />
+        <TextField fullWidth label="Digite sua mensagem aqui." multiline rows={4} />
       </Box>
 
       <Button size="large" variant="contained">
-        Submit
+        Enviar
       </Button>
     </div>
   );

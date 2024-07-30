@@ -6,15 +6,14 @@ import { countries } from 'src/assets/data/countries';
 
 export function getCountryCode(inputValue, countryCode) {
   if (inputValue) {
-    console.log(inputValue);
     const phoneNumber = parsePhoneNumber(inputValue);
-    console.log(phoneNumber);
+
     if (phoneNumber) {
       return phoneNumber?.country;
     }
   }
 
-  return countryCode ?? 'BR';
+  return countryCode ?? 'US';
 }
 
 // ----------------------------------------------------------------------

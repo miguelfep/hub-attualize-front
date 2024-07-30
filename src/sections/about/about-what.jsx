@@ -20,9 +20,9 @@ import { varFade, MotionViewport } from 'src/components/animate';
 
 // ----------------------------------------------------------------------
 
-export const SKILLS = [...Array(3)].map((_, index) => ({
-  label: ['Development', 'Design', 'Marketing'][index],
-  value: [20, 40, 60][index],
+export const SKILLS = [...Array(4)].map((_, index) => ({
+  label: ['Atendimento Humanizado', 'Praticidade', 'Especializada', 'Digital/Zero Papel'][index],
+  value: [100, 100, 100, 100][index],
 }));
 
 // ----------------------------------------------------------------------
@@ -85,7 +85,7 @@ export function AboutWhat() {
         <Grid xs={12} md={6} lg={5}>
           <m.div variants={varFade().inRight}>
             <Typography variant="h2" sx={{ mb: 3 }}>
-              What is Minimal?
+              Contabilidade Digital
             </Typography>
           </m.div>
 
@@ -93,10 +93,11 @@ export function AboutWhat() {
             <Typography
               sx={{ color: 'text.secondary', [stylesMode.dark]: { color: 'common.white' } }}
             >
-              Our theme is the most advanced and user-friendly theme you will find on the market, we
-              have documentation and video to help set your site really easily, pre-installed demos
-              you can import in one click and everything from the theme options to page content can
-              be edited from the front-end. This is the theme you are looking for.
+              Aqui na Attualize prezamos que as pessoas sejam elas mesmas e se sintam felizes exercendo seu trabalho aqui.<br/>
+
+              Um dos valores mais importantes é o respeito com nossos clientes e isso significa entregar qualidade.
+              <br/>
+              Aqui não existe o "nunca eterno", sempre nos questionamos e perguntamos para tudo "por que não?"
             </Typography>
           </m.div>
 
@@ -121,17 +122,6 @@ export function AboutWhat() {
               </Box>
             ))}
           </Stack>
-
-          <m.div variants={varFade().inRight}>
-            <Button
-              variant="outlined"
-              color="inherit"
-              size="large"
-              endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
-            >
-              Our work
-            </Button>
-          </m.div>
         </Grid>
       </Grid>
     </Container>

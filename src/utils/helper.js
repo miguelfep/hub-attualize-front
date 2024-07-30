@@ -32,16 +32,16 @@ export function flattenDeep(array) {
 // ----------------------------------------------------------------------
 
 export function orderBy(array, properties, orders) {
+  if (!Array.isArray(array)) {
+    throw new Error("The first argument must be an array");
+  }
+
   return array.slice().sort((a, b) => {
     for (let i = 0; i < properties.length; i += 1) {
       const property = properties[i];
       const order = orders && orders[i] === 'desc' ? -1 : 1;
-
-      const aValue = a[property];
-      const bValue = b[property];
-
-      if (aValue < bValue) return -1 * order;
-      if (aValue > bValue) return 1 * order;
+      if (a[property] < b[property]) return -1 * order;
+      if (a[property] > b[property]) return 1 * order;
     }
     return 0;
   });

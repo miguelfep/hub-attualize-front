@@ -158,9 +158,6 @@ const applyFilter = ({ inputData, filters, sortBy }) => {
     inputData = orderBy(inputData, ['createdAt'], ['asc']);
   }
 
-  if (sortBy === 'popular') {
-    inputData = orderBy(inputData, ['totalViews'], ['desc']);
-  }
 
   // Filters
   if (employmentTypes.length) {

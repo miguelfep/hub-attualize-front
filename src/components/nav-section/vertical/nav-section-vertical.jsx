@@ -4,8 +4,6 @@ import Stack from '@mui/material/Stack';
 import Collapse from '@mui/material/Collapse';
 import { useTheme } from '@mui/material/styles';
 
-import { getUser } from 'src/auth/context/jwt';
-
 import { NavList } from './nav-list';
 import { navSectionClasses } from '../classes';
 import { navSectionCssVars } from '../css-vars';
@@ -27,9 +25,6 @@ export function NavSectionVertical({
     ...navSectionCssVars.vertical(theme),
     ...overridesVars,
   };
-
-  const userActive = getUser();
-  slotProps = { ...slotProps, currentRole: userActive.role };
 
   return (
     <Stack component="nav" className={navSectionClasses.vertical.root} sx={{ ...cssVars, ...sx }}>

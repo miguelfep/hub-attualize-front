@@ -5,7 +5,7 @@
     "main": "#CBAB00",
     "dark": "#B8860B",
     "darker": "#8B6508",
-    "contrastText": "#000000"
+    "contrastText": "#ffffff"
   },
   "secondary": {
     "lighter": "#EFD6FF",

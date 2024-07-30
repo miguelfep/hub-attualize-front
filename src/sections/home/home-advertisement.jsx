@@ -6,8 +6,6 @@ import Button from '@mui/material/Button';
 import { useTheme } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 
-import { paths } from 'src/routes/paths';
-
 import { CONFIG } from 'src/config-global';
 import { varAlpha, textGradient } from 'src/theme/styles';
 
@@ -37,8 +35,8 @@ export function HomeAdvertisement({ sx, ...other }) {
         variants={varFade({ distance: 24 }).inDown}
         sx={{ m: 0, color: 'common.white', typography: { xs: 'h2', md: 'h1' } }}
       >
-        Get started with
-        <br /> Minimal kit
+        Vamos facilitar sua
+        <br /> Contabilidade?
         <Box
           component="span"
           sx={{
@@ -51,7 +49,7 @@ export function HomeAdvertisement({ sx, ...other }) {
             ml: 1,
           }}
         >
-          today
+          Hoje!
         </Box>
       </Box>
 
@@ -63,18 +61,19 @@ export function HomeAdvertisement({ sx, ...other }) {
       >
         <m.div variants={varFade({ distance: 24 }).inRight}>
           <Button
-            color="primary"
+            color="success"
             size="large"
             variant="contained"
             target="_blank"
             rel="noopener"
-            href={paths.minimalStore}
+            href="https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20contabilidade"
+            startIcon={<Iconify icon="mdi:whatsapp" />}
           >
-            Purchase now
+            Fale conosco
           </Button>
         </m.div>
 
-        <m.div variants={varFade({ distance: 24 }).inRight}>
+        {/* <m.div variants={varFade({ distance: 24 }).inRight}>
           <Button
             color="inherit"
             size="large"
@@ -91,7 +90,7 @@ export function HomeAdvertisement({ sx, ...other }) {
           >
             Get free version
           </Button>
-        </m.div>
+        </m.div> */}
       </Stack>
     </Stack>
   );

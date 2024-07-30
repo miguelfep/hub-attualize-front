@@ -21,8 +21,8 @@ export const paths = {
   maintenance: '/maintenance',
   pricing: '/pricing',
   payment: '/payment',
-  about: '/about-us',
-  contact: '/contact-us',
+  about: '/sobre',
+  contact: '/fale-conosco',
   faqs: '/faqs',
   page403: '/error/403',
   page404: '/error/404',
@@ -39,6 +39,21 @@ export const paths = {
     checkout: `/product/checkout`,
     details: (id) => `/product/${id}`,
     demo: { details: `/product/${MOCK_ID}` },
+  },
+  cliente: {
+    root: `${ROOTS.DASHBOARD}/cliente/list`,
+    new: `${ROOTS.DASHBOARD}/cliente/new`,
+    edit: (id) => `${ROOTS.DASHBOARD}/cliente/${id}/edit`,
+  },
+  invoice: {
+    root: `${ROOTS.DASHBOARD}/invoice`,
+    new: `${ROOTS.DASHBOARD}/invoice/new`,
+    details: (id) => `${ROOTS.DASHBOARD}/invoice/${id}`,
+    edit: (id) => `${ROOTS.DASHBOARD}/invoice/${id}/edit`,
+    demo: {
+      details: `${ROOTS.DASHBOARD}/invoice/${MOCK_ID}`,
+      edit: `${ROOTS.DASHBOARD}/invoice/${MOCK_ID}/edit`,
+    },
   },
   post: {
     root: `/post`,

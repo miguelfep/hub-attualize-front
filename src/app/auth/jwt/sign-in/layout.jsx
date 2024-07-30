@@ -8,6 +8,6 @@ export default function Layout({ children }) {
   return (
     <GuestGuard>
       <AuthSplitLayout section={{ title: 'Bem vindo novamente' }}>{children}</AuthSplitLayout>
-    </GuestGuard>
+      </GuestGuard>
   );
 }

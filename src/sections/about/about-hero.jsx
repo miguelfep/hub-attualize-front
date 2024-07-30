@@ -20,7 +20,7 @@ export function AboutHero() {
         position: 'relative',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundImage: `url(${CONFIG.site.basePath}/assets/background/overlay.svg), url(${CONFIG.site.basePath}/assets/images/about/hero.webp)`,
+        backgroundImage: `url(${CONFIG.site.basePath}/assets/background/overlay.svg), url(${CONFIG.site.basePath}/assets/images/about/banner-6.png)`,
       }}
     >
       <Container component={MotionContainer}>
@@ -34,7 +34,7 @@ export function AboutHero() {
           <AnimateText
             component="h1"
             variant="h1"
-            text={['Who', 'we are?']}
+            text={['Quem', 'somos?']}
             variants={varFade({ distance: 24 }).inRight}
             sx={{
               color: 'common.white',
@@ -49,8 +49,8 @@ export function AboutHero() {
               variant="h4"
               sx={{ mt: 3, color: 'common.white', fontWeight: 'fontWeightSemiBold' }}
             >
-              Let&apos;s work together and
-              <br /> make awesome site easily
+              Vamos juntos tornar sua empreas
+              <br /> um grande sucesso?
             </Typography>
           </m.div>
         </Box>

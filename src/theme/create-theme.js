@@ -52,7 +52,7 @@ function shouldSkipGeneratingVar(keys, value) {
     'cssVarPrefix',
     'unstable_sxConfig',
     'typography',
-    'transitions',
+    // 'transitions',
   ];
 
   const skipPaletteKeys = {

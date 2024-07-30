@@ -28,7 +28,7 @@ export function ComponentHero({ children, sx, ...other }) {
         sx={{
           ...bgGradient({
             color: `0deg, ${varAlpha(theme.vars.palette.background.defaultChannel, 0.9)}, ${varAlpha(theme.vars.palette.background.defaultChannel, 0.9)}`,
-            imgUrl: `${CONFIG.site.basePath}/assets/background/background-3-blur.webp`,
+            imgUrl: `${CONFIG.site.basePath}/assets/images/about/banner-6.png`,
           }),
           top: 0,
           left: 0,

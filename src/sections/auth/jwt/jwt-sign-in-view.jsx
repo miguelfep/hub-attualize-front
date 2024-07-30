@@ -81,13 +81,13 @@ export function JwtSignInView() {
       <Typography variant="h5">Acessar sua conta</Typography>
 
       <Stack direction="row" spacing={0.5}>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+        {/* <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Não possui uma conta?
         </Typography>
 
         <Link component={RouterLink} href={paths.auth.jwt.signUp} variant="subtitle2">
           Solicitar Acesso
-        </Link>
+        </Link> */}
       </Stack>
     </Stack>
   );
@@ -137,9 +137,9 @@ export function JwtSignInView() {
         type="submit"
         variant="contained"
         loading={isSubmitting}
-        loadingIndicator="Sign in..."
+        loadingIndicator="acessando..."
       >
-        Sign in
+        Logar
       </LoadingButton>
     </Stack>
   );

@@ -1,52 +1,43 @@
+import React from 'react';
 import { m } from 'framer-motion';
-
-import Box from '@mui/material/Box';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Container from '@mui/material/Container';
+import { Box, Container, Grid, Stack, Tabs, Tab, Typography, Button, Divider } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import Typography from '@mui/material/Typography';
-
-import { paths } from 'src/routes/paths';
-
+import { varFade, varScale, MotionViewport } from 'src/components/animate';
 import { useTabs } from 'src/hooks/use-tabs';
-
 import { CONFIG } from 'src/config-global';
 import { varAlpha } from 'src/theme/styles';
-
-import { Iconify } from 'src/components/iconify';
-import { varFade, varScale, MotionViewport } from 'src/components/animate';
-
 import { SectionTitle } from './components/section-title';
 import { FloatLine, FloatXIcon } from './components/svg-elements';
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
 export function HomePricing({ sx, ...other }) {
   const theme = useTheme();
-
   const tabs = useTabs('Standard');
 
   const renderDescription = (
     <SectionTitle
-      caption="plans"
-      title="Transparent"
-      txtGradient="pricing"
-      description="Choose from flexible pricing options designed to fit your business needs and budget with no hidden fees."
+      caption="Planos"
+      title="Conheça nossos"
+      txtGradient="Planos"
+      description="Conheça um pouco mais os planos da Attualize Contábil e saiba qual deles atende às suas necessidades!"
       sx={{ mb: 8, textAlign: 'center' }}
     />
   );
 
   const renderContentDesktop = (
-    <Box gridTemplateColumns="repeat(3, 1fr)" sx={{ display: { xs: 'none', md: 'grid' } }}>
+    <Box gridTemplateColumns="repeat(4, 1fr)" sx={{ display: { xs: 'none', md: 'grid' } }}>
       {PLANS.map((plan) => (
         <PlanCard
           key={plan.license}
           plan={plan}
           sx={{
+            ...(plan.license === 'Pleno' && {
+              transform: 'scale(1.05)',
+              zIndex: 1,
+              boxShadow: theme.shadows[5],
+            }),
             ...(plan.license === 'Plus' && {
               [theme.breakpoints.down(1440)]: {
                 borderLeft: `dashed 1px ${varAlpha(theme.vars.palette.grey['500Channel'], 0.2)}`,
@@ -119,10 +110,12 @@ export function HomePricing({ sx, ...other }) {
   );
 }
 
-function PlanCard({ plan, sx, ...other }) {
-  const standardLicense = plan.license === 'Standard';
+// ----------------------------------------------------------------------
 
-  const plusLicense = plan.license === 'Plus';
+function PlanCard({ plan, sx, ...other }) {
+  const startLicense = plan.license === 'Start';
+  const plenoLicense = plan.license === 'Pleno';
+  const premiumLicense = plan.license === 'Premium';
 
   const renderLines = (
     <>
@@ -147,7 +140,7 @@ function PlanCard({ plan, sx, ...other }) {
       }}
       {...other}
     >
-      {plusLicense && renderLines}
+      {plenoLicense && renderLines}
 
       <Stack direction="row" alignItems="center">
         <Stack flexGrow={1}>
@@ -165,41 +158,22 @@ function PlanCard({ plan, sx, ...other }) {
                 opacity: 0.24,
                 borderRadius: 1,
                 bgcolor: 'error.main',
-                ...(standardLicense && { bgcolor: 'primary.main' }),
-                ...(plusLicense && { bgcolor: 'secondary.main' }),
+                ...(startLicense && { bgcolor: 'primary.main' }),
+                ...(plenoLicense && { bgcolor: 'secondary.main' }),
               }}
             />
           </m.div>
         </Stack>
-
-        <m.div variants={varFade({ distance: 24 }).inLeft}>
-          <Box component="span" sx={{ typography: 'h3' }}>
-            ${plan.price}
-          </Box>
-        </m.div>
       </Stack>
 
-      <Stack direction="row" spacing={2}>
-        {plan.icons.map((icon, index) => (
-          <Box
-            component={m.img}
-            variants={varFade().in}
-            key={icon}
-            alt={icon}
-            src={icon}
-            sx={{
-              width: 24,
-              height: 24,
-              ...(standardLicense && [1, 2].includes(index) && { display: 'none' }),
-            }}
-          />
-        ))}
-        {standardLicense && (
-          <Box component={m.span} variants={varFade().in} sx={{ ml: -1 }}>
-            (only)
-          </Box>
-        )}
-      </Stack>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <Typography variant="body2" color="textSecondary" sx={{ mr: 1 }}>
+          Faturamento:
+        </Typography>
+        <Typography variant="body2" color="primary.main">
+          {plan.revenue}
+        </Typography>
+      </Box>
 
       <Stack spacing={2.5}>
         {plan.commons.map((option) => (
@@ -223,7 +197,7 @@ function PlanCard({ plan, sx, ...other }) {
 
         {plan.options.map((option, index) => {
           const disabled =
-            (standardLicense && [1, 2, 3].includes(index)) || (plusLicense && [3].includes(index));
+            (startLicense && [0, 1, 2, 3, 4].includes(index)) || (plenoLicense && [ 2, 3, 4].includes(index)) || (premiumLicense && [3, 4].includes(index));
 
           return (
             <Stack
@@ -248,14 +222,14 @@ function PlanCard({ plan, sx, ...other }) {
       <m.div variants={varFade({ distance: 24 }).inUp}>
         <Button
           fullWidth
-          variant={plusLicense ? 'contained' : 'outlined'}
+          variant={plenoLicense ? 'contained' : 'outlined'}
           color="inherit"
           size="large"
           target="_blank"
           rel="noopener"
-          href={paths.minimalStore}
+          href={plan.link}
         >
-          Get started
+          Quero Esse
         </Button>
       </m.div>
     </Stack>
@@ -264,25 +238,83 @@ function PlanCard({ plan, sx, ...other }) {
 
 // ----------------------------------------------------------------------
 
-const PLANS = [...Array(3)].map((_, index) => ({
-  license: ['Standard', 'Plus', 'Extended'][index],
-  price: [69, 129, 599][index],
-  commons: [
-    'One end products',
-    '12 months updates',
-    '6 months of support',
-    'One-time payments',
-    'Lifetime perpetual license.',
-  ],
-  options: [
-    'JavaScript version',
-    'TypeScript version',
-    'Design resources (Figma)',
-    'Commercial applications',
-  ],
-  icons: [
-    `${CONFIG.site.basePath}/assets/icons/platforms/ic-js.svg`,
-    `${CONFIG.site.basePath}/assets/icons/platforms/ic-ts.svg`,
-    `${CONFIG.site.basePath}/assets/icons/platforms/ic-figma.svg`,
-  ],
-}));
+const PLANS = [
+  {
+    license: 'Start',
+    price: 69,
+    commons: [
+      'Contabilidade',
+      'Impostos',
+      'Pró-labore',
+      'Portal do Cliente',
+    ],
+    options: [
+      'Sistema financeiro',
+      'Atendimento via whatsapp',
+      'Reuniões mensais',
+      'Gerente de sucesso',
+      'Power BI',
+    ],
+    revenue: 'R$ 20.000,00',
+    link: 'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20START',
+  },
+  {
+    license: 'Pleno',
+    price: 129,
+    commons: [
+      'Contabilidade',
+      'Impostos',
+      'Pró-labore',
+      'Portal do Cliente',
+    ],
+    options: [
+      'Sistema financeiro',
+      'Atendimento via whatsapp',
+      'Reuniões mensais',
+      'Gerente de sucesso',
+      'Power BI',
+    ],
+    revenue: 'R$ 100.000,00',
+    link: 'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PLENO',
+  },
+  {
+    license: 'Premium',
+    price: 599,
+    commons: [
+      'Contabilidade',
+      'Impostos',
+      'Pró-labore',
+      'Certificado Digital E-CNPJ',
+      'Portal do Cliente',
+    ],
+    options: [
+      'Sistema financeiro',
+      'Atendimento via whatsapp',
+      'Reuniões mensais',
+      'Gerente de sucesso',
+      'Power BI',
+    ],
+    revenue: 'R$ 300.000,00',
+    link: 'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PREMIUM',
+  },
+  {
+    license: 'Plus',
+    price: 999,
+    commons: [
+      'Contabilidade',
+      'Impostos',
+      'Pró-labore',
+      'Certificado Digital E-CNPJ',
+      'Portal do Cliente',
+    ],
+    options: [
+      'Sistema financeiro',
+      'Atendimento via whatsapp',
+      'Reuniões mensais',
+      'Gerente de sucesso',
+      'Power BI',
+    ],
+    revenue: 'Sem limites',
+    link: 'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PLUS',
+  },
+];

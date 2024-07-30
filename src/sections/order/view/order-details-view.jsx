@@ -21,7 +21,6 @@ export function OrderDetailsView({ order }) {
   const [status, setStatus] = useState(order?.status);
 
   const handleChangeStatus = useCallback((newValue) => {
-    console.log('attualize');
     setStatus(newValue);
   }, []);
 

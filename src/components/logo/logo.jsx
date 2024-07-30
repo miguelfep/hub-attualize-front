@@ -16,14 +16,6 @@ export const Logo = forwardRef(
   ({ width = 40, height = 40, disableLink = false, className, href = '/', sx, ...other }, ref) => {
     const theme = useTheme();
 
-    const gradientId = useId();
-
-    const PRIMARY_LIGHT = theme.vars.palette.primary.light;
-
-    const PRIMARY_MAIN = theme.vars.palette.primary.main;
-
-    const PRIMARY_DARK = theme.vars.palette.primary.dark;
-
     /*
      * OR using local (public folder)
      * const logo = ( <Box alt="logo" component="img" src={`${CONFIG.site.basePath}/logo/logo-single.svg`} width={width} height={height} /> );

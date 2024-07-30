@@ -31,9 +31,9 @@ export function HomeMinimal({ sx, ...other }) {
   const renderDescription = (
     <>
       <SectionTitle
-        caption="Visualizing Success"
-        title="What's in"
-        txtGradient="Minimal?"
+        caption="Contabilidade Digital"
+        title="O que é ser"
+        txtGradient="Attulize?"
         sx={{ mb: { xs: 5, md: 8 }, textAlign: { xs: 'center', md: 'left' } }}
       />
 
@@ -74,27 +74,11 @@ export function HomeMinimal({ sx, ...other }) {
       sx={{ height: 1, position: 'relative' }}
     >
       <Box
-        sx={{
-          left: 0,
-          width: 720,
-          borderRadius: 2,
-          position: 'absolute',
-          bgcolor: 'background.default',
-          boxShadow: (theme) =>
-            `-40px 40px 80px 0px ${varAlpha(theme.vars.palette.grey['500Channel'], 0.16)}`,
-          [stylesMode.dark]: {
-            boxShadow: (theme) =>
-              `-40px 40px 80px 0px ${varAlpha(theme.vars.palette.common.blackChannel, 0.16)}`,
-          },
-        }}
-      >
-        <Box
-          component="img"
-          alt="Home Chart"
-          src={`${CONFIG.site.basePath}/assets/images/home/home-chart.webp`}
-          sx={{ width: 720 }}
-        />
-      </Box>
+        component="img"
+        alt="Home Chart"
+        src={`${CONFIG.site.basePath}/assets/images/home/animacao-site.png`}
+        sx={{ width: 1220 }}
+      />
     </Stack>
   );
 
@@ -134,18 +118,18 @@ export function HomeMinimal({ sx, ...other }) {
 
 const ITEMS = [
   {
-    icon: `${CONFIG.site.basePath}/assets/icons/home/ic-make-brand.svg`,
-    title: 'Branding',
-    description: 'Consistent design makes it easy to brand your own.',
+    icon: `${CONFIG.site.basePath}/assets/icons/home/icones-site-3.png`,
+    title: 'Prático',
+    description: 'Tudo o que você menos precisa é de mais burocracia na hora de cuidar da sua contabilidade, deixe essa parte com a gente e foque no seu negócio!',
   },
   {
-    icon: `${CONFIG.site.basePath}/assets/icons/home/ic-design.svg`,
-    title: 'UI & UX design',
-    description: 'The kit is built on the principles of the atomic design system.',
+    icon: `${CONFIG.site.basePath}/assets/icons/home/icones-site-4.png`,
+    title: 'Digital',
+    description: 'Tudo o que você precisa na palma da sua mão e na tela do seu computador onde você estiver. Chega de papel, seu bolso e o meio ambiente agradecem!',
   },
   {
-    icon: `${CONFIG.site.basePath}/assets/icons/home/ic-development.svg`,
-    title: 'Development',
-    description: 'Easy to customize and extend, saving you time and money.',
+    icon: `${CONFIG.site.basePath}/assets/icons/home/icones-site-5.png`,
+    title: 'Ágil',
+    description: 'Aqui você é atendido de forma rápida e por pessoas de verdade, robôs e tickets infinitos não fazem parte da nossa comunicação e cultura..',
   },
 ];

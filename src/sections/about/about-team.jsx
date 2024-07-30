@@ -3,86 +3,96 @@ import { m } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
-import { _socials, _carouselsMembers } from 'src/_mock';
-
 import { Image } from 'src/components/image';
 import { Iconify, SocialIcon } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
-import { Carousel, useCarousel, CarouselArrowFloatButtons } from 'src/components/carousel';
+import { CONFIG } from 'src/config-global';
 
-// ----------------------------------------------------------------------
+const { assetURL } = CONFIG.site;
+
+
+// Dados reais dos membros
+const teamMembers = [
+  {
+    id: 1,
+    name: 'Anne Monteiro',
+    role: 'CEO',
+    avatarUrl: `/assets/images/about/anne.jpg`,
+    socials: [
+      { name: 'instagram', url: 'https://instagram.com/euannemonteiro' },
+      { name: 'youtube', url: 'https://www.youtube.com/c/AttualizeCont%C3%A1bil' },
+      { name: 'facebook', url: 'https://www.facebook.com/anne.contadora' },
+
+    ],
+  },
+  {
+    id: 2,
+    name: 'Miguel Fernando Pereira',
+    role: 'CTO',
+    avatarUrl: '/assets/images/about/miguel.jpg',
+    socials: [
+      { name: 'youtube', url: 'https://www.youtube.com/c/AttualizeCont%C3%A1bil' },
+
+    ],
+  },
+  // {
+  //   id: 3,
+  //   name: 'Geremias',
+  //   role: 'Head de operação',
+  //   avatarUrl: '/path/to/bob-johnson.jpg',
+  //   socials: [
+  //     { name: 'instagram', url: 'https://instagram.com/bobjohnson' },
+  //     { name: 'linkedin', url: 'https://linkedin.com/in/bobjohnson' },
+  //   ],
+  // },
+];
 
 export function AboutTeam() {
-  const carousel = useCarousel({
-    align: 'start',
-    slideSpacing: '24px',
-    slidesToShow: { xs: 1, sm: 2, md: 3, lg: 4 },
-  });
-
   return (
     <Container component={MotionViewport} sx={{ textAlign: 'center', py: { xs: 10, md: 15 } }}>
       <m.div variants={varFade().inDown}>
         <Typography variant="overline" sx={{ color: 'text.disabled' }}>
-          Dream team
+          Nosso time
         </Typography>
       </m.div>
 
       <m.div variants={varFade().inUp}>
         <Typography variant="h2" sx={{ my: 3 }}>
-          Great team is the key
+          Peças Chave da Attualize
         </Typography>
       </m.div>
 
       <m.div variants={varFade().inUp}>
         <Typography sx={{ mx: 'auto', maxWidth: 640, color: 'text.secondary' }}>
-          Minimal will provide you support if you have any problems, our support team will reply
-          within a day and we also have detailed documentation.
+          Conheça um pouco mais das peças chave da Attualize Contábil.
         </Typography>
       </m.div>
 
-      <Stack sx={{ position: 'relative' }}>
-        <CarouselArrowFloatButtons
-          {...carousel.arrows}
-          options={carousel.options}
-          slotProps={{
-            prevBtn: { sx: { left: { xs: -8, md: -40 } } },
-            nextBtn: { sx: { right: { xs: -8, md: -40 } } },
-          }}
-        />
-
-        <Carousel carousel={carousel} sx={{ px: 0.5 }}>
-          {_carouselsMembers.map((member) => (
-            <Box
-              key={member.id}
-              component={m.div}
-              variants={varFade().in}
-              sx={{ py: { xs: 8, md: 10 } }}
-            >
-              <MemberCard member={member} />
-            </Box>
-          ))}
-        </Carousel>
-      </Stack>
-
-      <Button
-        size="large"
-        color="inherit"
-        variant="outlined"
-        endIcon={<Iconify icon="eva:arrow-ios-forward-fill" width={24} />}
-        sx={{ mx: 'auto' }}
+      <Stack
+        direction={{ xs: 'column', md: 'row' }}
+        justifyContent="center"
+        alignItems="center"
+        spacing={3}
+        sx={{ mt: 5 }}
       >
-        All members
-      </Button>
+        {teamMembers.map((member) => (
+          <Box
+            key={member.id}
+            component={m.div}
+            variants={varFade().in}
+            sx={{ width: { xs: '100%', md: '30%' } }}
+          >
+            <MemberCard member={member} />
+          </Box>
+        ))}
+      </Stack>
     </Container>
   );
 }
-
-// ----------------------------------------------------------------------
 
 function MemberCard({ member }) {
   return (
@@ -100,8 +110,8 @@ function MemberCard({ member }) {
       </Box>
 
       <Stack direction="row" alignItems="center" justifyContent="center" sx={{ p: 2 }}>
-        {_socials.map((social) => (
-          <IconButton key={social.name}>
+        {member.socials.map((social) => (
+          <IconButton key={social.name} href={social.url} target="_blank">
             <SocialIcon icon={social.name} />
           </IconButton>
         ))}

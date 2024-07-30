@@ -32,7 +32,7 @@ export function AboutTestimonials() {
 
   const renderLink = (
     <Button color="primary" endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}>
-      Read more testimonials
+      Ver mais avaliações
     </Button>
   );
 
@@ -40,22 +40,21 @@ export function AboutTestimonials() {
     <Box sx={{ maxWidth: { md: 360 }, textAlign: { xs: 'center', md: 'unset' } }}>
       <m.div variants={varFade().inUp}>
         <Typography variant="overline" sx={{ color: 'common.white', opacity: 0.48 }}>
-          Testimonials
+          Avaliações
         </Typography>
       </m.div>
 
       <m.div variants={varFade().inUp}>
         <Typography variant="h2" sx={{ my: 3, color: 'common.white' }}>
-          Who love <br />
-          my work
+          O que dizems <br />
+          Nossos clientes
         </Typography>
       </m.div>
 
       <m.div variants={varFade().inUp}>
         <Typography sx={{ color: 'common.white' }}>
-          Our goal is to create a product and service that you’re satisfied with and use it every
-          day. This is why we’re constantly working on our services to make it better every day and
-          really listen to what our users has to say.
+          Conheça um pouco mais o que dizem nossos clientes, sobre nossos serviços
+          e sobre o atendimento especializado. Vem com a gente simplificar seu negócio!
         </Typography>
       </m.div>
 

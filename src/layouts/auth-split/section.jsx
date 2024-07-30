@@ -1,6 +1,10 @@
 import Box from '@mui/material/Box';
+import Link from '@mui/material/Link';
+import Tooltip from '@mui/material/Tooltip';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
+
+import { RouterLink } from 'src/routes/components';
 
 import { CONFIG } from 'src/config-global';
 import { varAlpha, bgGradient } from 'src/theme/styles';
@@ -12,7 +16,7 @@ export function Section({
   method,
   layoutQuery,
   methods,
-  title = 'Hub attualize a',
+  title = 'Hub TT',
   imgUrl = `${CONFIG.site.basePath}/assets/illustrations/illustration-dashboard.webp`,
   subtitle = 'O Sistema integrador da Attualize.',
   ...other
@@ -64,7 +68,7 @@ export function Section({
         alt="Dashboard illustration"
         src={imgUrl}
         sx={{ width: 1, aspectRatio: '4/3', objectFit: 'cover' }}
-      />
+      />     
     </Box>
   );
 }

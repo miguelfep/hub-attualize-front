@@ -103,15 +103,11 @@ export const _notifications = [...Array(9)].map((_, index) => ({
 
 export const _mapContact = [
   {
-    latlng: [33, 65],
-    address: _mock.fullAddress(1),
-    phoneNumber: _mock.phoneNumber(1),
+    latlng: [-49.24942, -25.4259292],
+    address:"Rua dias da rocha filho 670, ALTO DA RUA XV",
+    phoneNumber: "41 3068-1800",
   },
-  {
-    latlng: [-12.5, 18.5],
-    address: _mock.fullAddress(2),
-    phoneNumber: _mock.phoneNumber(2),
-  },
+  
 ];
 
 // ----------------------------------------------------------------------
@@ -120,22 +116,22 @@ export const _socials = [
   {
     value: 'facebook',
     name: 'Facebook',
-    path: 'https://www.facebook.com/caitlyn.kerluke',
+    path: 'https://www.facebook.com/attualizecontabil/',
   },
   {
     value: 'instagram',
     name: 'Instagram',
-    path: 'https://www.instagram.com/caitlyn.kerluke',
+    path: 'https://www.instagram.com/attualizecontabil/',
   },
   {
     value: 'linkedin',
     name: 'Linkedin',
-    path: 'https://www.linkedin.com/caitlyn.kerluke',
+    path: 'https://br.linkedin.com/company/attualize-contabil',
   },
   {
-    value: 'twitter',
-    name: 'Twitter',
-    path: 'https://www.twitter.com/caitlyn.kerluke',
+    value: 'youtube',
+    name: 'Youtube',
+    path: 'https://www.youtube.com/channel/UCefLgcPyYDLbm98QXVm_LFg',
   },
 ];
 
@@ -183,45 +179,38 @@ export const _pricingPlans = [
 
 export const _testimonials = [
   {
-    name: _mock.fullName(1),
+    name: "Monica Camozele",
     postedDate: _mock.time(1),
-    ratingNumber: _mock.number.rating(1),
+    ratingNumber: 5,
     avatarUrl: _mock.image.avatar(1),
-    content: `Excellent Work! Thanks a lot!`,
+    content: `“A Attualize foi muito importante ao valorizar o que eu tinha pra contar sobre o meu trabalho. Um outro contador mal me ouviu e disse que não valeria a pena eu abrir empresa. Senti um desdém, não sabia se pelo meu trabalho, por mim, ou por eu ser mulher. A disponibilidade em tirar minhas dúvidas, mesmo que eu pergunte 5 vezes a mesma coisa por não ter entendido ainda, é uma das coisas que me mantém com vocês. A atenção e cuidado de vocês com o cliente, é um baita diferencial. Me sinto respeitada e segura com vocês. Só tenho a agradecer.”`,
   },
   {
-    name: _mock.fullName(2),
+    name: "Juliana Romualdo",
     postedDate: _mock.time(2),
-    ratingNumber: _mock.number.rating(2),
+    ratingNumber:5,
     avatarUrl: _mock.image.avatar(2),
-    content: `It's a very good dashboard and we are really liking the product . We've done some things, like migrate to TS and implementing a react useContext api, to fit our job methodology but the product is one of the best in terms of design and application architecture. The team did a really good job.`,
+    content: `Sou nova por aqui, estou em fase de migração, estou aliviada de ter vcs. Mas preocupadas com as informações que nunca tive acesso. Enfim eu estou me sentindo segura e amparada. Adoro a página, as dicas. Foi através disso que pensei, tem algo errado na minha empresa e procurei vocês.`,
   },
   {
-    name: _mock.fullName(3),
+    name: "Celso Marchioretto",
     postedDate: _mock.time(3),
-    ratingNumber: _mock.number.rating(3),
+    ratingNumber: 5,
     avatarUrl: _mock.image.avatar(3),
-    content: `Customer support is realy fast and helpful the desgin of this theme is looks amazing also the code is very clean and readble realy good job !`,
+    content: `Sempre sou muito bem atendido, parabenizo a todo equipe. O Serviço é muito bom, sempre tivemos um ótimo atendimento.`,
   },
   {
-    name: _mock.fullName(4),
+    name: "Mauricio Penteado",
     postedDate: _mock.time(4),
-    ratingNumber: _mock.number.rating(4),
+    ratingNumber: 5,
     avatarUrl: _mock.image.avatar(4),
-    content: `Amazing, really good code quality and gives you a lot of examples for implementations.`,
+    content: `Um estritório com ótimo atendimento e pessoas super atenciosas.`,
   },
   {
-    name: _mock.fullName(5),
+    name: "Tamara resi",
     postedDate: _mock.time(5),
-    ratingNumber: _mock.number.rating(5),
+    ratingNumber: 5,
     avatarUrl: _mock.image.avatar(5),
-    content: `Got a few questions after purchasing the product. The owner responded very fast and very helpfull. Overall the code is excellent and works very good. 5/5 stars!`,
-  },
-  {
-    name: _mock.fullName(6),
-    postedDate: _mock.time(6),
-    ratingNumber: _mock.number.rating(6),
-    avatarUrl: _mock.image.avatar(6),
-    content: `CEO of Codealy.io here. We’ve built a developer assessment platform that makes sense - tasks are based on git repositories and run in virtual machines. We automate the pain points - storing candidates code, running it and sharing test results with the whole team, remotely. Bought this template as we need to provide an awesome dashboard for our early customers. I am super happy with purchase. The code is just as good as the design. Thanks!`,
-  },
+    content: `A empresa sempre nos atendeu com agilidade e cordialidade, demonstrando conhecimento técnico superior às outras que buscamos. A equipe é proativa e sempre nos oferece informações sobre os processos e pontuam eventuais desconformidades, trazendo também a forma mais viável e fácil de adequar. Muito organizados com as nossas documentações, o que facilita resolver tudo rapidamente e de acordo com o que exige as leis. Ficamos extremamente satisfeitos e indicamos o serviço da Atualize para todos os nossos parceiros.`,
+  }, 
 ];

@@ -32,14 +32,7 @@ export function NewClientDialog({ open, onClose, onAddClient }) {
 
   const onSubmit = async (data) => {
     try {
-      // Validar CPF/CNPJ
-      if (!cpfValidator.isValid(data.documento) && !cnpjValidator.isValid(data.documento)) {
-        setError('documento', {
-          type: 'manual',
-          message: 'Documento inválido',
-        });
-        return;
-      }
+  
 
       const cnpj = formatCpfCnpj(data.documento);
 
@@ -96,7 +89,6 @@ export function NewClientDialog({ open, onClose, onAddClient }) {
               label="CPF/CNPJ"
               fullWidth
               margin="normal"
-              required
               error={!!errors.documento}
               helperText={errors.documento ? errors.documento.message : ''}
             />

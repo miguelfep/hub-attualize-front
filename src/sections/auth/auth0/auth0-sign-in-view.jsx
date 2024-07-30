@@ -59,7 +59,7 @@ export function Auth0SignInView() {
   return (
     <>
       <Typography variant="h5" sx={{ mb: 5, textAlign: 'center' }}>
-        Acessar sua conta
+        Sign in to your account
       </Typography>
 
       <Stack spacing={2}>

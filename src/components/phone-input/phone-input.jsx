@@ -4,14 +4,17 @@ import PhoneNumberInput from 'react-phone-number-input/input';
 import TextField from '@mui/material/TextField';
 import InputAdornment from '@mui/material/InputAdornment';
 
+import { getCountryCode } from './utils';
 import { CountryListPopover } from './list';
 
 // ----------------------------------------------------------------------
 
 export const PhoneInput = forwardRef(
   ({ value, onChange, placeholder, country: inputCountryCode, disableSelect, ...other }, ref) => {
-    const defaultCountryCode = 'BR';
+    const defaultCountryCode = getCountryCode(value, inputCountryCode);
+
     const [selectedCountry, setSelectedCountry] = useState(defaultCountryCode);
+
     return (
       <PhoneNumberInput
         ref={ref}
@@ -19,7 +22,7 @@ export const PhoneInput = forwardRef(
         inputComponent={CustomInput}
         value={value}
         onChange={onChange}
-        placeholder={value ?? 'Digite o telefone'}
+        placeholder={placeholder ?? 'Enter phone number'}
         InputProps={
           disableSelect
             ? undefined

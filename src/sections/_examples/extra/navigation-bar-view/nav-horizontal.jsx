@@ -4,9 +4,8 @@ import { NavSectionHorizontal } from 'src/components/nav-section';
 
 import { NAV_ITEMS } from './data';
 
-console.log('nao chega aqui');
-
 // ----------------------------------------------------------------------
+
 export function NavHorizontal() {
   return (
     <Paper

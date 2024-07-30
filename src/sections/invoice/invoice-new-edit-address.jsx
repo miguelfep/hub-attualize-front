@@ -78,7 +78,7 @@ export function InvoiceNewEditAddress() {
           <Stack spacing={1}>
             <Typography variant="subtitle2">Attualize Contabil LTDA</Typography>
             <Typography variant="body2">Rua Dias da Rocha Filho 670</Typography>
-            <Typography variant="body2">41 3068-1800</Typography>
+            <Typography variant="body2">41 99698-2267</Typography>
           </Stack>
         </Stack>
 

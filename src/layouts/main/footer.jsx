@@ -20,21 +20,23 @@ import { SocialIcon } from 'src/components/iconify';
 
 const LINKS = [
   {
-    headline: 'Minimal',
+    headline: 'Attualize',
     children: [
-      { name: 'About us', href: paths.about },
-      { name: 'Contact us', href: paths.contact },
-      { name: 'FAQs', href: paths.faqs },
+      { name: 'Sobre', href: paths.about },
+      { name: 'Fale Conosco', href: paths.contact },
+      // { name: 'FAQs', href: paths.faqs },
     ],
   },
   {
-    headline: 'Legal',
+    headline: 'Especialidades',
     children: [
-      { name: 'Terms and condition', href: '#' },
-      { name: 'Privacy policy', href: '#' },
+      { name: 'Beleza', href: '#' },
+      { name: 'Saúde', href: '#' },
+      { name: 'Bem Estar', href: '#' },
+
     ],
   },
-  { headline: 'Contact', children: [{ name: 'support@minimals.cc', href: '#' }] },
+  { headline: 'Contato', children: [{ name: 'adm@attualizecontabil.com.br', href: '#' }] },
 ];
 
 // ----------------------------------------------------------------------
@@ -73,8 +75,8 @@ export function Footer({ layoutQuery, sx }) {
                 [theme.breakpoints.up(layoutQuery)]: { mx: 'unset' },
               }}
             >
-              The starting point for your next project with Minimal UI Kit, built on the newest
-              version of Material-UI ©, ready to be customized to your style.
+              Attualize contabil é uma empresa contabil digital e inteligente
+              oferecendo serviços especializados para todo o Brasil.
             </Typography>
 
             <Stack
@@ -134,7 +136,7 @@ export function Footer({ layoutQuery, sx }) {
         </Grid>
 
         <Typography variant="body2" sx={{ mt: 10 }}>
-          © All rights reserved.
+          © Todos os direitos reservados.
         </Typography>
       </Container>
     </Box>
@@ -158,9 +160,9 @@ export function HomeFooter({ sx }) {
       <Container>
         <Logo />
         <Box sx={{ mt: 1, typography: 'caption' }}>
-          © All rights reserved.
-          <br /> made by
-          <Link href="https://minimals.cc/"> minimals.cc </Link>
+          © Todos os direitos reservados
+          <br /> Feito por
+          <Link href="https://attualize.com.br/"> Attualize TECH </Link>
         </Box>
       </Container>
     </Box>

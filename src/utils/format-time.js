@@ -1,18 +1,18 @@
 import dayjs from 'dayjs';
-import 'dayjs/locale/pt-br';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
-import localizedFormat from 'dayjs/plugin/localizedFormat';
+import 'dayjs/locale/pt-br';
+
 
 // ----------------------------------------------------------------------
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
-dayjs.extend(localizedFormat);
-dayjs.locale('pt-br');
+dayjs.locale('pt-br'); 
 
-// ----------------------------------------------------------------------
-
+/**
+ * Docs: https://day.js.org/docs/en/display/format
+ */
 export const formatStr = {
   dateTime: 'DD MMM YYYY h:mm a', // 17 Apr 2022 12:00 am
   date: 'DD MMM YYYY', // 17 Apr 2022
@@ -27,14 +27,14 @@ export const formatStr = {
   },
 };
 
-// ----------------------------------------------------------------------
-
 export function today(format) {
   return dayjs(new Date()).startOf('day').format(format);
 }
 
 // ----------------------------------------------------------------------
 
+/** output: 17 Apr 2022 12:00 am
+ */
 export function fDateTime(date, format) {
   if (!date) {
     return null;
@@ -47,6 +47,8 @@ export function fDateTime(date, format) {
 
 // ----------------------------------------------------------------------
 
+/** output: 17 Apr 2022
+ */
 export function fDate(date, format) {
   if (!date) {
     return null;
@@ -59,6 +61,8 @@ export function fDate(date, format) {
 
 // ----------------------------------------------------------------------
 
+/** output: 12:00 am
+ */
 export function fTime(date, format) {
   if (!date) {
     return null;
@@ -71,6 +75,8 @@ export function fTime(date, format) {
 
 // ----------------------------------------------------------------------
 
+/** output: 1713250100
+ */
 export function fTimestamp(date) {
   if (!date) {
     return null;
@@ -83,6 +89,8 @@ export function fTimestamp(date) {
 
 // ----------------------------------------------------------------------
 
+/** output: a few seconds, 2 years
+ */
 export function fToNow(date) {
   if (!date) {
     return null;
@@ -93,8 +101,11 @@ export function fToNow(date) {
   return isValid ? dayjs(date).toNow(true) : 'Invalid time value';
 }
 
+
 // ----------------------------------------------------------------------
 
+/** output: boolean
+ */
 export function fIsBetween(inputDate, startDate, endDate) {
   if (!inputDate || !startDate || !endDate) {
     return false;
@@ -113,12 +124,16 @@ export function fIsBetween(inputDate, startDate, endDate) {
 
 // ----------------------------------------------------------------------
 
+/** output: boolean
+ */
 export function fIsAfter(startDate, endDate) {
   return dayjs(startDate).isAfter(endDate);
 }
 
 // ----------------------------------------------------------------------
 
+/** output: boolean
+ */
 export function fIsSame(startDate, endDate, units) {
   if (!startDate || !endDate) {
     return false;
@@ -135,8 +150,15 @@ export function fIsSame(startDate, endDate, units) {
 
 // ----------------------------------------------------------------------
 
+/** output:
+ * Same day: 26 Apr 2024
+ * Same month: 25 - 26 Apr 2024
+ * Same month: 25 - 26 Apr 2024
+ * Same year: 25 Apr - 26 May 2024
+ */
 export function fDateRangeShortLabel(startDate, endDate, initial) {
   const isValid = dayjs(startDate).isValid() && dayjs(endDate).isValid();
+
   const isAfter = fIsAfter(startDate, endDate);
 
   if (!isValid || isAfter) {
@@ -164,8 +186,8 @@ export function fDateRangeShortLabel(startDate, endDate, initial) {
   return label;
 }
 
-// ----------------------------------------------------------------------
-
+/** output: '2024-05-28T05:55:31+00:00'
+ */
 export function fAdd({
   years = 0,
   months = 0,
@@ -192,8 +214,8 @@ export function fAdd({
   return result;
 }
 
-// ----------------------------------------------------------------------
-
+/** output: '2024-05-28T05:55:31+00:00'
+ */
 export function fSub({
   years = 0,
   months = 0,
