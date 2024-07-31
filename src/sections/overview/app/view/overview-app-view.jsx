@@ -32,29 +32,33 @@ export function OverviewAppView() {
 
   const theme = useTheme();
 
+  const appFeatured =[
+    {
+      id: 1,
+      title: "Vendas",
+      description: "Sistema para vendas e orçamentos",
+    }
+
+  ] 
+
   return (
     <DashboardContent maxWidth="xl">
       <Grid container spacing={3}>
         <Grid xs={12} md={8}>
           <AppWelcome
-            title={`Bem novamente 👋 \n ${user?.name}`}
-            description="If you are going to use a passage of Lorem Ipsum, you need to be sure there isn't anything."
-            img={<SeoIllustration hideBackground />}
-            action={
-              <Button variant="contained" color="primary">
-                Go now
-              </Button>
-            }
+            title={`Olá 👋 \n ${user?.name}`}
+            description="Espero que você tenha uma otima experiencia em nosso HUB"
+            img={<SeoIllustration hideBackground />}           
           />
         </Grid>
 
         <Grid xs={12} md={4}>
-          <AppFeatured list={_appFeatured} />
+          <AppFeatured list={appFeatured} />
         </Grid>
 
         <Grid xs={12} md={4}>
           <AppWidgetSummary
-            title="Total active users"
+            title="Total de Orçamentos Enviados"
             percent={2.6}
             total={18765}
             chart={{

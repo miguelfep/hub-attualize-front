@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dayjs from 'dayjs';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -14,6 +15,11 @@ import Tooltip from '@mui/material/Tooltip';
 import TableBody from '@mui/material/TableBody';
 import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
+import TextField from '@mui/material/TextField';
+
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -100,8 +106,8 @@ export function InvoiceListView() {
     name: '',
     service: [],
     status: 'all',
-    startDate: null,
-    endDate: null,
+    startDate: dayjs().startOf('month'),
+    endDate: dayjs().endOf('month'),
   });
 
   const dateError = fIsAfter(filters.state.startDate, filters.state.endDate);
@@ -257,6 +263,24 @@ export function InvoiceListView() {
           sx={{ mb: { xs: 3, md: 5 } }}
         />
 
+
+<Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <DatePicker
+                label="Data Inicio"
+                value={filters.state.startDate}
+                onChange={(newValue) => filters.setState({ startDate: newValue })}
+                renderInput={(params) => <TextField {...params} />}
+              />
+              <DatePicker
+                label="Data Fim"
+                value={filters.state.endDate}
+                onChange={(newValue) => filters.setState({ endDate: newValue })}
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </LocalizationProvider>
+          </Stack>
+
         <Card sx={{ mb: { xs: 3, md: 5 } }}>
           <Scrollbar sx={{ minHeight: 108 }}>
             <Stack
@@ -341,7 +365,6 @@ export function InvoiceListView() {
               />
             ))}
           </Tabs>
-
           {canReset && (
             <InvoiceTableFiltersResult
               filters={filters}
