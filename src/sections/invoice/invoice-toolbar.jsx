@@ -12,6 +12,9 @@ import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
+import { toast } from 'sonner';
+
+import { enviarPedidoOrcamento } from 'src/actions/invoices';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -32,6 +35,21 @@ export function InvoiceToolbar({ invoice, currentStatus, statusOptions, onChange
   const handleEdit = useCallback(() => {
     router.push(paths.dashboard.invoice.edit(`${invoice?._id}`));
   }, [invoice?._id, router]);
+
+  const handleSend = useCallback(async () => {
+    try {
+      const res = await enviarPedidoOrcamento(invoice._id);
+      if (res.status === 200) {
+        toast.success('Mensagem enviada com sucesso!');
+      } else {
+        const errorMessage = res.data.message || 'Erro ao enviar mensagem';
+        toast.error(`Erro: ${errorMessage}`);
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Erro ao enviar mensagem';
+      toast.error(`Erro: ${errorMessage}`);
+    }
+  }, [invoice?._id]);
 
   const renderDownload = (
     <NoSsr>
@@ -80,7 +98,7 @@ export function InvoiceToolbar({ invoice, currentStatus, statusOptions, onChange
 
           {renderDownload}
           <Tooltip title="Enviar link">
-            <IconButton>
+            <IconButton onClick={handleSend}>
               <Iconify icon="iconamoon:send-fill" />
             </IconButton>
           </Tooltip>
