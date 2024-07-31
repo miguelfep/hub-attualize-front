@@ -124,16 +124,7 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
         onClose={popover.onClose}
         slotProps={{ arrow: { placement: 'right-top' } }}
       >
-        <MenuList>
-        <MenuItem
-            onClick={() => {
-              handleSendWhatsapp();
-              popover.onClose();
-            }}
-          >
-            <Iconify icon="mdi:whatsapp" />
-            Enviar Whatsapp
-          </MenuItem>
+        <MenuList>       
           <MenuItem
             onClick={() => {
               onViewRow();
@@ -152,6 +143,17 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
           >
             <Iconify icon="solar:pen-bold" />
             Editar
+          </MenuItem>
+          <Divider sx={{ borderStyle: 'dashed' }} />
+
+          <MenuItem
+            onClick={() => {
+              handleSendWhatsapp();
+              popover.onClose();
+            }}
+          >
+            <Iconify icon="mdi:whatsapp" />
+            Enviar Whatsapp
           </MenuItem>
 
           <Divider sx={{ borderStyle: 'dashed' }} />
