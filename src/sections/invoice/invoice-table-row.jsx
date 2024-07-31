@@ -1,3 +1,6 @@
+import { toast } from 'sonner';
+import React, { useCallback } from 'react';
+
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -17,6 +20,8 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
+import { enviarPedidoOrcamento } from 'src/actions/invoices';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
@@ -26,6 +31,23 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditRow, onDeleteRow }) {
   const confirm = useBoolean();
+
+
+  const handleSendWhatsapp = useCallback(async () => {
+    try {
+      const res = await enviarPedidoOrcamento(row._id);
+      if (res.status === 200) {
+        toast.success('Mensagem enviada com sucesso!');
+      } else {
+        const errorMessage = res.data.message || 'Erro ao enviar mensagem';
+        toast.error(`Erro: ${errorMessage}`);
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Erro ao enviar mensagem';
+      toast.error(`Erro: ${errorMessage}`);
+    }
+  }, [row._id]);
+
 
   const popover = usePopover();
   return (
@@ -103,6 +125,15 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
         slotProps={{ arrow: { placement: 'right-top' } }}
       >
         <MenuList>
+        <MenuItem
+            onClick={() => {
+              handleSendWhatsapp();
+              popover.onClose();
+            }}
+          >
+            <Iconify icon="mdi:whatsapp" />
+            Enviar Whatsapp
+          </MenuItem>
           <MenuItem
             onClick={() => {
               onViewRow();

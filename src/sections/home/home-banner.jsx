@@ -1,12 +1,12 @@
 import 'swiper/css';
-import React from 'react';
 import 'swiper/css/autoplay';
 import 'swiper/css/effect-fade';
+import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 
 import { useTheme } from '@mui/material/styles';
-
 import { Box, Stack, Button, Container, Typography } from '@mui/material';
+
 import styles from './HomeBanner.module.css';
 
 const slides = [
