@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import dayjs from 'dayjs';
+import 'dayjs/locale/pt-br'; // Adicione esta linha para importar o locale
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -262,10 +263,8 @@ export function InvoiceListView() {
           }
           sx={{ mb: { xs: 3, md: 5 } }}
         />
-
-
-<Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
+        <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br"> {/* Adicione adapterLocale="pt-br" */}
               <DatePicker
                 label="Data Inicio"
                 value={filters.state.startDate}
