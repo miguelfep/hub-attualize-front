@@ -11,7 +11,7 @@ import styles from './HomeBanner.module.css';
 
 const slides = [
   {
-    background: '/assets/background/Banner-pagina-principal-anne-monteiro-1005-x-950-px-10.png', // Substitua pela imagem real
+    background: '/assets/background/Banner-pagina-principal-anne-monteiro-optimized.webp', // Substitua pela imagem real
     title: 'Contabilidade Especializada',
     text: 'Se você busca uma contabilidade inteligente,digital prática e especializada no seu negócio, Encontrou!.',
     buttons: [

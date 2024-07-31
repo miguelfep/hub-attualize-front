@@ -21,6 +21,7 @@ import { AuthProvider as Auth0AuthProvider } from 'src/auth/context/auth0';
 import { AuthProvider as AmplifyAuthProvider } from 'src/auth/context/amplify';
 import { AuthProvider as SupabaseAuthProvider } from 'src/auth/context/supabase';
 import { AuthProvider as FirebaseAuthProvider } from 'src/auth/context/firebase';
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 // ----------------------------------------------------------------------
 
@@ -46,7 +47,6 @@ export default async function RootLayout({ children }) {
     <html lang={lang ?? 'en'} suppressHydrationWarning>
       <body>
         {getInitColorSchemeScript}
-
         <I18nProvider lang={CONFIG.isStaticExport ? undefined : lang}>
           <LocalizationProvider>
             <AuthProvider>
@@ -55,6 +55,7 @@ export default async function RootLayout({ children }) {
                 caches={CONFIG.isStaticExport ? 'localStorage' : 'cookie'}
               >
                 <ThemeProvider>
+                <SpeedInsights/>
                   <MotionLazy>
                     <CheckoutProvider>
                       <Snackbar />
