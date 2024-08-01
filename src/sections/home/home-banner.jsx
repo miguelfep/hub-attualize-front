@@ -1,26 +1,31 @@
+'use client';
+
+import React from 'react';
+import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 import 'swiper/css/autoplay';
 import 'swiper/css/effect-fade';
-import React from 'react';
-import { Swiper, SwiperSlide } from 'swiper/react';
 
+import Image from 'next/image'; // Usando next/image para otimização de imagem
 import { useTheme } from '@mui/material/styles';
 import { Box, Stack, Button, Container, Typography } from '@mui/material';
 
 import styles from './HomeBanner.module.css';
 
+// Define os slides do banner
 const slides = [
   {
     background: '/assets/background/Banner-pagina-principal-anne-monteiro-optimized.webp', // Substitua pela imagem real
     title: 'Contabilidade Especializada',
-    text: 'Se você busca uma contabilidade inteligente,digital prática e especializada no seu negócio, Encontrou!.',
+    text: 'Se você busca uma contabilidade inteligente, digital prática e especializada no seu negócio, encontrou!',
     buttons: [
       { text: 'Abrir Empresa', link: '/abertura', color: 'success', textColor: 'white' },
       { text: 'Trocar de Contador', link: 'https://wa.me/554196982267', color: 'info', textColor: 'white' }
     ]
   },
+  // Outro slide comentado, pode ser ativado quando necessário
   // {
-  //   background: '/assets/background/Banner-pagina-principal-anne-monteiro-1005-x-950-px-3.png', // Substitua pela imagem real
+  //   background: '/assets/background/Banner-pagina-principal-anne-monteiro-1005-x-950-px-3.png',
   //   title: 'Especialistas em Beleza, Saúde e Bem-Estar',
   //   text: 'Contabilidade digital especializada para o seu negócio prosperar.',
   //   buttons: [
@@ -47,15 +52,21 @@ export default function HomeBanner() {
           <SwiperSlide key={index}>
             <Box
               sx={{
-                backgroundImage: `url(${slide.background})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                height: { xs: '75vh', md: '100vh' }, // Ajustar altura para mobile e desktop
                 position: 'relative',
+                height: { xs: '75vh', md: '100vh' }, // Ajustar altura para mobile e desktop
                 display: 'flex',
                 alignItems: 'center',
+                justifyContent: 'center', // Certificar que o conteúdo está centralizado
               }}
             >
+              <Image
+                src={slide.background}
+                alt={slide.title}
+                layout="fill"
+                objectFit="cover"
+                priority={index === 0} // Priorizar o carregamento do primeiro slide
+                style={{ zIndex: -1 }}
+              />
               <Box
                 sx={{
                   position: 'absolute',
@@ -89,7 +100,7 @@ export default function HomeBanner() {
                         key={btnIndex}
                         href={button.link}
                         variant="contained"
-                        size="large"  // Aumentar o tamanho dos botões
+                        size="large" // Aumentar o tamanho dos botões para destaque
                         sx={{ 
                           backgroundColor: theme.palette[button.color]?.main || 'white', 
                           color: button.textColor 

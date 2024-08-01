@@ -120,30 +120,28 @@ export function InvoiceListView() {
     dateError,
   });
 
-  const dataInPage = rowInPage(dataFiltered, table.page, table.rowsPerPage);
-
+  const { filteredData, counts, totals } = applyFilter({
+    inputData: tableData,
+    comparator: getComparator(table.order, table.orderBy),
+    filters: filters.state,
+    dateError,
+  });
+  
+  const dataInPage = rowInPage(filteredData, table.page, table.rowsPerPage);
+  
   const canReset =
     !!filters.state.name ||
     filters.state.service.length > 0 ||
     filters.state.status !== 'all' ||
     (!!filters.state.startDate && !!filters.state.endDate);
-
-  const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
-
-  const getInvoiceLength = (status) => {
-    if (!Array.isArray(tableData)) return 0;
-    return tableData.filter((item) => item.status === status).length;
-  };
-
-  const getTotalAmount = (status) => {
-    if (!Array.isArray(tableData)) return 0;
-    return sumBy(
-      tableData.filter((item) => item.status === status),
-      (invoice) => invoice.total
-    );
-  };
-
-  const getPercentByStatus = (status) => (getInvoiceLength(status) / tableData.length) * 100;
+  
+  const notFound = (!filteredData.length && canReset) || !filteredData.length;
+  
+  const getInvoiceLength = (status) => counts[status] || 0;
+  
+  const getTotalAmount = (status) => totals[status] || 0;
+  
+  const getPercentByStatus = (status) => (getInvoiceLength(status) / filteredData.length) * 100;
 
   const TABS = [
     {
@@ -287,50 +285,50 @@ export function InvoiceListView() {
               divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
               sx={{ py: 2 }}
             >
-              <InvoiceAnalytic
-                title="Total"
-                total={tableData.length}
-                percent={100}
-                price={sumBy(tableData, (invoice) => invoice.total)}
-                icon="solar:bill-list-bold-duotone"
-                color={theme.vars.palette.info.main}
-              />
+          <InvoiceAnalytic
+  title="Total"
+  total={filteredData.length}
+  percent={100}
+  price={sumBy(filteredData, (invoice) => invoice.total)}
+  icon="solar:bill-list-bold-duotone"
+  color={theme.vars.palette.info.main}
+/>
 
-              <InvoiceAnalytic
-                title="Pago"
-                total={getInvoiceLength('pago')}
-                percent={getPercentByStatus('pago')}
-                price={getTotalAmount('pago')}
-                icon="solar:file-check-bold-duotone"
-                color={theme.vars.palette.success.main}
-              />
+<InvoiceAnalytic
+  title="Pago"
+  total={getInvoiceLength('pago')}
+  percent={getPercentByStatus('pago')}
+  price={getTotalAmount('pago')}
+  icon="solar:file-check-bold-duotone"
+  color={theme.vars.palette.success.main}
+/>
 
-              <InvoiceAnalytic
-                title="Aprovada"
-                total={getInvoiceLength('aprovada')}
-                percent={getPercentByStatus('aprovada')}
-                price={getTotalAmount('aprovada')}
-                icon="solar:sort-by-time-bold-duotone"
-                color={theme.vars.palette.secondary.main}
-              />
+<InvoiceAnalytic
+  title="Aprovada"
+  total={getInvoiceLength('aprovada')}
+  percent={getPercentByStatus('aprovada')}
+  price={getTotalAmount('aprovada')}
+  icon="solar:sort-by-time-bold-duotone"
+  color={theme.vars.palette.secondary.main}
+/>
 
-              <InvoiceAnalytic
-                title="Perdida"
-                total={getInvoiceLength('perdida')}
-                percent={getPercentByStatus('perdida')}
-                price={getTotalAmount('perdida')}
-                icon="solar:bell-bing-bold-duotone"
-                color={theme.vars.palette.error.main}
-              />
+<InvoiceAnalytic
+  title="Perdida"
+  total={getInvoiceLength('perdida')}
+  percent={getPercentByStatus('perdida')}
+  price={getTotalAmount('perdida')}
+  icon="solar:bell-bing-bold-duotone"
+  color={theme.vars.palette.error.main}
+/>
 
-              <InvoiceAnalytic
-                title="Orçamentos"
-                total={getInvoiceLength('orcamento')}
-                percent={getPercentByStatus('orcamento')}
-                price={getTotalAmount('orcamento')}
-                icon="solar:file-corrupted-bold-duotone"
-                color={theme.vars.palette.text.secondary}
-              />
+<InvoiceAnalytic
+  title="Orçamentos"
+  total={getInvoiceLength('orcamento')}
+  percent={getPercentByStatus('orcamento')}
+  price={getTotalAmount('orcamento')}
+  icon="solar:file-corrupted-bold-duotone"
+  color={theme.vars.palette.text.secondary}
+/>
             </Stack>
           </Scrollbar>
         </Card>
@@ -412,31 +410,31 @@ export function InvoiceListView() {
                   }
                 />
 
-                <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
-                      <InvoiceTableRow
-                        key={row._id}
-                        row={row}
-                        selected={table.selected.includes(row._id)}
-                        onSelectRow={() => table.onSelectRow(row._id)}
-                        onViewRow={() => handleViewRow(row._id)}
-                        onEditRow={() => handleEditRow(row._id)}
-                        onDeleteRow={() => handleDeleteRow(row._id)}
-                      />
-                    ))}
+<TableBody>
+  {filteredData
+    .slice(
+      table.page * table.rowsPerPage,
+      table.page * table.rowsPerPage + table.rowsPerPage
+    )
+    .map((row) => (
+      <InvoiceTableRow
+        key={row._id}
+        row={row}
+        selected={table.selected.includes(row._id)}
+        onSelectRow={() => table.onSelectRow(row._id)}
+        onViewRow={() => handleViewRow(row._id)}
+        onEditRow={() => handleEditRow(row._id)}
+        onDeleteRow={() => handleDeleteRow(row._id)}
+      />
+    ))}
 
-                  <TableEmptyRows
-                    height={table.dense ? 56 : 56 + 20}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                  />
+  <TableEmptyRows
+    height={table.dense ? 56 : 56 + 20}
+    emptyRows={emptyRows(table.page, table.rowsPerPage, filteredData.length)}
+  />
 
-                  <TableNoData notFound={notFound} />
-                </TableBody>
+  <TableNoData notFound={notFound} />
+</TableBody>
               </Table>
             </Scrollbar>
           </Box>
@@ -483,7 +481,7 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   const { name, status, service, startDate, endDate } = filters;
 
   if (!Array.isArray(inputData)) {
-    return [];
+    return { filteredData: [], counts: {}, totals: {} };
   }
 
   const stabilizedThis = inputData.map((el, index) => [el, index]);
@@ -520,5 +518,17 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
     }
   }
 
-  return inputData;
+  const counts = {};
+  const totals = {};
+
+  inputData.forEach((invoice) => {
+    if (!counts[invoice.status]) {
+      counts[invoice.status] = 0;
+      totals[invoice.status] = 0;
+    }
+    counts[invoice.status] += 1;
+    totals[invoice.status] += invoice.total;
+  });
+
+  return { filteredData: inputData, counts, totals };
 }

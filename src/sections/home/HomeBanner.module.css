@@ -12,3 +12,13 @@
     height: 100vh;
   }
   
+@media (max-width: 600px) {
+  .swiperContainer {
+    height: 75vh; /* Ajustar a altura para mobile */
+    margin-bottom: 0; /* Remover margem inferior */
+  }
+  
+  .swiper-slide {
+    height: 75vh; /* Ajustar a altura para mobile */
+  }
+}

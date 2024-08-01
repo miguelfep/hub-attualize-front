@@ -32,7 +32,7 @@ export function HomeMinimal({ sx, ...other }) {
       <SectionTitle
         caption="Contabilidade Digital"
         title="O que é ser"
-        txtGradient="Attulize?"
+        txtGradient="Attualize?"
         sx={{ mb: { xs: 5, md: 8 }, textAlign: { xs: 'center', md: 'left' } }}
       />
 
@@ -75,7 +75,7 @@ export function HomeMinimal({ sx, ...other }) {
       <Box
         component="img"
         alt="Home Chart"
-        src={`${CONFIG.site.basePath}/assets/images/home/animacao-site.png`}
+        src={`${CONFIG.site.basePath}/assets/images/home/animacao-site.webp`}
         sx={{ width: 1220 }}
       />
     </Stack>
