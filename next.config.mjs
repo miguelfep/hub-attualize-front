@@ -28,6 +28,8 @@ const nextConfig = {
   ...(isStaticExport === 'true' && {
     output: 'export',
   }),
+  reactStrictMode: true, 
+  swcMinify: true,
 };
 
 export default nextConfig;

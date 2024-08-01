@@ -35,20 +35,20 @@ const HomeServicesSection = () => {
       description: 'Contabilidade e gestão financeira especializada para seu estúdio, academia, ou box de Crossfit.',
     },
     {
-        icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-8.png`,
-        title: 'Profissional Parcerido',
-        description: 'Serviços exclusivos para você que atua como profissional parceiro.',
-      },
-      {
-        icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-9.png`,
-        title: 'Psicólogo autônomo',
-        description: 'Serviços exclusivos para psicólogos que atuam de forma autônoma.',
-      },
-      {
-        icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-10.png`,
-        title: 'Prestador de serviços',
-        description: 'Serviços exclusivos para PJ que precisam de apoio contábil.',
-      },
+      icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-8.png`,
+      title: 'Profissional Parcerido',
+      description: 'Serviços exclusivos para você que atua como profissional parceiro.',
+    },
+    {
+      icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-9.png`,
+      title: 'Psicólogo autônomo',
+      description: 'Serviços exclusivos para psicólogos que atuam de forma autônoma.',
+    },
+    {
+      icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-10.png`,
+      title: 'Prestador de serviços',
+      description: 'Serviços exclusivos para PJ que precisam de apoio contábil.',
+    },
   ];
 
   return (

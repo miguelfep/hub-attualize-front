@@ -2,9 +2,10 @@
 
 import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/autoplay';
-import 'swiper/css/effect-fade';
+import { Autoplay, EffectFade } from 'swiper/modules'; // Importar apenas os módulos necessários
+import 'swiper/css'; // Swiper CSS base
+import 'swiper/css/autoplay'; // Swiper CSS para autoplay
+import 'swiper/css/effect-fade'; // Swiper CSS para fade
 
 import Image from 'next/image'; // Usando next/image para otimização de imagem
 import { useTheme } from '@mui/material/styles';
@@ -15,7 +16,7 @@ import styles from './HomeBanner.module.css';
 // Define os slides do banner
 const slides = [
   {
-    background: '/assets/background/Banner-pagina-principal-anne-monteiro-optimized.webp', // Substitua pela imagem real
+    background: '/assets/background/Banner-pagina-principal-anne-monteiro-optimized.webp',
     title: 'Contabilidade Especializada',
     text: 'Se você busca uma contabilidade inteligente, digital prática e especializada no seu negócio, encontrou!',
     buttons: [
@@ -23,16 +24,6 @@ const slides = [
       { text: 'Trocar de Contador', link: 'https://wa.me/554196982267', color: 'info', textColor: 'white' }
     ]
   },
-  // Outro slide comentado, pode ser ativado quando necessário
-  // {
-  //   background: '/assets/background/Banner-pagina-principal-anne-monteiro-1005-x-950-px-3.png',
-  //   title: 'Especialistas em Beleza, Saúde e Bem-Estar',
-  //   text: 'Contabilidade digital especializada para o seu negócio prosperar.',
-  //   buttons: [
-  //     { text: 'Conheça nossos Serviços', link: '/servicos', color: 'primary', textColor: 'white' },
-  //     { text: 'Fale Conosco', link: '/contato', color: 'secondary', textColor: 'white' }
-  //   ]
-  // }
 ];
 
 export default function HomeBanner() {
@@ -41,10 +32,11 @@ export default function HomeBanner() {
   return (
     <Box component="section" sx={{ position: 'relative', overflow: 'hidden' }}>
       <Swiper
+        modules={[Autoplay, EffectFade]} // Importar módulos específicos do Swiper
         spaceBetween={0}
         slidesPerView={1}
         loop
-        autoplay={{ delay: 5000 }}
+        autoplay={{ delay: 5000, disableOnInteraction: false }} // Continuar autoplay mesmo após interação
         effect="fade"
         className={styles.swiperContainer}
       >
@@ -53,10 +45,10 @@ export default function HomeBanner() {
             <Box
               sx={{
                 position: 'relative',
-                height: { xs: '75vh', md: '100vh' }, // Ajustar altura para mobile e desktop
+                height: { xs: '75vh', md: '100vh' },
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center', // Certificar que o conteúdo está centralizado
+                justifyContent: 'center',
               }}
             >
               <Image
@@ -85,7 +77,7 @@ export default function HomeBanner() {
                     textAlign: 'left', 
                     color: 'white', 
                     maxWidth: 680, 
-                    marginTop: { xs: '10vh', md: '1vh' } // Ajustar margem superior para mobile e desktop
+                    marginTop: { xs: '10vh', md: '1vh' }
                   }}
                 >
                   <Typography variant="h1" component="h1" sx={{ fontSize: { xs: '2rem', md: '5rem' } }}>
@@ -100,7 +92,7 @@ export default function HomeBanner() {
                         key={btnIndex}
                         href={button.link}
                         variant="contained"
-                        size="large" // Aumentar o tamanho dos botões para destaque
+                        size="large"
                         sx={{ 
                           backgroundColor: theme.palette[button.color]?.main || 'white', 
                           color: button.textColor 
