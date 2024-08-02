@@ -22,7 +22,7 @@ export const PhoneInput = forwardRef(
         inputComponent={CustomInput}
         value={value}
         onChange={onChange}
-        placeholder={placeholder ?? 'Enter phone number'}
+        placeholder={placeholder ?? 'Digite o numero'}
         InputProps={
           disableSelect
             ? undefined

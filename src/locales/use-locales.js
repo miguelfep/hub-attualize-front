@@ -9,25 +9,24 @@ import { useRouter } from 'src/routes/hooks';
 import { toast } from 'src/components/snackbar';
 
 import { allLangs } from './all-langs';
-import { fallbackLng, changeLangMessages as messages } from './config-locales';
+import { changeLangMessages as messages } from './config-locales';
 
 // ----------------------------------------------------------------------
 
 export function useTranslate(ns) {
   const router = useRouter();
-
   const { t, i18n } = useTranslation(ns);
 
-  const fallback = allLangs.filter((lang) => lang.value === fallbackLng)[0];
-
-  const currentLang = allLangs.find((lang) => lang.value === i18n.resolvedLanguage);
+  // Foco no idioma pt-BR
+  const currentLang = allLangs.find((lang) => lang.value === 'pt') || allLangs[0];
 
   const onChangeLang = useCallback(
-    async (newLang) => {
+    async () => {
       try {
-        const langChangePromise = i18n.changeLanguage(newLang);
+        // Trocar idioma para pt-BR
+        const langChangePromise = i18n.changeLanguage('pt');
 
-        const currentMessages = messages[newLang] || messages.en;
+        const currentMessages = messages.pt || messages.en;
 
         toast.promise(langChangePromise, {
           loading: currentMessages.loading,
@@ -35,22 +34,22 @@ export function useTranslate(ns) {
           error: currentMessages.error,
         });
 
-        if (currentLang) {
-          dayjs.locale(currentLang.adapterLocale);
-        }
+        // Definir o locale do dayjs para pt-BR
+        dayjs.locale('pt-br');
 
+        // Atualizar o roteamento
         router.refresh();
       } catch (error) {
         console.error(error);
       }
     },
-    [currentLang, i18n, router]
+    [i18n, router]
   );
 
   return {
     t,
     i18n,
     onChangeLang,
-    currentLang: currentLang ?? fallback,
+    currentLang,
   };
 }

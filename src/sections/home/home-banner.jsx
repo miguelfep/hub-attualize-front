@@ -8,9 +8,13 @@ import 'swiper/css/autoplay'; // Swiper CSS para autoplay
 import 'swiper/css/effect-fade'; // Swiper CSS para fade
 
 import Image from 'next/image'; // Usando next/image para otimização de imagem
+
+
+
+
+
 import { useTheme } from '@mui/material/styles';
 import { Box, Stack, Button, Container, Typography } from '@mui/material';
-
 import styles from './HomeBanner.module.css';
 
 // Define os slides do banner

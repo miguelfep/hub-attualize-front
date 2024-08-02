@@ -10,20 +10,13 @@ export const metadata = { title: `Orçamento attualize - ${CONFIG.site.name}` };
 export default async function Page({ params }) {
   const { id } = params;
 
-  try {
-    const currentInvoice = await getInvoiceById(id);
+  const currentInvoice = await getInvoiceById(id);
 
     if (!currentInvoice) {
       throw new Error('Invoice not found');
     }
 
     return <OrcamentoView invoice={currentInvoice} />;
-  } catch (error) {
-    console.error('Failed to fetch invoice:', error);
-
-    // Handle error appropriately, e.g., return a custom error component
-    return <div>Failed to load invoice details. Please try again later.</div>;
-  }
 }
 
 // ----------------------------------------------------------------------

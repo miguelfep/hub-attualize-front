@@ -2,11 +2,8 @@
 
 'use client';
 
-import 'dayjs/locale/en';
-import 'dayjs/locale/vi';
-import 'dayjs/locale/fr';
-import 'dayjs/locale/zh-cn';
-import 'dayjs/locale/ar-sa';
+// Importação do idioma pt-BR para o dayjs
+import 'dayjs/locale/pt-br';
 
 import dayjs from 'dayjs';
 
@@ -20,10 +17,11 @@ import { useTranslate } from './use-locales';
 export function LocalizationProvider({ children }) {
   const { currentLang } = useTranslate();
 
-  dayjs.locale(currentLang.adapterLocale);
+  // Defina a localidade do dayjs para pt-BR
+  dayjs.locale('pt-br');
 
   return (
-    <Provider dateAdapter={AdapterDayjs} adapterLocale={currentLang.adapterLocale}>
+    <Provider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
       {children}
     </Provider>
   );

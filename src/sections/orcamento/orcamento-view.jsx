@@ -16,7 +16,7 @@ import { updateInvoice, getInvoiceById } from 'src/actions/invoices';
 import { Iconify } from 'src/components/iconify';
 
 import { CheckoutSteps } from '../checkout/checkout-steps';
-import { CheckoutOrderComplete } from '../checkout/checkout-order-complete'; // Adicione getInvoiceById
+import { CheckoutOrderComplete } from '../checkout/checkout-order-complete';
 
 import { OrcamentoPago } from './orcamento-pago';
 import { OrcamentoAprovado } from './orcamento-aprovado';
@@ -25,11 +25,27 @@ import { OrcamentoPendente } from './orcamento-pendente';
 const ORCAMENTO_CHECKOUT_STEPS = ['Aprovação', 'Pagamento'];
 
 export function OrcamentoView({ invoice }) {
+  // Adicionar validação para a invoice
+  if (!invoice) {
+    return (
+      <Container sx={{ mt: 10, textAlign: 'center' }}>
+        <Box>
+          <Typography variant="h4" color="error">
+            Erro
+          </Typography>
+          <Typography variant="h6" sx={{ my: 2 }}>
+            Venda não encontrada. Por favor, verifique o ID e tente novamente.
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
+
   const [currentInvoice, setCurrentInvoice] = useState(invoice);
   const [activeStep, setActiveStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('boleto');
   const [status, setStatus] = useState(invoice.status);
-  const [loading, setLoading] = useState(false); // Estado para o indicador de carregamento
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (status !== 'orcamento') {
@@ -40,7 +56,6 @@ export function OrcamentoView({ invoice }) {
   const updateInvoiceData = async () => {
     setLoading(true);
     try {
-      console.log('vai atualizar : ', currentInvoice._id);
       const updatedInvoice = await getInvoiceById(currentInvoice._id);
       setCurrentInvoice(updatedInvoice);
       setStatus(updatedInvoice.status);
@@ -52,7 +67,7 @@ export function OrcamentoView({ invoice }) {
   };
 
   const handleApproval = async (newStatus) => {
-    setLoading(true); // Mostrar o indicador de carregamento
+    setLoading(true);
     try {
       const data = {
         status: newStatus,
@@ -64,7 +79,7 @@ export function OrcamentoView({ invoice }) {
     } catch (error) {
       toast.error('Erro ao atualizar status');
     } finally {
-      setLoading(false); // Esconder o indicador de carregamento
+      setLoading(false);
     }
   };
 
@@ -73,25 +88,36 @@ export function OrcamentoView({ invoice }) {
   };
 
   const handlePayment = async () => {
-    setLoading(true); // Mostrar o indicador de carregamento
+    setLoading(true);
     try {
-      const response = await axios.post('/api/process-payment', {
+      await axios.post('/api/process-payment', {
         invoiceId: currentInvoice._id,
         paymentMethod,
       });
       toast.success(`Pagamento processado com ${paymentMethod}`);
-      await updateInvoiceData(); // Atualizar a invoice após o pagamento
+      await updateInvoiceData();
     } catch (error) {
       toast.error('Erro ao processar pagamento');
     } finally {
-      setLoading(false); // Esconder o indicador de carregamento
+      setLoading(false);
     }
   };
 
   return (
     <Container sx={{ mb: 10 }}>
       <Box sx={{ textAlign: 'center', my: { xs: 3, md: 5 } }}>
-        <Box component="img" alt="logo" src="/logo/hub-tt.png" sx={{ width: 48, height: 48 }} />
+        <Box
+          component="img"
+          alt="logo"
+          src="/logo/hub-tt.png"
+          sx={{
+            width: 48,
+            height: 48,
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center',
+          }}
+        />
         <Typography variant="h4">Orçamento {currentInvoice?.invoiceNumber}</Typography>
       </Box>
 
@@ -109,7 +135,7 @@ export function OrcamentoView({ invoice }) {
             paymentMethod={paymentMethod}
             handlePaymentMethodChange={handlePaymentMethodChange}
             handlePayment={handlePayment}
-            updateInvoiceData={updateInvoiceData} // Passar a função de atualização
+            updateInvoiceData={updateInvoiceData}
             loading={loading}
           />
         )}
@@ -124,7 +150,7 @@ export function OrcamentoView({ invoice }) {
               startIcon={<Iconify width={16} icon="mingcute:thumb-up-2-fill" />}
               onClick={() => handleApproval('aprovada')}
               sx={{ mr: 2 }}
-              disabled={loading} // Desabilitar o botão enquanto carrega
+              disabled={loading}
             >
               {loading && <CircularProgress size={20} sx={{ mr: 1 }} />}
               Aprovar
@@ -134,7 +160,7 @@ export function OrcamentoView({ invoice }) {
               color="grey"
               startIcon={<Iconify width={16} icon="mingcute:thumb-down-2-fill" />}
               onClick={() => handleApproval('perdida')}
-              disabled={loading} // Desabilitar o botão enquanto carrega
+              disabled={loading}
             >
               {loading && <CircularProgress size={20} sx={{ mr: 1 }} />}
               Reprovar

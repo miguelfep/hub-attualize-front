@@ -67,4 +67,8 @@ export const endpoints = {
     delete: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/',
     checkout: 'https://api.attualizecontabil.com.br/api/checkout/orcamento',
   },
+  marketing: {
+    create: 'https://api.attualizecontabil.com.br/api/marketing/criar/lead',
+    update: 'https://api.attualizecontabil.com.br/api/marketing/atualizar/lead'
+  }
 };

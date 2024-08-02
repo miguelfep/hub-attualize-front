@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import dayjs from 'dayjs';
-import 'dayjs/locale/pt-br'; // Adicione esta linha para importar o locale
+import 'dayjs/locale/pt-br';
+import { useState, useEffect, useCallback } from 'react'; // Adicione esta linha para importar o locale
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -15,12 +15,11 @@ import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import TableBody from '@mui/material/TableBody';
 import { useTheme } from '@mui/material/styles';
-import IconButton from '@mui/material/IconButton';
 import TextField from '@mui/material/TextField';
-
+import IconButton from '@mui/material/IconButton';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -434,11 +433,10 @@ export function InvoiceListView() {
   />
 
   <TableNoData notFound={notFound} />
-</TableBody>
-              </Table>
+  </TableBody>
+</Table>
             </Scrollbar>
           </Box>
-
           <TablePaginationCustom
             page={table.page}
             dense={table.dense}
