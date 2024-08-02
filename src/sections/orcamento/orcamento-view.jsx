@@ -15,39 +15,25 @@ import { updateInvoice, getInvoiceById } from 'src/actions/invoices';
 
 import { Iconify } from 'src/components/iconify';
 
-import { CheckoutSteps } from '../checkout/checkout-steps';
-import { CheckoutOrderComplete } from '../checkout/checkout-order-complete';
-
 import { OrcamentoPago } from './orcamento-pago';
 import { OrcamentoAprovado } from './orcamento-aprovado';
 import { OrcamentoPendente } from './orcamento-pendente';
+import { CheckoutSteps } from '../checkout/checkout-steps';
+import { CheckoutOrderComplete } from '../checkout/checkout-order-complete';
 
 const ORCAMENTO_CHECKOUT_STEPS = ['Aprovação', 'Pagamento'];
 
 export function OrcamentoView({ invoice }) {
-  // Adicionar validação para a invoice
-  if (!invoice) {
-    return (
-      <Container sx={{ mt: 10, textAlign: 'center' }}>
-        <Box>
-          <Typography variant="h4" color="error">
-            Erro
-          </Typography>
-          <Typography variant="h6" sx={{ my: 2 }}>
-            Venda não encontrada. Por favor, verifique o ID e tente novamente.
-          </Typography>
-        </Box>
-      </Container>
-    );
-  }
-
+  // Inicialização dos hooks
   const [currentInvoice, setCurrentInvoice] = useState(invoice);
   const [activeStep, setActiveStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('boleto');
-  const [status, setStatus] = useState(invoice.status);
+  const [status, setStatus] = useState(invoice?.status || 'orcamento');
   const [loading, setLoading] = useState(false);
 
+  // useEffect deve ser chamado fora de qualquer condição
   useEffect(() => {
+    // Logica condicional dentro do useEffect
     if (status !== 'orcamento') {
       setActiveStep(1);
     }
@@ -102,6 +88,22 @@ export function OrcamentoView({ invoice }) {
       setLoading(false);
     }
   };
+
+  // Adicionar validação para a invoice após a declaração dos hooks
+  if (!invoice) {
+    return (
+      <Container sx={{ mt: 10, textAlign: 'center' }}>
+        <Box>
+          <Typography variant="h4" color="error">
+            Erro
+          </Typography>
+          <Typography variant="h6" sx={{ my: 2 }}>
+            Venda não encontrada. Por favor, verifique o ID e tente novamente.
+          </Typography>
+        </Box>
+      </Container>
+    );
+  }
 
   return (
     <Container sx={{ mb: 10 }}>

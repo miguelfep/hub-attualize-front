@@ -70,7 +70,6 @@ export function OrcamentoAprovado({
   invoice,
   paymentMethod,
   handlePaymentMethodChange,
-  handlePayment,
   loading,
   updateInvoiceData, // Nova prop para atualizar a invoice
 }) {
@@ -202,8 +201,6 @@ export function OrcamentoAprovado({
             <PaymentMethods
               method={method}
               handleChangeMethod={handleChangeMethod}
-              handlePayment={handlePayment}
-              loading={loading}
             />
           </Box>
         </Grid>
