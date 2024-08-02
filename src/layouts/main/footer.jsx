@@ -89,7 +89,7 @@ export function Footer({ layoutQuery, sx }) {
               }}
             >
               {_socials.map((social) => (
-                <IconButton key={social.name}>
+                <IconButton key={social.name} href={social.path} target='_blank'>
                   <SocialIcon icon={social.name} />
                 </IconButton>
               ))}
