@@ -56,14 +56,13 @@ export function OverviewAppView() {
         seriesCobrancas: response.seriesCobrancas || [],
         leads: response.leads || [],
       });
-    } catch (err) { // Renomeando a variável de 'error' para 'err'
+    } catch (err) {
       setError('Erro ao buscar dados do dashboard.');
       console.error('Erro ao buscar dados do dashboard:', err);
     } finally {
       setLoading(false);
     }
   };
-  
 
   useEffect(() => {
     fetchDashboardData();
@@ -73,13 +72,16 @@ export function OverviewAppView() {
     return <div>{error}</div>;
   }
 
+  // Verifica se o usuário tem a role 'admin' ou 'financeiro'
+  const isFinanceOrAdmin = user?.role === 'admin' || user?.role === 'financeiro';
+
   return (
     <DashboardContent maxWidth="xl">
       <Grid container spacing={3}>
         <Grid xs={12} md={8}>
           <AppWelcome
             title={`Olá 👋 \n ${user?.name}`}
-            description="Espero que você tenha uma otima experiencia em nosso HUB"
+            description="Espero que você tenha uma ótima experiência em nosso HUB"
             img={<SeoIllustration hideBackground />}
           />
         </Grid>
@@ -87,39 +89,49 @@ export function OverviewAppView() {
         <Grid xs={12} md={4}>
           <AppFeatured list={appFeatured} />
         </Grid>
-        {/* Contas a Pagar */}
-        <Grid xs={12} md={4}>
-          <AppWidgetSummary
-            title="Contas a Pagar"
-            total={dashboardData.totalContasPagar}
-            percent={dashboardData.percentualVariacaoContasPagar}
-            chart={{
-              categories:
-                dashboardData.categoriesContasPagar.length > 0
-                  ? dashboardData.categoriesContasPagar
-                  : ['Nenhum dado'],
-              series:
-                dashboardData.seriesContasPagar.length > 0 ? dashboardData.seriesContasPagar : [0],
-            }}
-          />
-        </Grid>
 
-        {/* Cobranças */}
-        <Grid xs={12} md={4}>
-          <AppWidgetSummary
-            title="Cobranças"
-            total={dashboardData.totalCobrancas}
-            percent={dashboardData.percentualVariacaoCobrancas}
-            chart={{
-              categories:
-                dashboardData.categoriesCobrancas.length > 0
-                  ? dashboardData.categoriesCobrancas
-                  : ['Nenhum dado'],
-              series:
-                dashboardData.seriesCobrancas.length > 0 ? dashboardData.seriesCobrancas : [0],
-            }}
-          />
-        </Grid>
+        {/* Condicional para Contas a Pagar e Cobranças */}
+        {isFinanceOrAdmin && (
+          <>
+            {/* Contas a Pagar */}
+            <Grid xs={12} md={4}>
+              <AppWidgetSummary
+                title="Contas a Pagar"
+                total={dashboardData.totalContasPagar}
+                percent={dashboardData.percentualVariacaoContasPagar}
+                chart={{
+                  categories:
+                    dashboardData.categoriesContasPagar.length > 0
+                      ? dashboardData.categoriesContasPagar
+                      : ['Nenhum dado'],
+                  series:
+                    dashboardData.seriesContasPagar.length > 0
+                      ? dashboardData.seriesContasPagar
+                      : [0],
+                }}
+              />
+            </Grid>
+
+            {/* Cobranças */}
+            <Grid xs={12} md={4}>
+              <AppWidgetSummary
+                title="Cobranças"
+                total={dashboardData.totalCobrancas}
+                percent={dashboardData.percentualVariacaoCobrancas}
+                chart={{
+                  categories:
+                    dashboardData.categoriesCobrancas.length > 0
+                      ? dashboardData.categoriesCobrancas
+                      : ['Nenhum dado'],
+                  series:
+                    dashboardData.seriesCobrancas.length > 0
+                      ? dashboardData.seriesCobrancas
+                      : [0],
+                }}
+              />
+            </Grid>
+          </>
+        )}
 
         {/* Leads */}
         <Grid xs={12} md={4}>
