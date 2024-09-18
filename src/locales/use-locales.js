@@ -20,31 +20,28 @@ export function useTranslate(ns) {
   // Foco no idioma pt-BR
   const currentLang = allLangs.find((lang) => lang.value === 'pt') || allLangs[0];
 
-  const onChangeLang = useCallback(
-    async () => {
-      try {
-        // Trocar idioma para pt-BR
-        const langChangePromise = i18n.changeLanguage('pt');
+  const onChangeLang = useCallback(async () => {
+    try {
+      // Trocar idioma para pt-BR
+      const langChangePromise = i18n.changeLanguage('pt');
 
-        const currentMessages = messages.pt || messages.en;
+      const currentMessages = messages.pt || messages.en;
 
-        toast.promise(langChangePromise, {
-          loading: currentMessages.loading,
-          success: () => currentMessages.success,
-          error: currentMessages.error,
-        });
+      toast.promise(langChangePromise, {
+        loading: currentMessages.loading,
+        success: () => currentMessages.success,
+        error: currentMessages.error,
+      });
 
-        // Definir o locale do dayjs para pt-BR
-        dayjs.locale('pt-br');
+      // Definir o locale do dayjs para pt-BR
+      dayjs.locale('pt-br');
 
-        // Atualizar o roteamento
-        router.refresh();
-      } catch (error) {
-        console.error(error);
-      }
-    },
-    [i18n, router]
-  );
+      // Atualizar o roteamento
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+    }
+  }, [i18n, router]);
 
   return {
     t,

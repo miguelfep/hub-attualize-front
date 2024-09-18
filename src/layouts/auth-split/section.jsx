@@ -64,7 +64,7 @@ export function Section({
         alt="Dashboard illustration"
         src={imgUrl}
         sx={{ width: 1, aspectRatio: '4/3', objectFit: 'cover' }}
-      />     
+      />
     </Box>
   );
 }

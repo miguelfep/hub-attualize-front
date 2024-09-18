@@ -3,12 +3,11 @@ import 'dayjs/locale/pt-br';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
-
 // ----------------------------------------------------------------------
 
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
-dayjs.locale('pt-br'); 
+dayjs.locale('pt-br');
 
 /**
  * Docs: https://day.js.org/docs/en/display/format
@@ -100,7 +99,6 @@ export function fToNow(date) {
 
   return isValid ? dayjs(date).toNow(true) : 'Invalid time value';
 }
-
 
 // ----------------------------------------------------------------------
 

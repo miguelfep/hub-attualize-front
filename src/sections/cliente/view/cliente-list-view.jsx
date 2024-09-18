@@ -118,6 +118,19 @@ export function ClienteListView() {
     [fetchClientes, confirm]
   );
 
+  const handleActivateRow = useCallback(
+    async (id) => {
+      try {
+        await updateCliente(id, { status: true });
+        toast.success('Cliente ativado!');
+        fetchClientes();
+      } catch (error) {
+        toast.error('Erro ao ativar cliente');
+      }
+    },
+    [fetchClientes]
+  );
+
   const handleDeleteRows = useCallback(async () => {
     try {
       await Promise.all(table.selected.map((id) => updateCliente(id, { status: false })));
@@ -149,7 +162,7 @@ export function ClienteListView() {
     <>
       <DashboardContent>
         <CustomBreadcrumbs
-          heading="List"
+          heading="Lista de Clientes"
           links={[
             { name: 'Dashboard', href: paths.dashboard.root },
             { name: 'Clientes', href: paths.dashboard.cliente.root },
@@ -268,6 +281,7 @@ export function ClienteListView() {
                         selected={table.selected.includes(row._id)}
                         onSelectRow={() => table.onSelectRow(row._id)}
                         onDeleteRow={() => handleDeleteRow(row._id)}
+                        onActivateRow={() => handleActivateRow(row._id)}
                         onEditRow={() => handleEditRow(row._id)}
                         onUpdate={fetchClientes}
                       />

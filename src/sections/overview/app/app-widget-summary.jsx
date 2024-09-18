@@ -43,7 +43,7 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, ...other })
         {fPercent(percent)}
       </Box>
       <Box component="span" sx={{ typography: 'body2', color: 'text.secondary' }}>
-        last 7 days
+        mes anterior
       </Box>
     </Box>
   );

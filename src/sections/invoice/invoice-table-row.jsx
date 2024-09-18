@@ -32,7 +32,6 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditRow, onDeleteRow }) {
   const confirm = useBoolean();
 
-
   const handleSendWhatsapp = useCallback(async () => {
     try {
       const res = await enviarPedidoOrcamento(row._id);
@@ -47,7 +46,6 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
       toast.error(`Erro: ${errorMessage}`);
     }
   }, [row._id]);
-
 
   const popover = usePopover();
   return (
@@ -124,7 +122,7 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
         onClose={popover.onClose}
         slotProps={{ arrow: { placement: 'right-top' } }}
       >
-        <MenuList>       
+        <MenuList>
           <MenuItem
             onClick={() => {
               onViewRow();

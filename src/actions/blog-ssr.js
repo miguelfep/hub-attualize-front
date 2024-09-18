@@ -7,8 +7,7 @@ export async function getPosts() {
     const res = await axios.get('https://attualizecontabil.com.br/wp-json/wp/v2/posts');
     const posts = res.data; // Os dados já estão na propriedade data
 
-    return posts
-    
+    return posts;
   } catch (error) {
     console.error('Failed to fetch posts:', error);
     return [];

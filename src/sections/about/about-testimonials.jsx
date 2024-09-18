@@ -53,8 +53,8 @@ export function AboutTestimonials() {
 
       <m.div variants={varFade().inUp}>
         <Typography sx={{ color: 'common.white' }}>
-          Conheça um pouco mais o que dizem nossos clientes, sobre nossos serviços
-          e sobre o atendimento especializado. Vem com a gente simplificar seu negócio!
+          Conheça um pouco mais o que dizem nossos clientes, sobre nossos serviços e sobre o
+          atendimento especializado. Vem com a gente simplificar seu negócio!
         </Typography>
       </m.div>
 

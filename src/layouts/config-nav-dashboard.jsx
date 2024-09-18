@@ -48,12 +48,42 @@ export const navData = [
     items: [
       { title: 'App', path: paths.dashboard.root, icon: ICONS.dashboard },
       { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
-      // {
-      //   title: 'Contratos',
-      //   path: paths.dashboard.general.analytics,
-      //   icon: ICONS.analytics,
-      //   roles: ['financeiro', 'superAdmin'],
-      // },
+      {
+        title: 'Financeiro',
+        path: paths.dashboard.general.analytics,
+        icon: ICONS.analytics,
+        roles: ['financeiro', 'admin'],
+        children: [
+          {
+            title: 'Contratos',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.contratos.root,
+          },
+          {
+            title: 'A receber',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.financeiro.receber,
+          },
+          {
+            title: 'A pagar',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.financeiro.pagar,
+          },
+        ],
+      },
+      {
+        title: 'Societario',
+        path: paths.dashboard.aberturas.root,
+        icon: ICONS.tour,
+        roles: ['operacional', 'admin'],
+        children: [
+          {
+            title: 'Abertura',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.aberturas.root,
+          },
+        ],
+      },
       {
         title: 'Vendas',
         path: paths.dashboard.invoice.root,

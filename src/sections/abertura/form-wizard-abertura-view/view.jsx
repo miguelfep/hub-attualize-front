@@ -1,6 +1,5 @@
 'use client';
 
-
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { ComponentHero } from 'src/sections/_examples/component-hero';
@@ -17,7 +16,6 @@ export function FormWizardViewAbertura() {
         <CustomBreadcrumbs
           heading="Abertura de empresa"
           links={[{ name: 'Abertura de Empresa' }]}
-   
         />
       </ComponentHero>
 

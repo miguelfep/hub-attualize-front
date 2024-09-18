@@ -22,12 +22,31 @@ import { ClienteQuickEditForm } from './cliente-quick-edit-form';
 
 // ----------------------------------------------------------------------
 
-export function ClienteTableRow({ row, selected, onEditRow, onSelectRow, onDeleteRow, onUpdate }) {
+export function ClienteTableRow({
+  row,
+  selected,
+  onEditRow,
+  onSelectRow,
+  onDeleteRow,
+  onActivateRow,
+  onUpdate,
+}) {
   const confirm = useBoolean();
 
   const popover = usePopover();
 
   const quickEdit = useBoolean();
+
+  const handleAction = () => {
+    if (row.status) {
+      // Caso esteja ativo, inativar o cliente
+      onDeleteRow();
+    } else {
+      // Caso esteja inativo, ativar o cliente
+      onActivateRow();
+    }
+    confirm.onFalse();
+  };
 
   return (
     <>
@@ -62,7 +81,7 @@ export function ClienteTableRow({ row, selected, onEditRow, onSelectRow, onDelet
         </TableCell>
         <TableCell>
           <Stack direction="row" alignItems="center">
-            <Tooltip title="Ediçãp Rápida" placement="top" arrow>
+            <Tooltip title="Edição Rápida" placement="top" arrow>
               <IconButton
                 color={quickEdit.value ? 'inherit' : 'default'}
                 onClick={quickEdit.onTrue}
@@ -97,10 +116,10 @@ export function ClienteTableRow({ row, selected, onEditRow, onSelectRow, onDelet
               confirm.onTrue();
               popover.onClose();
             }}
-            sx={{ color: 'warning.main' }}
+            sx={{ color: row.status ? 'warning.main' : 'success.main' }} // Muda a cor conforme o status
           >
-            <Iconify icon="lets-icons:remove-duotone" />
-            Inativar
+            <Iconify icon={row.status ? 'lets-icons:remove-duotone' : 'solar:tick-bold'} />
+            {row.status ? 'Inativar' : 'Ativar'}
           </MenuItem>
 
           <MenuItem
@@ -118,11 +137,15 @@ export function ClienteTableRow({ row, selected, onEditRow, onSelectRow, onDelet
       <ConfirmDialog
         open={confirm.value}
         onClose={confirm.onFalse}
-        title="Inativar"
-        content="Tem certeza que deseja inativar esse cliente?"
+        title={row.status ? 'Inativar' : 'Ativar'}
+        content={`Tem certeza que deseja ${row.status ? 'inativar' : 'ativar'} esse cliente?`}
         action={
-          <Button variant="contained" color="warning" onClick={onDeleteRow}>
-            Inativar
+          <Button
+            variant="contained"
+            color={row.status ? 'warning' : 'success'}
+            onClick={handleAction}
+          >
+            {row.status ? 'Inativar' : 'Ativar'}
           </Button>
         }
       />

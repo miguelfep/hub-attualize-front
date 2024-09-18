@@ -9,10 +9,18 @@ import { SvgColor } from 'src/components/svg-color';
 
 // Subcomponente para os serviços
 const ServiceCard = ({ icon, title, description }) => (
-  <Stack spacing={2} component={m.div} variants={varFade().inUp} alignItems="center" sx={{ textAlign: 'center', padding: 2 }}>
+  <Stack
+    spacing={2}
+    component={m.div}
+    variants={varFade().inUp}
+    alignItems="center"
+    sx={{ textAlign: 'center', padding: 2 }}
+  >
     <SvgColor component="img" src={icon} alt={title} sx={{ width: 80, height: 80 }} />
     <Typography variant="h5">{title}</Typography>
-    <Typography variant="body2" color="textSecondary">{description}</Typography>
+    <Typography variant="body2" color="textSecondary">
+      {description}
+    </Typography>
   </Stack>
 );
 
@@ -22,17 +30,20 @@ const HomeServicesSection = () => {
     {
       icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-5.png`,
       title: 'Beleza e estética',
-      description: 'Contabilidade e gestão financeira para seu salão de beleza, estética e barbearia.',
+      description:
+        'Contabilidade e gestão financeira para seu salão de beleza, estética e barbearia.',
     },
     {
       icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-6.png`,
       title: 'Saúde',
-      description: 'Contabilidade e gestão financeira especializada para sua clínica ou consultório.',
+      description:
+        'Contabilidade e gestão financeira especializada para sua clínica ou consultório.',
     },
     {
       icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-7.png`,
       title: 'Bem Estar',
-      description: 'Contabilidade e gestão financeira especializada para seu estúdio, academia, ou box de Crossfit.',
+      description:
+        'Contabilidade e gestão financeira especializada para seu estúdio, academia, ou box de Crossfit.',
     },
     {
       icon: `${CONFIG.site.basePath}/assets/icons/home/icone-especialidade-8.png`,
@@ -60,7 +71,8 @@ const HomeServicesSection = () => {
               Principais áreas de atuação
             </Typography>
             <Typography variant="body1" color="textSecondary">
-              Descubra como podemos ajudar você e seu negócio a prosperar com nossos serviços especializados.
+              Descubra como podemos ajudar você e seu negócio a prosperar com nossos serviços
+              especializados.
             </Typography>
           </Stack>
           <Grid container spacing={4} justifyContent="center" sx={{ mt: 5 }}>

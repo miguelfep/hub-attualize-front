@@ -137,6 +137,25 @@ export const paths = {
         edit: `${ROOTS.DASHBOARD}/user/${MOCK_ID}/edit`,
       },
     },
+    contratos: {
+      root: `${ROOTS.DASHBOARD}/financeiro/contratos`,
+      new: `${ROOTS.DASHBOARD}/financeiro/contratos/new`,
+      edit: (id) => `${ROOTS.DASHBOARD}/financeiro/contratos/${id}/edit`,
+      pagar: `${ROOTS.DASHBOARD}/financeiro/pagar`,
+      receber: `${ROOTS.DASHBOARD}/financeiro/receber`,
+    },
+    financeiro: {
+      root: `${ROOTS.DASHBOARD}/financeiro/dashboard`,
+      new: `${ROOTS.DASHBOARD}/financeiro/contratos/new`,
+      edit: (id) => `${ROOTS.DASHBOARD}/financeiro/contratos/${id}/edit`,
+      receber: `${ROOTS.DASHBOARD}/financeiro/receber`,
+      pagar: `${ROOTS.DASHBOARD}/financeiro/pagar`,
+      pagarnovo: `${ROOTS.DASHBOARD}/financeiro/pagar/new`,
+    },
+    aberturas: {
+      root: `${ROOTS.DASHBOARD}/societario`,
+      edit: (id) => `${ROOTS.DASHBOARD}/societario/abertura/${id}/edit`,
+    },
     product: {
       root: `${ROOTS.DASHBOARD}/product`,
       new: `${ROOTS.DASHBOARD}/product/new`,

@@ -5,7 +5,7 @@ import { Card, Stack, Button, Divider, Typography } from '@mui/material';
 
 export function InvoicePaymentDetails({ boleto }) {
   const handleCopy = (text) => {
-    toast.success(`Texto copiado: ${  text}`);
+    toast.success(`Texto copiado: ${text}`);
   };
 
   return (

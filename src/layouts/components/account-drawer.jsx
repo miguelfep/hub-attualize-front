@@ -34,7 +34,7 @@ export function AccountDrawer({ data = [], sx, ...other }) {
 
   const pathname = usePathname();
 
-  const  user  = getUser();
+  const user = getUser();
 
   const [open, setOpen] = useState(false);
 
@@ -146,7 +146,7 @@ export function AccountDrawer({ data = [], sx, ...other }) {
                 </MenuItem>
               );
             })}
-          </Stack>        
+          </Stack>
         </Scrollbar>
 
         <Box sx={{ p: 2.5 }}>

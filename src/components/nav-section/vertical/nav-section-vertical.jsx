@@ -4,6 +4,8 @@ import Stack from '@mui/material/Stack';
 import Collapse from '@mui/material/Collapse';
 import { useTheme } from '@mui/material/styles';
 
+import { getUser } from 'src/auth/context/jwt';
+
 import { NavList } from './nav-list';
 import { navSectionClasses } from '../classes';
 import { navSectionCssVars } from '../css-vars';
@@ -26,6 +28,13 @@ export function NavSectionVertical({
     ...overridesVars,
   };
 
+  const user = getUser();
+
+  const nova = {
+    ...slotProps, // Mescla todos os valores de slotProps
+    currentRole: user.role, // Adiciona ou sobrescreve o currentRole
+  };
+
   return (
     <Stack component="nav" className={navSectionClasses.vertical.root} sx={{ ...cssVars, ...sx }}>
       <NavUl sx={{ flex: '1 1 auto', gap: 'var(--nav-item-gap)' }}>
@@ -35,7 +44,7 @@ export function NavSectionVertical({
             subheader={group.subheader}
             items={group.items}
             render={render}
-            slotProps={slotProps}
+            slotProps={nova}
             enabledRootRedirect={enabledRootRedirect}
           />
         ))}

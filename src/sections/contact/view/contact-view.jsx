@@ -22,7 +22,7 @@ export function ContactView() {
         >
           <ContactForm />
 
-          <ContactMap/>
+          <ContactMap />
         </Box>
       </Container>
     </>

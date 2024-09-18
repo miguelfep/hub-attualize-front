@@ -152,8 +152,6 @@ export function HeaderBase({
 
               {/* -- Sign in button -- */}
               {signIn && <SignInButton />}
-
-   
             </Box>
 
             {slots?.rightAreaEnd}

@@ -201,7 +201,9 @@ function PlanCard({ plan, sx, ...other }) {
 
         {plan.options.map((option, index) => {
           const disabled =
-            (startLicense && [0, 1, 2, 3, 4].includes(index)) || (plenoLicense && [ 2, 3, 4].includes(index)) || (premiumLicense && [3, 4].includes(index));
+            (startLicense && [0, 1, 2, 3, 4].includes(index)) ||
+            (plenoLicense && [2, 3, 4].includes(index)) ||
+            (premiumLicense && [3, 4].includes(index));
 
           return (
             <Stack
@@ -246,12 +248,7 @@ const PLANS = [
   {
     license: 'Start',
     price: 69,
-    commons: [
-      'Contabilidade',
-      'Impostos',
-      'Pró-labore',
-      'Portal do Cliente',
-    ],
+    commons: ['Contabilidade', 'Impostos', 'Pró-labore', 'Portal do Cliente'],
     options: [
       'Sistema financeiro',
       'Atendimento via whatsapp',
@@ -265,12 +262,7 @@ const PLANS = [
   {
     license: 'Pleno',
     price: 129,
-    commons: [
-      'Contabilidade',
-      'Impostos',
-      'Pró-labore',
-      'Portal do Cliente',
-    ],
+    commons: ['Contabilidade', 'Impostos', 'Pró-labore', 'Portal do Cliente'],
     options: [
       'Sistema financeiro',
       'Atendimento via whatsapp',

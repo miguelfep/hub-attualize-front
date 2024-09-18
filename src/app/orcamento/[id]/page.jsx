@@ -12,11 +12,11 @@ export default async function Page({ params }) {
 
   const currentInvoice = await getInvoiceById(id);
 
-    if (!currentInvoice) {
-      throw new Error('Invoice not found');
-    }
+  if (!currentInvoice) {
+    throw new Error('Invoice not found');
+  }
 
-    return <OrcamentoView invoice={currentInvoice} />;
+  return <OrcamentoView invoice={currentInvoice} />;
 }
 
 // ----------------------------------------------------------------------

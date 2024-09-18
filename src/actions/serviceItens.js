@@ -3,7 +3,7 @@ import axios, { endpoints } from 'src/utils/axios';
 // ----------------------------------------------------------------------
 
 export async function getServiceItens() {
-  const res = await axios.get('https://api.attualizecontabil.com.br/api/financeiro/services/itens');
+  const res = await axios.get('http://localhost:9443/api/financeiro/services/itens');
   return res.data;
 }
 

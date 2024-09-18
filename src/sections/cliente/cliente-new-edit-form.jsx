@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { z as zod } from 'zod';
 import { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -61,7 +62,7 @@ export const NewUClienteSchema = zod.object({
   nome: zod.string().min(1, { message: 'Nome é obrigatório!' }),
   razaoSocial: zod.string().optional(),
   cnpj: zod.string().min(1, { message: 'CNPJ é obrigatório!' }),
-  codigo: zod.string().optional(),
+  codigo: zod.number().optional(),
   email: zod
     .string()
     .min(1, { message: 'Email é obrigatório!' })
@@ -155,8 +156,8 @@ export function ClienteNewEditForm({ currentCliente }) {
       planoEmpresa: currentCliente?.planoEmpresa || '',
       status: currentCliente?.status || true,
       tipoContato: currentCliente?.tipoContato || 'cliente',
-      dataEntrada: currentCliente?.dataEntrada || null,
-      dataSaida: currentCliente?.dataSaida || null,
+      dataEntrada: currentCliente?.dataEntrada ? new Date(currentCliente.dataEntrada) : null,
+      dataSaida: currentCliente?.dataSaida ? new Date(currentCliente.dataSaida) : null,
       regimeTributario: currentCliente?.regimeTributario || '',
       tipoNegocio: currentCliente?.tipoNegocio || [],
       contadorResponsavel: currentCliente?.contadorResponsavel || 'semresponsavel',
@@ -185,7 +186,7 @@ export function ClienteNewEditForm({ currentCliente }) {
   } = methods;
 
   const values = watch();
-  console.log(currentCliente);
+
   const {
     fields: enderecoFields,
     append: appendEndereco,
@@ -230,8 +231,8 @@ export function ClienteNewEditForm({ currentCliente }) {
     try {
       // Chame a API para atualizar os dados da Receita aqui
 
-      const newCLiente = await updateCliente(currentCliente._id);
-      reset(newCLiente);
+      // const newCLiente = await updateCliente(currentCliente._id);
+      // reset(newCLiente);
 
       toast.success('Dados da Receita atualizados com sucesso!');
     } catch (error) {
@@ -382,8 +383,10 @@ export function ClienteNewEditForm({ currentCliente }) {
                     render={({ field }) => (
                       <DatePicker
                         label="Data de Entrada"
-                        value={field.value}
-                        onChange={(newValue) => field.onChange(newValue)}
+                        value={field.value ? dayjs(field.value) : null} // Convertendo para dayjs
+                        onChange={(newValue) => {
+                          field.onChange(newValue ? newValue.toDate() : null); // Convertendo de volta para Date
+                        }}
                         renderInput={(params) => (
                           <TextField
                             {...params}
@@ -403,8 +406,10 @@ export function ClienteNewEditForm({ currentCliente }) {
                     render={({ field }) => (
                       <DatePicker
                         label="Data de Saída"
-                        value={field.value}
-                        onChange={(newValue) => field.onChange(newValue)}
+                        value={field.value ? dayjs(field.value) : null} // Convertendo para dayjs
+                        onChange={(newValue) => {
+                          field.onChange(newValue ? newValue.toDate() : null); // Convertendo de volta para Date
+                        }}
                         renderInput={(params) => (
                           <TextField
                             {...params}
@@ -431,13 +436,56 @@ export function ClienteNewEditForm({ currentCliente }) {
             <Card sx={{ p: 3 }}>
               <Grid container spacing={2}>
                 <Grid xs={12}>
-                  <Field.Text name="atividade_principal" label="Atividade Principal" fullWidth />
+                  <Controller
+                    name="atividade_principal"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField
+                        {...field}
+                        value={
+                          field.value
+                            ? field.value.map((item) => `${item.code} - ${item.text}`).join(', ')
+                            : ''
+                        } // Exibir code e text
+                        label="Atividade Principal"
+                        fullWidth
+                        disabled
+                        error={!!errors.atividade_principal}
+                        helperText={
+                          errors.atividade_principal ? errors.atividade_principal.message : ''
+                        }
+                      />
+                    )}
+                  />
                 </Grid>
                 <Grid xs={12}>
-                  <Field.Text
+                  <Controller
                     name="atividades_secundarias"
-                    label="Atividades Secundárias"
-                    fullWidth
+                    control={control}
+                    render={({ field }) => {
+                      const value = field.value
+                        ? field.value.map((item) => `${item.code} - ${item.text}`).join('\n')
+                        : ''; // Exibir code e text com quebra de linha
+                      const rows = field.value ? field.value.length : 1; // Definir o número de linhas dinamicamente
+
+                      return (
+                        <TextField
+                          {...field}
+                          value={value}
+                          label="Atividades Secundárias"
+                          fullWidth
+                          multiline
+                          rows={rows} // Definir número de linhas baseado no número de atividades
+                          disabled
+                          error={!!errors.atividades_secundarias}
+                          helperText={
+                            errors.atividades_secundarias
+                              ? errors.atividades_secundarias.message
+                              : ''
+                          }
+                        />
+                      );
+                    }}
                   />
                 </Grid>
                 <Grid xs={12}>

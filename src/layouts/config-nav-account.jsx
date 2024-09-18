@@ -26,7 +26,7 @@ export const _account = [
         />
       </SvgIcon>
     ),
-  }, 
+  },
   {
     label: 'Segurança',
     href: '#',

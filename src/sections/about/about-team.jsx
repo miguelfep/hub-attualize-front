@@ -15,7 +15,6 @@ import { varFade, MotionViewport } from 'src/components/animate';
 
 const { assetURL } = CONFIG.site;
 
-
 // Dados reais dos membros
 const teamMembers = [
   {
@@ -27,7 +26,6 @@ const teamMembers = [
       { name: 'instagram', url: 'https://instagram.com/euannemonteiro' },
       { name: 'youtube', url: 'https://www.youtube.com/c/AttualizeCont%C3%A1bil' },
       { name: 'facebook', url: 'https://www.facebook.com/anne.contadora' },
-
     ],
   },
   {
@@ -35,10 +33,7 @@ const teamMembers = [
     name: 'Miguel Fernando Pereira',
     role: 'CTO',
     avatarUrl: '/assets/images/about/miguel.jpg',
-    socials: [
-      { name: 'youtube', url: 'https://www.youtube.com/c/AttualizeCont%C3%A1bil' },
-
-    ],
+    socials: [{ name: 'youtube', url: 'https://www.youtube.com/c/AttualizeCont%C3%A1bil' }],
   },
   // {
   //   id: 3,

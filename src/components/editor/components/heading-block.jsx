@@ -60,7 +60,7 @@ export function HeadingBlock({ editor }) {
           (editor.isActive('heading', { level: 4 }) && 'Heading 4') ||
           (editor.isActive('heading', { level: 5 }) && 'Heading 5') ||
           (editor.isActive('heading', { level: 6 }) && 'Heading 6') ||
-          'Paragraph'}
+          'Paragráfo'}
 
         <Iconify
           width={16}
@@ -93,7 +93,7 @@ export function HeadingBlock({ editor }) {
       >
         <ToolbarItem
           component="li"
-          label="Paragraph"
+          label="Parágrafo"
           active={editor.isActive('paragraph')}
           onClick={() => {
             handleClose();

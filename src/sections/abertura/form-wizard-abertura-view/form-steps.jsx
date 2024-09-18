@@ -46,7 +46,7 @@ const businessSegments = [
     name: 'Bem-estar',
     icon: '/assets/icons/home/icone-especialidade-7.png', // Atualize com o caminho do ícone correto
   },
-   {
+  {
     id: 'prestadorServico',
     name: 'Serviço',
     icon: '/assets/icons/home/icone-especialidade-10.png', // Atualize com o caminho do ícone correto
@@ -185,7 +185,9 @@ export function StepCompleted({ onReset }) {
       justifyContent="center"
       sx={{ borderRadius: 'inherit', bgcolor: 'background.neutral' }}
     >
-      <Typography variant="subtitle1">Orçamento esta sendo gerado - iremos enviar o mais rápido possivel!</Typography>
+      <Typography variant="subtitle1">
+        Orçamento esta sendo gerado - iremos enviar o mais rápido possivel!
+      </Typography>
 
       <Button
         variant="outlined"

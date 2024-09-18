@@ -1,44 +1,77 @@
 'use client';
 
-import Box from '@mui/material/Box';
+import { useState, useEffect } from 'react';
+
 import { useTheme } from '@mui/material/styles';
 import Grid from '@mui/material/Unstable_Grid2';
 
+import { buscarDadosDashboard } from 'src/actions/lead';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { SeoIllustration } from 'src/assets/illustrations';
-import { _appAuthors, _appRelated, _appInvoices, _appInstalled } from 'src/_mock';
-
-import { svgColorClasses } from 'src/components/svg-color';
 
 import { getUser } from 'src/auth/context/jwt';
 
-import { AppWidget } from '../app-widget';
 import { AppWelcome } from '../app-welcome';
 import { AppFeatured } from '../app-featured';
 import { AppNewInvoice } from '../app-new-invoice';
-import { AppTopAuthors } from '../app-top-authors';
-import { AppTopRelated } from '../app-top-related';
-import { AppAreaInstalled } from '../app-area-installed';
 import { AppWidgetSummary } from '../app-widget-summary';
-import { AppCurrentDownload } from '../app-current-download';
-import { AppTopInstalledCountries } from '../app-top-installed-countries';
-
-// ----------------------------------------------------------------------
 
 export function OverviewAppView() {
+  const [dashboardData, setDashboardData] = useState({
+    totalContasPagar: 0,
+    percentualVariacaoContasPagar: 0,
+    categoriesContasPagar: [],
+    seriesContasPagar: [],
+    totalCobrancas: 0,
+    percentualVariacaoCobrancas: 0,
+    categoriesCobrancas: [],
+    seriesCobrancas: [],
+    leads: [],
+  });
 
-  const user = getUser()
-
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const theme = useTheme();
+  const user = getUser();
 
-  const appFeatured =[
+  const appFeatured = [
     {
       id: 1,
-      title: "Vendas",
-      description: "Sistema para vendas e orçamentos",
-    }
+      title: 'Vendas',
+      description: 'Sistema para vendas e orçamentos',
+    },
+  ];
 
-  ] 
+  const fetchDashboardData = async () => {
+    try {
+      const response = await buscarDadosDashboard();
+      setDashboardData({
+        totalContasPagar: response.totalContasPagar || 0,
+        percentualVariacaoContasPagar: response.percentualVariacaoContasPagar || 0,
+        categoriesContasPagar: response.categoriesContasPagar || [],
+        seriesContasPagar: response.seriesContasPagar || [],
+        totalCobrancas: response.totalCobrancas || 0,
+        percentualVariacaoCobrancas: response.percentualVariacaoCobrancas || 0,
+        categoriesCobrancas: response.categoriesCobrancas || [],
+        seriesCobrancas: response.seriesCobrancas || [],
+        leads: response.leads || [],
+      });
+    } catch (err) { // Renomeando a variável de 'error' para 'err'
+      setError('Erro ao buscar dados do dashboard.');
+      console.error('Erro ao buscar dados do dashboard:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  if (error) {
+    return <div>{error}</div>;
+  }
 
   return (
     <DashboardContent maxWidth="xl">
@@ -47,162 +80,71 @@ export function OverviewAppView() {
           <AppWelcome
             title={`Olá 👋 \n ${user?.name}`}
             description="Espero que você tenha uma otima experiencia em nosso HUB"
-            img={<SeoIllustration hideBackground />}           
+            img={<SeoIllustration hideBackground />}
           />
         </Grid>
 
         <Grid xs={12} md={4}>
           <AppFeatured list={appFeatured} />
         </Grid>
-
+        {/* Contas a Pagar */}
         <Grid xs={12} md={4}>
           <AppWidgetSummary
-            title="Total de Orçamentos Enviados"
-            percent={2.6}
-            total={18765}
+            title="Contas a Pagar"
+            total={dashboardData.totalContasPagar}
+            percent={dashboardData.percentualVariacaoContasPagar}
             chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [15, 18, 12, 51, 68, 11, 39, 37],
+              categories:
+                dashboardData.categoriesContasPagar.length > 0
+                  ? dashboardData.categoriesContasPagar
+                  : ['Nenhum dado'],
+              series:
+                dashboardData.seriesContasPagar.length > 0 ? dashboardData.seriesContasPagar : [0],
             }}
           />
         </Grid>
 
+        {/* Cobranças */}
         <Grid xs={12} md={4}>
           <AppWidgetSummary
-            title="Total installed"
-            percent={0.2}
-            total={4876}
+            title="Cobranças"
+            total={dashboardData.totalCobrancas}
+            percent={dashboardData.percentualVariacaoCobrancas}
             chart={{
-              colors: [theme.vars.palette.info.main],
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [20, 41, 63, 33, 28, 35, 50, 46],
+              categories:
+                dashboardData.categoriesCobrancas.length > 0
+                  ? dashboardData.categoriesCobrancas
+                  : ['Nenhum dado'],
+              series:
+                dashboardData.seriesCobrancas.length > 0 ? dashboardData.seriesCobrancas : [0],
             }}
           />
         </Grid>
 
+        {/* Leads */}
         <Grid xs={12} md={4}>
           <AppWidgetSummary
-            title="Total downloads"
-            percent={-0.1}
-            total={678}
+            title="Leads"
+            total={dashboardData.leads.length} // Exibe o total de leads
+            percent={0} // Sem cálculo de variação para leads
             chart={{
-              colors: [theme.vars.palette.error.main],
               categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [18, 19, 31, 8, 16, 37, 12, 33],
+              series: [18, 19, 31, 8, 16, 37, 12, 33], // Dados fictícios para o gráfico
             }}
           />
         </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <AppCurrentDownload
-            title="Current download"
-            subheader="Downloaded by operating system"
-            chart={{
-              series: [
-                { label: 'Mac', value: 12244 },
-                { label: 'Window', value: 53345 },
-                { label: 'iOS', value: 44313 },
-                { label: 'Android', value: 78343 },
-              ],
-            }}
-          />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={8}>
-          <AppAreaInstalled
-            title="Area installed"
-            subheader="(+43%) than last year"
-            chart={{
-              categories: [
-                'Jan',
-                'Feb',
-                'Mar',
-                'Apr',
-                'May',
-                'Jun',
-                'Jul',
-                'Aug',
-                'Sep',
-                'Oct',
-                'Nov',
-                'Dec',
-              ],
-              series: [
-                {
-                  name: '2022',
-                  data: [
-                    { name: 'Asia', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
-                    { name: 'Europe', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
-                    { name: 'Americas', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
-                  ],
-                },
-                {
-                  name: '2023',
-                  data: [
-                    { name: 'Asia', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8, 17] },
-                    { name: 'Europe', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8, 17] },
-                    { name: 'Americas', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8, 17] },
-                  ],
-                },
-                {
-                  name: '2024',
-                  data: [
-                    { name: 'Asia', data: [6, 20, 15, 18, 7, 24, 6, 10, 12, 17, 18, 10] },
-                    { name: 'Europe', data: [6, 20, 15, 18, 7, 24, 6, 10, 12, 17, 18, 10] },
-                    { name: 'Americas', data: [6, 20, 15, 18, 7, 24, 6, 10, 12, 17, 18, 10] },
-                  ],
-                },
-              ],
-            }}
-          />
-        </Grid>
-
-        <Grid xs={12} lg={8}>
+        <Grid xs={12} lg={12}>
           <AppNewInvoice
-            title="New invoice"
-            tableData={_appInvoices}
+            title="Leads"
+            tableData={dashboardData.leads}
             headLabel={[
-              { id: 'id', label: 'Invoice ID' },
-              { id: 'category', label: 'Category' },
-              { id: 'price', label: 'Price' },
-              { id: 'status', label: 'Status' },
+              { id: 'nome', label: 'Nome' },
+              { id: 'segment', label: 'Segmento' },
+              { id: 'local', label: 'Local' },
+              { id: 'status', label: 'Contato' },
               { id: '' },
             ]}
           />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <AppTopRelated title="Related applications" list={_appRelated} />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <AppTopInstalledCountries title="Top installed countries" list={_appInstalled} />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <AppTopAuthors title="Top authors" list={_appAuthors} />
-        </Grid>
-
-        <Grid xs={12} md={6} lg={4}>
-          <Box sx={{ gap: 3, display: 'flex', flexDirection: 'column' }}>
-            <AppWidget
-              title="Conversion"
-              total={38566}
-              icon="solar:user-rounded-bold"
-              chart={{ series: 48 }}
-            />
-
-            <AppWidget
-              title="Applications"
-              total={55566}
-              icon="fluent:mail-24-filled"
-              chart={{
-                series: 75,
-                colors: [theme.vars.palette.info.light, theme.vars.palette.info.main],
-              }}
-              sx={{ bgcolor: 'info.dark', [`& .${svgColorClasses.root}`]: { color: 'info.light' } }}
-            />
-          </Box>
         </Grid>
       </Grid>
     </DashboardContent>

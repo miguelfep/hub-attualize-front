@@ -31,7 +31,7 @@ const defaultConfig = {
   radius: 8,
   subItemHeight: 36,
   rootItemHeight: 44,
-  currentRole: 'admin',
+  currentRole: 'operacional',
   hiddenSubheader: false,
   padding: '4px 8px 4px 12px',
 };

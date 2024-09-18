@@ -8,7 +8,7 @@ import Box from '@mui/material/Box';
 // Importação dos componentes criados
 
 import DefaultComponent from './form-defaultComponent';
-import PsicologoComponent  from './form-psicologoComponent';
+import PsicologoComponent from './form-psicologoComponent';
 
 // ----------------------------------------------------------------------
 

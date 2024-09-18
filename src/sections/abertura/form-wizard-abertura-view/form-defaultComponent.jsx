@@ -1,14 +1,7 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
 
-import {
-  Box,
-  Radio,
-  TextField,
-  Typography,
-  RadioGroup,
-  FormControlLabel,
-} from '@mui/material';
+import { Box, Radio, TextField, Typography, RadioGroup, FormControlLabel } from '@mui/material';
 
 import EstadoCidadeSelect from 'src/components/abertura/componente-estados-brasil';
 
@@ -21,7 +14,7 @@ export default function DefaultComponent() {
     <Box>
       <Typography variant="h4" align="center" gutterBottom>
         Informações Gerais
-      </Typography>        
+      </Typography>
 
       <Box mb={3}>
         <Typography variant="subtitle1" gutterBottom>
@@ -32,16 +25,8 @@ export default function DefaultComponent() {
           control={control}
           render={({ field }) => (
             <RadioGroup row {...field}>
-              <FormControlLabel
-                value="whatsapp"
-                control={<Radio />}
-                label="WhatsApp"
-              />
-              <FormControlLabel
-                value="email"
-                control={<Radio />}
-                label="Email"
-              />
+              <FormControlLabel value="whatsapp" control={<Radio />} label="WhatsApp" />
+              <FormControlLabel value="email" control={<Radio />} label="Email" />
             </RadioGroup>
           )}
         />
@@ -50,7 +35,7 @@ export default function DefaultComponent() {
       <Typography variant="subtitle1" gutterBottom>
         Onde irá ficar seu negócio?
       </Typography>
-      
+
       {/* Espaço entre EstadoCidadeSelect e Observações */}
       <Box mb={3}>
         <EstadoCidadeSelect />

@@ -49,7 +49,7 @@ export function AboutHero() {
               variant="h4"
               sx={{ mt: 3, color: 'common.white', fontWeight: 'fontWeightSemiBold' }}
             >
-              Vamos juntos tornar sua empreas
+              Vamos juntos tornar sua empresa
               <br /> um grande sucesso?
             </Typography>
           </m.div>

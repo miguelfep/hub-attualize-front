@@ -33,7 +33,6 @@ const LINKS = [
       { name: 'Beleza', href: '#' },
       { name: 'Saúde', href: '#' },
       { name: 'Bem Estar', href: '#' },
-
     ],
   },
   { headline: 'Contato', children: [{ name: 'adm@attualizecontabil.com.br', href: '#' }] },
@@ -75,8 +74,8 @@ export function Footer({ layoutQuery, sx }) {
                 [theme.breakpoints.up(layoutQuery)]: { mx: 'unset' },
               }}
             >
-              Attualize contabil é uma empresa contabil digital e inteligente
-              oferecendo serviços especializados para todo o Brasil.
+              Attualize contabil é uma empresa contabil digital e inteligente oferecendo serviços
+              especializados para todo o Brasil.
             </Typography>
 
             <Stack
@@ -89,7 +88,7 @@ export function Footer({ layoutQuery, sx }) {
               }}
             >
               {_socials.map((social) => (
-                <IconButton key={social.name} href={social.path} target='_blank'>
+                <IconButton key={social.name} href={social.path} target="_blank">
                   <SocialIcon icon={social.name} />
                 </IconButton>
               ))}

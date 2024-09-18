@@ -6,13 +6,12 @@ import { BackToTop } from 'src/components/animate/back-to-top';
 import { ScrollProgress, useScrollProgress } from 'src/components/animate/scroll-progress';
 
 import { HomeFAQs } from '../home-faqs';
-import  HomeBanner  from '../home-banner';
+import HomeBanner from '../home-banner';
 import { HomeMinimal } from '../home-minimal';
 import { HomePricing } from '../home-pricing';
-import HomeServicesSection  from '../home-atuacao';
+import HomeServicesSection from '../home-atuacao';
 import { HomeTestimonials } from '../home-testimonials';
 import { HomeAdvertisement } from '../home-advertisement';
-
 
 // ----------------------------------------------------------------------
 
@@ -29,7 +28,7 @@ export function HomeView() {
 
       <BackToTop />
 
-      <HomeBanner/>    
+      <HomeBanner />
 
       <Stack sx={{ position: 'relative', bgcolor: 'background.default' }}>
         <HomeMinimal />

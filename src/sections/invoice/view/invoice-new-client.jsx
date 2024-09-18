@@ -31,8 +31,6 @@ export function NewClientDialog({ open, onClose, onAddClient }) {
 
   const onSubmit = async (data) => {
     try {
-  
-
       const cnpj = formatCpfCnpj(data.documento);
 
       const dataToSend = {

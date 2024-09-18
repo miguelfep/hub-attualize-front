@@ -158,7 +158,6 @@ const applyFilter = ({ inputData, filters, sortBy }) => {
     inputData = orderBy(inputData, ['createdAt'], ['asc']);
   }
 
-
   // Filters
   if (employmentTypes.length) {
     inputData = inputData.filter((job) =>

@@ -1,6 +1,5 @@
 import { FormWizardViewAbertura } from 'src/sections/abertura/form-wizard-abertura-view';
 
-
 // ----------------------------------------------------------------------
 
 export const metadata = {

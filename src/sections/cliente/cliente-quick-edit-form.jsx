@@ -265,11 +265,7 @@ export function ClienteQuickEditForm({ currentUser, open, onClose, onUpdate }) {
                 </MenuItem>
               ))}
             </Field.Select>
-            <Field.MultiSelect
-              name="tributacao"
-              label="Tributação"
-              options={TRIBUTACAO_OPTIONS}
-             />
+            <Field.MultiSelect name="tributacao" label="Tributação" options={TRIBUTACAO_OPTIONS} />
           </Box>
           <Box sx={{ mt: 3 }}>
             <Field.Editor

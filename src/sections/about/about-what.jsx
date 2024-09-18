@@ -91,11 +91,14 @@ export function AboutWhat() {
             <Typography
               sx={{ color: 'text.secondary', [stylesMode.dark]: { color: 'common.white' } }}
             >
-              Aqui na Attualize prezamos que as pessoas sejam elas mesmas e se sintam felizes exercendo seu trabalho aqui.<br/>
-
-              Um dos valores mais importantes é o respeito com nossos clientes e isso significa entregar qualidade.
-              <br/>
-              Aqui não existe o &quot;nunca eterno&quot;, sempre nos questionamos e perguntamos para tudo &quot;por que não?&quot;
+              Aqui na Attualize prezamos que as pessoas sejam elas mesmas e se sintam felizes
+              exercendo seu trabalho aqui.
+              <br />
+              Um dos valores mais importantes é o respeito com nossos clientes e isso significa
+              entregar qualidade.
+              <br />
+              Aqui não existe o &quot;nunca eterno&quot;, sempre nos questionamos e perguntamos para
+              tudo &quot;por que não?&quot;
             </Typography>
           </m.div>
 

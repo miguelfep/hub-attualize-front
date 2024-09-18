@@ -72,6 +72,8 @@ export function NavList({ data, depth, render, cssVars, slotProps, enabledRootRe
 
   // Hidden item by role
   if (data.roles && slotProps?.currentRole) {
+    console.log('hidem: ', data.roles);
+
     if (!data?.roles?.includes(slotProps?.currentRole)) {
       return null;
     }

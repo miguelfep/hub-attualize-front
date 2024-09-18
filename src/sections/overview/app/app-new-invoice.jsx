@@ -1,6 +1,9 @@
+import React, { useState } from 'react';
+
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
+import Modal from '@mui/material/Modal';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import MenuList from '@mui/material/MenuList';
@@ -8,10 +11,10 @@ import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
+import TextField from '@mui/material/TextField';
 import CardHeader from '@mui/material/CardHeader';
 import IconButton from '@mui/material/IconButton';
-
-import { fCurrency } from 'src/utils/format-number';
+import Typography from '@mui/material/Typography';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -22,6 +25,8 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 // ----------------------------------------------------------------------
 
 export function AppNewInvoice({ title, subheader, tableData, headLabel, ...other }) {
+  console.log(tableData);
+
   return (
     <Card {...other}>
       <CardHeader title={title} subheader={subheader} sx={{ mb: 3 }} />
@@ -32,7 +37,7 @@ export function AppNewInvoice({ title, subheader, tableData, headLabel, ...other
 
           <TableBody>
             {tableData.map((row) => (
-              <RowItem key={row.id} row={row} />
+              <RowItem key={row._id} row={row} />
             ))}
           </TableBody>
         </Table>
@@ -46,7 +51,7 @@ export function AppNewInvoice({ title, subheader, tableData, headLabel, ...other
           color="inherit"
           endIcon={<Iconify icon="eva:arrow-ios-forward-fill" width={18} sx={{ ml: -0.5 }} />}
         >
-          View all
+          Ver todos
         </Button>
       </Box>
     </Card>
@@ -56,19 +61,17 @@ export function AppNewInvoice({ title, subheader, tableData, headLabel, ...other
 function RowItem({ row }) {
   const popover = usePopover();
 
+  const [openViewModal, setOpenViewModal] = useState(false);
+  const [openMessageModal, setOpenMessageModal] = useState(false);
+
   const handleDownload = () => {
     popover.onClose();
-    console.info('DOWNLOAD', row.id);
+    setOpenViewModal(true); // Abre o modal de visualização
   };
 
-  const handlePrint = () => {
+  const handleSendWhats = () => {
     popover.onClose();
-    console.info('PRINT', row.id);
-  };
-
-  const handleShare = () => {
-    popover.onClose();
-    console.info('SHARE', row.id);
+    setOpenMessageModal(true); // Abre o modal de envio de mensagem
   };
 
   const handleDelete = () => {
@@ -79,22 +82,22 @@ function RowItem({ row }) {
   return (
     <>
       <TableRow>
-        <TableCell>{row.invoiceNumber}</TableCell>
+        <TableCell>{row.nome}</TableCell>
 
-        <TableCell>{row.category}</TableCell>
+        <TableCell>{row.segment}</TableCell>
 
-        <TableCell>{fCurrency(row.price)}</TableCell>
+        <TableCell>{row.origem}</TableCell>
 
         <TableCell>
           <Label
             variant="soft"
             color={
-              (row.status === 'progress' && 'warning') ||
-              (row.status === 'out of date' && 'error') ||
+              (row.receberOrcamento === 'telefone' && 'warning') ||
+              (row.receberOrcamento === 'outros' && 'error') ||
               'success'
             }
           >
-            {row.status}
+            {row.receberOrcamento}
           </Label>
         </TableCell>
 
@@ -113,28 +116,101 @@ function RowItem({ row }) {
       >
         <MenuList>
           <MenuItem onClick={handleDownload}>
-            <Iconify icon="eva:cloud-download-fill" />
-            Download
+            <Iconify icon="eva:eye-fill" />
+            Ver
           </MenuItem>
 
-          <MenuItem onClick={handlePrint}>
-            <Iconify icon="solar:printer-minimalistic-bold" />
-            Print
-          </MenuItem>
-
-          <MenuItem onClick={handleShare}>
-            <Iconify icon="solar:share-bold" />
-            Share
+          <MenuItem onClick={handleSendWhats}>
+            <Iconify icon="logos:whatsapp-icon" />
+            Enviar Mensagem
           </MenuItem>
 
           <Divider sx={{ borderStyle: 'dashed' }} />
 
           <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
             <Iconify icon="solar:trash-bin-trash-bold" />
-            Delete
+            Deletar
           </MenuItem>
         </MenuList>
       </CustomPopover>
+
+      {/* Modal para Visualizar Informações */}
+      <Modal
+        open={openViewModal}
+        onClose={() => setOpenViewModal(false)}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            {row.nome}
+          </Typography>
+          <Typography id="modal-modal-description" sx={{ mt: 2 }}>
+            telefone: {row.telefone}
+            <br />
+            Email: {row.email}
+            <br />
+            Segmento: {row.segment}
+            <br />
+            Origem: {row.origem}
+            <br />
+            Receber Orçamento: {row.receberOrcamento}
+            <br />
+            Cidade: {row.cidade} - {row.estado}
+          </Typography>
+          <br />
+          <Typography>{row.observacoes}</Typography>
+          <Button onClick={() => setOpenViewModal(false)} sx={{ mt: 2 }}>
+            Fechar
+          </Button>
+        </Box>
+      </Modal>
+
+      {/* Modal para Enviar Mensagem */}
+      <Modal
+        open={openMessageModal}
+        onClose={() => setOpenMessageModal(false)}
+        aria-labelledby="modal-modal-title"
+        aria-describedby="modal-modal-description"
+      >
+        <Box
+          sx={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 400,
+            bgcolor: 'background.paper',
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          <Typography id="modal-modal-title" variant="h6" component="h2">
+            Enviar Mensagem
+          </Typography>
+          <TextField
+            fullWidth
+            multiline
+            rows={4}
+            defaultValue={`Olá ${row.nome}, estamos entrando em contato...`}
+            sx={{ mt: 2 }}
+          />
+          <Button onClick={() => setOpenMessageModal(false)} sx={{ mt: 2 }}>
+            Enviar
+          </Button>
+        </Box>
+      </Modal>
     </>
   );
 }

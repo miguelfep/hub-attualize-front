@@ -32,7 +32,7 @@ export const Editor = forwardRef(
       editable = true,
       fullItem = false,
       value: content = '',
-      placeholder = 'Write something awesome...',
+      placeholder = 'Escreva aqui...',
       ...other
     },
     ref

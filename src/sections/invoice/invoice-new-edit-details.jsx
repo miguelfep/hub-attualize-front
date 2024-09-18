@@ -93,7 +93,7 @@ export function InvoiceNewEditDetails() {
   const handleChangeQuantity = useCallback(
     (event, index) => {
       const quantidade = Number(event.target.value);
-      const {preco} = values.items[index];
+      const { preco } = values.items[index];
       setValue(`items[${index}].quantidade`, quantidade);
       setValue(`items[${index}].total`, quantidade * preco);
     },
@@ -103,7 +103,7 @@ export function InvoiceNewEditDetails() {
   const handleChangePrice = useCallback(
     (event, index) => {
       const preco = Number(event.target.value);
-      const {quantidade} = values.items[index];
+      const { quantidade } = values.items[index];
       setValue(`items[${index}].preco`, preco);
       setValue(`items[${index}].total`, quantidade * preco);
     },

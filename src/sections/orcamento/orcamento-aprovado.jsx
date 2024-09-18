@@ -198,10 +198,7 @@ export function OrcamentoAprovado({
               loadingCep={loadingCep}
               cepNotFound={cepNotFound}
             />
-            <PaymentMethods
-              method={method}
-              handleChangeMethod={handleChangeMethod}
-            />
+            <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
           </Box>
         </Grid>
         <Grid xs={12} md={4}>

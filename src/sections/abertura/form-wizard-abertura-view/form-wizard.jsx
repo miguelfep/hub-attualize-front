@@ -23,14 +23,30 @@ function PreviewStep({ data }) {
   return (
     <Box>
       <h2>Pré-visualização dos Dados</h2>
-      <p><strong>Nome:</strong> {data.stepOne.nome}</p>
-      <p><strong>Email:</strong> {data.stepOne.email}</p>
-      <p><strong>Telefone:</strong> {data.stepOne.telefone}</p>
-      <p><strong>Segmento:</strong> {data.stepTwo.segment}</p>
-      <p><strong>Estado:</strong> {data.stepThree.estado}</p>
-      <p><strong>Cidade:</strong> {data.stepThree.cidade}</p>
-      <p><strong>Receber Orçamento por:</strong> {data.stepThree.receberOrcamento}</p>
-      <p><strong>Observações:</strong> {data.stepThree.observacoes}</p>
+      <p>
+        <strong>Nome:</strong> {data.stepOne.nome}
+      </p>
+      <p>
+        <strong>Email:</strong> {data.stepOne.email}
+      </p>
+      <p>
+        <strong>Telefone:</strong> {data.stepOne.telefone}
+      </p>
+      <p>
+        <strong>Segmento:</strong> {data.stepTwo.segment}
+      </p>
+      <p>
+        <strong>Estado:</strong> {data.stepThree.estado}
+      </p>
+      <p>
+        <strong>Cidade:</strong> {data.stepThree.cidade}
+      </p>
+      <p>
+        <strong>Receber Orçamento por:</strong> {data.stepThree.receberOrcamento}
+      </p>
+      <p>
+        <strong>Observações:</strong> {data.stepThree.observacoes}
+      </p>
     </Box>
   );
 }
@@ -131,7 +147,7 @@ export function FormWizard() {
         } catch (error) {
           toast.error('Erro ao processar dados!');
           console.error('Erro ao processar dados:', error);
-           // Não avança para o próximo passo se houver erro
+          // Não avança para o próximo passo se houver erro
         }
       }
     },

@@ -24,9 +24,7 @@ const FAQs = [
   {
     question: 'A Attualize atende todo o Brasil?',
     answer: (
-      <Typography>
-        Sim, por ser uma contabilidade digital atendemos todo o Brasil!
-      </Typography>
+      <Typography>Sim, por ser uma contabilidade digital atendemos todo o Brasil!</Typography>
     ),
   },
   {
@@ -35,7 +33,7 @@ const FAQs = [
       <Box component="ul" sx={{ pl: 3, listStyleType: 'disc' }}>
         <li>Área da Beleza.</li>
         <li>Área da Saúde</li>
-        <li>Área do Bem Estar</li>         
+        <li>Área do Bem Estar</li>
       </Box>
     ),
   },
@@ -43,13 +41,24 @@ const FAQs = [
     question: 'Quais serviços vocês fornecem mensalmente?',
     answer: (
       <Box component="ul" sx={{ pl: 3, listStyleType: 'disc' }}>
-        <li>  Elaboração da CONTABILIDADE de acordo com a legislação, balancetes, balanço patrimonial e demonstrações contábeis obrigatórias.</li>
-        <li> Aplicação dos dispositivos legais vigentes, escrituração dos documentos fiscais emitidos pela empresa, APURAÇÃO dos tributos devidos conforme a emissão dos impostos da empresa.</li>
-        <li>ORIENTAÇÃO e aplicação dos preceitos da Consolidação das Leis do Trabalho, MANUTENÇÃO dos registros de sócios, ELABORAÇÃO de Pró-Labore dos sócios, bem como as guias dos encargos sociais e tributos a serem recolhidos pela empresa.</li>
+        <li>
+          {' '}
+          Elaboração da CONTABILIDADE de acordo com a legislação, balancetes, balanço patrimonial e
+          demonstrações contábeis obrigatórias.
+        </li>
+        <li>
+          {' '}
+          Aplicação dos dispositivos legais vigentes, escrituração dos documentos fiscais emitidos
+          pela empresa, APURAÇÃO dos tributos devidos conforme a emissão dos impostos da empresa.
+        </li>
+        <li>
+          ORIENTAÇÃO e aplicação dos preceitos da Consolidação das Leis do Trabalho, MANUTENÇÃO dos
+          registros de sócios, ELABORAÇÃO de Pró-Labore dos sócios, bem como as guias dos encargos
+          sociais e tributos a serem recolhidos pela empresa.
+        </li>
       </Box>
     ),
-  }, 
- 
+  },
 ];
 
 // ----------------------------------------------------------------------

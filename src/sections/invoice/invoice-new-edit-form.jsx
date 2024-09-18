@@ -107,7 +107,6 @@ export function InvoiceNewEditForm({ currentInvoice }) {
       reset();
       loadingSave.onFalse();
       router.push(paths.dashboard.invoice.root);
-      console.info('DATA', JSON.stringify(data, null, 2));
     } catch (error) {
       console.error(error);
       loadingSave.onFalse();

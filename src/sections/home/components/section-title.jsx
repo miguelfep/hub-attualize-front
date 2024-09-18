@@ -37,9 +37,7 @@ export function SectionTitle({ title, caption, slotProps, txtGradient, descripti
           sx={{
             opacity: 0.4,
             display: 'inline-block',
-            ...textGradient(
-              `to right, ${COLORS.primary.dark}, ${COLORS.primary.main}`
-            ),
+            ...textGradient(`to right, ${COLORS.primary.dark}, ${COLORS.primary.main}`),
           }}
         >
           {txtGradient}

@@ -104,10 +104,9 @@ export const _notifications = [...Array(9)].map((_, index) => ({
 export const _mapContact = [
   {
     latlng: [-49.24942, -25.4259292],
-    address:"Rua dias da rocha filho 670, ALTO DA RUA XV",
-    phoneNumber: "41 3068-1800",
+    address: 'Rua dias da rocha filho 670, ALTO DA RUA XV',
+    phoneNumber: '41 3068-1800',
   },
-  
 ];
 
 // ----------------------------------------------------------------------
@@ -179,38 +178,38 @@ export const _pricingPlans = [
 
 export const _testimonials = [
   {
-    name: "Monica Camozele",
+    name: 'Monica Camozele',
     postedDate: _mock.time(1),
     ratingNumber: 5,
     avatarUrl: _mock.image.avatar(1),
     content: `“A Attualize foi muito importante ao valorizar o que eu tinha pra contar sobre o meu trabalho. Um outro contador mal me ouviu e disse que não valeria a pena eu abrir empresa. Senti um desdém, não sabia se pelo meu trabalho, por mim, ou por eu ser mulher. A disponibilidade em tirar minhas dúvidas, mesmo que eu pergunte 5 vezes a mesma coisa por não ter entendido ainda, é uma das coisas que me mantém com vocês. A atenção e cuidado de vocês com o cliente, é um baita diferencial. Me sinto respeitada e segura com vocês. Só tenho a agradecer.”`,
   },
   {
-    name: "Juliana Romualdo",
+    name: 'Juliana Romualdo',
     postedDate: _mock.time(2),
-    ratingNumber:5,
+    ratingNumber: 5,
     avatarUrl: _mock.image.avatar(2),
     content: `Sou nova por aqui, estou em fase de migração, estou aliviada de ter vcs. Mas preocupadas com as informações que nunca tive acesso. Enfim eu estou me sentindo segura e amparada. Adoro a página, as dicas. Foi através disso que pensei, tem algo errado na minha empresa e procurei vocês.`,
   },
   {
-    name: "Celso Marchioretto",
+    name: 'Celso Marchioretto',
     postedDate: _mock.time(3),
     ratingNumber: 5,
     avatarUrl: _mock.image.avatar(3),
     content: `Sempre sou muito bem atendido, parabenizo a todo equipe. O Serviço é muito bom, sempre tivemos um ótimo atendimento.`,
   },
   {
-    name: "Mauricio Penteado",
+    name: 'Mauricio Penteado',
     postedDate: _mock.time(4),
     ratingNumber: 5,
     avatarUrl: _mock.image.avatar(4),
     content: `Um estritório com ótimo atendimento e pessoas super atenciosas.`,
   },
   {
-    name: "Tamara resi",
+    name: 'Tamara resi',
     postedDate: _mock.time(5),
     ratingNumber: 5,
     avatarUrl: _mock.image.avatar(5),
     content: `A empresa sempre nos atendeu com agilidade e cordialidade, demonstrando conhecimento técnico superior às outras que buscamos. A equipe é proativa e sempre nos oferece informações sobre os processos e pontuam eventuais desconformidades, trazendo também a forma mais viável e fácil de adequar. Muito organizados com as nossas documentações, o que facilita resolver tudo rapidamente e de acordo com o que exige as leis. Ficamos extremamente satisfeitos e indicamos o serviço da Atualize para todos os nossos parceiros.`,
-  }, 
+  },
 ];

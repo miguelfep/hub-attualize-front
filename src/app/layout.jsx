@@ -1,6 +1,6 @@
 import 'src/global.css';
 
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import { CONFIG } from 'src/config-global';
 import { primary } from 'src/theme/core/palette';
@@ -56,7 +56,7 @@ export default async function RootLayout({ children }) {
                 caches={CONFIG.isStaticExport ? 'localStorage' : 'cookie'}
               >
                 <ThemeProvider>
-                <SpeedInsights/>
+                  <SpeedInsights />
                   <MotionLazy>
                     <CheckoutProvider>
                       <Snackbar />

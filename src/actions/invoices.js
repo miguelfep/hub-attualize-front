@@ -42,8 +42,6 @@ export async function crirarPedidoOrcamento(id, invoiceData) {
   return res.data;
 }
 
-
 export async function enviarPedidoOrcamento(id) {
- 
   return axios.post(`${endpoints.invoices.checkout}/enviar/${id}`);
 }

@@ -35,8 +35,12 @@ export function ComponentCardAbertura({ item, selected, onClick }) {
         }}
       >
         <Box display="flex" justifyContent="center" mb={1}>
-          <SvgColor component="img" src={item.icon} alt={item.name} sx={{ width: 80, height: 80 }} />
-
+          <SvgColor
+            component="img"
+            src={item.icon}
+            alt={item.name}
+            sx={{ width: 80, height: 80 }}
+          />
         </Box>
         <Typography variant="subtitle1" textAlign="center">
           {item.name}

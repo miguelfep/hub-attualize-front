@@ -13,6 +13,7 @@ import Image from 'next/image'; // Usando next/image para otimização de imagem
 
 
 
+
 import { useTheme } from '@mui/material/styles';
 import { Box, Stack, Button, Container, Typography } from '@mui/material';
 import styles from './HomeBanner.module.css';
@@ -25,8 +26,13 @@ const slides = [
     text: 'Se você busca uma contabilidade inteligente, digital prática e especializada no seu negócio, encontrou!',
     buttons: [
       { text: 'Abrir Empresa', link: '/abertura', color: 'success', textColor: 'white' },
-      { text: 'Trocar de Contador', link: 'https://wa.me/554196982267', color: 'info', textColor: 'white' }
-    ]
+      {
+        text: 'Trocar de Contador',
+        link: 'https://wa.me/554196982267',
+        color: 'info',
+        textColor: 'white',
+      },
+    ],
   },
 ];
 
@@ -45,7 +51,9 @@ export default function HomeBanner() {
         className={styles.swiperContainer}
       >
         {slides.map((slide, index) => (
-          <SwiperSlide key={index}>
+          <SwiperSlide key={`slide-${index}`}>
+            {' '}
+            {/* Chave única */}
             <Box
               sx={{
                 position: 'relative',
@@ -58,10 +66,9 @@ export default function HomeBanner() {
               <Image
                 src={slide.background}
                 alt={slide.title}
-                layout="fill"
-                objectFit="cover"
+                fill // Substitui layout="fill"
                 priority={index === 0} // Priorizar o carregamento do primeiro slide
-                style={{ zIndex: -1 }}
+                style={{ objectFit: 'cover', zIndex: -1 }} // Substitui objectFit via style
               />
               <Box
                 sx={{
@@ -75,16 +82,20 @@ export default function HomeBanner() {
                 }}
               />
               <Container sx={{ zIndex: 2 }}>
-                <Stack 
-                  spacing={7} 
-                  sx={{ 
-                    textAlign: 'left', 
-                    color: 'white', 
-                    maxWidth: 680, 
-                    marginTop: { xs: '10vh', md: '1vh' }
+                <Stack
+                  spacing={7}
+                  sx={{
+                    textAlign: 'left',
+                    color: 'white',
+                    maxWidth: 680,
+                    marginTop: { xs: '10vh', md: '1vh' },
                   }}
                 >
-                  <Typography variant="h1" component="h1" sx={{ fontSize: { xs: '2rem', md: '5rem' } }}>
+                  <Typography
+                    variant="h1"
+                    component="h1"
+                    sx={{ fontSize: { xs: '2rem', md: '5rem' } }}
+                  >
                     {slide.title}
                   </Typography>
                   <Typography variant="body1" sx={{ fontSize: { xs: '1rem', md: '1.5rem' } }}>
@@ -93,13 +104,13 @@ export default function HomeBanner() {
                   <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                     {slide.buttons.map((button, btnIndex) => (
                       <Button
-                        key={btnIndex}
+                        key={`button-${btnIndex}`} // Chave única para os botões
                         href={button.link}
                         variant="contained"
                         size="large"
-                        sx={{ 
-                          backgroundColor: theme.palette[button.color]?.main || 'white', 
-                          color: button.textColor 
+                        sx={{
+                          backgroundColor: theme.palette[button.color]?.main || 'white',
+                          color: button.textColor,
                         }}
                       >
                         {button.text}

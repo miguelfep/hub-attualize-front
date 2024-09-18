@@ -119,16 +119,19 @@ const ITEMS = [
   {
     icon: `${CONFIG.site.basePath}/assets/icons/home/icones-site-3.png`,
     title: 'Prático',
-    description: 'Tudo o que você menos precisa é de mais burocracia na hora de cuidar da sua contabilidade, deixe essa parte com a gente e foque no seu negócio!',
+    description:
+      'Tudo o que você menos precisa é de mais burocracia na hora de cuidar da sua contabilidade, deixe essa parte com a gente e foque no seu negócio!',
   },
   {
     icon: `${CONFIG.site.basePath}/assets/icons/home/icones-site-4.png`,
     title: 'Digital',
-    description: 'Tudo o que você precisa na palma da sua mão e na tela do seu computador onde você estiver. Chega de papel, seu bolso e o meio ambiente agradecem!',
+    description:
+      'Tudo o que você precisa na palma da sua mão e na tela do seu computador onde você estiver. Chega de papel, seu bolso e o meio ambiente agradecem!',
   },
   {
     icon: `${CONFIG.site.basePath}/assets/icons/home/icones-site-5.png`,
     title: 'Ágil',
-    description: 'Aqui você é atendido de forma rápida e por pessoas de verdade, robôs e tickets infinitos não fazem parte da nossa comunicação e cultura..',
+    description:
+      'Aqui você é atendido de forma rápida e por pessoas de verdade, robôs e tickets infinitos não fazem parte da nossa comunicação e cultura..',
   },
 ];

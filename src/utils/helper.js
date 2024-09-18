@@ -33,7 +33,7 @@ export function flattenDeep(array) {
 
 export function orderBy(array, properties, orders) {
   if (!Array.isArray(array)) {
-    throw new Error("The first argument must be an array");
+    throw new Error('The first argument must be an array');
   }
 
   return array.slice().sort((a, b) => {
