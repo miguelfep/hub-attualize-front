@@ -79,7 +79,7 @@ export const navData = [
         children: [
           {
             title: 'Abertura',
-            roles: ['admin', 'financeiro'],
+            roles: ['admin', 'operacional'],
             path: paths.dashboard.aberturas.root,
           },
         ],
