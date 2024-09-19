@@ -54,6 +54,8 @@ export const signUp = async ({ email, password, firstName, lastName }) => {
     }
 
     sessionStorage.setItem(STORAGE_KEY, accessToken);
+    Cookies.set('accessToken', accessToken, { expires: 7 });
+
   } catch (error) {
     console.error('Error during sign up:', error);
     throw error;
@@ -65,6 +67,7 @@ export const signUp = async ({ email, password, firstName, lastName }) => {
  *************************************** */
 export const signOut = async () => {
   try {
+    Cookies.remove('accessToken');
     await setSession(null, null);
   } catch (error) {
     console.error('Error during sign out:', error);

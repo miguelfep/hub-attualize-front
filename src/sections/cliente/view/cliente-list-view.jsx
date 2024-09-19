@@ -65,7 +65,7 @@ export const CLIENTE_STATUS_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function ClienteListView() {
-  const table = useTable({ defaultDense: true });
+  const table = useTable({ defaultDense: true, defaultRowsPerPage: 50 });
 
   const router = useRouter();
 
@@ -302,7 +302,7 @@ export function ClienteListView() {
             page={table.page}
             dense={table.dense}
             count={dataFiltered.length}
-            rowsPerPage={table.rowsPerPage}
+            rowsPerPage={50}
             onPageChange={table.onChangePage}
             onChangeDense={table.onChangeDense}
             onRowsPerPageChange={table.onChangeRowsPerPage}

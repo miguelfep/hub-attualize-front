@@ -1,7 +1,7 @@
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
-
+import Cookies from 'js-cookie';
 import { USER_DATA, STORAGE_KEY } from './constant';
 
 // ----------------------------------------------------------------------
@@ -58,6 +58,7 @@ export function tokenExpired(exp) {
   setTimeout(() => {
     try {
       alert('Token expired!');
+      Cookies.remove(STORAGE_KEY);
       sessionStorage.removeItem(STORAGE_KEY);
       window.location.href = paths.auth.jwt.signIn;
     } catch (error) {
@@ -72,7 +73,8 @@ export function tokenExpired(exp) {
 export async function setSession(accessToken) {
   try {
     if (accessToken) {
-      sessionStorage.setItem(STORAGE_KEY, accessToken);
+      // Salva o token nos cookies em vez do sessionStorage
+      Cookies.set(STORAGE_KEY, accessToken, { expires: 7 });
 
       axios.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
 
@@ -84,7 +86,7 @@ export async function setSession(accessToken) {
         throw new Error('Invalid access token!');
       }
     } else {
-      sessionStorage.removeItem(STORAGE_KEY);
+      Cookies.remove(STORAGE_KEY); // Remove o token dos cookies
       delete axios.defaults.headers.common.Authorization;
     }
   } catch (error) {
@@ -97,9 +99,9 @@ export async function setUser(userData) {
   try {
     if (userData) {
       // Converter o objeto userData em uma string JSON antes de armazená-lo
-      sessionStorage.setItem(USER_DATA, JSON.stringify(userData));
+      Cookies.set(USER_DATA, JSON.stringify(userData), { expires: 7 });
     } else {
-      sessionStorage.removeItem(USER_DATA);
+      Cookies.remove(USER_DATA); // Remove o userData dos cookies
     }
   } catch (error) {
     console.error('Error during setting user session:', error);
@@ -110,7 +112,7 @@ export async function setUser(userData) {
 // Função adicional para obter userData da sessão
 export function getUser() {
   try {
-    const userData = sessionStorage.getItem(USER_DATA);
+    const userData = Cookies.get(USER_DATA); // Obtém userData dos cookies
     return userData ? JSON.parse(userData) : null;
   } catch (error) {
     console.error('Error during getting user session:', error);

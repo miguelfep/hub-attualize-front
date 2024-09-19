@@ -79,7 +79,7 @@ export function InvoiceListView() {
   const [loading, setLoading] = useState(true);
   const [fetchError, setFetchError] = useState(null);
 
-  const table = useTable({ defaultOrderBy: 'dataVencimento' });
+  const table = useTable({ defaultOrderBy: 'dataVencimento', defaultRowsPerPage: 50 });
 
   const fetchInvoices = useCallback(async () => {
     try {
@@ -112,21 +112,23 @@ export function InvoiceListView() {
 
   const dateError = fIsAfter(filters.state.startDate, filters.state.endDate);
 
-  const dataFiltered = applyFilter({
-    inputData: tableData,
-    comparator: getComparator(table.order, table.orderBy),
-    filters: filters.state,
-    dateError,
-  });
-
+  // Contagem de todas as faturas com base nas datas, sem o filtro de status
   const { filteredData, counts, totals } = applyFilter({
     inputData: tableData,
     comparator: getComparator(table.order, table.orderBy),
-    filters: filters.state,
+    filters: { ...filters.state, status: 'all' }, // Não filtrar por status nas contagens
     dateError,
   });
 
-  const dataInPage = rowInPage(filteredData, table.page, table.rowsPerPage);
+  // Aplicando o filtro de status apenas para a tabela
+  const tableFilteredData = applyFilter({
+    inputData: tableData,
+    comparator: getComparator(table.order, table.orderBy),
+    filters: filters.state, // Aqui o status é aplicado
+    dateError,
+  }).filteredData;
+
+  const dataInPage = rowInPage(tableFilteredData, table.page, table.rowsPerPage);
 
   const canReset =
     !!filters.state.name ||
@@ -134,12 +136,10 @@ export function InvoiceListView() {
     filters.state.status !== 'all' ||
     (!!filters.state.startDate && !!filters.state.endDate);
 
-  const notFound = (!filteredData.length && canReset) || !filteredData.length;
+  const notFound = (!tableFilteredData.length && canReset) || !tableFilteredData.length;
 
   const getInvoiceLength = (status) => counts[status] || 0;
-
   const getTotalAmount = (status) => totals[status] || 0;
-
   const getPercentByStatus = (status) => (getInvoiceLength(status) / filteredData.length) * 100;
 
   const TABS = [
@@ -147,35 +147,35 @@ export function InvoiceListView() {
       value: 'all',
       label: 'Todos',
       color: 'default',
-      count: tableData.length,
+      count: filteredData.length, // Mostrar a contagem total para todas as faturas
     },
     {
       value: 'pago',
       label: 'Pagas',
       color: 'success',
-      count: getInvoiceLength('pago'),
+      count: counts['pago'] || 0, // Mostrar a contagem de pagas, mesmo quando outra aba está ativa
     },
     {
       value: 'aprovada',
       label: 'Aprovada',
       color: 'secondary',
-      count: getInvoiceLength('aprovada'),
+      count: counts['aprovada'] || 0,
     },
     {
       value: 'perdida',
       label: 'Perdida',
       color: 'error',
-      count: getInvoiceLength('perdida'),
+      count: counts['perdida'] || 0,
     },
     {
       value: 'orcamento',
       label: 'Orçamentos',
       color: 'default',
-      count: getInvoiceLength('orcamento'),
+      count: counts['orcamento'] || 0,
     },
   ];
 
-  const handleDeleteRow = useCallback(
+   const handleDeleteRow = useCallback(
     async (id) => {
       const res = await deleteInvoiceById(id);
       if (res) {
@@ -190,27 +190,6 @@ export function InvoiceListView() {
     [dataInPage.length, table, fetchInvoices]
   );
 
-  const handleDeleteRows = useCallback(async () => {
-    const promises = table.selected.map(async (id) => {
-      const res = await deleteInvoiceById(id);
-      if (!res) {
-        throw new Error('Erro ao deletar venda');
-      }
-    });
-
-    try {
-      await Promise.all(promises);
-      toast.success('Vendas deletadas com sucesso!');
-      await fetchInvoices();
-    } catch (deleteError) {
-      toast.error(deleteError.message);
-    }
-
-    table.onUpdatePageDeleteRows({
-      totalRowsInPage: dataInPage.length,
-      totalRowsFiltered: dataFiltered.length,
-    });
-  }, [dataFiltered.length, dataInPage.length, table, fetchInvoices]);
 
   const handleEditRow = useCallback(
     (id) => {
@@ -234,10 +213,6 @@ export function InvoiceListView() {
     [filters, table]
   );
 
-  if (fetchError) {
-    return <div>{fetchError}</div>;
-  }
-
   return (
     <>
       <DashboardContent>
@@ -260,10 +235,9 @@ export function InvoiceListView() {
           }
           sx={{ mb: { xs: 3, md: 5 } }}
         />
+
         <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-            {' '}
-            {/* Adicione adapterLocale="pt-br" */}
             <DatePicker
               label="Data Inicio"
               value={filters.state.startDate}
@@ -281,11 +255,7 @@ export function InvoiceListView() {
 
         <Card sx={{ mb: { xs: 3, md: 5 } }}>
           <Scrollbar sx={{ minHeight: 108 }}>
-            <Stack
-              direction="row"
-              divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
-              sx={{ py: 2 }}
-            >
+            <Stack direction="row" divider={<Divider orientation="vertical" flexItem />} sx={{ py: 2 }}>
               <InvoiceAnalytic
                 title="Total"
                 total={filteredData.length}
@@ -294,7 +264,6 @@ export function InvoiceListView() {
                 icon="solar:bill-list-bold-duotone"
                 color={theme.vars.palette.info.main}
               />
-
               <InvoiceAnalytic
                 title="Pago"
                 total={getInvoiceLength('pago')}
@@ -303,7 +272,6 @@ export function InvoiceListView() {
                 icon="solar:file-check-bold-duotone"
                 color={theme.vars.palette.success.main}
               />
-
               <InvoiceAnalytic
                 title="Aprovada"
                 total={getInvoiceLength('aprovada')}
@@ -311,9 +279,8 @@ export function InvoiceListView() {
                 price={getTotalAmount('aprovada')}
                 icon="solar:sort-by-time-bold-duotone"
                 color={theme.vars.palette.secondary.main}
-              />
-
-              <InvoiceAnalytic
+              />   
+            <InvoiceAnalytic
                 title="Perdida"
                 total={getInvoiceLength('perdida')}
                 percent={getPercentByStatus('perdida')}
@@ -321,7 +288,6 @@ export function InvoiceListView() {
                 icon="solar:bell-bing-bold-duotone"
                 color={theme.vars.palette.error.main}
               />
-
               <InvoiceAnalytic
                 title="Orçamentos"
                 total={getInvoiceLength('orcamento')}
@@ -350,132 +316,63 @@ export function InvoiceListView() {
                 label={tab.label}
                 iconPosition="end"
                 icon={
-                  <Label
-                    variant={
-                      ((tab.value === 'all' || tab.value === filters.state.status) && 'filled') ||
-                      'soft'
-                    }
-                    color={tab.color}
-                  >
+                  <Label variant="soft" color={tab.color}>
                     {tab.count}
                   </Label>
                 }
               />
             ))}
           </Tabs>
-          {canReset && (
-            <InvoiceTableFiltersResult
-              filters={filters}
-              onResetPage={table.onResetPage}
-              totalResults={dataFiltered.length}
-              sx={{ p: 2.5, pt: 0 }}
-            />
-          )}
 
           <Box sx={{ position: 'relative' }}>
-            <TableSelectedAction
-              dense={table.dense}
-              numSelected={table.selected.length}
-              rowCount={dataFiltered.length}
-              onSelectAllRows={(checked) => {
-                table.onSelectAllRows(
-                  checked,
-                  dataFiltered.map((row) => row._id)
-                );
-              }}
-              action={
-                <Stack direction="row">
-                  <Tooltip title="Delete">
-                    <IconButton color="primary" onClick={confirm.onTrue}>
-                      <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              }
-            />
-
-            <Scrollbar sx={{ minHeight: 444 }}>
-              <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 800 }}>
+            <Scrollbar>
+              <Table size={table.dense ? 'small' : 'medium'}>
                 <TableHeadCustom
                   order={table.order}
                   orderBy={table.orderBy}
                   headLabel={TABLE_HEAD}
-                  rowCount={dataFiltered.length}
+                  rowCount={tableFilteredData.length}
                   numSelected={table.selected.length}
                   onSort={table.onSort}
                   onSelectAllRows={(checked) =>
                     table.onSelectAllRows(
                       checked,
-                      dataFiltered.map((row) => row._id)
+                      tableFilteredData.map((row) => row._id)
                     )
                   }
                 />
-
                 <TableBody>
-                  {filteredData
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
-                      <InvoiceTableRow
-                        key={row._id}
-                        row={row}
-                        selected={table.selected.includes(row._id)}
-                        onSelectRow={() => table.onSelectRow(row._id)}
-                        onViewRow={() => handleViewRow(row._id)}
-                        onEditRow={() => handleEditRow(row._id)}
-                        onDeleteRow={() => handleDeleteRow(row._id)}
-                      />
-                    ))}
-
-                  <TableEmptyRows
-                    height={table.dense ? 56 : 56 + 20}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, filteredData.length)}
-                  />
-
+                  {tableFilteredData.map((row) => (
+                    <InvoiceTableRow
+                      key={row._id}
+                      row={row}
+                      selected={table.selected.includes(row._id)}
+                      onSelectRow={() => table.onSelectRow(row._id)}
+                      onViewRow={() => handleViewRow(row._id)}
+                      onEditRow={() => handleEditRow(row._id)}
+                      onDeleteRow={() => handleDeleteRow(row._id)}
+                    />
+                  ))}
+                  <TableEmptyRows height={table.dense ? 56 : 76} emptyRows={emptyRows(table.page, table.rowsPerPage, tableFilteredData.length)} />
                   <TableNoData notFound={notFound} />
                 </TableBody>
               </Table>
             </Scrollbar>
+            <TablePaginationCustom
+              page={table.page}
+              dense={table.dense}
+              count={tableFilteredData.length}
+              rowsPerPage={table.rowsPerPage}
+              onPageChange={table.onChangePage}
+              onRowsPerPageChange={table.onChangeRowsPerPage}
+            />
           </Box>
-          <TablePaginationCustom
-            page={table.page}
-            dense={table.dense}
-            count={dataFiltered.length}
-            rowsPerPage={table.rowsPerPage}
-            onPageChange={table.onChangePage}
-            onChangeDense={table.onChangeDense}
-            onRowsPerPageChange={table.onChangeRowsPerPage}
-          />
         </Card>
       </DashboardContent>
-
-      <ConfirmDialog
-        open={confirm.value}
-        onClose={confirm.onFalse}
-        title="Delete"
-        content={
-          <>
-            Tem certeza que quer deletar <strong> {table.selected.length} </strong> itens?
-          </>
-        }
-        action={
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => {
-              handleDeleteRows();
-              confirm.onFalse();
-            }}
-          >
-            Deletar
-          </Button>
-        }
-      />
     </>
   );
 }
+
 
 function applyFilter({ inputData, comparator, filters, dateError }) {
   const { name, status, service, startDate, endDate } = filters;
@@ -484,40 +381,42 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
     return { filteredData: [], counts: {}, totals: {} };
   }
 
+  // Ordena os dados
   const stabilizedThis = inputData.map((el, index) => [el, index]);
-
   stabilizedThis.sort((a, b) => {
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     return a[1] - b[1];
   });
-
   inputData = stabilizedThis.map((el) => el[0]);
 
+  // Filtro de nome
   if (name) {
     inputData = inputData.filter((invoice) =>
       invoice.cliente.name.toLowerCase().includes(name.toLowerCase())
     );
   }
 
+  // Filtro de status (Pagas, Aprovadas, etc.)
   if (status !== 'all') {
     inputData = inputData.filter((invoice) => invoice.status === status);
   }
 
+  // Filtro de serviços
   if (service.length) {
     inputData = inputData.filter((invoice) =>
       invoice.items.some((filterItem) => service.includes(filterItem.description))
     );
   }
 
-  if (!dateError) {
-    if (startDate && endDate) {
-      inputData = inputData.filter((invoice) =>
-        fIsBetween(invoice.dataVencimento, startDate, endDate)
-      );
-    }
+  // Filtro de data (Aplicado a todas as TABS)
+  if (!dateError && startDate && endDate) {
+    inputData = inputData.filter((invoice) =>
+      fIsBetween(invoice.dataVencimento, startDate, endDate)
+    );
   }
 
+  // Contagem por status e totalização
   const counts = {};
   const totals = {};
 

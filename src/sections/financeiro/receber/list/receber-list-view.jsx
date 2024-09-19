@@ -336,7 +336,6 @@ export function ReceberListView() {
           dense={table.dense}
           count={dataFiltered.length}
           rowsPerPage={table.rowsPerPage}
-          rowsPerPageOptions={[50, 100, 150]}
           onPageChange={table.onChangePage}
           onChangeDense={table.onChangeDense}
           onRowsPerPageChange={table.onChangeRowsPerPage}
