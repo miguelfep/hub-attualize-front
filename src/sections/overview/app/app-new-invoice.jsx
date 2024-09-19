@@ -25,8 +25,6 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 // ----------------------------------------------------------------------
 
 export function AppNewInvoice({ title, subheader, tableData, headLabel, ...other }) {
-  console.log(tableData);
-
   return (
     <Card {...other}>
       <CardHeader title={title} subheader={subheader} sx={{ mb: 3 }} />

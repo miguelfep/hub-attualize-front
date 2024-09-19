@@ -87,3 +87,18 @@ export async function solicitarAprovacaoPorId(id, config = {}) {
   }
 }
 
+
+export async function enviarLinkAbertura(id, config = {}) {
+  try {
+    const response = await axios.post(
+      `${baseUrl}societario/abertura/enviar/link/${id}`,
+      config
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao enivar link:", error);
+    throw error;
+  }
+}
+
+

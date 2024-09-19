@@ -23,6 +23,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
+import { enviarLinkAbertura } from 'src/actions/societario';
 
 // ----------------------------------------------------------------------
 
@@ -31,7 +32,7 @@ export function AberturaTableRow({ row, selected, onSelectRow, onEditRow, onDele
 
   const handleSendWhatsapp = useCallback(async () => {
     try {
-      const res = await enviarPedidoOrcamento(row._id);
+      const res = await enviarLinkAbertura(row._id);
       if (res.status === 200) {
         toast.success('Mensagem enviada com sucesso!');
       } else {
@@ -50,7 +51,8 @@ export function AberturaTableRow({ row, selected, onSelectRow, onEditRow, onDele
     onboarding: { label: 'Onboarding', color: 'warning' },
     em_validacao: { label: 'Validação', color: 'primary' },
     em_constituicao: { label: 'Em Constituição', color: 'secondary' },
-    iniciado: { label: 'Iniciado', color: 'warning' },
+    Iniciado: { label: 'Iniciado', color: 'warning' },
+    Inativo: { label: 'Encerrada', color: 'error' },
   };
   
 
