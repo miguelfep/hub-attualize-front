@@ -1,9 +1,10 @@
 'use client';
 
+import Cookies from 'js-cookie';
 import { useMemo, useEffect, useCallback } from 'react';
 
 import { useSetState } from 'src/hooks/use-set-state';
-import Cookies from 'js-cookie';
+
 import { STORAGE_KEY } from './constant';
 import { AuthContext } from '../auth-context';
 import { getUser, setSession, isValidToken } from './utils';

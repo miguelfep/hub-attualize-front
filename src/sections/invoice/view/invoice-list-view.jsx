@@ -12,11 +12,9 @@ import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import Tooltip from '@mui/material/Tooltip';
 import TableBody from '@mui/material/TableBody';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -39,7 +37,6 @@ import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { ConfirmDialog } from 'src/components/custom-dialog';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import {
   useTable,
@@ -49,13 +46,11 @@ import {
   getComparator,
   TableEmptyRows,
   TableHeadCustom,
-  TableSelectedAction,
   TablePaginationCustom,
 } from 'src/components/table';
 
 import { InvoiceAnalytic } from '../invoice-analytic';
 import { InvoiceTableRow } from '../invoice-table-row';
-import { InvoiceTableFiltersResult } from '../invoice-table-filters-result';
 
 // ----------------------------------------------------------------------
 
@@ -153,25 +148,25 @@ export function InvoiceListView() {
       value: 'pago',
       label: 'Pagas',
       color: 'success',
-      count: counts['pago'] || 0, // Mostrar a contagem de pagas, mesmo quando outra aba está ativa
+      count: counts.pago || 0,
     },
     {
       value: 'aprovada',
       label: 'Aprovada',
       color: 'secondary',
-      count: counts['aprovada'] || 0,
+      count: counts.aprovada || 0,
     },
     {
       value: 'perdida',
       label: 'Perdida',
       color: 'error',
-      count: counts['perdida'] || 0,
+      count: counts.perdida || 0,
     },
     {
       value: 'orcamento',
       label: 'Orçamentos',
       color: 'default',
-      count: counts['orcamento'] || 0,
+      count: counts.orcamento || 0,
     },
   ];
 
@@ -214,7 +209,6 @@ export function InvoiceListView() {
   );
 
   return (
-    <>
       <DashboardContent>
         <CustomBreadcrumbs
           heading="Lista de vendas"
@@ -369,7 +363,6 @@ export function InvoiceListView() {
           </Box>
         </Card>
       </DashboardContent>
-    </>
   );
 }
 
