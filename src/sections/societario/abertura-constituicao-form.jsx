@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 import InputMask from 'react-input-mask';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 
 import { styled } from '@mui/material/styles';
 import {
@@ -19,9 +19,12 @@ import {
   TextField,
   Typography,
   InputAdornment,
+  IconButton,
   CircularProgress,
   FormControlLabel,
 } from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -97,6 +100,18 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   const [loadingCep, setLoadingCep] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [numSocios, setNumSocios] = useState(1);
+
+  const [values, setValues] = useState({
+    showPassword: false,
+  });
+
+  const handleShowPassword = useCallback(() => {
+    setValues({ ...values, showPassword: !values.showPassword });
+  }, [values]);
+
+  const handleMouseDownPassword = useCallback((event) => {
+    event.preventDefault();
+  }, []);
 
   useEffect(() => {
     if (currentAbertura) {
@@ -391,17 +406,38 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={6}>
-                <TextField
-                  type="password"
-                  label="Senha GOV"
-                  name="senhaGOV"
-                  fullWidth
-                  value={formData.senhaGOV || ''}
-                  onChange={handleChange}
-                />
+              <Grid item xs={12} sm={6} md={6}>               
+                  <TextField
+                      type={values.showPassword ? 'text' : 'password'}
+                      label="Senha GOV"
+                      name="senhaGOV"
+                      fullWidth
+                      value={formData.senhaGOV || ''}
+                      onChange={handleChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Iconify icon="solar:shield-key-bold" width={24} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              onClick={handleShowPassword}
+                              onMouseDown={handleMouseDownPassword}
+                              edge="end"
+                            >
+                              {values.showPassword ? (
+                                <Iconify icon="solar:eye-bold" width={24} />
+                              ) : (
+                                <Iconify icon="solar:eye-closed-bold" width={24} />
+                              )}
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />                
               </Grid>
-
               {/* Endereço */}
               <Grid item xs={12}>
                 <Typography variant="h6">Endereço Comercial</Typography>
