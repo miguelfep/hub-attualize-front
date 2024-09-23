@@ -133,6 +133,26 @@ export function ReceberListView() {
     setFilters({ ...filters, status: newValue });
   };
 
+  const handleNextMonth = () => {
+    const newStartDate = filters.startDate.add(1, 'month').startOf('month');
+    const newEndDate = filters.endDate.add(1, 'month').endOf('month');
+    setFilters({
+      ...filters,
+      startDate: newStartDate,
+      endDate: newEndDate,
+    });
+  };
+
+  const handlePreviousMonth = () => {
+    const newStartDate = filters.startDate.subtract(1, 'month').startOf('month');
+    const newEndDate = filters.endDate.subtract(1, 'month').endOf('month');
+    setFilters({
+      ...filters,
+      startDate: newStartDate,
+      endDate: newEndDate,
+    });
+  };
+
   const canReset =
     !!filters.descricao || filters.status !== 'all' || !!filters.startDate || !!filters.endDate;
 
@@ -246,7 +266,10 @@ export function ReceberListView() {
         </Tabs>
       </Card>
 
-      <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
+      <Stack direction="row" spacing={2} sx={{ p: 2.5, alignItems: 'center' }}>
+        <IconButton onClick={handlePreviousMonth}>
+          <Iconify icon="mingcute:arrow-left-circle-fill" />
+        </IconButton>
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
           <DatePicker
             label="Data Inicial"
@@ -261,6 +284,9 @@ export function ReceberListView() {
             renderInput={(params) => <TextField {...params} fullWidth />}
           />
         </LocalizationProvider>
+        <IconButton onClick={handleNextMonth}>
+          <Iconify icon="mingcute:arrow-right-circle-fill" />
+        </IconButton>
       </Stack>
 
       {canReset && (

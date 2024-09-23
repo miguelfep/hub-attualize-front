@@ -19,6 +19,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { IconButton } from '@mui/material';
+
 import { paths } from 'src/routes/paths'; // paths deve vir antes de RouterLink
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
@@ -64,7 +66,7 @@ export function ContasPagarListView() {
   const theme = useTheme();
   const router = useRouter();
   const confirm = useBoolean();
-  const modalOpen = useBoolean(); // Controlar o modal
+  const modalOpen = useBoolean();
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -75,18 +77,16 @@ export function ContasPagarListView() {
     endDate: dayjs().endOf('month'),
   });
 
-  const [newConta, setNewConta] = useState({
-    descricao: '',
-    valor: 0,
-    dataVencimento: dayjs(),
-    status: 'PENDENTE',
-    banco: '',
+  const [analiticoData, setAnaliticoData] = useState({
+    total: 0,
+    pagos: 0,
+    pendentes: 0,
   });
 
-  const [rowsPerPage, setRowsPerPage] = useState(10); // Controla o limite de linhas por página
-  const [page, setPage] = useState(0); // Controla a página atual
+  const [rowsPerPage, setRowsPerPage] = useState(50);
+  const [page, setPage] = useState(0);
 
-  const table = useTable({ defaultOrderBy: 'dataVencimento' });
+  const table = useTable({ defaultOrderBy: 'dataVencimento', defaultRowsPerPage: 50 });
 
   const fetchContas = useCallback(async () => {
     try {
@@ -105,6 +105,42 @@ export function ContasPagarListView() {
     fetchContas();
   }, [fetchContas]);
 
+  useEffect(() => {
+    const total = sumBy(tableData, (conta) => conta.valor);
+    const pagos = sumBy(
+      tableData.filter((d) => d.status === 'PAGO'),
+      (conta) => conta.valor
+    );
+    const pendentes = sumBy(
+      tableData.filter((d) => d.status === 'PENDENTE'),
+      (conta) => conta.valor
+    );
+
+    setAnaliticoData({ total, pagos, pendentes });
+  }, [filters.startDate, filters.endDate, tableData]);
+
+  // Função para avançar um mês
+  const handleNextMonth = () => {
+    const newStartDate = filters.startDate.add(1, 'month').startOf('month');
+    const newEndDate = filters.endDate.add(1, 'month').endOf('month');
+    setFilters({
+      ...filters,
+      startDate: newStartDate,
+      endDate: newEndDate,
+    });
+  };
+
+  // Função para voltar um mês
+  const handlePreviousMonth = () => {
+    const newStartDate = filters.startDate.subtract(1, 'month').startOf('month');
+    const newEndDate = filters.endDate.subtract(1, 'month').endOf('month');
+    setFilters({
+      ...filters,
+      startDate: newStartDate,
+      endDate: newEndDate,
+    });
+  };
+
   const handleDateChange = (field) => (newValue) => {
     setFilters({ ...filters, [field]: newValue });
   };
@@ -115,33 +151,22 @@ export function ContasPagarListView() {
   };
 
   const handleChangePage = (event, newPage) => {
-    setPage(newPage); // Atualiza a página
+    setPage(newPage);
   };
 
   const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10)); // Atualiza o limite de linhas por página
-    setPage(0); // Volta para a primeira página
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
   };
 
   const dataFiltered = tableData
     .filter((row) => row.descricao.toLowerCase().includes(filters.descricao.toLowerCase()))
     .filter((row) => filters.status === 'all' || row.status === filters.status);
 
-  const dataInPage = rowInPage(dataFiltered, page, rowsPerPage); // Limita as linhas por página
-
-  const total = sumBy(tableData, (conta) => conta.valor);
-  const pagos = sumBy(
-    tableData.filter((d) => d.status === 'PAGO'),
-    (conta) => conta.valor
-  );
-  const pendentes = sumBy(
-    tableData.filter((d) => d.status === 'PENDENTE'),
-    (conta) => conta.valor
-  );
+  const dataInPage = rowInPage(dataFiltered, page, rowsPerPage);
 
   return (
     <DashboardContent>
-      {/* Breadcrumbs com o botão de Nova Conta */}
       <CustomBreadcrumbs
         heading="Lista de Contas a Pagar"
         links={[
@@ -162,7 +187,6 @@ export function ContasPagarListView() {
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
-      {/* Analíticos acima da Tabela */}
       <Card sx={{ mb: { xs: 3, md: 5 } }}>
         <Scrollbar sx={{ minHeight: 108 }}>
           <Stack
@@ -174,7 +198,7 @@ export function ContasPagarListView() {
               title="Total"
               total={tableData.length}
               percent={100}
-              price={total}
+              price={analiticoData.total}
               icon="solar:bill-list-bold-duotone"
               color={theme.vars.palette.info.main}
             />
@@ -182,8 +206,8 @@ export function ContasPagarListView() {
             <ReceberAnalytic
               title="Pagos"
               total={dataFiltered.filter((d) => d.status === 'PAGO').length}
-              percent={(pagos / total) * 100}
-              price={pagos}
+              percent={(analiticoData.pagos / analiticoData.total) * 100}
+              price={analiticoData.pagos}
               icon="solar:file-check-bold-duotone"
               color={theme.vars.palette.success.main}
             />
@@ -191,8 +215,8 @@ export function ContasPagarListView() {
             <ReceberAnalytic
               title="Pendentes"
               total={dataFiltered.filter((d) => d.status === 'PENDENTE').length}
-              percent={(pendentes / total) * 100}
-              price={pendentes}
+              percent={(analiticoData.pendentes / analiticoData.total) * 100}
+              price={analiticoData.pendentes}
               icon="solar:bell-bing-bold-duotone"
               color={theme.vars.palette.warning.main}
             />
@@ -200,17 +224,20 @@ export function ContasPagarListView() {
         </Scrollbar>
       </Card>
 
-      {/* Tabs para filtrar as contas */}
       <Card sx={{ mb: 3 }}>
         <Tabs value={filters.status} onChange={handleFilterStatus} sx={{ px: 2.5 }}>
           <Tab value="all" label="Todos" />
           <Tab value="PAGO" label="Pagos" />
           <Tab value="PENDENTE" label="Pendentes" />
+          <Tab value="AGENDADO" label="Agendado" />
         </Tabs>
       </Card>
 
-      {/* Filtros de Data e Descrição */}
+      {/* Adicionando botões de avanço e retrocesso */}
       <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
+        <IconButton  onClick={handlePreviousMonth} >
+          <Iconify icon="mingcute:arrow-left-fill" />
+        </IconButton>
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
           <DatePicker
             label="Data Inicial"
@@ -225,9 +252,11 @@ export function ContasPagarListView() {
             renderInput={(params) => <TextField {...params} fullWidth />}
           />
         </LocalizationProvider>
+        <IconButton onClick={handleNextMonth}>
+          <Iconify icon="mingcute:arrow-right-fill" />
+        </IconButton>
       </Stack>
 
-      {/* Tabela de Contas a Pagar */}
       <Card>
         <Box sx={{ position: 'relative' }}>
           <Scrollbar>
@@ -264,7 +293,6 @@ export function ContasPagarListView() {
           </Scrollbar>
         </Box>
 
-        {/* Paginação da Tabela */}
         <TablePaginationCustom
           page={page}
           rowsPerPage={rowsPerPage}

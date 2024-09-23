@@ -19,6 +19,8 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
+import { IconButton } from '@mui/material';
+
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
@@ -106,6 +108,24 @@ export function InvoiceListView() {
   });
 
   const dateError = fIsAfter(filters.state.startDate, filters.state.endDate);
+
+  const handleNextMonth = () => {
+    const newStartDate = filters.state.startDate.add(1, 'month').startOf('month');
+    const newEndDate = filters.state.endDate.add(1, 'month').endOf('month');
+    filters.setState({
+      startDate: newStartDate,
+      endDate: newEndDate,
+    });
+  };
+
+  const handlePreviousMonth = () => {
+    const newStartDate = filters.state.startDate.subtract(1, 'month').startOf('month');
+    const newEndDate = filters.state.endDate.subtract(1, 'month').endOf('month');
+    filters.setState({
+      startDate: newStartDate,
+      endDate: newEndDate,
+    });
+  };
 
   // Contagem de todas as faturas com base nas datas, sem o filtro de status
   const { filteredData, counts, totals } = applyFilter({
@@ -231,6 +251,9 @@ export function InvoiceListView() {
         />
 
         <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
+        <IconButton onClick={handlePreviousMonth}>
+          <Iconify icon="mingcute:arrow-left-fill" />
+        </IconButton>
           <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
             <DatePicker
               label="Data Inicio"
@@ -245,6 +268,9 @@ export function InvoiceListView() {
               renderInput={(params) => <TextField {...params} />}
             />
           </LocalizationProvider>
+          <IconButton onClick={handleNextMonth}>
+          <Iconify icon="mingcute:arrow-right-circle-fill" />
+        </IconButton>
         </Stack>
 
         <Card sx={{ mb: { xs: 3, md: 5 } }}>
