@@ -3,10 +3,11 @@
 import { useFormContext } from 'react-hook-form';
 
 import { Card, Button, Switch, TextField, CardActions, FormControlLabel } from '@mui/material';
+import { toast } from 'sonner';
+import { enviarLinkAbertura } from 'src/actions/societario';
 
 export default function AberturaIniciadoForm({ currentAbertura = {} }) {
   const { register, handleSubmit, setValue } = useFormContext();
-  console.log(currentAbertura);
 
   // Função para lidar com o envio do formulário
   const onSave = (data) => {
@@ -15,9 +16,19 @@ export default function AberturaIniciadoForm({ currentAbertura = {} }) {
   };
 
   // Função para reenviar o link
-  const onReenviarLink = () => {
-    console.log('Reenviar link para a abertura com ID:', currentAbertura._id);
-    // Lógica para reenviar o link
+  const onReenviarLink = async () => {
+    try {
+      const res = await enviarLinkAbertura(currentAbertura._id);
+      if (res.status === 200) {
+        toast.success('Mensagem enviada com sucesso!');
+      } else {
+        const errorMessage = res.data.message || 'Erro ao enviar mensagem';
+        toast.error(`Erro: ${errorMessage}`);
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || 'Erro ao enviar mensagem';
+      toast.error(`Erro: ${errorMessage}`);
+    }
   };
 
   return (

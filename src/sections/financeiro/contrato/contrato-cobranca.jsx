@@ -80,7 +80,7 @@ export function ContratoCobrancas({ contratoId, contrato }) {
       const linkDownload = `https://attualize.com.br/fatura/${cobranca._id}`; // Gera o link de acordo com o ID da cobrança
       const mensagem =
         `Olá ${cliente.nome}, aqui está o link do seu boleto referente a: ${cobranca.observacoes}.\n\n` +
-        `Link para download: ${linkDownload}`;
+        `Link para acessar: ${linkDownload}`;
 
       const data = {
         whatsapp: cliente.whatsapp,
