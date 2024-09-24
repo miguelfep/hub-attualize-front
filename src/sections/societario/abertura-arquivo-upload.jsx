@@ -18,7 +18,7 @@ const HeadingTypography = styled(Typography)(({ theme }) => ({
   },
 }));
 
-const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUploadSuccess }) => {
+const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUploaded }) => {
   const [files, setFiles] = useState([]);
   const { getRootProps, getInputProps } = useDropzone({
     multiple: false,
@@ -38,8 +38,10 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
       const response = await uploadArquivo(clientId, name, arquivo);
 
       if (response.status === 200) {
+        const updatedData = response.data;  // Supondo que a resposta contenha toda a abertura atualizada
+
         handleDialogClose();
-        onFileUploadSuccess(); // Chame o callback aqui
+        onFileUploaded(name, updatedData); 
         toast.success('Arquivo enviado com sucesso');
       } else {
         // Tratar erro
@@ -52,6 +54,7 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
 
   return (
     <Box {...getRootProps({ className: 'dropzone' })}>
+      
       <input {...getInputProps()} />
       {/* Renderizar a imagem de pré-visualização */}
       {files.length ? (

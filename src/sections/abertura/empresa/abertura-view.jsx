@@ -33,33 +33,12 @@ import ComponenteAguardandoValidacao from 'src/components/abertura/ComponenteAgu
 
 import DialogDocumentsAbertura from 'src/sections/societario/abertura-dialog-documento';
 
-const StyledGrid = styled(Grid)(({ theme }) => ({
-  marginTop: theme.spacing(4.8),
-  [theme.breakpoints.down('md')]: {
-    order: -1,
-    width: '100%',
-  },
-}));
-
-
-// Funções auxiliares para formatar e remover formatação de moeda
-const formatCurrency = (value) => {
-  const numberValue = Number(value.replace(/[^\d]/g, '')) / 100;
-  return numberValue.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
-};
 
 const unformatCurrency = (value) =>
   // Remove tudo que não seja dígito
   Number(value.replace(/[^\d]/g, '')) / 100;
-const AberturaEmpresaViewPage = ({ aberturaData, fetchAbertura }) => {
-  console.log('abertura');
-  console.log(aberturaData);
-  
-  
-
+const AberturaEmpresaViewPage = ({ aberturaData }) => {
+ 
   const [formData, setFormData] = useState({
     statusAbertura: aberturaData.statusAbertura || '', 
     situacaoAbertura: aberturaData.situacaoAbertura || '', // Adicionando statusAbertura
@@ -109,6 +88,66 @@ const AberturaEmpresaViewPage = ({ aberturaData, fetchAbertura }) => {
       },
     ],
   });
+
+  const handleFileUploaded = (documentName, updatedData) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      ...updatedData, 
+    }));
+  };
+
+  const handleFileDownload = async (id, name, filename) => {
+    try {
+      const response = await downloadArquivo(id, name, filename);
+  
+      // Criar um URL temporário para o blob
+      const blob = new Blob([response.data], { type: response.data.type });
+      const url = window.URL.createObjectURL(blob);
+  
+      // Criar um link temporário para disparar o download
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename); // Nome do arquivo a ser baixado
+  
+      // Adicionar o link ao DOM
+      document.body.appendChild(link);
+  
+      // Disparar o download
+      link.click();
+  
+      // Remover o link temporário do DOM
+      document.body.removeChild(link);
+  
+      // Revogar o URL temporário
+      window.URL.revokeObjectURL(url);
+  
+      toast.success(`${name} baixado com sucesso.`);
+    } catch (error) {
+      toast.error(`Erro ao baixar ${name}`);
+    }
+  };
+
+  const handleFileDelete = async (id, name) => {
+    try {
+      // Chamada da API para deletar o arquivo e obter o novo estado do objeto
+      const response = await deletarArquivo(id, name);
+  
+      if (response && response.data) {
+        // Atualizando o estado local com os dados retornados da API
+        setFormData((prevState) => ({
+          ...prevState,
+          ...response.data, // Atualiza o estado com os novos valores retornados da API
+        }));
+  
+        toast.success(`${name} deletado com sucesso.`);
+      } else {
+        toast.error(`Erro ao atualizar o estado após deletar ${name}`);
+      }
+    } catch (error) {
+      toast.error(`Erro ao deletar ${name}`);
+    }
+  };
+  
 
   const [loadingCep, setLoadingCep] = useState(false);
   const [loadingApproval, setLoadingApproval] = useState(false);
@@ -257,16 +296,17 @@ const AberturaEmpresaViewPage = ({ aberturaData, fetchAbertura }) => {
   const renderDocument = (url, name, id) => {
     if (!url) {
       return (
-        <DialogDocumentsAbertura
+         <DialogDocumentsAbertura
+          document={formData[name]}
           name={name}
           id={id}
-          fetchAbertura={fetchAbertura}
+          onFileUploaded={handleFileUploaded}
         />
       );
     }
     const filename = url.split('/').pop();
     return (
-      <StyledGrid item xs={12} md={12}>
+      <Grid item xs={12} md={12}>
         <Box
           sx={{
             borderRadius: 1,
@@ -285,7 +325,7 @@ const AberturaEmpresaViewPage = ({ aberturaData, fetchAbertura }) => {
               size="small"
               variant="contained"
               color="success"
-              onClick={() => downloadArquivo(id, name, filename)}
+              onClick={() => handleFileDownload(id, name, filename)}
             >
               Baixar {name}
             </Button>
@@ -293,13 +333,13 @@ const AberturaEmpresaViewPage = ({ aberturaData, fetchAbertura }) => {
               size="small"
               variant="contained"
               color="error"
-              onClick={() => deletarArquivo(id, name)}
+              onClick={() => handleFileDelete(id, name)}
             >
               Deletar
             </Button>
           </Box>
         </Box>
-      </StyledGrid>
+      </Grid>
     );
   };
 

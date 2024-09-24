@@ -7,7 +7,7 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { CardContent } from '@mui/material';
+import { CardContent, TextField } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import { styled } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
@@ -56,19 +56,43 @@ const cobrancaStatusTexts = {
 
 export function InvoiceDetails({ invoice }) {
   const [currentStatus, setCurrentStatus] = useState(invoice?.status);
+  const [motivoPerda, setMotivoPerda] = useState(invoice?.motivoPerda || ''); // Estado para o motivo da perda
+  const [isEditingMotivo, setIsEditingMotivo] = useState(false); // Controle para exibir o input de edição
 
+  // Função para alterar o status da fatura
   const handleChangeStatus = useCallback(
     async (event) => {
       const dataUpdate = {
         status: event.target.value,
+        motivoPerda, // Enviar o motivo da perda se o status for 'perdida'
       };
 
       const res = await updateInvoice(invoice._id, dataUpdate);
       toast.success('Venda atualizada');
       setCurrentStatus(res.status);
+
+      if (res.status === 'perdida') {
+        setMotivoPerda(res.motivoPerda || ''); // Atualizar o motivo da perda se o status for 'perdida'
+      }
     },
-    [invoice._id]
+    [invoice._id, motivoPerda]
   );
+
+  // Função para salvar o motivo da perda
+  const handleSaveMotivo = async () => {
+    try {
+      const dataUpdate = {
+        status: 'perdida',
+        motivoPerda,
+      };
+
+      await updateInvoice(invoice._id, dataUpdate);
+      toast.success('Motivo da perda atualizado');
+      setIsEditingMotivo(false); // Fechar o campo de edição após salvar
+    } catch (error) {
+      toast.error('Erro ao atualizar o motivo da perda');
+    }
+  };
 
   const renderTotal = (
     <>
@@ -262,6 +286,7 @@ export function InvoiceDetails({ invoice }) {
             <br />
             Telefone: (41) 3068-1800
             <br />
+            Vendedor: {invoice?.proprietarioVenda}
           </Stack>
           <Stack sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -272,7 +297,6 @@ export function InvoiceDetails({ invoice }) {
             {invoice?.cliente.email}
             <br />
             Telefone: {invoice?.cliente.whatsapp}
-            <br />
           </Stack>
           <Stack sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -290,6 +314,41 @@ export function InvoiceDetails({ invoice }) {
         {renderList}
         <Divider sx={{ mt: 5, borderStyle: 'dashed' }} />
         {renderFooter}
+
+        {/* Mostrar o campo de edição do motivo se o status for 'perdida' */}
+        {currentStatus === 'perdida' && (
+          <Box sx={{ mt: 4 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Motivo da perda
+            </Typography>
+            {isEditingMotivo ? (
+              <Stack direction="row" spacing={2}>
+                <TextField
+                  label="Motivo da perda"
+                  variant="outlined"
+                  fullWidth
+                  value={motivoPerda}
+                  onChange={(e) => setMotivoPerda(e.target.value)}
+                />
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSaveMotivo}
+                  disabled={!motivoPerda}
+                >
+                  Salvar
+                </Button>
+              </Stack>
+            ) : (
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Typography variant="body2">{motivoPerda || 'Sem motivo fornecido'}</Typography>
+                <Button variant="outlined" onClick={() => setIsEditingMotivo(true)}>
+                  Editar
+                </Button>
+              </Stack>
+            )}
+          </Box>
+        )}
       </Card>
     </>
   );

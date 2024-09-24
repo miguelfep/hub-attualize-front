@@ -1,3 +1,5 @@
+import { getUser } from 'src/auth/context/jwt';
+
 import { z as zod } from 'zod';
 import { toast } from 'sonner';
 import { useMemo } from 'react';
@@ -23,6 +25,7 @@ import { InvoiceNewEditDetails } from './invoice-new-edit-details';
 import { InvoiceNewEditAddress } from './invoice-new-edit-address';
 import { InvoiceNewEditPayment } from './invoice-new-edit-payment';
 import { InvoiceNewEditStatusDate } from './invoice-new-edit-status-date';
+
 
 export const NewInvoiceSchema = zod
   .object({
@@ -57,11 +60,12 @@ export const NewInvoiceSchema = zod
 export function InvoiceNewEditForm({ currentInvoice }) {
   const router = useRouter();
 
+  const user = getUser()
+ 
   const loadingSave = useBoolean();
 
   const loadingSend = useBoolean();
 
-  const waitFor = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   const defaultValues = useMemo(
     () => ({
@@ -70,7 +74,8 @@ export function InvoiceNewEditForm({ currentInvoice }) {
       status: currentInvoice?.status || 'orcamento',
       desconto: currentInvoice?.desconto || 0,
       totalAmount: currentInvoice?.total || 0,
-      cliente: currentInvoice?.cliente || null,
+      cliente: currentInvoice?.cliente || null,    
+      motivoPerda: currentInvoice?.motivoPerda || " ",
       items: currentInvoice?.items || [
         {
           titulo: '',
@@ -115,8 +120,10 @@ export function InvoiceNewEditForm({ currentInvoice }) {
 
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
+
+    const dataToSend = {...data,   proprietarioVenda: user.name }
     try {
-      const response = await createInvoice(data);
+      const response = await createInvoice(dataToSend);
       if (response.status === 201) {
         reset();
         loadingSend.onFalse();

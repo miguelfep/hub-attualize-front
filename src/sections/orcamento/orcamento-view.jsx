@@ -10,6 +10,7 @@ import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
+import TextField from '@mui/material/TextField';
 
 import { updateInvoice, getInvoiceById } from 'src/actions/invoices';
 
@@ -24,16 +25,15 @@ import { CheckoutOrderComplete } from '../checkout/checkout-order-complete';
 const ORCAMENTO_CHECKOUT_STEPS = ['Aprovação', 'Pagamento'];
 
 export function OrcamentoView({ invoice }) {
-  // Inicialização dos hooks
   const [currentInvoice, setCurrentInvoice] = useState(invoice);
   const [activeStep, setActiveStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('boleto');
   const [status, setStatus] = useState(invoice?.status || 'orcamento');
   const [loading, setLoading] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState(''); // Estado para o motivo da recusa
+  const [showRejectionInput, setShowRejectionInput] = useState(false); // Controle para mostrar input
 
-  // useEffect deve ser chamado fora de qualquer condição
   useEffect(() => {
-    // Logica condicional dentro do useEffect
     if (status !== 'orcamento') {
       setActiveStep(1);
     }
@@ -52,11 +52,12 @@ export function OrcamentoView({ invoice }) {
     }
   };
 
-  const handleApproval = async (newStatus) => {
+  const handleApproval = async (newStatus, reason = '') => {
     setLoading(true);
     try {
       const data = {
         status: newStatus,
+        motivoPerda: reason, // Incluindo o motivo da recusa, se houver
       };
 
       await updateInvoice(currentInvoice._id, data);
@@ -89,7 +90,6 @@ export function OrcamentoView({ invoice }) {
     }
   };
 
-  // Adicionar validação para a invoice após a declaração dos hooks
   if (!invoice) {
     return (
       <Container sx={{ mt: 10, textAlign: 'center' }}>
@@ -161,11 +161,34 @@ export function OrcamentoView({ invoice }) {
               variant="contained"
               color="grey"
               startIcon={<Iconify width={16} icon="mingcute:thumb-down-2-fill" />}
-              onClick={() => handleApproval('perdida')}
+              onClick={() => setShowRejectionInput(true)} // Mostrar o campo de recusa
               disabled={loading}
             >
               {loading && <CircularProgress size={20} sx={{ mr: 1 }} />}
               Reprovar
+            </Button>
+          </Box>
+        )}
+
+        {showRejectionInput && (
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <TextField
+              label="Motivo da recusa"
+              variant="outlined"
+              fullWidth
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              sx={{ mb: 2 }}
+            />
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => handleApproval('perdida', rejectionReason)} // Passar o motivo da recusa
+              disabled={loading || !rejectionReason}
+              startIcon={<Iconify width={16} icon="mingcute:thumb-down-2-fill" />}
+            >
+              {loading && <CircularProgress size={20} sx={{ mr: 1 }} />}
+              Confirmar Reprovação
             </Button>
           </Box>
         )}

@@ -71,7 +71,7 @@ export const ABERTURA_STATUS_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function AberturasListView() {
-  const table = useTable({ defaultDense: true });
+  const table = useTable({ defaultDense: true , defaultRowsPerPage: 50});
 
   const router = useRouter();
 
