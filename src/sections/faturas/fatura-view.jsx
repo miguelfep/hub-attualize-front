@@ -1,19 +1,17 @@
 'use client';
 
-// Definir o componente como Client Component
-
 import React from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
-
-import { Box, Card, Grid, Stack, Button, Container, Typography, CardContent } from '@mui/material'; // Para fazer a requisição do boleto em PDF
+import { Box, Card, Grid, Stack, Button, Container, Typography, CardContent } from '@mui/material';
+import { Iconify } from 'src/components/iconify'; // Certifique-se que Iconify esteja configurado
 
 const FaturaViewPage = ({ faturaData }) => {
   const locale = 'pt-br';
 
   // Dados da fatura
-  const { valor, dataVencimento, observacoes, boleto } = faturaData;
+  const { valor, dataVencimento, observacoes, boleto, status } = faturaData;
 
   const boletoData = boleto ? JSON.parse(boleto) : null; // Verifica se há dados de boleto e os parseia
 
@@ -37,6 +35,9 @@ const FaturaViewPage = ({ faturaData }) => {
     }
   };
 
+  // Checar se a fatura está paga ou recebida
+  const isFaturaPagaOuRecebida = status === 'PAGO' || status === 'RECEBIDO';
+
   return (
     <Container sx={{ mb: 10 }}>
       <Box sx={{ textAlign: 'center', my: { xs: 3, md: 5 } }}>
@@ -58,83 +59,92 @@ const FaturaViewPage = ({ faturaData }) => {
         </Typography>
       </Box>
 
-      {/* Cartão com os detalhes da fatura */}
-      <Card sx={{ maxWidth: 800, margin: '0 auto', p: 3 }}>
-        {' '}
-        {/* Aumenta a largura do card */}
-        <CardContent>
-          {/* Título centralizado e maior */}
-          <Typography variant="h4" sx={{ mb: 4, textAlign: 'center', fontWeight: 'bold' }}>
-            Detalhes da Fatura
-          </Typography>
+      {/* Indicação de fatura paga ou recebida */}
+      {isFaturaPagaOuRecebida && (
+        <Card sx={{ mb: 4, maxWidth: 800, margin: '0 auto', backgroundColor: '#e0ffe0', p: 2 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Iconify icon="mdi:check-circle-outline" width={40} height={40} color="green" />
+            <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'green' }}>
+              Esta fatura já está Paga!
+            </Typography>
+          </Stack>
+        </Card>
+      )}
 
-          <Grid container spacing={2}>
-            {/* Exibir o valor */}
-            <Grid item xs={12}>
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="subtitle1">Valor:</Typography>
-                <Typography variant="h6" color="primary">
-                  R$ {valor.toFixed(2)}
+      {/* Exibir detalhes da fatura apenas se não estiver paga ou recebida */}
+      {!isFaturaPagaOuRecebida && (
+        <Card sx={{ maxWidth: 800, margin: '0 auto', p: 3 }}>
+          <CardContent>
+            {/* Título centralizado e maior */}
+            <Typography variant="h4" sx={{ mb: 4, textAlign: 'center', fontWeight: 'bold' }}>
+              Detalhes da Fatura
+            </Typography>
+
+            <Grid container spacing={2}>
+              {/* Exibir o valor */}
+              <Grid item xs={12}>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="subtitle1">Valor:</Typography>
+                  <Typography variant="h6" color="primary">
+                    R$ {valor.toFixed(2)}
+                  </Typography>
+                </Stack>
+              </Grid>
+
+              {/* Exibir a data de vencimento */}
+              <Grid item xs={12}>
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="subtitle1">Data de Vencimento:</Typography>
+                  <Typography variant="body1">{formattedDate}</Typography>
+                </Stack>
+              </Grid>
+
+              {/* Exibir observações */}
+              <Grid item xs={12}>
+                <Typography variant="subtitle1">Descrição:</Typography>
+                <Typography variant="body1" sx={{ mt: 1 }}>
+                  {observacoes}
                 </Typography>
-              </Stack>
-            </Grid>
+              </Grid>
 
-            {/* Exibir a data de vencimento */}
-            <Grid item xs={12}>
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="subtitle1">Data de Vencimento:</Typography>
-                <Typography variant="body1">{formattedDate}</Typography>
-              </Stack>
-            </Grid>
-
-            {/* Exibir observações */}
-            <Grid item xs={12}>
-              <Typography variant="subtitle1">Descrição:</Typography>
-              <Typography variant="body1" sx={{ mt: 1 }}>
-                {observacoes}
-              </Typography>{' '}
-              {/* Descrição com texto embaixo */}
-            </Grid>
-
-            {/* Botões para copiar PIX ou linha digitável e baixar o boleto */}
-            {boletoData && (
-              <Stack spacing={3} sx={{ width: '100%', mt: 3 }}>
-                {' '}
-                {/* Mais espaçamento entre os botões */}
-                {boletoData.linhaDigitavel && (
-                  <CopyToClipboard
-                    text={boletoData.linhaDigitavel}
-                    onCopy={() => toast.success('Linha Digitável copiada!')}
+              {/* Botões para copiar PIX ou linha digitável e baixar o boleto */}
+              {boletoData && (
+                <Stack spacing={3} sx={{ width: '100%', mt: 3 }}>
+                  {boletoData.linhaDigitavel && (
+                    <CopyToClipboard
+                      text={boletoData.linhaDigitavel}
+                      onCopy={() => toast.success('Linha Digitável copiada!')}
+                    >
+                      <Button variant="contained" fullWidth>
+                        Copiar Linha Digitável
+                      </Button>
+                    </CopyToClipboard>
+                  )}
+                  {boletoData.pixCopiaECola && (
+                    <CopyToClipboard
+                      text={boletoData.pixCopiaECola}
+                      onCopy={() => toast.success('Código PIX copiado!')}
+                    >
+                      <Button variant="contained" color="success" fullWidth>
+                        Copiar Código PIX
+                      </Button>
+                    </CopyToClipboard>
+                  )}
+                  {/* Botão de download do boleto */}
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    fullWidth
+                    onClick={() => handleDownloadBoleto(boletoData.codigoSolicitacao)}
                   >
-                    <Button variant="contained" fullWidth>
-                      Copiar Linha Digitável
-                    </Button>
-                  </CopyToClipboard>
-                )}
-                {boletoData.pixCopiaECola && (
-                  <CopyToClipboard
-                    text={boletoData.pixCopiaECola}
-                    onCopy={() => toast.success('Código PIX copiado!')}
-                  >
-                    <Button variant="contained" color="success" fullWidth>
-                      Copiar Código PIX
-                    </Button>
-                  </CopyToClipboard>
-                )}
-                {/* Botão de download do boleto */}
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  fullWidth
-                  onClick={() => handleDownloadBoleto(boletoData.codigoSolicitacao)}
-                >
-                  Download do Boleto
-                </Button>
-              </Stack>
-            )}
-          </Grid>
-        </CardContent>
-      </Card>
+                    Download do Boleto
+                  </Button>
+                </Stack>
+              )}
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
     </Container>
   );
 };

@@ -32,7 +32,7 @@ export function ReceberTableRow({ row, selected, onSelectRow, fetchCobrancas }) 
     try {
       const { cliente } = row.contrato;
       const linkDownload = `https://attualize.com.br/fatura/${row._id}`;
-      const mensagem = `Olá ${cliente.nome}, aqui está o link do seu boleto referente a: ${row.observacoes}.\n\nLink para download: ${linkDownload}`;
+      const mensagem = `Olá ${cliente.nome}, aqui está o link do seu boleto referente a: ${row.observacoes}.\n\nLink para acessar: ${linkDownload}`;
 
       const data = {
         whatsapp: cliente.whatsapp,

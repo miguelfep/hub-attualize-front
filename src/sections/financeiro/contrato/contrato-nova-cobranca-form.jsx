@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 
 import { today } from 'src/utils/format-time';
-
 import { atualizarCobrancaPorId, criarCobrancasPorContrato } from 'src/actions/financeiro';
 
 // Define o schema de validação usando zod
@@ -44,13 +43,11 @@ const formatCurrency = (value) => {
 const parseCurrency = (formattedValue) => Number(formattedValue.replace(/[R$,]/g, '')) / 100;
 
 const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobrancaAtual }) => {
-  // Estado local para os campos
   const [observacoes, setObservacoes] = useState('');
   const [formattedValue, setFormattedValue] = useState('');
   const [dataVencimento, setDataVencimento] = useState(dayjs(today()));
-  const [status, setStatus] = useState('EMABERTO'); // Estado para o status da cobrança
+  const [status, setStatus] = useState('EMABERTO'); 
 
-  // UseMemo para gerar os valores padrão com base no contrato e na cobrança atual
   const defaultValues = useMemo(
     () => ({
       observacoes: cobrancaAtual?.observacoes || '',
@@ -62,28 +59,25 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
       dataVencimento: cobrancaAtual?.dataVencimento
         ? dayjs(cobrancaAtual.dataVencimento)
         : dayjs(today()),
-      status: cobrancaAtual?.status || 'EMABERTO', // Valor padrão para o status
+      status: cobrancaAtual?.status || 'EMABERTO', 
     }),
     [cobrancaAtual]
   );
 
   useEffect(() => {
     if (open) {
-      // Reseta os valores ao abrir o modal
       setObservacoes(defaultValues.observacoes);
       setFormattedValue(defaultValues.valor || '');
       setDataVencimento(defaultValues.dataVencimento);
-      setStatus(defaultValues.status); // Define o status inicial
+      setStatus(defaultValues.status); 
     }
   }, [open, defaultValues]);
 
-  // Função para formatar o valor ao digitar
   const handleValorChange = (event) => {
     const rawValue = event.target.value;
     setFormattedValue(formatCurrency(rawValue));
   };
 
-  // Função para lidar com o clique no botão
   const handleCreateOrUpdate = async () => {
     try {
       const parsedValue = parseCurrency(formattedValue);
@@ -92,24 +86,24 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
         valor: parsedValue,
         dataVencimento: dataVencimento.toDate(),
         contrato: contrato._id,
-        status, // Adiciona o status da cobrança no envio
+        status, 
       };
 
-      if (cobrancaAtual && cobrancaAtual.boleto) {
-        toast.error('Não é possível alterar uma cobrança que já possui boleto gerado.');
+      if (cobrancaAtual && cobrancaAtual.boleto && status === cobrancaAtual.status) {
+        toast.error('Não é possível alterar os detalhes de uma cobrança com boleto gerado.');
         return;
       }
 
       if (cobrancaAtual) {
-        await atualizarCobrancaPorId(cobrancaAtual._id, data); // Atualizar cobrança existente
+        await atualizarCobrancaPorId(cobrancaAtual._id, data); 
         toast.success('Cobrança atualizada com sucesso!');
       } else {
-        await criarCobrancasPorContrato(data); // Criar nova cobrança
+        await criarCobrancasPorContrato(data); 
         toast.success('Cobrança criada com sucesso!');
       }
 
-      await fetchCobrancas(); // Atualiza a lista de cobranças
-      handleClose(); // Fecha o modal
+      await fetchCobrancas(); 
+      handleClose(); 
     } catch (error) {
       console.error('Erro ao criar/editar cobrança:', error);
       toast.error(
@@ -156,6 +150,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
                   fullWidth
                   error={!dataVencimento}
                   helperText={!dataVencimento && 'Data de vencimento é obrigatória'}
+                  disabled={!!cobrancaAtual?.boleto}
                 />
               )}
             />
@@ -176,7 +171,6 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
             />
           </Grid>
 
-          {/* Select para o Status */}
           <Grid item xs={12}>
             <FormControl fullWidth>
               <InputLabel>Status da Cobrança</InputLabel>
@@ -196,16 +190,14 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
         <Button onClick={handleClose} color="secondary">
           Cancelar
         </Button>
-        {!cobrancaAtual?.boleto && (
-          <Button
-            onClick={handleCreateOrUpdate}
-            color="primary"
-            variant="contained"
-            disabled={!observacoes || !formattedValue || !dataVencimento}
-          >
-            {cobrancaAtual ? 'Atualizar' : 'Criar'}
-          </Button>
-        )}
+        <Button
+          onClick={handleCreateOrUpdate}
+          color="primary"
+          variant="contained"
+          disabled={!observacoes || !formattedValue || !dataVencimento}
+        >
+          {cobrancaAtual ? 'Atualizar' : 'Criar'}
+        </Button>
       </DialogActions>
     </Dialog>
   );
