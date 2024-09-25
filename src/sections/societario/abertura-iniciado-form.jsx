@@ -1,9 +1,10 @@
 'use client';
 
+import { toast } from 'sonner';
 import { useFormContext } from 'react-hook-form';
 
 import { Card, Button, Switch, TextField, CardActions, FormControlLabel } from '@mui/material';
-import { toast } from 'sonner';
+
 import { enviarLinkAbertura } from 'src/actions/societario';
 
 export default function AberturaIniciadoForm({ currentAbertura = {} }) {

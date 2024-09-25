@@ -1,5 +1,3 @@
-import { getUser } from 'src/auth/context/jwt';
-
 import { z as zod } from 'zod';
 import { toast } from 'sonner';
 import { useMemo } from 'react';
@@ -20,6 +18,8 @@ import { today, fIsAfter } from 'src/utils/format-time';
 import { createInvoice, updateInvoice } from 'src/actions/invoices';
 
 import { Form, schemaHelper } from 'src/components/hook-form';
+
+import { getUser } from 'src/auth/context/jwt';
 
 import { InvoiceNewEditDetails } from './invoice-new-edit-details';
 import { InvoiceNewEditAddress } from './invoice-new-edit-address';

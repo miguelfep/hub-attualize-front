@@ -18,19 +18,19 @@ import {
   MenuItem,
   TextField,
   Typography,
-  InputAdornment,
   IconButton,
+  InputAdornment,
   CircularProgress,
   FormControlLabel,
 } from '@mui/material';
-
-import { Iconify } from 'src/components/iconify';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
 
 import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/societario';
+
+import { Iconify } from 'src/components/iconify';
 
 import DialogDocumentsAbertura from './abertura-dialog-documento';
 

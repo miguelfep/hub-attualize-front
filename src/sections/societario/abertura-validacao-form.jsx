@@ -33,7 +33,7 @@ import { Iconify } from 'src/components/iconify';
 
 import DialogDocumentsAbertura from './abertura-dialog-documento';
 
-export function AberturaValidacaoForm({ currentAbertura, onStatusChange }) { 
+export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValue }) { 
   const { register, handleSubmit, setValue, watch } = useForm({
     defaultValues: {
       nomeEmpresarial: '',
@@ -262,7 +262,6 @@ export function AberturaValidacaoForm({ currentAbertura, onStatusChange }) {
     try {
       // Envia a requisição PUT para atualizar os dados do cliente
       const response = await updateAbertura(currentAbertura._id, preparedData);
-      console.log(response);
       
       // Verifica se a requisição foi bem-sucedida
       if (response.status !== 200) {
@@ -305,9 +304,9 @@ export function AberturaValidacaoForm({ currentAbertura, onStatusChange }) {
   const handleApprove = async () => {
     loading.onTrue();
     try {
-      await updateAbertura(currentAbertura._id, { statusAbertura: 'em_constituicao' });
+      await updateAbertura(currentAbertura._id, { statusAbertura: 'kickoff', somenteAtualizar:false });
+      setParentValue('statusAbertura', 'kickoff')
       toast.success('Abertura aprovada!');
-      onStatusChange('em_constituicao');
     } catch (error) {
       console.error(error);
       toast.error('Erro ao aprovar a abertura');
@@ -321,7 +320,7 @@ export function AberturaValidacaoForm({ currentAbertura, onStatusChange }) {
     try {
       await updateAbertura(currentAbertura._id, { statusAbertura: 'Iniciado' });
       toast.error('Abertura reprovada!');
-      onStatusChange('Iniciado');
+      setParentValue('Iniciado');
     } catch (error) {
       console.error(error);
       toast.error('Erro ao reprovar a abertura');

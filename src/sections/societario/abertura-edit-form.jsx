@@ -121,7 +121,7 @@ export function AberturaEditForm({ currentAbertura }) {
       case 'Iniciado':
         return <AberturaIniciadoForm currentAbertura={currentAbertura} />;
       case 'em_validacao':
-        return <AberturaValidacaoForm currentAbertura={currentAbertura} />;
+        return <AberturaValidacaoForm currentAbertura={currentAbertura} setValue={setValue} />;
       case 'onboarding':
         return <div>Usuário gerado, clique em avançar</div>;  
       default:

@@ -7,13 +7,13 @@ import Grid from '@mui/material/Grid';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import { styled } from '@mui/material/styles';
+// ** Custom Components Imports
+import { DialogContent } from '@mui/material';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
-import { Iconify } from 'src/components/iconify';
 
-// ** Custom Components Imports
-import { DialogContent } from '@mui/material';
+import { Iconify } from 'src/components/iconify';
 
 import UploadArquivoAbertura from './abertura-arquivo-upload';
 

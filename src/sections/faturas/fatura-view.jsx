@@ -4,8 +4,10 @@ import React from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { CopyToClipboard } from 'react-copy-to-clipboard';
+
 import { Box, Card, Grid, Stack, Button, Container, Typography, CardContent } from '@mui/material';
-import { Iconify } from 'src/components/iconify'; // Certifique-se que Iconify esteja configurado
+
+import { Iconify } from 'src/components/iconify';
 
 const FaturaViewPage = ({ faturaData }) => {
   const locale = 'pt-br';
