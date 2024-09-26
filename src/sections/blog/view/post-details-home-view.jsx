@@ -2,13 +2,11 @@
 
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
 import Checkbox from '@mui/material/Checkbox';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
-import AvatarGroup from '@mui/material/AvatarGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { paths } from 'src/routes/paths';
@@ -16,24 +14,37 @@ import { paths } from 'src/routes/paths';
 import { fShortenNumber } from 'src/utils/format-number';
 
 import { Iconify } from 'src/components/iconify';
+
 import { Markdown } from 'src/components/markdown';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { PostItem } from '../post-item';
-import { PostCommentList } from '../post-comment-list';
-import { PostCommentForm } from '../post-comment-form';
 import { PostDetailsHero } from '../post-details-hero';
 
 // ----------------------------------------------------------------------
 
 export function PostDetailsHomeView({ post, latestPosts }) {
+  const formattedPosts = latestPosts
+    .filter((latestPost) => latestPost.id !== post.id)  // Remover a postagem atual
+    .map((latest) => ({
+      id: latest.id,
+      title: latest.title.rendered,
+      date: latest.date,
+      content: latest.content.rendered,
+      excerpt: latest.excerpt.rendered,
+      slug: latest.slug,
+      link: latest.link,
+      author: latest._embedded?.author[0]?.name || 'Autor Desconhecido',
+      imageUrl: latest.jetpack_featured_media_url || '/default-image.png',
+    }));
+
   return (
     <>
       <PostDetailsHero
-        title={post?.title ?? ''}
-        author={post?.author}
-        coverUrl={post?.coverUrl ?? ''}
-        createdAt={post?.createdAt}
+        title={post?.yoast_head_json.title ?? ''}
+        author={post?.yoast_head_json.author}
+        coverUrl={post?.yoast_head_json.og_image[0].url ?? ''}
+        createdAt={post?.date}
       />
 
       <Container
@@ -44,7 +55,7 @@ export function PostDetailsHomeView({ post, latestPosts }) {
           links={[
             { name: 'Home', href: '/' },
             { name: 'Blog', href: paths.post.root },
-            { name: post?.title },
+            { name: post?.yoast_head_json.title },
           ]}
           sx={{ maxWidth: 720, mx: 'auto' }}
         />
@@ -52,9 +63,9 @@ export function PostDetailsHomeView({ post, latestPosts }) {
 
       <Container maxWidth={false}>
         <Stack sx={{ maxWidth: 720, mx: 'auto' }}>
-          <Typography variant="subtitle1">{post?.description}</Typography>
+          <Typography variant="subtitle1">{post?.yoast_head_json.description}</Typography>
 
-          <Markdown children={post?.content} />
+          <Markdown children={post?.content.rendered} />
 
           <Stack
             spacing={3}
@@ -86,38 +97,21 @@ export function PostDetailsHomeView({ post, latestPosts }) {
                 sx={{ mr: 1 }}
               />
 
-              <AvatarGroup>
-                {post?.favoritePerson.map((person) => (
-                  <Avatar key={person.name} alt={person.name} src={person.avatarUrl} />
-                ))}
-              </AvatarGroup>
             </Stack>
           </Stack>
 
-          <Stack direction="row" sx={{ mb: 3, mt: 5 }}>
-            <Typography variant="h4">Comments</Typography>
-
-            <Typography variant="subtitle2" sx={{ color: 'text.disabled' }}>
-              ({post?.comments.length})
-            </Typography>
-          </Stack>
-
-          <PostCommentForm />
-
           <Divider sx={{ mt: 5, mb: 2 }} />
-
-          <PostCommentList comments={post?.comments} />
         </Stack>
       </Container>
 
-      {!!latestPosts?.length && (
+      {!!formattedPosts?.length && (
         <Container sx={{ pb: 15 }}>
           <Typography variant="h4" sx={{ mb: 5 }}>
-            Recent Posts
+            Postagens Recentes
           </Typography>
 
           <Grid container spacing={3}>
-            {latestPosts?.slice(latestPosts.length - 4).map((latestPost) => (
+            {formattedPosts?.slice(formattedPosts.length - 4).map((latestPost) => (
               <Grid key={latestPost.id} xs={12} sm={6} md={4} lg={3}>
                 <PostItem post={latestPost} />
               </Grid>

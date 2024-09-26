@@ -18,8 +18,8 @@ import { SearchNotFound } from 'src/components/search-not-found';
 export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
   const router = useRouter();
 
-  const handleClick = (title) => {
-    router.push(hrefItem(title));
+  const handleClick = (slug) => {
+    router.push(hrefItem(slug)); // Usando o slug para o link
   };
 
   const handleKeyUp = (event) => {
@@ -38,7 +38,7 @@ export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
       popupIcon={null}
       options={results}
       onInputChange={(event, newValue) => onSearch(newValue)}
-      getOptionLabel={(option) => option.title}
+      getOptionLabel={(option) => option.title.rendered} // Usar title.rendered do WordPress
       noOptionsText={<SearchNotFound query={query} />}
       isOptionEqualToValue={(option, value) => option.id === value.id}
       slotProps={{
@@ -48,7 +48,7 @@ export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
       renderInput={(params) => (
         <TextField
           {...params}
-          placeholder="Search..."
+          placeholder="Buscar..."
           onKeyUp={handleKeyUp}
           InputProps={{
             ...params.InputProps,
@@ -67,15 +67,15 @@ export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
         />
       )}
       renderOption={(props, post, { inputValue }) => {
-        const matches = match(post.title, inputValue);
-        const parts = parse(post.title, matches);
+        const matches = match(post.title.rendered, inputValue); // Busca no título renderizado
+        const parts = parse(post.title.rendered, matches);
 
         return (
           <li {...props} key={post.id}>
             <Avatar
               key={post.id}
-              alt={post.title}
-              src={post.coverUrl}
+              alt={post.title.rendered}
+              src={post.jetpack_featured_media_url || '/default-image.png'} // Usa a URL da imagem ou um padrão
               variant="rounded"
               sx={{
                 width: 48,
@@ -86,7 +86,7 @@ export function PostSearch({ query, results, onSearch, hrefItem, loading }) {
               }}
             />
 
-            <Link key={inputValue} underline="none" onClick={() => handleClick(post.title)}>
+            <Link key={inputValue} underline="none" onClick={() => handleClick(post.slug)}>
               {parts.map((part, index) => (
                 <Typography
                   key={index}

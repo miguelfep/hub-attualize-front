@@ -1,21 +1,46 @@
-import { paramCase } from 'src/utils/change-case';
-import axios, { endpoints } from 'src/utils/axios';
+import axios from 'src/utils/axios';
 
 import { CONFIG } from 'src/config-global';
-import { getPost, getLatestPosts } from 'src/actions/blog-ssr';
+import { getPostBySlug, getLatestPosts } from 'src/actions/blog-ssr';
 
 import { PostDetailsHomeView } from 'src/sections/blog/view';
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Post details - ${CONFIG.site.name}` };
+export async function generateMetadata({ params }) {
+  const { title } = params;
+
+  // Fetch the post based on the slug
+  const post = await getPostBySlug(title);
+
+  // If the post is found, set the title for SEO
+  if (post) {
+    return {
+      title: `${post?.yoast_head_json?.title || post.title.rendered} - ${CONFIG.site.name}`,
+      description: post?.yoast_head_json?.description || 'Descrição da postagem',
+      openGraph: {
+        title: post?.yoast_head_json?.title || post.title.rendered,
+        description: post?.yoast_head_json?.description,
+        url: post.link,
+        images: [
+          {
+            url: post.jetpack_featured_media_url || '/default-image.png',
+            alt: post.title.rendered,
+          },
+        ],
+      },
+    };
+  }
+
+  // Fallback metadata if the post is not found
+  return { title: `Postagem não encontrada - ${CONFIG.site.name}` };
+}
 
 export default async function Page({ params }) {
   const { title } = params;
 
-  const { post } = await getPost(title);
-
-  const { latestPosts } = await getLatestPosts(title);
+  const post = await getPostBySlug(title);
+  const latestPosts = await getLatestPosts();
 
   return <PostDetailsHomeView post={post} latestPosts={latestPosts} />;
 }
@@ -36,8 +61,8 @@ export { dynamic };
  */
 export async function generateStaticParams() {
   if (CONFIG.isStaticExport) {
-    const res = await axios.get(endpoints.post.list);
-    return res.data.posts.map((post) => ({ title: paramCase(post.title) }));
+    const res = await axios.get('https://attualizecontabil.com.br/wp-json/wp/v2/posts');
+    return res.data.map((post) => ({ slug: post.slug }));  // Usa o slug para gerar os caminhos estáticos
   }
   return [];
 }

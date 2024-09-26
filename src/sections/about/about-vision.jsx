@@ -59,7 +59,7 @@ export function AboutVision() {
         py: { xs: 1.5, md: 2.5 },
       }}
     >
-      {['att', 'spotify', 'netflix', 'hbo', 'amazon'].map((logo) => (
+      {['att'].map((logo) => (
         <Box
           component={m.img}
           key={logo}

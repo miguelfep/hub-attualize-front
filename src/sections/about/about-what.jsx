@@ -49,7 +49,7 @@ export function AboutWhat() {
             <m.div variants={varFade().inUp}>
               <Image
                 alt="Our office small"
-                src={`${CONFIG.site.basePath}/assets/images/about/what-small.webp`}
+                src={`${CONFIG.site.basePath}/assets/images/about/time-desc.webp`}
                 ratio="1/1"
                 sx={{
                   borderRadius: 3,
@@ -65,8 +65,8 @@ export function AboutWhat() {
           <Grid xs={6}>
             <m.div variants={varFade().inUp}>
               <Image
-                alt="Our office large"
-                src={`${CONFIG.site.basePath}/assets/images/about/what-large.webp`}
+                alt="Time Attualize"
+                src={`${CONFIG.site.basePath}/assets/images/about/time-operacao.webp`}
                 ratio="3/4"
                 sx={{
                   borderRadius: 3,

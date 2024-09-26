@@ -8,7 +8,7 @@ import { PostListHomeView } from 'src/sections/blog/view';
 export const metadata = { title: `Nosso Blog - ${CONFIG.site.name}` };
 
 export default async function Page() {
-  const { posts } = await getPosts();
+  const { posts, totalPages } = await getPosts(1, 10); // Carregar a primeira página com 10 posts
 
-  return <PostListHomeView posts={posts} />;
+  return <PostListHomeView initialPosts={posts} totalPages={totalPages} />;
 }

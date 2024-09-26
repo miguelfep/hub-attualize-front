@@ -21,10 +21,16 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
+function truncateText(htmlString, maxLength) {
+  const plainText = htmlString.replace(/(<([^>]+)>)/gi, ''); // Remove HTML tags
+  return plainText.length > maxLength ? `${plainText.slice(0, maxLength)}...` : plainText;
+}
+
 export function PostItem({ post }) {
   const theme = useTheme();
+    
 
-  const linkTo = paths.post.details(post.title);
+  const linkTo = paths.post.details(post.slug);
 
   return (
     <Card>
@@ -41,8 +47,8 @@ export function PostItem({ post }) {
         />
 
         <Avatar
-          alt={post.author.name}
-          src={post.author.avatarUrl}
+          alt={post.author || 'Autor desconhecido'}
+          src={post.author_avatar || ''} 
           sx={{
             left: 24,
             zIndex: 9,
@@ -51,12 +57,12 @@ export function PostItem({ post }) {
           }}
         />
 
-        <Image alt={post.title} src={post.coverUrl} ratio="4/3" />
+        <Image alt={post.title} src={post.imageUrl} ratio="4/3" />
       </Box>
 
       <CardContent sx={{ pt: 6 }}>
         <Typography variant="caption" component="div" sx={{ mb: 1, color: 'text.disabled' }}>
-          {fDate(post.createdAt)}
+          {fDate(post.date)}
         </Typography>
 
         <Link
@@ -68,12 +74,12 @@ export function PostItem({ post }) {
         >
           {post.title}
         </Link>
-
-        <InfoBlock
-          totalViews={post.totalViews}
-          totalShares={post.totalShares}
-          totalComments={post.totalComments}
-        />
+        <Typography
+          variant="body2"
+          component="p"
+          sx={{ mt: 1, color: 'text.secondary' }}
+          dangerouslySetInnerHTML={{ __html: truncateText(post.excerpt, 100) }}
+        />    
       </CardContent>
     </Card>
   );
@@ -82,17 +88,17 @@ export function PostItem({ post }) {
 // ----------------------------------------------------------------------
 
 export function PostItemLatest({ post, index }) {
-  const theme = useTheme();
+  const theme = useTheme();  
 
-  const linkTo = paths.post.details(post.title);
+  const linkTo = paths.post.details(post.slug);
 
   const postSmall = index === 1 || index === 2;
-
+  
   return (
     <Card>
       <Avatar
-        alt={post.author.name}
-        src={post.author.avatarUrl}
+        alt={post.author || 'Autor desconhecido'}
+        src={post.author || '/default-avatar.png'} 
         sx={{
           top: 24,
           left: 24,
@@ -103,7 +109,7 @@ export function PostItemLatest({ post, index }) {
 
       <Image
         alt={post.title}
-        src={post.coverUrl}
+        src={post.imageUrl}
         ratio="4/3"
         sx={{ height: 360 }}
         slotProps={{ overlay: { bgcolor: varAlpha(theme.vars.palette.grey['900Channel'], 0.48) } }}
@@ -119,7 +125,7 @@ export function PostItemLatest({ post, index }) {
         }}
       >
         <Typography variant="caption" component="div" sx={{ mb: 1, opacity: 0.64 }}>
-          {fDate(post.createdAt)}
+          {fDate(post.date)}
         </Typography>
 
         <Link
@@ -136,13 +142,12 @@ export function PostItemLatest({ post, index }) {
         >
           {post.title}
         </Link>
-
-        <InfoBlock
-          totalViews={post.totalViews}
-          totalShares={post.totalShares}
-          totalComments={post.totalComments}
-          sx={{ opacity: 0.64, color: 'common.white' }}
-        />
+        <Typography
+          variant="body2"
+          component="p"
+          sx={{ mt: 1, color: 'text.white' }}
+          dangerouslySetInnerHTML={{ __html: truncateText(post.excerpt, 55) }}
+        />       
       </CardContent>
     </Card>
   );

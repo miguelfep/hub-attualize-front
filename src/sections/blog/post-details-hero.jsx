@@ -12,7 +12,6 @@ import { useResponsive } from 'src/hooks/use-responsive';
 
 import { fDate } from 'src/utils/format-time';
 
-import { _socials } from 'src/_mock';
 import { varAlpha, bgGradient } from 'src/theme/styles';
 
 import { Iconify, SocialIcon } from 'src/components/iconify';
@@ -21,6 +20,22 @@ import { Iconify, SocialIcon } from 'src/components/iconify';
 
 export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
   const theme = useTheme();
+
+
+  const _socialsShare = [
+    {
+      name: 'Facebook',
+      icon: 'eva:facebook-fill',
+      url: (postUrl, postTitle) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}&title=${encodeURIComponent(postTitle)}`,
+    },
+     {
+      name: 'LinkedIn',
+      icon: 'eva:linkedin-fill',
+      url: (postUrl, postTitle) => `https://www.linkedin.com/shareArticle?url=${encodeURIComponent(postUrl)}&title=${encodeURIComponent(postTitle)}`,
+    },
+  ];
+  
+  
 
   const smUp = useResponsive('up', 'sm');
 
@@ -37,13 +52,13 @@ export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
     >
       <Container sx={{ height: 1, position: 'relative' }}>
         <Typography
-          variant="h3"
+          variant="h2"
           component="h1"
           sx={{
             zIndex: 9,
             color: 'common.white',
             position: 'absolute',
-            maxWidth: 480,
+            maxWidth: 600,
             pt: { xs: 2, md: 8 },
           }}
         >
@@ -66,13 +81,13 @@ export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
             >
               <Avatar
                 alt={author.name}
-                src={author.avatarUrl}
+                src="/logo/hub-tt.png"
                 sx={{ width: 64, height: 64, mr: 2 }}
               />
 
               <ListItemText
                 sx={{ color: 'common.white' }}
-                primary={author.name}
+                primary={author}
                 secondary={fDate(createdAt)}
                 primaryTypographyProps={{ typography: 'subtitle1', mb: 0.5 }}
                 secondaryTypographyProps={{ color: 'inherit', sx: { opacity: 0.64 } }}
@@ -87,13 +102,15 @@ export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
             FabProps={{ size: 'medium' }}
             sx={{ position: 'absolute', bottom: { xs: 32, md: 64 }, right: { xs: 16, md: 24 } }}
           >
-            {_socials.map((action) => (
+            {_socialsShare.map((action) => (
               <SpeedDialAction
                 key={action.name}
                 icon={<SocialIcon icon={action.name} />}
                 tooltipTitle={action.name}
                 tooltipPlacement="top"
                 FabProps={{ color: 'default' }}
+                onClick={() => window.open(action.url(window.location.href, title), '_blank')} // Abertura em nova aba
+
               />
             ))}
           </SpeedDial>

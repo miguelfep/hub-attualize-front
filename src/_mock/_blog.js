@@ -4,7 +4,6 @@ export const POST_PUBLISH_OPTIONS = [
 ];
 
 export const POST_SORT_OPTIONS = [
-  { value: 'latest', label: 'Latest' },
-  { value: 'popular', label: 'Popular' },
-  { value: 'oldest', label: 'Oldest' },
+  { value: 'latest', label: 'Novos' },
+  { value: 'oldest', label: 'Antigos' },
 ];

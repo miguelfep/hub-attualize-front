@@ -12,6 +12,11 @@ export const navData = [
     icon: <Iconify width={22} icon="solar:file-bold-duotone" />,
   },
   {
+    title: 'Blog',
+    path: paths.post.blog,
+    icon: <Iconify width={22} icon="solar:file-bold-duotone" />,
+  },
+  {
     title: 'Fale Conosco',
     path: paths.contact,
     icon: <Iconify width={22} icon="solar:atom-bold-duotone" />,
