@@ -62,7 +62,9 @@ export const NewUClienteSchema = zod.object({
   nome: zod.string().min(1, { message: 'Nome é obrigatório!' }),
   razaoSocial: zod.string().optional(),
   cnpj: zod.string().min(1, { message: 'CNPJ é obrigatório!' }),
-  codigo: zod.number().optional(),
+  codigo: zod
+  .preprocess((val) => (val ? Number(val) : undefined), zod.number().optional())
+  .optional(),  // Preprocess para converter string para número
   email: zod
     .string()
     .min(1, { message: 'Email é obrigatório!' })
@@ -141,7 +143,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       nome: currentCliente?.nome || '',
       razaoSocial: currentCliente?.razaoSocial || '',
       cnpj: currentCliente?.cnpj || '',
-      codigo: currentCliente?.codigo || '',
+      codigo: currentCliente?.codigo || null,
       email: currentCliente?.email || '',
       emailFinanceiro: currentCliente?.emailFinanceiro || '',
       whatsapp: currentCliente?.whatsapp || '',
