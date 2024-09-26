@@ -1,15 +1,10 @@
 import { toast } from 'sonner';
 import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
-
 import { styled } from '@mui/material/styles';
 import { Box, Button, Typography, DialogActions } from '@mui/material';
-
 import { uploadArquivo } from 'src/actions/societario';
-
 import { Iconify } from 'src/components/iconify';
-
-
 
 const HeadingTypography = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(5),
@@ -18,8 +13,17 @@ const HeadingTypography = styled(Typography)(({ theme }) => ({
   },
 }));
 
+const documentFieldMapping = {
+  RG: 'rgAnexo',
+  IPTU: 'iptuAnexo',
+  RT: 'rtAnexo',
+  // Add other mappings as necessary
+};
+
 const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUploaded }) => {
   const [files, setFiles] = useState([]);
+  
+  // Dropzone configuration
   const { getRootProps, getInputProps } = useDropzone({
     multiple: false,
     accept: {
@@ -31,20 +35,25 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
   });
 
   const handleSubmit = async (event) => {
+    // Prevent the form submission and stop event propagation
     event.preventDefault();
+    event.stopPropagation();
+
     const arquivo = files[0];
+    if (!arquivo) {
+      toast.error('Por favor, selecione um arquivo antes de enviar.');
+      return;
+    }
 
     try {
       const response = await uploadArquivo(clientId, name, arquivo);
-
       if (response.status === 200) {
-        const updatedData = response.data;  // Supondo que a resposta contenha toda a abertura atualizada
-
-        handleDialogClose();
-        onFileUploaded(name, updatedData); 
+        const updatedData = { [documentFieldMapping[name]]: response.data[documentFieldMapping[name]] }; 
+        console.log(updatedData);
+        
+        handleDialogClose();  // Fecha o diálogo após upload
+        onFileUploaded(name, updatedData);  // Atualiza os dados no componente pai
         toast.success('Arquivo enviado com sucesso');
-      } else {
-        // Tratar erro
       }
     } catch (error) {
       console.error('Erro ao enviar arquivo', error);
@@ -54,7 +63,6 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
 
   return (
     <Box {...getRootProps({ className: 'dropzone' })}>
-      
       <input {...getInputProps()} />
       {/* Renderizar a imagem de pré-visualização */}
       {files.length ? (
@@ -85,16 +93,18 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
           color="success"
           variant="outlined"
           onClick={(e) => {
-            e.stopPropagation(); // Parando a propagação do evento
-            handleSubmit(e);
+            // Parando a propagação do evento de clique para evitar o envio do formulário principal
+            e.preventDefault();
+            e.stopPropagation(); 
+            handleSubmit(e); // Função de envio de arquivo
           }}
         >
           Enviar
         </Button>
         <Button
           onClick={(e) => {
-            e.stopPropagation(); // Parando a propagação do evento
-            handleDialogClose(e);
+            e.stopPropagation(); // Previne a propagação do evento de clique
+            handleDialogClose(e); // Fecha o modal
           }}
           color="secondary"
         >
@@ -104,6 +114,5 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
     </Box>
   );
 };
-
 
 export default UploadArquivoAbertura;
