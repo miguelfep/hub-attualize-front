@@ -150,7 +150,8 @@ export function ContratoNewEditForm({ currentContrato }) {
     loadingSend.onTrue();
     try {
       const response = await postContrato(data);
-      if (response === 201) {
+      
+      if (response.status === 201) {
         reset();
         loadingSend.onFalse();
         router.push(paths.dashboard.contratos.root);

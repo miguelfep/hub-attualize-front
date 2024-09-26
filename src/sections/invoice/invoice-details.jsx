@@ -317,7 +317,7 @@ export function InvoiceDetails({ invoice }) {
 
         {/* Mostrar o campo de edição do motivo se o status for 'perdida' */}
         {currentStatus === 'perdida' && (
-          <Box sx={{ mt: 4 }}>
+           <Box sx={{ mt: 4, mb: 6 }}> 
             <Typography variant="h6" sx={{ mb: 2 }}>
               Motivo da perda
             </Typography>
