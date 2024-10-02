@@ -12,7 +12,6 @@ import Stack from '@mui/material/Stack';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 
-import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -70,10 +69,8 @@ export function ContratoNewEditForm({ currentContrato }) {
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false); // Controle do modal
   const [initialTotal, setInitialTotal] = useState(0); // Valor inicial do contrato para comparação
 
-  // Calcular o valor total do contrato
-  const calculateTotal = (items) => {
-    return items.reduce((acc, item) => acc + item.quantidade * item.valorUnitario, 0);
-  };
+  const calculateTotal = (items) => 
+    items.reduce((acc, item) => acc + item.quantidade * item.valorUnitario, 0);
 
   // Ao carregar o contrato, definimos o valor total inicial
   useEffect(() => {
