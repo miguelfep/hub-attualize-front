@@ -1,6 +1,6 @@
 import { z as zod } from 'zod';
 import { toast } from 'sonner';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -10,6 +10,7 @@ import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import LoadingButton from '@mui/lab/LoadingButton';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -66,6 +67,20 @@ export function ContratoNewEditForm({ currentContrato }) {
   const loadingSave = useBoolean();
   const loadingSend = useBoolean();
   const [tabIndex, setTabIndex] = useState(0); // Controle da aba ativa
+  const [openConfirmDialog, setOpenConfirmDialog] = useState(false); // Controle do modal
+  const [initialTotal, setInitialTotal] = useState(0); // Valor inicial do contrato para comparação
+
+  // Calcular o valor total do contrato
+  const calculateTotal = (items) => {
+    return items.reduce((acc, item) => acc + item.quantidade * item.valorUnitario, 0);
+  };
+
+  // Ao carregar o contrato, definimos o valor total inicial
+  useEffect(() => {
+    if (currentContrato) {
+      setInitialTotal(calculateTotal(currentContrato.items));
+    }
+  }, [currentContrato]);
 
   const defaultValues = useMemo(
     () => ({
@@ -102,66 +117,60 @@ export function ContratoNewEditForm({ currentContrato }) {
   const {
     reset,
     handleSubmit,
+    watch,
     formState: { isSubmitting, errors },
   } = methods;
 
-  const handleSaveAsDraft = handleSubmit(async (data) => {
+  const items = watch('items'); // Observar mudanças nos itens
+
+  // Função para salvar o contrato, com ou sem atualização das cobranças
+  const saveContrato = async (data, atualizarCobrancas) => {
     try {
-      loadingSave.onTrue();
+      const contratoData = { ...data, atualizarCobrancas };
+      const response = currentContrato
+        ? await updateContrato(currentContrato._id, contratoData)
+        : await postContrato(contratoData);
 
-      const resp = await updateContrato(currentContrato._id, data);
-
-      if (resp.status === 200) {
-        reset({
-          titulo: resp.data.titulo || '',
-          cliente: resp.data.cliente || null,
-          valorMensalidade: resp.data.valorMensalidade || 0,
-          metodoCobranca: resp.data.metodoCobranca || 'boleto',
-          tipoCobranca: resp.data.tipoCobranca || 'mensal',
-          tipoContrato: resp.data.tipoContrato || 'normal',
-          cobrancaContabil: resp.data.cobrancaContabil ?? false,
-          possuiDecimoTerceiro: resp.data.possuiDecimoTerceiro ?? false,
-          dataVencimento: resp.data.dataVencimento || 10,
-          status: resp.data.status || 'ativo',
-          dataInicio: resp.data.dataInicio || today(),
-          observacoes: resp.data.observacoes || '',
-          items: resp.data.items || [
-            {
-              servico: '',
-              descricao: '',
-              quantidade: 1,
-              valorUnitario: 0,
-            },
-          ],
-        });
-
-        loadingSave.onFalse();
-        toast.success('Atualizado com sucesso');
+      if (response.status === 200 || response.status === 201) {
+        toast.success('Contrato salvo com sucesso!');
+       
       } else {
-        toast.error(resp.data.message);
+        toast.error('Erro ao salvar contrato');
       }
     } catch (error) {
       console.error(error);
+      toast.error('Erro ao salvar contrato');
+    } finally {
       loadingSave.onFalse();
+      loadingSend.onFalse();
+    }
+  };
+
+  // Salvar como rascunho
+  const handleSaveAsDraft = handleSubmit(async (data) => {
+    const currentTotal = calculateTotal(items);
+
+    if (currentTotal !== initialTotal) {
+      // Se o valor total mudou, exibir o modal de confirmação
+      setOpenConfirmDialog(true);
+    } else {
+      // Se o valor não mudou, enviar diretamente com `atualizarCobranca: false`
+      await saveContrato(data, false);
     }
   });
 
+  // Função chamada ao confirmar se as cobranças devem ser atualizadas ou não
+  const handleConfirmUpdate = async (shouldUpdate) => {
+    setOpenConfirmDialog(false); // Fechar o modal
+
+    const data = methods.getValues(); // Obter dados do formulário
+    
+    await saveContrato(data, shouldUpdate); // Salvar contrato com a decisão
+  };
+
+  // Função para criar e enviar o contrato
   const handleCreateAndSend = handleSubmit(async (data) => {
-    loadingSend.onTrue();
-    try {
-      const response = await postContrato(data);
-      
-      if (response.status === 201) {
-        reset();
-        loadingSend.onFalse();
-        router.push(paths.dashboard.contratos.root);
-      } else {
-        toast.error('Erro ao gerar Contrato');
-      }
-    } catch (error) {
-      console.error(error);
-      loadingSend.onFalse();
-    }
+    await saveContrato(data, false); // Criar e enviar sem perguntar sobre atualização de cobrança
   });
 
   // Função para controlar a troca de abas
@@ -214,6 +223,20 @@ export function ContratoNewEditForm({ currentContrato }) {
           {currentContrato ? 'Duplicar' : 'Criar'}
         </LoadingButton>
       </Stack>
+
+      {/* Diálogo de confirmação */}
+      <Dialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)}>
+        <DialogTitle>Atualizar cobranças?</DialogTitle>
+        <DialogContent>O valor total do contrato foi alterado. Deseja atualizar as cobranças?</DialogContent>
+        <DialogActions>
+          <Button onClick={() => handleConfirmUpdate(false)} color="secondary">
+            Não
+          </Button>
+          <Button onClick={() => handleConfirmUpdate(true)} color="primary">
+            Sim
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Form>
   );
 }

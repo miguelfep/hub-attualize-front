@@ -10,7 +10,6 @@ export default async function Page({ params }) {
   const { id } = params;
 
   const currentContrato = await getContratoPorId(id);
-  console.log(currentContrato);
 
   return <ContratoEditView contrato={currentContrato} />;
 }
