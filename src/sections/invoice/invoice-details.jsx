@@ -46,12 +46,15 @@ const cobrancaStatusColors = {
   EMABERTO: 'warning',
   VENCIDO: 'error',
   CANCELADO: 'info',
+  RECEBIDO: 'success',
 };
 
 const cobrancaStatusTexts = {
   EMABERTO: 'Aguardando pagamento',
   VENCIDO: 'Vencida',
   CANCELADO: 'Cancelado',
+  RECEBIDO: 'Pago',
+
 };
 
 export function InvoiceDetails({ invoice }) {
