@@ -21,15 +21,17 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 const statusColors = {
-  EMABERTO: 'success',
+  EMABERTO: 'warning',
   VENCIDO: 'error',
   CANCELADO: 'info',
+  RECEBIDO: 'success',
 };
 
 const statusTexts = {
   EMABERTO: 'Aguardando pagamento',
   VENCIDO: 'Vencida',
   CANCELADO: 'Cancelado',
+  RECEBIDO: 'Pago',
 };
 
 export function CobrancaExistente({ invoice }) {
@@ -38,7 +40,7 @@ export function CobrancaExistente({ invoice }) {
   const handleDownload = async (codigoSolicitacao) => {
     try {
       const response = await axios.get(
-        `https://api.attualizecontabil.com.br/api/contratos/cobrancas/faturas/${codigoSolicitacao}/pdf`
+        `http://localhost:9443/api/contratos/cobrancas/faturas/${codigoSolicitacao}/pdf`
       );
 
       const { pdf } = response.data;
