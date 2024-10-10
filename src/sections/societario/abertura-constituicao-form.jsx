@@ -129,20 +129,19 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
  
   useEffect(() => {
     if (currentAbertura) {
-      setFormData({
+      setFormData((prevFormData) => ({
+        ...prevFormData,
         ...currentAbertura,
-        // Formatando 'capitalSocial' para exibir corretamente como moeda
         capitalSocial: currentAbertura.capitalSocial || 0,
-         socios: currentAbertura.socios || formData.socios,
+        socios: currentAbertura.socios || prevFormData.socios,
         enderecoComercial: {
-          ...formData.enderecoComercial,
+          ...prevFormData.enderecoComercial,
           ...currentAbertura.enderecoComercial,
         },
-      });
+      }));
       setNumSocios(currentAbertura.socios?.length || 1);
     }
-  }, [currentAbertura]);
-  
+  }, [currentAbertura, formData.enderecoComercial, formData.socios]);
   
 
   useEffect(() => {
@@ -207,8 +206,8 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     setFormData({ ...formData, socios: newSocios });
   };
 
-  const handleCapitalSocialChange = (values) => {
-    const { floatValue } = values; // Número sem formatação
+  const handleCapitalSocialChange = (currencyValues) => {
+    const { floatValue } = currencyValues; // Número sem formatação
     setFormData((prevData) => ({
       ...prevData,
       capitalSocial: floatValue, // Salva o valor como número
