@@ -32,18 +32,28 @@ import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/soc
 
 import { Iconify } from 'src/components/iconify';
 
+import { NumericFormat } from 'react-number-format';
+
+
 import DialogDocumentsAbertura from './abertura-dialog-documento';
 
-// Funções auxiliares para formatar e remover formatação de moeda
+// Funções auxiliares de formatação de moeda
 const formatCurrency = (value) => {
-  const numberValue = Number(value.replace(/[^\d]/g, '')) / 100;
+  const numberValue = Number(value.replace(/[^\d]/g, ''));
   return numberValue.toLocaleString('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   });
 };
 
-const unformatCurrency = (value) => Number(value.replace(/[^\d]/g, '')) / 100;
+const unformatCurrency = (value) => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    return Number(value.replace(/[^\d]/g, ''));
+  }
+  return 0;
+};
+
 
 export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   const [formData, setFormData] = useState({
@@ -59,7 +69,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     metragemImovel: '',
     metragemUtilizada: '',
     senhaGOV: '',
-    capitalSocial: '',
+    capitalSocial: 0,
     valorMensalidade: '',
     observacoes: '',
     notificarWhats: false,
@@ -71,6 +81,9 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     situacaoAbertura: 0,
     somenteAtualizar: true,
     numSocios: 1, // Valor padrão para número de sócios
+    previsaoFaturamento: currentAbertura.previsaoFaturamento,
+    proLabore: currentAbertura.proLabore,
+    regimeTributario: currentAbertura.regimeTributario,
     socios: [
       {
         nome: '',
@@ -113,22 +126,24 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     event.preventDefault();
   }, []);
 
+ 
   useEffect(() => {
     if (currentAbertura) {
-      setFormData((prevData) => ({
-        ...prevData,
+      setFormData({
         ...currentAbertura,
-        socios: Array.isArray(currentAbertura.socios) ? currentAbertura.socios : prevData.socios,
+        // Formatando 'capitalSocial' para exibir corretamente como moeda
+        capitalSocial: currentAbertura.capitalSocial || 0,
+         socios: currentAbertura.socios || formData.socios,
         enderecoComercial: {
-          ...prevData.enderecoComercial,
+          ...formData.enderecoComercial,
           ...currentAbertura.enderecoComercial,
         },
-        situacaoAbertura: currentAbertura.situacaoAbertura || prevData.situacaoAbertura,
-        numSocios: currentAbertura.socios?.length || prevData.numSocios, // Garantir que sócios e numSocios sejam atualizados
-      }));
-      setNumSocios(currentAbertura.socios?.length || 1); // Atualizar o número de sócios
+      });
+      setNumSocios(currentAbertura.socios?.length || 1);
     }
   }, [currentAbertura]);
+  
+  
 
   useEffect(() => {
     if (formData.situacaoAbertura !== (currentAbertura?.situacaoAbertura || 0)) {
@@ -139,24 +154,28 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     }
   }, [formData.situacaoAbertura, currentAbertura]);
 
-  // Função para atualizar os dados do formulário
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const [mainField, subField] = name.split('.');
 
-    if (subField) {
-      setFormData((prevData) => ({
-        ...prevData,
-        [mainField]: {
-          ...prevData[mainField],
-          [subField]: value,
-        },
-      }));
-    } else {
+  const handleChange = (event) => {
+    const { name, value, type, checked } = event.target;
+    const [field, subfield] = name.split('.');
+
+    if (field === 'socios') {
+      const updatedSocios = [...formData.socios];
+      updatedSocios[parseInt(subfield, 10)] = {
+        ...updatedSocios[parseInt(subfield, 10)],
+        [name.split('.').pop()]: type === 'checkbox' ? checked : value,
+      };
+      setFormData({ ...formData, socios: updatedSocios });
+    } else if (field === 'enderecoComercial') {
       setFormData({
         ...formData,
-        [name]: type === 'checkbox' ? checked : value,
+        enderecoComercial: {
+          ...formData.enderecoComercial,
+          [subfield]: value,
+        },
       });
+    } else {
+      setFormData({ ...formData, [name]: type === 'checkbox' ? checked : value });
     }
   };
 
@@ -188,15 +207,14 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     setFormData({ ...formData, socios: newSocios });
   };
 
-  const handleCapitalSocialChange = (event) => {
-    const { value } = event.target;
-    const numericValue = unformatCurrency(value);
-
-    setFormData({
-      ...formData,
-      capitalSocial: numericValue, // Armazenado como número
-    });
+  const handleCapitalSocialChange = (values) => {
+    const { floatValue } = values; // Número sem formatação
+    setFormData((prevData) => ({
+      ...prevData,
+      capitalSocial: floatValue, // Salva o valor como número
+    }));
   };
+
 
   const handleCepBlur = async () => {
     const cep = formData.enderecoComercial.cep.replace('-', '');
@@ -230,7 +248,11 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   const handleSave = async () => {
     loading.onTrue();
     try {
-      await updateAbertura(currentAbertura._id, formData);
+      const dataToSave = {
+        ...formData,
+        capitalSocial: formData.capitalSocial, // já está como número
+      };
+      await updateAbertura(currentAbertura._id, dataToSave);
       toast.success('Dados salvos com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar os dados');
@@ -238,6 +260,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
       loading.onFalse();
     }
   };
+
 
   const handleTabChange = (event, newValue) => {
     setActiveTab(newValue);
@@ -659,12 +682,17 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 </React.Fragment>
               ))}
               <Grid item xs={12} sm={6} md={2}>
-                <TextField
+              <NumericFormat
                   label="Capital Social"
-                  name="capitalSocial"
+                  customInput={TextField}
+                  value={formData.capitalSocial}
+                  thousandSeparator="."
+                  decimalSeparator=","
+                  prefix="R$ "
+                  decimalScale={2}
+                  fixedDecimalScale
+                  onValueChange={handleCapitalSocialChange}
                   fullWidth
-                  value={formatCurrency(formData.capitalSocial.toString())} // Formatação BRL para exibição
-                  onChange={handleCapitalSocialChange}
                 />
               </Grid>
 
@@ -679,11 +707,10 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 >
                 {Array.isArray(formData.socios) && formData.socios.map((socio, index) => (
-  <MenuItem key={index} value={socio.nome}>
-    {socio.nome}
-  </MenuItem>
-))}
-
+                    <MenuItem key={index} value={socio.nome}>
+                      {socio.nome}
+                    </MenuItem>
+                  ))}
                 </TextField>
               </Grid>
               <Grid item xs={12} sm={6} md={6}>
@@ -964,6 +991,65 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 onChange={handleChange}
               />
             </Grid>
+            {/* Pro Labore */}
+        <Grid item xs={12} sm={6} md={4}>
+          <NumericFormat
+            label="Pro Labore"
+            customInput={TextField}
+            value={formData.proLabore}
+            thousandSeparator="."
+            decimalSeparator=","
+            prefix="R$ "
+            decimalScale={2}
+            fixedDecimalScale
+            onValueChange={({ floatValue }) => 
+              setFormData((prevData) => ({
+                ...prevData,
+                proLabore: floatValue || 0, // Salva como número
+              }))
+            }
+            fullWidth
+          />
+        </Grid>
+
+        {/* Previsão de Faturamento */}
+        <Grid item xs={12} sm={6} md={4}>
+          <NumericFormat
+            label="Previsão de Faturamento"
+            customInput={TextField}
+            value={formData.previsaoFaturamento}
+            thousandSeparator="."
+            decimalSeparator=","
+            prefix="R$ "
+            decimalScale={2}
+            fixedDecimalScale
+            onValueChange={({ floatValue }) => 
+              setFormData((prevData) => ({
+                ...prevData,
+                previsaoFaturamento: floatValue || 0, // Salva como número
+              }))
+            }
+            fullWidth
+          />
+        </Grid>
+
+        {/* Regime Tributário */}
+        <Grid item xs={12} sm={6} md={4}>
+          <TextField
+            select
+            label="Regime Tributário"
+            name="regimeTributario"
+            fullWidth
+            value={formData.regimeTributario || ''}
+            onChange={handleChange}
+          >
+            <MenuItem value="Simples">Simples</MenuItem>
+            <MenuItem value="Real">Real</MenuItem>
+            <MenuItem value="Presumido">Presumido</MenuItem>
+            <MenuItem value="Simei">Simei</MenuItem>
+          </TextField>
+         
+        </Grid>
           </Grid>
          
       </Grid>        
