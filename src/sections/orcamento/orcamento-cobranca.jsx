@@ -149,7 +149,7 @@ export function CobrancaExistente({ invoice }) {
                     <Stack spacing={2}>
                       <Stack direction="row" justifyContent="space-between">
                         <Typography variant="h6">Chave PIX:</Typography>
-                        <Typography variant="h6">32.610.190/0001-55</Typography>
+                        <Typography variant="h6">de6ce328-8119-4256-84c5-e3bd0fd9f9fa</Typography>
                       </Stack>
                       <Stack direction="row" justifyContent="space-between">
                         <Typography variant="h6">Beneficiário:</Typography>
@@ -160,7 +160,7 @@ export function CobrancaExistente({ invoice }) {
                       <Button
                         variant="contained"
                         startIcon={<Iconify width={16} icon="eva:copy-outline" />}
-                        onClick={() => handleCopy('32.610.190/0001-55', 'Chave PIX copiada!')}
+                        onClick={() => handleCopy('de6ce328-8119-4256-84c5-e3bd0fd9f9fa', 'Chave PIX copiada!')}
                         fullWidth
                       >
                         Copiar Chave PIX
