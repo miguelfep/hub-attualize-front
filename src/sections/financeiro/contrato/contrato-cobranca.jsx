@@ -35,6 +35,7 @@ export function ContratoCobrancas({ contratoId, contrato }) {
   const [confirm, setConfirm] = useState({ open: false, action: null });
   const [popoverAnchor, setPopoverAnchor] = useState(null); // Controla o popover individualmente
   const [popoverIndex, setPopoverIndex] = useState(null); // Guarda o índice da cobrança aberta
+  const [loadingBoleto, setLoadingBoleto] = useState(false);
 
   const cobrancaStatusTexts = {
     EMABERTO: 'Aguardando pagamento',
@@ -99,19 +100,24 @@ export function ContratoCobrancas({ contratoId, contrato }) {
 
   // Função para gerar boleto
   const handleGenerateBoleto = async (cobrancaId) => {
+    if (loadingBoleto) return;
+    setLoadingBoleto(true); // Inicia o estado de loading
+
     try {
-      await gerarBoletoPorId(cobrancaId);
+      await gerarBoletoPorId(cobrancaId);  
       toast.success('Boleto gerado com sucesso!');
       fetchCobrancas();
     } catch (error) {
       toast.error('Erro ao gerar boleto');
+    }
+    finally {
+      setLoadingBoleto(false); // Reseta o estado de loading após o fim da ação
     }
   };
 
   // Função para cancelar boleto
   const handleCancelarBoleto = async (cobrancaId) => {
     try {
-      console.log('vai cancelar');
       await cancelarBoleto(cobrancaId);
       toast.success('Boleto cancelado com sucesso!');
       fetchCobrancas();
@@ -225,10 +231,11 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                             handleGenerateBoleto(cobranca._id);
                             handleClosePopover();
                           }}
+                          disabled={loadingBoleto}
                         >
                           <Iconify icon="mdi:bank-plus" />
-                          Gerar Boleto
-                        </MenuItem>
+                          {loadingBoleto ? 'Gerando...' : 'Gerar Boleto'} {/* Exibe mensagem de carregamento */}
+                          </MenuItem>
                       ) : (
                         <>
                           <MenuItem
