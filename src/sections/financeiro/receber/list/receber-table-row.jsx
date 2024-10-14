@@ -25,7 +25,7 @@ import { cancelarBoleto, gerarBoletoPorId, enviarBoletoDigisac } from 'src/actio
 
 export function ReceberTableRow({ row, selected, onSelectRow, fetchCobrancas }) {
   const popover = usePopover();
-  const [confirm, setConfirm] = useState({ open: false, action: null });
+  const [loading, setLoading] = useState(false); // Estado de carregamento
 
   // Função para enviar o boleto via WhatsApp
   const handleSendWhatsApp = async () => {
@@ -50,14 +50,16 @@ export function ReceberTableRow({ row, selected, onSelectRow, fetchCobrancas }) 
     }
   };
 
-  // Função para gerar boleto
   const handleGenerateBoleto = async () => {
+    setLoading(true); // Inicia o estado de carregamento
     try {
       await gerarBoletoPorId(row._id);
       toast.success('Boleto gerado com sucesso!');
-      fetchCobrancas(); // Atualiza as cobranças
+      fetchCobrancas();
     } catch (error) {
       toast.error('Erro ao gerar boleto');
+    } finally {
+      setLoading(false); // Encerra o estado de carregamento após conclusão
     }
   };
 
@@ -181,9 +183,10 @@ export function ReceberTableRow({ row, selected, onSelectRow, fetchCobrancas }) 
                     handleGenerateBoleto();
                     popover.onClose();
                   }}
+                  disabled={loading}
                 >
                   <Iconify icon="mdi:bank-plus" />
-                  Gerar Boleto
+                  {loading ? 'Gerando...' : 'Gerar Boleto'}
                 </MenuItem>
               )}
 
