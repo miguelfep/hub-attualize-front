@@ -51,17 +51,34 @@ export function ReceberTableRow({ row, selected, onSelectRow, fetchCobrancas }) 
   };
 
   const handleGenerateBoleto = async () => {
-    setLoading(true); // Inicia o estado de carregamento
+    if (loading) return; // Evita chamadas duplicadas
+    
+    setLoading(true);
     try {
-      await gerarBoletoPorId(row._id);
-      toast.success('Boleto gerado com sucesso!');
-      fetchCobrancas();
+      console.log(`Iniciando geração de boleto para ID: ${row._id}`);
+      
+      // Executa a chamada para gerar o boleto
+      const res = await gerarBoletoPorId(row._id);
+      
+      // Valida se a resposta foi bem-sucedida
+      if (res.status === 200 || res.status === 201) {
+        console.log('Boleto gerado com sucesso:', res.data); // Log de sucesso
+        toast.success('Boleto gerado com sucesso!');
+        await fetchCobrancas(); // Atualiza as cobranças
+      } else {
+        console.error('Erro ao gerar boleto: resposta inesperada', res);
+        toast.error('Erro ao gerar boleto: resposta inesperada');
+      }
     } catch (error) {
+      console.error('Erro ao gerar boleto:', error); // Log de erro detalhado
       toast.error('Erro ao gerar boleto');
     } finally {
-      setLoading(false); // Encerra o estado de carregamento após conclusão
+      setLoading(false);
+      console.log('Finalizando geração de boleto');
     }
   };
+  
+  
 
   // Função para cancelar boleto
   const handleCancelarBoleto = async () => {

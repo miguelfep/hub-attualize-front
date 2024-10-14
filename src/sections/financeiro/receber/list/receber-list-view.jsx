@@ -342,7 +342,8 @@ export function ReceberListView() {
                     key={row._id}
                     row={row}
                     selected={table.selected.includes(row._id)}
-                    onSelectRow={() => table.onSelectRow(row._id)}                   
+                    onSelectRow={() => table.onSelectRow(row._id)} 
+                    fetchCobrancas={fetchCobrancas}                  
                   />
                 ))}
 
