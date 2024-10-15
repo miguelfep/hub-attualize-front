@@ -34,7 +34,7 @@ import { Iconify } from 'src/components/iconify';
 import DialogDocumentsAbertura from './abertura-dialog-documento';
 
 export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValue }) { 
-  const { register, handleSubmit, setValue, watch } = useForm({
+  const { register, setValue, watch } = useForm({
     defaultValues: {
       nomeEmpresarial: '',
       dataCriacao: '',
@@ -59,18 +59,16 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
       iptuAnexo: null,
       rgAenxo: null,
       numSocios: 1,
-      socios: [
-        {
-          nome: '',
-          cpf: '',
-          rg: '',
-          endereco: '',
-          porcentagem: 0,
-          estadoCivil: '',
-          naturalidade: '',
-          administrador: false,
-        },
-      ],
+      socios: Array(currentAbertura.socios?.length || 1).fill({
+        nome: '',
+        cpf: '',
+        rg: '',
+        profissao: '',
+        porcentagem: '',
+        estadoCivil: '',
+        naturalidade: '',
+        administrador: false,
+      }),
       enderecoComercial: {
         cep: '',
         logradouro: '',
@@ -91,17 +89,10 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
     rt: currentAbertura?.rtAnexo != null,
   });
 
-  // Função chamada ao sucesso do upload
-  const handleFileUploadSuccess = (documento) => {
-    setDocumentosEnviados((prevState) => ({
-      ...prevState,
-      [documento]: true,
-    }));
-  };
 
   const loading = useBoolean();
   const [loadingCep, setLoadingCep] = useState(false);
-  const [numSocios, setNumSocios] = useState(1);
+  const [numSocios, setNumSocios] = useState(currentAbertura.socios?.length || 1);
   const formData = watch();
 
   const StyledGrid = styled(Grid)(({ theme }) => ({
@@ -203,23 +194,15 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
       setValue('marcaRegistrada', currentAbertura.marcaRegistrada || false);
       setValue('interesseRegistroMarca', currentAbertura.interesseRegistroMarca || false);
       setValue('possuiRT', currentAbertura.possuiRT || false);
-      setNumSocios(currentAbertura.socios?.length || 1);
+      setNumSocios(currentAbertura.socios.length);
       setValue('responsavelReceitaFederal', currentAbertura.responsavelReceitaFederal || '');
       setValue('formaAtuacao', currentAbertura.formaAtuacao || '');
       setValue('valorMensalidade', formatToBRL(currentAbertura.valorMensalidade || 0));
 
        // Preencher os valores para cada sócio
-    currentAbertura.socios?.forEach((socio, index) => {
-      setValue(`socios.${index}.nome`, socio.nome || '');
-      setValue(`socios.${index}.cpf`, socio.cpf || '');
-      setValue(`socios.${index}.rg`, socio.rg || '');
-      setValue(`socios.${index}.endereco`, socio.endereco || '');
-      setValue(`socios.${index}.porcentagem`, socio.porcentagem || '');
-      setValue(`socios.${index}.estadoCivil`, socio.estadoCivil || ''); // Estado Civil
-      setValue(`socios.${index}.regimeBens`, socio.regimeBens || ''); // Regime de Bens
-      setValue(`socios.${index}.naturalidade`, socio.naturalidade || '');
-      setValue(`socios.${index}.administrador`, socio.administrador || false);
-    });
+       currentAbertura.socios?.forEach((socio, index) => {
+        setValue(`socios.${index}`, socio);
+      });
       // Preenchendo o endereço comercial
       if (currentAbertura.enderecoComercial) {
         setValue('enderecoComercial.cep', currentAbertura.enderecoComercial.cep || '');
@@ -486,7 +469,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
           </Grid>
           {[...Array(numSocios)].map((_, index) => (
             <React.Fragment key={index}>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
               <TextField
                   fullWidth
                   label={`Nome Sócio ${index + 1}`}
@@ -494,7 +477,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                   margin="dense"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
                   label={`CPF Sócio ${index + 1}`}
@@ -502,11 +485,35 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                   margin="dense"
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <TextField
                   fullWidth
                   label={`RG Sócio ${index + 1}`}
                   {...register(`socios.${index}.rg`)}
+                  margin="dense"
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label={`CNH Sócio ${index + 1}`}
+                  {...register(`socios.${index}.cnh`)}
+                  margin="dense"
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label={`Endereço Sócio ${index + 1}`}
+                  {...register(`socios.${index}.endereco`)}
+                  margin="dense"
+                />
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <TextField
+                  fullWidth
+                  label={`Profissão Sócio ${index + 1}`}
+                  {...register(`socios.${index}.profissao`)}
                   margin="dense"
                 />
               </Grid>

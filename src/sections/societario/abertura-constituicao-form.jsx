@@ -141,7 +141,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
       }));
       setNumSocios(currentAbertura.socios?.length || 1);
     }
-  }, [currentAbertura, formData.enderecoComercial, formData.socios]);
+  }, [currentAbertura]);
   
 
   useEffect(() => {
@@ -573,7 +573,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               </Grid>
               {[...Array(numSocios).keys()].map((i) => (
                 <React.Fragment key={i}>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={4}>
                     <TextField
                       label={`Nome Sócio ${i + 1}`}
                       name={`socios.${i}.nome`} // Nome ajustado para incluir o índice do sócio
@@ -582,7 +582,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                       onChange={handleChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={4}>
                     <TextField
                       label={`CPF Sócio ${i + 1}`}
                       name={`socios.${i}.cpf`} // Nome ajustado para incluir o índice do sócio
@@ -591,12 +591,39 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                       onChange={handleChange}
                     />
                   </Grid>
-                  <Grid item xs={12} sm={6}>
+                  <Grid item xs={12} sm={4}>
                     <TextField
                       label={`RG Sócio ${i + 1}`}
                       name={`socios.${i}.rg`} // Nome ajustado para incluir o índice do sócio
                       fullWidth
                       value={formData.socios[i]?.rg || ''}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label={`CNH Sócio ${i + 1}`}
+                      name={`socios.${i}.cnh`} // Nome ajustado para incluir o índice do sócio
+                      fullWidth
+                      value={formData.socios[i]?.cnh || ''}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label={`Endereço Sócio ${i + 1}`}
+                      name={`socios.${i}.endereco`} // Nome ajustado para incluir o índice do sócio
+                      fullWidth
+                      value={formData.socios[i]?.endereco || ''}
+                      onChange={handleChange}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={4}>
+                    <TextField
+                      label={`Profissão Sócio ${i + 1}`}
+                      name={`socios.${i}.profissao`} // Nome ajustado para incluir o índice do sócio
+                      fullWidth
+                      value={formData.socios[i]?.profissao || ''}
                       onChange={handleChange}
                     />
                   </Grid>
