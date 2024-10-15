@@ -335,7 +335,6 @@ export function ReceberListView() {
                   )
                 }
               />
-
               <TableBody>
                 {dataInPage.map((row) => (
                   <ReceberTableRow
