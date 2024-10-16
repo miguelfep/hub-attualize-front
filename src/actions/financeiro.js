@@ -43,6 +43,7 @@ export async function getContratosPorMes(month) {
 // Função para cancelar um boleto por ID
 export async function cancelarBoleto(id) {
   const res = await axios.post(`${endpoints.contratos.update}/cobrancas/cancelar/${id}`);
+  
   return res.data;
 }
 
@@ -89,8 +90,7 @@ export async function getCobrancaPorId(id) {
 
 // Função para gerar um boleto por ID de cobrança
 export async function gerarBoletoPorId(id) {
-  const res = await axios.post(`${endpoints.contratos.gerarBoleto}/${id}`);
-  return res.data;
+  return axios.post(`${endpoints.contratos.gerarBoleto}/${id}`);
 }
 
 // Função para buscar fatura por ID
