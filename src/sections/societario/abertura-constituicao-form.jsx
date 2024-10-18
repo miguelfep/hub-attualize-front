@@ -34,7 +34,6 @@ import { Iconify } from 'src/components/iconify';
 
 import { NumericFormat } from 'react-number-format';
 
-
 import DialogDocumentsAbertura from './abertura-dialog-documento';
 
 // Funções auxiliares de formatação de moeda
@@ -70,7 +69,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     metragemUtilizada: '',
     senhaGOV: '',
     capitalSocial: 0,
-    valorMensalidade: '',
+    valorMensalidade: currentAbertura.valorMensalidade,
     observacoes: '',
     notificarWhats: false,
     marcaRegistrada: false,
@@ -133,6 +132,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
         ...prevFormData,
         ...currentAbertura,
         capitalSocial: currentAbertura.capitalSocial || 0,
+        valorMensalidade: currentAbertura.valorMensalidade || 0,
         socios: currentAbertura.socios || prevFormData.socios,
         enderecoComercial: {
           ...prevFormData.enderecoComercial,
@@ -211,6 +211,14 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     setFormData((prevData) => ({
       ...prevData,
       capitalSocial: floatValue, // Salva o valor como número
+    }));
+  };
+
+  const handleValorMensalidadeChange = (currencyValues) => {
+    const { floatValue } = currencyValues; // Número sem formatação
+    setFormData((prevData) => ({
+      ...prevData,
+      valorMensalidade: floatValue, // Salva o valor como número
     }));
   };
 
@@ -707,7 +715,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   </Grid>
                 </React.Fragment>
               ))}
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={12} sm={6} md={6}>
               <NumericFormat
                   label="Capital Social"
                   customInput={TextField}
@@ -723,7 +731,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               </Grid>
 
               {/* Responsável na Receita Federal */}
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid item xs={12} sm={6} md={6}>
                 <TextField
                   select
                   label="Responsável na Receita Federal"
@@ -758,6 +766,22 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   <MenuItem value="Casa do cliente">Casa do cliente</MenuItem>
                   <MenuItem value="Outros">Outros</MenuItem>
                 </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6}>
+              <NumericFormat
+                  label="Valor Mensalidadel"
+                  name='valorMensalidade'
+                  customInput={TextField}
+                  value={formData.valorMensalidade}
+                  thousandSeparator="."
+                  decimalSeparator=","
+                  prefix="R$ "
+                  decimalScale={2}
+                  fixedDecimalScale
+                  onValueChange={handleValorMensalidadeChange}
+                  fullWidth
+                />
+             
               </Grid>
               {formData.statusAbertura === "em_constituicao" && (
                   <Grid item xs={12} sm={12} md={12}>
