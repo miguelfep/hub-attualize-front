@@ -63,8 +63,7 @@ export const CONTRATO_STATUS_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function ContratoListView() {
-  const table = useTable({ defaultDense: true });
-
+  const table = useTable({ defaultDense: true, defaultRowsPerPage: 100 });
   const router = useRouter();
 
   const confirm = useBoolean();
