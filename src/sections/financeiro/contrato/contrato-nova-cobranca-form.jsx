@@ -182,6 +182,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
               >
                 <MenuItem value="RECEBIDO">Pago</MenuItem>
                 <MenuItem value="EMABERTO">Pendente</MenuItem>
+                <MenuItem value="CANCELADO">Cancelado</MenuItem>
               </Select>
             </FormControl>
           </Grid>

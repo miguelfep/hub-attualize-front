@@ -106,7 +106,7 @@ export function ContratoListView() {
       try {
         // Inativa o contrato e atualiza a lista
 
-        await updateContrato(id, { status: 'inativo' });
+        await updateContrato(id, { status: 'inativo', atualizarCobrancas: true });
         toast.success('Contrato inativado!');
         fetchContratos();
       } catch (error) {
