@@ -30,28 +30,11 @@ import { consultarCep } from 'src/utils/consultarCep';
 
 import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/societario';
 
-import { Iconify } from 'src/components/iconify';
-
 import { NumericFormat } from 'react-number-format';
 
+import { Iconify } from 'src/components/iconify';
+
 import DialogDocumentsAbertura from './abertura-dialog-documento';
-
-// Funções auxiliares de formatação de moeda
-const formatCurrency = (value) => {
-  const numberValue = Number(value.replace(/[^\d]/g, ''));
-  return numberValue.toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
-};
-
-const unformatCurrency = (value) => {
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') {
-    return Number(value.replace(/[^\d]/g, ''));
-  }
-  return 0;
-};
 
 
 export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
@@ -77,6 +60,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     possuiRT: false,
     iptuAnexo: null,
     rgAnexo: null,
+    documentoRT: currentAbertura.documentoRT || null,
     situacaoAbertura: 0,
     somenteAtualizar: true,
     numSocios: 1, // Valor padrão para número de sócios
@@ -113,6 +97,12 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   const [activeTab, setActiveTab] = useState(0);
   const [numSocios, setNumSocios] = useState(1);
 
+  const documentFieldMapping = {
+    RG: 'rgAnexo',
+    IPTU: 'iptuAnexo',
+    RT: 'documentoRT',
+  };
+
   const [values, setValues] = useState({
     showPassword: false,
   });
@@ -124,6 +114,44 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   const handleMouseDownPassword = useCallback((event) => {
     event.preventDefault();
   }, []);
+
+  const handleFileUploaded = (documentType, updatedData) => {
+    const fieldName = documentFieldMapping[documentType]; // Mapeia o documentType para o campo correto
+    setFormData((prevState) => ({
+      ...prevState,
+      [fieldName]: updatedData[fieldName], // Atualiza o campo correspondente
+    }));
+    toast.success('Arquivo enviado com sucesso!');
+  };
+  
+  const handleDownload = async (clientId, documentType, filename) => {
+    try {
+      const response = await downloadArquivo(clientId, documentType, filename);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      toast.error('Erro ao baixar o arquivo');
+    }
+  };
+
+  const handleDelete = async (clientId, documentType) => {
+    const fieldName = documentFieldMapping[documentType]; // Mapeia o documentType para o campo correto
+    try {
+      await deletarArquivo(clientId, documentType);
+      setFormData((prevData) => ({
+        ...prevData,
+        [fieldName]: null, // Define o campo do documento correspondente como null
+      }));
+      toast.success('Arquivo deletado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao deletar o arquivo');
+    }
+  };
 
  
   useEffect(() => {
@@ -284,7 +312,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   const renderDocument = (url, name, id) => {
     if (!url) {
       return (
-        <DialogDocumentsAbertura name={name} id={id} fetchAbertura={fetchAbertura} />
+        <DialogDocumentsAbertura name={name} id={id} fetchAbertura={fetchAbertura} onFileUploaded={handleFileUploaded} />
       );
     }
     const filename = url.split('/').pop();
@@ -308,15 +336,15 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               size="small"
               variant="contained"
               color="success"
-              onClick={() => downloadArquivo(id, name, filename)}
-            >
+              onClick={() => handleDownload(id, name, filename)}
+              >
               Baixar {name}
             </Button>
             <Button
               size="small"
               variant="contained"
               color="error"
-              onClick={() => deletarArquivo(id, name)}
+              onClick={() => handleDelete(id, name)}
             >
               Deletar
             </Button>
@@ -907,8 +935,8 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 {renderDocument(formData.iptuAnexo, 'IPTU', currentAbertura._id)}
               </Grid>
               {formData.possuiRT && (
-                <Grid item xs={12} sm={4} md={3}>
-                  {renderDocument(formData.rtAnexo, 'RT', currentAbertura._id)}
+                <Grid item xs={12} sm={4} md={4}>
+                  {renderDocument(formData.documentoRT, 'RT', currentAbertura._id)}
                 </Grid>
               )}
             </Grid>

@@ -29,6 +29,7 @@ import { deletarArquivo, updateAbertura, downloadArquivo, solicitarAprovacaoPorI
 
 import ComponenteEmConstituicao from 'src/components/abertura/ComponenteEmConstituicao';
 import ComponenteAguardandoValidacao from 'src/components/abertura/ComponenteAguardandoValidacao';
+import ComponenteAberturaFinalizada from 'src/components/abertura/ComponenteAberturaFinalizada';
 
 import DialogDocumentsAbertura from 'src/sections/societario/abertura-dialog-documento';
 
@@ -63,7 +64,7 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
     possuiRT: aberturaData.possuiRT || false,
     rgAnexo: aberturaData.rgAnexo || null,
     iptuAnexo: aberturaData.iptuAnexo || null,
-    rtAnexo: aberturaData.rtAnexo || null,
+    documentoRT: aberturaData.documentoRT || null,
     enderecoComercial: {
       cep: aberturaData.enderecoComercial?.cep || '',
       logradouro: aberturaData.enderecoComercial?.logradouro || '',
@@ -90,7 +91,7 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
     ],
   });
 
-  const handleFileUploaded = (documentName, updatedData) => {
+  const handleFileUploaded = ( updatedData) => {
     setFormData((prevState) => ({
       ...prevState,
       ...updatedData, 
@@ -353,6 +354,12 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
     if (formData.statusAbertura === "em_constituicao") {
       return <ComponenteEmConstituicao  formData={formData} />;
     }
+
+       // Se o status da abertura for "aguardando_validacao", exibir o componente correspondente
+       if (formData.statusAbertura === "finalizado") {
+        return <ComponenteAberturaFinalizada  formData={formData} />;
+      }
+  
 
   return (
     <Container sx={{ mb: 10 }}>
@@ -869,8 +876,8 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
                 {renderDocument(formData.iptuAnexo, 'IPTU', aberturaData._id)}
               </Grid>
               {formData.possuiRT && (
-                <Grid item xs={12} sm={4} md={3}>
-                  {renderDocument(formData.rtAnexo, 'RT', aberturaData._id)}
+                <Grid item xs={12} sm={4} md={4}>
+                  {renderDocument(formData.documentoRT, 'RT', aberturaData._id)}
                 </Grid>
               )}
             </Grid>

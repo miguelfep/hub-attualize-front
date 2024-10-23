@@ -8,6 +8,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Box from '@mui/material/Box';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -82,9 +84,9 @@ export function AberturaEditForm({ currentAbertura }) {
   const { watch, setValue } = methods;
   const statusAbertura = watch('statusAbertura');
 
-  const handleAdvanceStatus = async () => {
-    const nextStatus = statusMap[statusAbertura];
-    if (nextStatus) {
+  const handleAdvanceStatus = async (customStatus) => {
+    const nextStatus = customStatus || statusMap[statusAbertura];
+        if (nextStatus) {
       loading.onTrue();
       try {
         const response = await updateAbertura(currentAbertura._id, { statusAbertura: nextStatus, somenteAtualizar: false });
@@ -119,7 +121,7 @@ export function AberturaEditForm({ currentAbertura }) {
   const renderStatusComponent = () => {
     switch (statusAbertura) {
       case 'Iniciado':
-        return <AberturaIniciadoForm currentAbertura={currentAbertura} />;
+        return <AberturaIniciadoForm currentAbertura={currentAbertura} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'em_validacao':
         return <AberturaValidacaoForm currentAbertura={currentAbertura} setValue={setValue} />;
       case 'onboarding':
@@ -128,11 +130,24 @@ export function AberturaEditForm({ currentAbertura }) {
         return <AberturaConstituicaoForm currentAbertura={currentAbertura} />;
     }
   };
+
+  const shouldShowAdvanceButton = ['Iniciado', 'kickoff'].includes(statusAbertura);
+
+
+
   return (
     <Form methods={methods}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Chip
+          label={`Status: ${statusAbertura}`}
+          color="success"
+          sx={{ fontSize: '1rem', fontWeight: 'bold' }}
+        />
+      </Box>
       <>{renderStatusComponent()}</>
 
       <Stack justifyContent="space-between" direction="row" spacing={2} sx={{ mt: 3 }}>
+      {shouldShowAdvanceButton && (
         <Button
           variant="outlined"
           disabled={!reverseStatusMap[statusAbertura]}
@@ -141,15 +156,16 @@ export function AberturaEditForm({ currentAbertura }) {
         >
           Voltar
         </Button>
-
-        <Button
-          variant="contained"
-          disabled={!statusMap[statusAbertura]}
-          onClick={handleAdvanceStatus}
-          loading={loading.value}
-        >
-          Avançar
-        </Button>
+        )}
+        {shouldShowAdvanceButton && (
+          <Button
+            variant="contained"
+            onClick={handleAdvanceStatus}
+            loading={loading.value}
+          >
+            Avançar {statusAbertura}
+          </Button>
+        )}
       </Stack>
     </Form>
   );

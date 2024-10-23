@@ -84,9 +84,9 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
   });
 
   const [documentosEnviados, setDocumentosEnviados] = useState({
-    rg: currentAbertura?.rgAnexo != null,
-    iptu: currentAbertura?.iptuAnexo != null,
-    rt: currentAbertura?.rtAnexo != null,
+    RG: currentAbertura?.rgAnexo != null,
+    IPTU: currentAbertura?.iptuAnexo != null,
+    RT: currentAbertura?.documentoRT != null,
   });
 
 
@@ -101,6 +101,18 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
       order: -1,
     },
   }));
+
+
+  const handleFileUploaded = (fieldName, updatedData) => {
+    // Atualizar o estado de documentos enviados
+    setDocumentosEnviados((prev) => ({
+      ...prev,
+      [fieldName]: true, // Documento foi enviado
+    }));
+
+    // Atualizar o valor do campo no formulário
+    setValue(fieldName, updatedData[fieldName]);
+  };
 
   const handleDownload = async (clientId, documentType, filename) => {
     try {
@@ -120,15 +132,24 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
   const handleDelete = async (clientId, documentType) => {
     try {
       const response = await deletarArquivo(clientId, documentType);
+
+      setDocumentosEnviados((prev) => ({
+        ...prev,
+        [documentType]: false, // Documento foi removido
+      }));
+
+      setValue(documentType, null);
+
+
       toast.success('Arquivo deletado com sucesso!');
     } catch (error) {
       toast.error('Erro ao deletar o arquivo');
     }
   };
 
-  const renderDocument = (url, name, id, documento) => {
-    if (url == null) {
-      return <DialogDocumentsAbertura document={document} name={name} id={currentAbertura._id} />;
+  const renderDocument = (url, name, id,) => {
+    if (!documentosEnviados[name]) {
+       return <DialogDocumentsAbertura name={name} id={currentAbertura._id}  onFileUploaded={handleFileUploaded} />;
     }
     const filename = url.split('/').pop();
     return (
@@ -287,7 +308,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
   const handleApprove = async () => {
     loading.onTrue();
     try {
-      await updateAbertura(currentAbertura._id, { statusAbertura: 'kickoff', somenteAtualizar:false });
+      await updateAbertura(currentAbertura._id, { statusAbertura: 'kickoff', somenteAtualizar:false,  });
       setParentValue('statusAbertura', 'kickoff')
       toast.success('Abertura aprovada!');
     } catch (error) {
@@ -313,7 +334,6 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
   };
 
   return (
-    <form onSubmit={handleSave}>
       <Card sx={{ p: 3, mb: 3 }}>
         <Box display="flex" justifyContent="space-between">
           <Typography variant="h6">Dados da Abertura</Typography>
@@ -724,7 +744,6 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             </Grid>
           )}
         </Grid>
-      </Card>
       <Stack direction="row" spacing={2} sx={{ mt: 3, mb: 3 }} justifyContent="center">
         <Button
           variant="contained"
@@ -753,6 +772,6 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
           Aprovar
         </Button>
       </Stack>
-    </form>
+    </Card>
   );
 }

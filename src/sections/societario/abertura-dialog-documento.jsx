@@ -25,7 +25,7 @@ const StyledGrid = styled(Grid)(({ theme }) => ({
   },
 }));
 
-const DialogDocumentsAbertura = ({ document, name, id, onFileUploaded }) => {
+const DialogDocumentsAbertura = ({  name, id, onFileUploaded }) => {
   // ** States
   const [open, setOpen] = useState(false);
   const handleClickOpen = () => setOpen(true);

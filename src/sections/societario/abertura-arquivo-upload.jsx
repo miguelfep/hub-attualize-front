@@ -1,8 +1,12 @@
 import { toast } from 'sonner';
 import { useState } from 'react';
+
 import { useDropzone } from 'react-dropzone';
+
 import { styled } from '@mui/material/styles';
+
 import { Box, Button, Typography, DialogActions } from '@mui/material';
+
 import { uploadArquivo } from 'src/actions/societario';
 import { Iconify } from 'src/components/iconify';
 
@@ -16,7 +20,7 @@ const HeadingTypography = styled(Typography)(({ theme }) => ({
 const documentFieldMapping = {
   RG: 'rgAnexo',
   IPTU: 'iptuAnexo',
-  RT: 'rtAnexo',
+  RT: 'documentoRT',
   // Add other mappings as necessary
 };
 

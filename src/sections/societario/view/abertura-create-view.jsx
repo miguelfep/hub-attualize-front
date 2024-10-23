@@ -17,7 +17,7 @@ export function AberturaCreateView() {
         heading="Criar uma nova abertura"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Abberturas', href: paths.dashboard.aberturas.root },
+          { name: 'Aberturas', href: paths.dashboard.aberturas.root },
           { name: 'Editar Abertura' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}

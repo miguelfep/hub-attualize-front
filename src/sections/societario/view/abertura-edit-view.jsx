@@ -11,6 +11,7 @@ import { AberturaEditForm } from '../abertura-edit-form';
 // ----------------------------------------------------------------------
 
 export function AberturaEditView({ abertura }) {
+  
   return (
     <DashboardContent>
       <CustomBreadcrumbs
@@ -18,7 +19,7 @@ export function AberturaEditView({ abertura }) {
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Aberturas', href: paths.dashboard.aberturas.root },
-          { name: abertura?.nome },
+          { name: abertura.nomeEmpresarial },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />
