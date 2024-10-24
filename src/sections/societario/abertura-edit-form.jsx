@@ -60,6 +60,15 @@ const reverseStatusMap = {
   Iniciado: null, // Não volta mais a partir daqui
 };
 
+
+const statusDisplayMap = {
+  Iniciado: 'Iniciado',
+  em_validacao: 'Em Validação',
+  kickoff: 'Kickoff',
+  em_constituicao: 'Em Constituição',
+  onboarding: 'Onboarding',
+  finalizado: 'Finalizado',
+};
 // ----------------------------------------------------------------------
 
 export function AberturaEditForm({ currentAbertura }) {
@@ -131,7 +140,7 @@ export function AberturaEditForm({ currentAbertura }) {
     }
   };
 
-  const shouldShowAdvanceButton = ['Iniciado', 'kickoff'].includes(statusAbertura);
+  const shouldShowAdvanceButton = ['Iniciado', 'kickoff', 'em_constituicao', 'onboarding'].includes(statusAbertura);
 
 
 
@@ -139,7 +148,7 @@ export function AberturaEditForm({ currentAbertura }) {
     <Form methods={methods}>
         <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Chip
-          label={`Status: ${statusAbertura}`}
+          label={`Status: ${statusDisplayMap[statusAbertura] || statusAbertura}`}
           color="success"
           sx={{ fontSize: '1rem', fontWeight: 'bold' }}
         />
@@ -160,10 +169,10 @@ export function AberturaEditForm({ currentAbertura }) {
         {shouldShowAdvanceButton && (
           <Button
             variant="contained"
-            onClick={handleAdvanceStatus}
+            onClick={() => handleAdvanceStatus(statusMap[statusAbertura])}
             loading={loading.value}
           >
-            Avançar {statusAbertura}
+            Avançar
           </Button>
         )}
       </Stack>
