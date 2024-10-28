@@ -2,8 +2,9 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { z as zod } from 'zod';
 import { useMemo, useState, useEffect } from 'react';
+
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFormContext } from 'react-hook-form';
 
 import { DatePicker } from '@mui/x-date-pickers';
 import {
@@ -33,6 +34,8 @@ import {
 import { toast } from 'src/components/snackbar';
 import { Form } from 'src/components/hook-form';
 
+import { categoriasDespesas } from 'src/utils/constants/categorias';
+
 const decodificarLinhaDigitavel = (codigoBarras) => {
   const valor = parseFloat(codigoBarras.substring(37, 47)) / 100;
   const fatorVencimento = parseInt(codigoBarras.substring(33, 37), 10);
@@ -44,6 +47,7 @@ const decodificarLinhaDigitavel = (codigoBarras) => {
 
 export const ContaPagarSchema = zod.object({
   descricao: zod.string().min(1, { message: 'Descrição é obrigatória!' }),
+  nome: zod.string().min(1, { message: 'Nome Despesa é obrigatória!' }),
   valor: zod.string().min(1, { message: 'Valor é obrigatório!' }),
   dataVencimento: zod.string().min(1, { message: 'Data de Vencimento é obrigatória!' }),
   dataPagamento: zod.string().optional(),
@@ -57,6 +61,7 @@ export const ContaPagarSchema = zod.object({
   banco: zod.string().min(1, { message: 'Banco é obrigatório!' }),
   statusPagamento: zod.string().optional(),
   codigoTransacao: zod.string().optional(),
+  categoria: zod.string().min(1, { message: 'Categoria é obrigatória!' }),
 });
 
 export function PagarNewEditForm({ currentConta }) {
@@ -68,6 +73,7 @@ export function PagarNewEditForm({ currentConta }) {
   const defaultValues = useMemo(
     () => ({
       descricao: currentConta?.descricao || '',
+      nome: currentConta?.nome || '',
       valor: currentConta?.valor ? currentConta.valor.toFixed(2).replace('.', ',') : '',
       dataVencimento: currentConta?.dataVencimento
         ? dayjs(currentConta.dataVencimento).format('DD/MM/YYYY')
@@ -79,7 +85,8 @@ export function PagarNewEditForm({ currentConta }) {
       tipo: currentConta?.tipo || 'AVULSA',
       parcelas: currentConta?.parcelas || 1,
       status: currentConta?.status || 'PENDENTE',
-      banco: currentConta?.banco?.codigo || '', // Aqui você pega o 'codigo' do banco
+      banco: currentConta?.banco?.codigo || '', 
+      categoria: currentConta?.categoria || '',
       statusPagamento: currentConta?.statusPagamento || '',
       codigoTransacao: currentConta?.codigoTransacao || '',
     }),
@@ -231,13 +238,40 @@ export function PagarNewEditForm({ currentConta }) {
                 )}
               />
             </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Categoria</InputLabel>
+                <Controller
+                  name="categoria"
+                  control={control}
+                  render={({ field }) => (
+                    <Select {...field} label="Categoria" fullWidth>
+                      {categoriasDespesas.map((categoria) => (
+                        <MenuItem key={categoria._id} value={categoria._id}>
+                          {categoria.nome} {/* Mostrando o nome da categoria */}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  )}
+                />
+              </FormControl>
+            </Grid>
             {/* Descrição */}
+            <Grid item xs={12}>
+              <Controller
+                name="nome"
+                control={control}
+                render={({ field }) => (
+                  <TextField {...field} label="Nome Despesa" fullWidth required />
+                )}
+              />
+            </Grid>
             <Grid item xs={12}>
               <Controller
                 name="descricao"
                 control={control}
                 render={({ field }) => (
-                  <TextField {...field} label="Descrição" fullWidth required />
+                  <TextField {...field} label="Descrição" fullWidth rows={4} multiline required />
                 )}
               />
             </Grid>

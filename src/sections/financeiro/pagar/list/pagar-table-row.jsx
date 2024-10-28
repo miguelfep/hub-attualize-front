@@ -6,6 +6,7 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Checkbox from '@mui/material/Checkbox';
+import { Chip } from '@mui/material';
 import TableRow from '@mui/material/TableRow';
 import MenuList from '@mui/material/MenuList';
 import MenuItem from '@mui/material/MenuItem';
@@ -19,12 +20,18 @@ import { toast } from 'sonner';
 
 import { usePopover, CustomPopover } from 'src/components/custom-popover'; // Biblioteca de toast para feedback visual
 import { deletarContaPagarPorId } from 'src/actions/contas';
+import  {getCategoriaNome } from 'src/utils/constants/categorias';
+
+
 
 // ----------------------------------------------------------------------
 
 export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) {
   const popover = usePopover();
   const [confirm, setConfirm] = useState({ open: false, action: null });
+
+  console.log(row);
+  
 
   // Função para deletar ou outra ação que precise ser realizada na conta
   const handleDeleteConta = async (id) => {
@@ -54,7 +61,7 @@ export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) 
               color="inherit"
               sx={{ cursor: 'pointer', fontWeight: 'bold' }}
             >
-              {row.descricao}
+              {row.nome ? row.nome : row.descricao}
             </Link>
             <Box component="span" sx={{ color: 'text.disabled', fontSize: '12px' }}>
               {row.tipo || 'Sem observações'}
@@ -91,6 +98,14 @@ export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) 
         <Box component="span" sx={{ color: 'text.secondary' }}>
           {row.banco.nome}
         </Box>
+      </TableCell>
+      <TableCell>
+        <Chip
+          label={getCategoriaNome(row.categoria)}
+          variant="outlined"
+          color="primary" // Pode ajustar a cor conforme necessário, como 'secondary', 'default', etc.
+          sx={{ color: 'text.secondary' }} // Estilos opcionais
+        />
       </TableCell>
 
       {/* Ações adicionais */}

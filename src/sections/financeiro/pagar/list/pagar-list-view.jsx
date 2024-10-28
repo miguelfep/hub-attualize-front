@@ -51,11 +51,12 @@ import { ReceberAnalytic } from '../../receber/receber-analytic';
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-  { id: 'descricao', label: 'Descrição' },
+  { id: 'nome', label: 'Nome' },
   { id: 'valor', label: 'Valor da Conta' },
   { id: 'vencimento', label: 'Data de Vencimento' },
   { id: 'status', label: 'Status' },
   { id: 'banco', label: 'Banco' },
+  { id: 'categoria', label: 'Categoria' },
   { id: '', label: '' },
 ];
 
