@@ -46,8 +46,22 @@ export const navData = [
   {
     subheader: 'Geral',
     items: [
-      { title: 'App', path: paths.dashboard.root, icon: ICONS.dashboard },
+      { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
+      
       { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
+      {
+        title: 'Comercial',
+        path: paths.dashboard.invoice.root,
+        icon: ICONS.invoice,
+        roles: ['financeiro', 'admin', 'comercial'],
+        children: [
+          {
+            title: 'Vendas',
+            roles: ['admin', 'financeiro', 'comercial'],
+            path: paths.dashboard.invoice.root,
+          },
+           ],
+      },
       {
         title: 'Financeiro',
         path: paths.dashboard.general.analytics,
@@ -56,7 +70,7 @@ export const navData = [
         children: [
           {
             title: 'Contratos',
-            roles: ['admin', 'financeiro'],
+            roles: ['admin', 'financeiro', 'comercial'],
             path: paths.dashboard.contratos.root,
           },
           {
@@ -75,21 +89,16 @@ export const navData = [
         title: 'Societario',
         path: paths.dashboard.aberturas.root,
         icon: ICONS.tour,
-        roles: ['operacional', 'admin'],
+        roles: ['operacional', 'admin', 'comercial'],
         children: [
           {
             title: 'Abertura',
-            roles: ['admin', 'operacional'],
+            roles: ['admin', 'operacional', 'comercial'],
             path: paths.dashboard.aberturas.root,
           },
         ],
       },
-      {
-        title: 'Vendas',
-        path: paths.dashboard.invoice.root,
-        icon: ICONS.invoice,
-        roles: ['financeiro', 'admin'],
-      },
+    
     ],
   },
 ];
