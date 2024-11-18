@@ -34,6 +34,7 @@ export function KanbanDetailsToolbar({
 
   const handleChangeStatus = useCallback(
     (newValue) => {
+     
       popover.onClose();
       setStatus(newValue);
     },
@@ -68,11 +69,7 @@ export function KanbanDetailsToolbar({
         </Button>
 
         <Stack direction="row" justifyContent="flex-end" flexGrow={1}>
-          <Tooltip title="Like">
-            <IconButton color={liked ? 'default' : 'primary'} onClick={onLike}>
-              <Iconify icon="ic:round-thumb-up" />
-            </IconButton>
-          </Tooltip>
+         
 
           <Tooltip title="Delete task">
             <IconButton onClick={confirm.onTrue}>
@@ -93,7 +90,7 @@ export function KanbanDetailsToolbar({
         slotProps={{ arrow: { placement: 'top-right' } }}
       >
         <MenuList>
-          {['To do', 'In progress', 'Ready to test', 'Done'].map((option) => (
+          {['Lead', 'Contato Feito', 'Negociando', 'Proposta Enviada', 'Ganho', 'Perdido'].map((option) => (
             <MenuItem
               key={option}
               selected={status === option}
@@ -113,12 +110,12 @@ export function KanbanDetailsToolbar({
         title="Delete"
         content={
           <>
-            Are you sure want to delete <strong> {taskName} </strong>?
+            Tem certeza que deseja deletar a tarefa <strong> {taskName} </strong>?
           </>
         }
         action={
           <Button variant="contained" color="error" onClick={onDelete}>
-            Delete
+            Deletar
           </Button>
         }
       />

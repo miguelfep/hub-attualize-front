@@ -15,6 +15,8 @@ import { AppWelcome } from '../app-welcome';
 import { AppFeatured } from '../app-featured';
 import { AppNewInvoice } from '../app-new-invoice';
 import { AppWidgetSummary } from '../app-widget-summary';
+import { AppAreaInstalled } from '../app-area-installed';
+import { EcommerceCurrentBalance } from '../../e-commerce/ecommerce-current-balance';
 
 export function OverviewAppView() {
   const [dashboardData, setDashboardData] = useState({
@@ -115,7 +117,7 @@ export function OverviewAppView() {
             {/* Cobranças */}
             <Grid xs={12} md={4}>
               <AppWidgetSummary
-                title="Cobranças"
+                title="Contas a Receber"
                 total={dashboardData.totalCobrancas}
                 percent={dashboardData.percentualVariacaoCobrancas}
                 chart={{
@@ -132,19 +134,59 @@ export function OverviewAppView() {
             </Grid>
           </>
         )}
+   
+        <Grid xs={12} md={4}>          
+          <EcommerceCurrentBalance
+            title="Ticket Médio"
+            earning={837}
+            refunded={1600}
+            orderTotal={287650}
+            currentBalance={837}
+          />
+        </Grid>
 
-        {/* Leads */}
-        <Grid xs={12} md={4}>
-          <AppWidgetSummary
-            title="Leads"
-            total={dashboardData.leads.length} // Exibe o total de leads
-            percent={0} // Sem cálculo de variação para leads
+        <Grid xs={12} md={12} lg={12}>
+          <AppAreaInstalled
+            title="Carteira de clientes"
             chart={{
-              categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'],
-              series: [18, 19, 31, 8, 16, 37, 12, 33], // Dados fictícios para o gráfico
+              categories: [
+                'Jan',
+                'Fev',
+                'Mar',
+                'Abr',
+                'Mai',
+                'Jun',
+                'Jul',
+                'Ago',
+                'Set',
+                'Out',
+                'Nov',
+                'Dez',
+              ],
+              series: [
+                {
+                  name: '2023',
+                  data: [
+                    { name: 'Entrada', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
+                    { name: 'Churn', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
+                    { name: 'Pontual', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
+                  ],
+                },
+                {
+                  name: '2024',
+                  data: [
+                    { name: 'Entrada', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
+                    { name: 'Churn', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
+                    { name: 'Pontual', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
+                  ],
+                },                
+              ],
             }}
           />
         </Grid>
+
+
+    
         <Grid xs={12} lg={12}>
           <AppNewInvoice
             title="Leads"

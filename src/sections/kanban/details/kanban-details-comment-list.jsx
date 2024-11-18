@@ -1,62 +1,68 @@
+import { useState } from 'react';
+
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import InputBase from '@mui/material/InputBase';
 import Typography from '@mui/material/Typography';
 
-import { fToNow } from 'src/utils/format-time';
+import { getUser } from 'src/auth/context/jwt';
 
-import { Image } from 'src/components/image';
-import { Lightbox, useLightBox } from 'src/components/lightbox';
+export function KanbanDetailsCommentInput({ comentarios, onAddComment }) {
+  const user = getUser();
+  const [commentText, setCommentText] = useState('');
 
-// ----------------------------------------------------------------------
-
-export function KanbanDetailsCommentList({ comments }) {
-  const slides = comments
-    .filter((comment) => comment.messageType === 'image')
-    .map((slide) => ({ src: slide.message }));
-
-  const lightbox = useLightBox(slides);
+  const handleAddComment = () => {
+    if (commentText.trim()) {
+      const newComment = {
+        responsavel: user.name,
+        texto: commentText,
+        dataComentario: new Date(),
+      };
+      onAddComment(newComment);
+      setCommentText('');
+    }
+  };
 
   return (
-    <>
-      <Stack component="ul" spacing={3}>
-        {comments.map((comment) => (
-          <Stack component="li" key={comment.id} direction="row" spacing={2}>
-            <Avatar src={comment.avatarUrl} />
-
-            <Stack spacing={comment.messageType === 'image' ? 1 : 0.5} flexGrow={1}>
-              <Stack direction="row" alignItems="center" justifyContent="space-between">
-                <Typography variant="subtitle2"> {comment.name}</Typography>
-                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                  {fToNow(comment.createdAt)}
-                </Typography>
-              </Stack>
-
-              {comment.messageType === 'image' ? (
-                <Image
-                  alt={comment.message}
-                  src={comment.message}
-                  onClick={() => lightbox.onOpen(comment.message)}
-                  sx={{
-                    borderRadius: 1.5,
-                    cursor: 'pointer',
-                    transition: (theme) => theme.transitions.create(['opacity']),
-                    '&:hover': { opacity: 0.8 },
-                  }}
-                />
-              ) : (
-                <Typography variant="body2">{comment.message}</Typography>
-              )}
-            </Stack>
+    <Stack spacing={3} sx={{ py: 3, px: 2.5 }}>
+      <Stack direction="row" spacing={2}>
+        <Avatar src={user?.photoURL} alt={user?.displayName}>
+          {user?.name?.charAt(0).toUpperCase()}
+        </Avatar>
+        <Paper variant="outlined" sx={{ p: 1, flexGrow: 1, bgcolor: 'transparent' }}>
+          <InputBase
+            fullWidth
+            multiline
+            rows={2}
+            placeholder="Digite o comentário"
+            sx={{ px: 1 }}
+            value={commentText}
+            onChange={(e) => setCommentText(e.target.value)}
+          />
+          <Stack direction="row" alignItems="center">
+            <Button variant="contained" onClick={handleAddComment}>
+              Comentar
+            </Button>
           </Stack>
-        ))}
+        </Paper>
       </Stack>
 
-      <Lightbox
-        index={lightbox.selected}
-        slides={slides}
-        open={lightbox.open}
-        close={lightbox.onClose}
-      />
-    </>
+      {comentarios.map((comment) => (
+        <Stack key={comment.id} direction="row" spacing={2} sx={{ mt: 2 }}>
+          <Avatar>{comment.responsavel?.charAt(0).toUpperCase()}</Avatar>
+          <Paper variant="outlined" sx={{ p: 1, flexGrow: 1 }}>
+            <Typography variant="subtitle2" gutterBottom>
+              {comment.responsavel}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" gutterBottom>
+              {new Date(comment.dataComentario).toLocaleString()}
+            </Typography>
+            <Typography variant="body1">{comment.texto}</Typography>
+          </Paper>
+        </Stack>
+      ))}
+    </Stack>
   );
 }

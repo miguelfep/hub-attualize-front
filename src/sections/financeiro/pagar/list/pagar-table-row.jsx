@@ -2,11 +2,11 @@ import { useState } from 'react';
 import { format } from 'date-fns';
 
 import Box from '@mui/material/Box';
+import { Chip } from '@mui/material';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Checkbox from '@mui/material/Checkbox';
-import { Chip } from '@mui/material';
 import TableRow from '@mui/material/TableRow';
 import MenuList from '@mui/material/MenuList';
 import MenuItem from '@mui/material/MenuItem';
@@ -19,8 +19,9 @@ import { fCurrency } from 'src/utils/format-number'; // Formatação de moeda
 import { toast } from 'sonner';
 
 import { usePopover, CustomPopover } from 'src/components/custom-popover'; // Biblioteca de toast para feedback visual
-import { deletarContaPagarPorId } from 'src/actions/contas';
 import  {getCategoriaNome } from 'src/utils/constants/categorias';
+
+import { deletarContaPagarPorId } from 'src/actions/contas';
 
 
 
@@ -30,8 +31,6 @@ export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) 
   const popover = usePopover();
   const [confirm, setConfirm] = useState({ open: false, action: null });
 
-  console.log(row);
-  
 
   // Função para deletar ou outra ação que precise ser realizada na conta
   const handleDeleteConta = async (id) => {

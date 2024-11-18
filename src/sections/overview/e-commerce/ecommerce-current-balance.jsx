@@ -1,6 +1,5 @@
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Button from '@mui/material/Button';
 
 import { fCurrency } from 'src/utils/format-number';
 
@@ -31,19 +30,9 @@ export function EcommerceCurrentBalance({
       <Box sx={{ gap: 2, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ typography: 'h3' }}>{fCurrency(currentBalance)}</Box>
 
-        {row('Order total', orderTotal)}
-        {row('Earning', earning)}
-        {row('Refunded', refunded)}
+        {row('Total de vendas', orderTotal)}
+     
 
-        <Box sx={{ gap: 2, display: 'flex' }}>
-          <Button fullWidth variant="contained" color="warning">
-            Request
-          </Button>
-
-          <Button fullWidth variant="contained" color="primary">
-            Transfer
-          </Button>
-        </Box>
       </Box>
     </Card>
   );

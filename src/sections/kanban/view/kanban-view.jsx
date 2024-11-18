@@ -59,14 +59,12 @@ export function KanbanView() {
   const { board, boardLoading, boardEmpty } = useGetBoard();
 
   const [columnFixed, setColumnFixed] = useState(true);
-
   const recentlyMovedToNewContainer = useRef(false);
-
   const lastOverId = useRef(null);
-
   const [activeId, setActiveId] = useState(null);
 
-  const columnIds = board.columns.map((column) => column.id);
+  // Verifique se board e board.columns existem antes de prosseguir
+  const columnIds = board?.columns?.map((column) => column.id) || [];
 
   const isSortingContainer = activeId ? columnIds.includes(activeId) : false;
 
@@ -78,6 +76,8 @@ export function KanbanView() {
 
   const collisionDetectionStrategy = useCallback(
     (args) => {
+      if (!board || !board.tasks) return []; // Adicionado para garantir que board e tasks estejam disponíveis
+
       if (activeId && activeId in board.tasks) {
         return closestCenter({
           ...args,
@@ -87,23 +87,15 @@ export function KanbanView() {
         });
       }
 
-      // Start by finding any intersecting droppable
       const pointerIntersections = pointerWithin(args);
-
-      const intersections =
-        pointerIntersections.length > 0
-          ? // If there are droppables intersecting with the pointer, return those
-            pointerIntersections
-          : rectIntersection(args);
+      const intersections = pointerIntersections.length > 0 ? pointerIntersections : rectIntersection(args);
       let overId = getFirstCollision(intersections, 'id');
 
       if (overId != null) {
         if (overId in board.tasks) {
           const columnItems = board.tasks[overId].map((task) => task.id);
 
-          // If a column is matched and it contains items (columns 'A', 'B', 'C')
           if (columnItems.length > 0) {
-            // Return the closest droppable within that column
             overId = closestCenter({
               ...args,
               droppableContainers: args.droppableContainers.filter(
@@ -112,31 +104,22 @@ export function KanbanView() {
             })[0]?.id;
           }
         }
-
         lastOverId.current = overId;
-
         return [{ id: overId }];
       }
 
-      // When a draggable item moves to a new column, the layout may shift
-      // and the `overId` may become `null`. We manually set the cached `lastOverId`
-      // to the id of the draggable item that was moved to the new column, otherwise
-      // the previous `overId` will be returned which can cause items to incorrectly shift positions
       if (recentlyMovedToNewContainer.current) {
         lastOverId.current = activeId;
       }
 
-      // If no droppable is matched, return the last match
       return lastOverId.current ? [{ id: lastOverId.current }] : [];
     },
-    [activeId, board?.tasks]
+    [activeId, board] // Certifique-se de que as dependências estão corretas
   );
 
   const findColumn = (id) => {
-    if (id in board.tasks) {
-      return id;
-    }
-
+    if (!board || !board.tasks) return null;
+    if (id in board.tasks) return id;
     return Object.keys(board.tasks).find((key) =>
       board.tasks[key].map((task) => task.id).includes(id)
     );
@@ -148,9 +131,6 @@ export function KanbanView() {
     });
   }, []);
 
-  /**
-   * onDragStart
-   */
   const onDragStart = ({ active }) => {
     setActiveId(active.id);
   };
@@ -265,7 +245,9 @@ export function KanbanView() {
     </Stack>
   );
 
-  const renderEmpty = <EmptyContent filled sx={{ py: 10, maxHeight: { md: 480 } }} />;
+  const renderEmpty = (
+    <EmptyContent filled sx={{ py: 10, maxHeight: { md: 480 } }} />
+  );
 
   const renderList = (
     <DndContext
@@ -300,13 +282,13 @@ export function KanbanView() {
               items={[...columnIds, PLACEHOLDER_ID]}
               strategy={horizontalListSortingStrategy}
             >
-              {board?.columns.map((column) => (
-                <KanbanColumn key={column.id} column={column} tasks={board.tasks[column.id]}>
+              {board.columns.map((column) => (
+                <KanbanColumn key={column.id} column={column} tasks={board.tasks[column.id] || []}>
                   <SortableContext
-                    items={board.tasks[column.id]}
+                    items={board.tasks[column.id] || []}
                     strategy={verticalListSortingStrategy}
                   >
-                    {board.tasks[column.id].map((task) => (
+                    {(board.tasks[column.id] || []).map((task) => (
                       <KanbanTaskItem
                         task={task}
                         key={task.id}
@@ -317,16 +299,14 @@ export function KanbanView() {
                   </SortableContext>
                 </KanbanColumn>
               ))}
-
               <KanbanColumnAdd id={PLACEHOLDER_ID} />
             </SortableContext>
           </Stack>
         </Stack>
       </Stack>
-
       <KanbanDragOverlay
-        columns={board?.columns}
-        tasks={board?.tasks}
+        columns={board.columns}
+        tasks={board.tasks}
         activeId={activeId}
         sx={cssVars}
       />
@@ -353,8 +333,7 @@ export function KanbanView() {
         justifyContent="space-between"
         sx={{ pr: { sm: 3 }, mb: { xs: 3, md: 5 } }}
       >
-        <Typography variant="h4">Kanban</Typography>
-
+        <Typography variant="h4">Funil de vendas</Typography>
         <FormControlLabel
           label="Column fixed"
           labelPlacement="start"
@@ -370,7 +349,7 @@ export function KanbanView() {
         />
       </Stack>
 
-      {boardLoading ? renderLoading : <>{boardEmpty ? renderEmpty : renderList}</>}
+      {boardLoading ? renderLoading : boardEmpty ? renderEmpty : renderList}
     </DashboardContent>
   );
 }

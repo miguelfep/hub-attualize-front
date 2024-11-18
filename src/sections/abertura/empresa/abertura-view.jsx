@@ -28,8 +28,8 @@ import { consultarCep } from 'src/utils/consultarCep';
 import { deletarArquivo, updateAbertura, downloadArquivo, solicitarAprovacaoPorId } from 'src/actions/societario';
 
 import ComponenteEmConstituicao from 'src/components/abertura/ComponenteEmConstituicao';
-import ComponenteAguardandoValidacao from 'src/components/abertura/ComponenteAguardandoValidacao';
 import ComponenteAberturaFinalizada from 'src/components/abertura/ComponenteAberturaFinalizada';
+import ComponenteAguardandoValidacao from 'src/components/abertura/ComponenteAguardandoValidacao';
 
 import DialogDocumentsAbertura from 'src/sections/societario/abertura-dialog-documento';
 

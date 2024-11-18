@@ -7,28 +7,37 @@ import InputBase, { inputBaseClasses } from '@mui/material/InputBase';
 
 import { uuidv4 } from 'src/utils/uuidv4';
 
-import { _mock } from 'src/_mock';
+import { getUser } from 'src/auth/context/jwt';
 
 // ----------------------------------------------------------------------
 
 export function KanbanTaskAdd({ status, openAddTask, onAddTask, onCloseAddTask }) {
   const [taskName, setTaskName] = useState('');
+  const [descricao, setDescription] = useState('');
+  const [responsavel, setResponsavel] = useState('');
+  const user = getUser()
 
   const defaultTask = useMemo(
     () => ({
       id: uuidv4(),
-      status,
-      name: taskName.trim() ? taskName : 'Untitled',
-      priority: 'medium',
-      attachments: [],
+      cliente: null,
+      titulo: taskName.trim() || 'Untitled',
+      descricao,
+      status: status || 'prospectando',
+      responsavel: responsavel || user.name,
+      valorPotencial: null,
+      dataCriacao: new Date(),
+      dataConclusao: null,
+      prioridade: 'média',
+      dataFollowUp: null,
+      comentarios: [],
+      due: null,
       labels: [],
-      comments: [],
-      assignee: [],
-      due: [null, null],
-      reporter: { id: _mock.id(16), name: _mock.fullName(16), avatarUrl: _mock.image.avatar(16) },
+      attachments: [],
     }),
-    [status, taskName]
+    [taskName, descricao, responsavel, status, user.name]
   );
+  
 
   const handleChangeName = useCallback((event) => {
     setTaskName(event.target.value);
@@ -78,7 +87,7 @@ export function KanbanTaskAdd({ status, openAddTask, onAddTask, onCloseAddTask }
           />
         </Paper>
 
-        <FormHelperText sx={{ mx: 1 }}>Press Enter to create the task.</FormHelperText>
+        <FormHelperText sx={{ mx: 1 }}>Aperte Enter para criar a tarefa.</FormHelperText>
       </div>
     </ClickAwayListener>
   );

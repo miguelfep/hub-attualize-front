@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
 import Confetti from 'react-confetti';
-import { Box, Card, CardContent, Typography } from '@mui/material';
+import React, { useState, useEffect } from 'react';
+
+import { Box, Card, Typography, CardContent } from '@mui/material';
 
 const ComponenteAberturaFinalizada = ({ formData }) => {
   const [windowSize, setWindowSize] = useState({ width: 0, height: 0 });

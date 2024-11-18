@@ -1,5 +1,5 @@
 import dayjs from 'dayjs';
-import { useState, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -7,21 +7,22 @@ import Chip from '@mui/material/Chip';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import Select from '@mui/material/Select';
 import Tooltip from '@mui/material/Tooltip';
 import { styled } from '@mui/material/styles';
-import Checkbox from '@mui/material/Checkbox';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import FormGroup from '@mui/material/FormGroup';
-import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import LinearProgress from '@mui/material/LinearProgress';
-import FormControlLabel from '@mui/material/FormControlLabel';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useTabs } from 'src/hooks/use-tabs';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { varAlpha } from 'src/theme/styles';
+import { getClientes } from 'src/actions/clientes';
+import { addCommentToTask, deleteCommentFromTask } from 'src/actions/kanban';
 
+import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { CustomTabs } from 'src/components/custom-tabs';
@@ -30,20 +31,8 @@ import { useDateRangePicker, CustomDateRangePicker } from 'src/components/custom
 import { KanbanDetailsToolbar } from './kanban-details-toolbar';
 import { KanbanInputName } from '../components/kanban-input-name';
 import { KanbanDetailsPriority } from './kanban-details-priority';
-import { KanbanDetailsAttachments } from './kanban-details-attachments';
-import { KanbanDetailsCommentList } from './kanban-details-comment-list';
 import { KanbanDetailsCommentInput } from './kanban-details-comment-input';
 import { KanbanContactsDialog } from '../components/kanban-contacts-dialog';
-
-// ----------------------------------------------------------------------
-
-const SUBTASKS = [
-  'Complete project proposal',
-  'Conduct market research',
-  'Design user interface mockups',
-  'Develop backend api',
-  'Implement authentication system',
-];
 
 const StyledLabel = styled('span')(({ theme }) => ({
   ...theme.typography.caption,
@@ -53,39 +42,50 @@ const StyledLabel = styled('span')(({ theme }) => ({
   fontWeight: theme.typography.fontWeightSemiBold,
 }));
 
-// ----------------------------------------------------------------------
-
 export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, onCloseDetails }) {
-  const tabs = useTabs('overview');
-
-  const [priority, setPriority] = useState(task.priority);
-
-  const [taskName, setTaskName] = useState(task.name);
-
-  const [subtaskCompleted, setSubtaskCompleted] = useState(SUBTASKS.slice(0, 2));
-
+  const tabs = useTabs('geral');
+  const [priority, setPriority] = useState(task.prioridade);
+  const [taskName, setTaskName] = useState(task.titulo);
+  const [clientes, setClientes] = useState([]);
+  const [cliente, setCliente] = useState(task.cliente || null);
+  const [valorPotencial, setValorPotencial] = useState(task.valorPotencial || '');
+  const [loading, setLoading] = useState(false);
+  const [labels, setLabels] = useState(task.labels || []); // Novo estado para labels
   const like = useBoolean();
+  const contactsDialog = useBoolean();
+  const [taskDescription, setTaskDescription] = useState(task.descricao);
+  const [comentarios, setComentarios] = useState(task.comentarios || []);
 
-  const contacts = useBoolean();
-
-  const [taskDescription, setTaskDescription] = useState(task.description);
-
-  const rangePicker = useDateRangePicker(dayjs(task.due[0]), dayjs(task.due[1]));
-
+  useEffect(() => {
+    const fetchClientes = async () => {
+      try {
+        const clientesData = await getClientes();
+        setClientes(clientesData);
+      } catch (error) {
+        console.error('Erro ao buscar clientes:', error);
+      }
+    };
+    fetchClientes();
+  }, []);
+  
+  const rangePicker = useDateRangePicker(
+    task.dataFollowUp ? dayjs(task.dataFollowUp) : dayjs(), // Sugere a data atual se `dataFollowUp` estiver indefinida
+    task.dataFollowUp ? dayjs(task.dataFollowUp) : dayjs()
+  );
   const handleChangeTaskName = useCallback((event) => {
     setTaskName(event.target.value);
   }, []);
 
+  const handleChangeCliente = useCallback((selectedClient) => {
+    setCliente(selectedClient); // Define o cliente selecionado
+    contactsDialog.onFalse(); // Fecha o diálogo após seleção
+  }, [contactsDialog]);
+
+
   const handleUpdateTask = useCallback(
     (event) => {
-      try {
-        if (event.key === 'Enter') {
-          if (taskName) {
-            onUpdateTask({ ...task, name: taskName });
-          }
-        }
-      } catch (error) {
-        console.error(error);
+      if (event.key === 'Enter' && taskName) {
+        onUpdateTask({ ...task, titulo: taskName });
       }
     },
     [onUpdateTask, task, taskName]
@@ -99,36 +99,71 @@ export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, o
     setPriority(newValue);
   }, []);
 
-  const handleClickSubtaskComplete = (taskId) => {
-    const selected = subtaskCompleted.includes(taskId)
-      ? subtaskCompleted.filter((value) => value !== taskId)
-      : [...subtaskCompleted, taskId];
+  // Manipulador para labels múltiplas
+  const handleLabelChange = (event) => {
+    setLabels(event.target.value);
+  };
 
-    setSubtaskCompleted(selected);
+  // Manipulador para valorPotencial com formatação em real
+  const handleValorPotencialChange = (event) => {
+    const formattedValue = event.target.value.replace(/\D/g, '');
+    setValorPotencial((parseFloat(formattedValue) / 100).toLocaleString('pt-BR', {
+      style: 'currency',
+      currency: 'BRL',
+    }));
+  };
+
+  const handleAddComment = async (newComment) => {
+    await addCommentToTask(task.id, newComment);      
+
+  };
+
+  const handleDeleteComment = async (commentId) => {
+      await deleteCommentFromTask(task.id, commentId);
+  };
+  
+  const handleSave = async () => {
+    setLoading(true);
+    
+
+    try {
+      await onUpdateTask({
+        ...task,
+        titulo: taskName,
+        descricao: taskDescription,
+        prioridade: priority,
+        cliente,
+        labels,
+        dataFollowUp: rangePicker.startDate,
+        id: task.id,
+        valorPotencial,
+      });
+      
+      toast.success('Tarefa atualizada com sucesso');
+    } catch (error) {
+      console.error('Erro ao atualizar a tarefa:', error);
+      toast.error('Erro ao atualizar a tarefa');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderToolbar = (
     <KanbanDetailsToolbar
       liked={like.value}
-      taskName={task.name}
+      taskName={task.titulo}
       onLike={like.onToggle}
       onDelete={onDeleteTask}
       taskStatus={task.status}
-      onCloseDetails={onCloseDetails}
+      onClose={onCloseDetails}
     />
   );
 
   const renderTabs = (
-    <CustomTabs
-      value={tabs.value}
-      onChange={tabs.onChange}
-      variant="fullWidth"
-      slotProps={{ tab: { px: 0 } }}
-    >
+    <CustomTabs value={tabs.value} onChange={tabs.onChange} variant="fullWidth">
       {[
-        { value: 'overview', label: 'Overview' },
-        { value: 'subTasks', label: 'Subtasks' },
-        { value: 'comments', label: `Comments (${task.comments.length})` },
+        { value: 'geral', label: 'Dados' },
+        { value: 'comentarios', label: `Comentarios (${task.comentarios.length})` },
       ].map((tab) => (
         <Tab key={tab.value} value={tab.value} label={tab.label} />
       ))}
@@ -137,88 +172,106 @@ export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, o
 
   const renderTabOverview = (
     <Box sx={{ gap: 3, display: 'flex', flexDirection: 'column' }}>
-      {/* Task name */}
       <KanbanInputName
-        placeholder="Task name"
+        placeholder="Nome"
         value={taskName}
         onChange={handleChangeTaskName}
         onKeyUp={handleUpdateTask}
         inputProps={{ id: `input-task-${taskName}` }}
       />
-
-      {/* Reporter */}
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <StyledLabel>Reporter</StyledLabel>
-        <Avatar alt={task.reporter.name} src={task.reporter.avatarUrl} />
+        <StyledLabel>Vendedor</StyledLabel>
+        <StyledLabel>{task.responsavel}</StyledLabel>
       </Box>
 
       {/* Assignee */}
       <Box sx={{ display: 'flex' }}>
-        <StyledLabel sx={{ height: 40, lineHeight: '40px' }}>Assignee</StyledLabel>
+  <StyledLabel sx={{ height: 40, lineHeight: '40px' }}>Cliente</StyledLabel>
+  <Box sx={{ gap: 1, display: 'flex', flexWrap: 'wrap', alignItems: 'center' }}>
+    
+    {/* Renderiza o Avatar do cliente se task.cliente estiver definido */}
+    {cliente ? (
+      <Tooltip title={cliente.nome}>
+        <Avatar
+          src={cliente.avatarUrl}
+          alt={cliente.nome}
+        />
+      </Tooltip>
+    ) : null}
 
-        <Box sx={{ gap: 1, display: 'flex', flexWrap: 'wrap' }}>
-          {task.assignee.map((user) => (
-            <Avatar key={user.id} alt={user.name} src={user.avatarUrl} />
-          ))}
+    {/* Botão para adicionar ou alterar cliente */}
+    <Tooltip title="Adicionar cliente">
+      <IconButton
+        onClick={contactsDialog.onTrue}
+        sx={{
+          bgcolor: (theme) => varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
+          border: (theme) => `dashed 1px ${theme.vars.palette.divider}`,
+        }}
+      >
+        <Iconify icon="mingcute:add-line" />
+      </IconButton>
+    </Tooltip>
 
-          <Tooltip title="Add assignee">
-            <IconButton
-              onClick={contacts.onTrue}
-              sx={{
-                bgcolor: (theme) => varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
-                border: (theme) => `dashed 1px ${theme.vars.palette.divider}`,
-              }}
-            >
-              <Iconify icon="mingcute:add-line" />
-            </IconButton>
-          </Tooltip>
+    {/* Componente de diálogo para selecionar cliente */}
+    <KanbanContactsDialog
+      clientes={clientes}
+      cliente={cliente} // Passa o cliente atual da tarefa
+      handleChangeCliente={handleChangeCliente}
+      open={contactsDialog.value}
+      onClose={contactsDialog.onFalse}
+    />
+  </Box>
+</Box>
 
-          <KanbanContactsDialog
-            assignee={task.assignee}
-            open={contacts.value}
-            onClose={contacts.onFalse}
-          />
-        </Box>
-      </Box>
-
-      {/* Label */}
+      {/* Multiple Labels Selector */}
       <Box sx={{ display: 'flex' }}>
-        <StyledLabel sx={{ height: 24, lineHeight: '24px' }}>Labels</StyledLabel>
-
-        {!!task.labels.length && (
-          <Box sx={{ gap: 1, display: 'flex', flexWrap: 'wrap' }}>
-            {task.labels.map((label) => (
-              <Chip key={label} color="info" label={label} size="small" variant="soft" />
-            ))}
-          </Box>
-        )}
+        <StyledLabel>Labels</StyledLabel>
+        <Select
+          multiple
+          value={labels}
+          onChange={handleLabelChange}
+          renderValue={(selected) => (
+            <Box sx={{ display: 'flex', gap: 0.5 }}>
+              {selected.map((label) => (
+                <Chip key={label} label={label} size="small" />
+              ))}
+            </Box>
+          )}
+          sx={{ minWidth: 200 }}
+        >
+          {['Site', 'Youtube', 'Instagram', 'Anne Monteiro', 'Outros'].map((label) => (
+            <MenuItem key={label} value={label}>
+              {label}
+            </MenuItem>
+          ))}
+        </Select>
       </Box>
-
-      {/* Due date */}
+      {/* Input para Valor Potencial */}
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <StyledLabel> Due date </StyledLabel>
-
+        <StyledLabel>Valor Potencial</StyledLabel>
+        <TextField
+          fullWidth
+          size="small"
+          value={valorPotencial}
+          onChange={handleValorPotencialChange}
+          placeholder="R$ 0,00"
+        />
+      </Box>
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <StyledLabel>Data FollowUp</StyledLabel>
         {rangePicker.selected ? (
           <Button size="small" onClick={rangePicker.onOpen}>
             {rangePicker.shortLabel}
           </Button>
         ) : (
-          <Tooltip title="Add due date">
-            <IconButton
-              onClick={rangePicker.onOpen}
-              sx={{
-                bgcolor: (theme) => varAlpha(theme.vars.palette.grey['500Channel'], 0.08),
-                border: (theme) => `dashed 1px ${theme.vars.palette.divider}`,
-              }}
-            >
+          <Tooltip title="Adicionar data de follow-up">
+            <IconButton onClick={rangePicker.onOpen}>
               <Iconify icon="mingcute:add-line" />
             </IconButton>
           </Tooltip>
         )}
-
         <CustomDateRangePicker
           variant="calendar"
-          title="Choose due date"
           startDate={rangePicker.startDate}
           endDate={rangePicker.endDate}
           onChangeStartDate={rangePicker.onChangeStartDate}
@@ -229,16 +282,12 @@ export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, o
           error={rangePicker.error}
         />
       </Box>
-
-      {/* Priority */}
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <StyledLabel>Priority</StyledLabel>
+        <StyledLabel>Prioridade</StyledLabel>
         <KanbanDetailsPriority priority={priority} onChangePriority={handleChangePriority} />
       </Box>
-
-      {/* Description */}
       <Box sx={{ display: 'flex' }}>
-        <StyledLabel> Description </StyledLabel>
+        <StyledLabel>Descrição</StyledLabel>
         <TextField
           fullWidth
           multiline
@@ -249,58 +298,9 @@ export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, o
           InputProps={{ sx: { typography: 'body2' } }}
         />
       </Box>
-
-      {/* Attachments */}
-      <Box sx={{ display: 'flex' }}>
-        <StyledLabel>Attachments</StyledLabel>
-        <KanbanDetailsAttachments attachments={task.attachments} />
-      </Box>
     </Box>
   );
 
-  const renderTabSubtasks = (
-    <Box sx={{ gap: 3, display: 'flex', flexDirection: 'column' }}>
-      <div>
-        <Typography variant="body2" sx={{ mb: 1 }}>
-          {subtaskCompleted.length} of {SUBTASKS.length}
-        </Typography>
-
-        <LinearProgress
-          variant="determinate"
-          value={(subtaskCompleted.length / SUBTASKS.length) * 100}
-        />
-      </div>
-
-      <FormGroup>
-        {SUBTASKS.map((taskItem) => (
-          <FormControlLabel
-            key={taskItem}
-            control={
-              <Checkbox
-                disableRipple
-                name={taskItem}
-                checked={subtaskCompleted.includes(taskItem)}
-              />
-            }
-            label={taskItem}
-            onChange={() => handleClickSubtaskComplete(taskItem)}
-          />
-        ))}
-      </FormGroup>
-
-      <Button
-        variant="outlined"
-        startIcon={<Iconify icon="mingcute:add-line" />}
-        sx={{ alignSelf: 'flex-start' }}
-      >
-        Subtask
-      </Button>
-    </Box>
-  );
-
-  const renderTabComments = (
-    <>{!!task.comments.length && <KanbanDetailsCommentList comments={task.comments} />}</>
-  );
 
   return (
     <Drawer
@@ -311,16 +311,21 @@ export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, o
       PaperProps={{ sx: { width: { xs: 1, sm: 480 } } }}
     >
       {renderToolbar}
-
       {renderTabs}
-
       <Scrollbar fillContent sx={{ py: 3, px: 2.5 }}>
-        {tabs.value === 'overview' && renderTabOverview}
-        {tabs.value === 'subTasks' && renderTabSubtasks}
-        {tabs.value === 'comments' && renderTabComments}
+        {tabs.value === 'geral' && renderTabOverview}
       </Scrollbar>
-
-      {tabs.value === 'comments' && <KanbanDetailsCommentInput />}
+      {tabs.value === 'comentarios' && <KanbanDetailsCommentInput comentarios={task.comentarios} onAddComment={handleAddComment}  onDeleteComment={handleDeleteComment}/>}
+      <Box sx={{ p: 2, textAlign: 'center' }}>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={loading}
+          startIcon={loading ? <CircularProgress size={20} /> : null}
+        >
+          {loading ? 'Salvando...' : 'Salvar'}
+        </Button>
+      </Box>
     </Drawer>
   );
 }

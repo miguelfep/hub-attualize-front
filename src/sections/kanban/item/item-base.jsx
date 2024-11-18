@@ -15,8 +15,6 @@ import { imageClasses } from 'src/components/image';
 
 import { kanbanClasses } from '../classes';
 
-// ----------------------------------------------------------------------
-
 export const StyledItemWrap = styled(ListItem)(() => ({
   '@keyframes fadeIn': { '0%': { opacity: 0 }, '100%': { opacity: 1 } },
   transform:
@@ -41,8 +39,6 @@ export const StyledItem = styled(Stack)(({ theme }) => ({
   backgroundColor: theme.vars.palette.common.white,
   transition: theme.transitions.create(['box-shadow']),
   [stylesMode.dark]: { backgroundColor: theme.vars.palette.grey[900] },
-  [`&.${kanbanClasses.state.disabled}`]: {},
-  [`&.${kanbanClasses.state.sorting}`]: {},
   [`&.${kanbanClasses.state.dragOverlay}`]: {
     backdropFilter: `blur(6px)`,
     boxShadow: theme.customShadows.z20,
@@ -56,57 +52,51 @@ const ItemBase = forwardRef(({ task, stateProps, sx, ...other }, ref) => {
   const theme = useTheme();
 
   useEffect(() => {
-    if (!stateProps?.dragOverlay) {
-      return;
+    if (stateProps?.dragOverlay) {
+      document.body.style.cursor = 'grabbing';
+      return () => {
+        document.body.style.cursor = '';
+      };
     }
-
-    document.body.style.cursor = 'grabbing';
-
-    // eslint-disable-next-line consistent-return
-    return () => {
-      document.body.style.cursor = '';
-    };
+    return undefined; // Certifica-se de que a função retorna undefined quando não há 'dragOverlay'
   }, [stateProps?.dragOverlay]);
 
   const itemWrapClassName = kanbanClasses.itemWrap.concat(
-    (stateProps?.fadeIn && ` ${kanbanClasses.state.fadeIn}`) ||
-      (stateProps?.dragOverlay && ` ${kanbanClasses.state.dragOverlay}`) ||
-      ''
+    stateProps?.fadeIn ? ` ${kanbanClasses.state.fadeIn}` : '',
+    stateProps?.dragOverlay ? ` ${kanbanClasses.state.dragOverlay}` : ''
   );
 
   const itemClassName = kanbanClasses.item.concat(
-    (stateProps?.dragging && ` ${kanbanClasses.state.dragging}`) ||
-      (stateProps?.disabled && ` ${kanbanClasses.state.disabled}`) ||
-      (stateProps?.sorting && ` ${kanbanClasses.state.sorting}`) ||
-      (stateProps?.dragOverlay && ` ${kanbanClasses.state.dragOverlay}`) ||
-      ''
+    stateProps?.dragging ? ` ${kanbanClasses.state.dragging}` : '',
+    stateProps?.disabled ? ` ${kanbanClasses.state.disabled}` : '',
+    stateProps?.sorting ? ` ${kanbanClasses.state.sorting}` : '',
+    stateProps?.dragOverlay ? ` ${kanbanClasses.state.dragOverlay}` : ''
   );
 
   const renderPriority = (
     <Iconify
       icon={
-        (task.priority === 'low' && 'solar:double-alt-arrow-down-bold-duotone') ||
-        (task.priority === 'medium' && 'solar:double-alt-arrow-right-bold-duotone') ||
+        task.prioridade === 'baixa' ? 'solar:double-alt-arrow-down-bold-duotone' :
+        task.prioridade === 'média' ? 'solar:double-alt-arrow-right-bold-duotone' :
         'solar:double-alt-arrow-up-bold-duotone'
       }
       sx={{
         top: 4,
         right: 4,
         position: 'absolute',
-        ...(task.priority === 'low' && { color: 'info.main' }),
-        ...(task.priority === 'medium' && { color: 'warning.main' }),
-        ...(task.priority === 'hight' && { color: 'error.main' }),
+        color: task.prioridade === 'baixa' ? 'info.main' :
+               task.prioridade === 'média' ? 'warning.main' : 'error.main',
       }}
     />
   );
 
-  const renderImg = !!task?.attachments?.length && (
+  const renderImg = !!task.attachments?.length && (
     <Box sx={{ p: theme.spacing(1, 1, 0, 1) }}>
       <Box
         component="img"
         className={imageClasses.root}
-        alt={task?.attachments?.[0]}
-        src={task?.attachments?.[0]}
+        alt={task.attachments[0]}
+        src={task.attachments[0]}
         sx={{
           width: 320,
           height: 'auto',
@@ -127,19 +117,14 @@ const ItemBase = forwardRef(({ task, stateProps, sx, ...other }, ref) => {
         sx={{ typography: 'caption', color: 'text.disabled' }}
       >
         <Iconify width={16} icon="solar:chat-round-dots-bold" sx={{ mr: 0.25 }} />
-
         <Box component="span" sx={{ mr: 1 }}>
-          {task?.comments?.length}
+          {task.comentarios.length}
         </Box>
-
         <Iconify width={16} icon="eva:attach-2-fill" sx={{ mr: 0.25 }} />
-        <Box component="span">{task?.attachments?.length}</Box>
+        <Box component="span">{task.attachments.length}</Box>
       </Stack>
-
       <AvatarGroup sx={{ [`& .${avatarGroupClasses.avatar}`]: { width: 24, height: 24 } }}>
-        {task?.assignee?.map((user) => (
-          <Avatar key={user.id} alt={user.name} src={user.avatarUrl} />
-        ))}
+          <Avatar key={task.responsavel} alt={task.responsavel} />
       </AvatarGroup>
     </Stack>
   );
@@ -150,8 +135,8 @@ const ItemBase = forwardRef(({ task, stateProps, sx, ...other }, ref) => {
       disablePadding
       className={itemWrapClassName}
       sx={{
-        ...(!!stateProps?.transition && { transition: stateProps.transition }),
-        ...(!!stateProps?.transform && {
+        ...(stateProps?.transition && { transition: stateProps.transition }),
+        ...(stateProps?.transform && {
           '--translate-x': `${Math.round(stateProps.transform.x)}px`,
           '--translate-y': `${Math.round(stateProps.transform.y)}px`,
           '--scale-x': `${stateProps.transform.scaleX}`,
@@ -168,12 +153,9 @@ const ItemBase = forwardRef(({ task, stateProps, sx, ...other }, ref) => {
         {...other}
       >
         {renderImg}
-
         <Stack spacing={2} sx={{ px: 2, py: 2.5, position: 'relative' }}>
           {renderPriority}
-
-          <Typography variant="subtitle2">{task.name}</Typography>
-
+          <Typography variant="subtitle2">{task.titulo}</Typography>
           {renderInfo}
         </Stack>
       </StyledItem>

@@ -2,6 +2,7 @@
 
 import { toast } from 'sonner';
 import InputMask from 'react-input-mask';
+import { NumericFormat } from 'react-number-format';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import { styled } from '@mui/material/styles';
@@ -29,8 +30,6 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { consultarCep } from 'src/utils/consultarCep';
 
 import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/societario';
-
-import { NumericFormat } from 'react-number-format';
 
 import { Iconify } from 'src/components/iconify';
 

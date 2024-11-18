@@ -3,7 +3,7 @@
 import { toast } from 'sonner';
 import { useFormContext } from 'react-hook-form';
 
-import { Card, CardContent, Button, Switch, TextField, CardActions, FormControlLabel } from '@mui/material';
+import { Card, Button, Switch, TextField, CardContent, CardActions, FormControlLabel } from '@mui/material';
 
 import { enviarLinkAbertura } from 'src/actions/societario';
 

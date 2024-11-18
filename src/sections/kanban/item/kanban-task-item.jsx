@@ -27,7 +27,7 @@ export function KanbanTaskItem({ task, disabled, columnId, sx }) {
   const handleDeleteTask = useCallback(async () => {
     try {
       deleteTask(columnId, task.id);
-      toast.success('Delete success!', { position: 'top-center' });
+      toast.success('Deletado com sucesso!', { position: 'top-center' });
     } catch (error) {
       console.error(error);
     }

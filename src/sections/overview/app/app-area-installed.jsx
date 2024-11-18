@@ -55,7 +55,7 @@ export function AppAreaInstalled({ title, subheader, chart, ...other }) {
       <ChartLegends
         colors={chartOptions?.colors}
         labels={chart.series[0].data.map((item) => item.name)}
-        values={[fShortenNumber(1234), fShortenNumber(6789), fShortenNumber(1012)]}
+        values={[fShortenNumber(35), fShortenNumber(6), fShortenNumber(15)]}
         sx={{
           px: 3,
           gap: 3,

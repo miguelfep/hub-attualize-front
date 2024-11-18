@@ -24,7 +24,7 @@ export function KanbanColumn({ children, column, tasks, disabled, sx }) {
       animateLayoutChanges,
     });
 
-  const tasksIds = tasks.map((task) => task.id);
+    const tasksIds = tasks ? tasks.map((task) => task.id) : [];
 
   const isOverContainer = over
     ? (column.id === over.id && active?.data.current?.type !== 'container') ||
@@ -58,7 +58,7 @@ export function KanbanColumn({ children, column, tasks, disabled, sx }) {
     try {
       deleteColumn(column.id);
 
-      toast.success('Delete success!', { position: 'top-center' });
+      toast.success('Deletado com sucesso!', { position: 'top-center' });
     } catch (error) {
       console.error(error);
     }

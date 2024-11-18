@@ -5,7 +5,7 @@ import axios, { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-const enableServer = false;
+const enableServer = true;
 
 const KANBAN_ENDPOINT = endpoints.kanban;
 
@@ -19,10 +19,10 @@ const swrOptions = {
 
 export function useGetBoard() {
   const { data, isLoading, error, isValidating } = useSWR(KANBAN_ENDPOINT, fetcher, swrOptions);
-
+  
   const memoizedValue = useMemo(() => {
-    const tasks = data?.board.tasks ?? {};
-    const columns = data?.board.columns ?? [];
+    const tasks = data?.board?.tasks ?? {};
+    const columns = data?.board?.columns ?? [];
 
     return {
       board: { tasks, columns },
@@ -31,7 +31,7 @@ export function useGetBoard() {
       boardValidating: isValidating,
       boardEmpty: !isLoading && !columns.length,
     };
-  }, [data?.board.columns, data?.board.tasks, error, isLoading, isValidating]);
+  }, [data?.board?.columns, data?.board?.tasks, error, isLoading, isValidating]);
 
   return memoizedValue;
 }
@@ -225,6 +225,8 @@ export async function updateTask(columnId, taskData) {
   /**
    * Work on server
    */
+
+  
   if (enableServer) {
     const data = { columnId, taskData };
     await axios.post(KANBAN_ENDPOINT, data, { params: { endpoint: 'update-task' } });
@@ -314,6 +316,77 @@ export async function deleteTask(columnId, taskId) {
       };
 
       return { ...currentData, board: { ...board, tasks } };
+    },
+    false
+  );
+}
+
+// ----------------------------------------------------------------------
+
+export async function addCommentToTask(taskId, commentData) {
+  /**
+   * Work on server
+   */
+  if (enableServer) {
+    const data = { ...commentData };
+    await axios.post(`${KANBAN_ENDPOINT}/tasks/${taskId}/comments`, data);
+  }
+  /**
+   * Work in local
+   */
+  mutate(
+    KANBAN_ENDPOINT,
+    (currentData) => {
+      const { board } = currentData;
+
+      // Find the column containing the task and update the task's comments
+      const updatedTasks = Object.keys(board.tasks).reduce((acc, columnId) => {
+        acc[columnId] = board.tasks[columnId].map((task) =>
+          task.id === taskId
+            ? { ...task, comentarios: [...task.comentarios, commentData] }
+            : task
+        );
+        return acc;
+      }, {});
+
+      return { ...currentData, board: { ...board, tasks: updatedTasks } };
+    },
+    false
+  );
+}
+
+// ----------------------------------------------------------------------
+
+export async function deleteCommentFromTask(taskId, commentId) {
+  /**
+   * Work on server
+   */
+  if (enableServer) {
+    await axios.delete(`${KANBAN_ENDPOINT}/tasks/${taskId}/comments/${commentId}`);
+  }
+
+  /**
+   * Work in local
+   */
+  mutate(
+    KANBAN_ENDPOINT,
+    (currentData) => {
+      const { board } = currentData;
+
+      // Find the column containing the task and update the task's comments by filtering out the deleted comment
+      const updatedTasks = Object.keys(board.tasks).reduce((acc, columnId) => {
+        acc[columnId] = board.tasks[columnId].map((task) =>
+          task.id === taskId
+            ? {
+                ...task,
+                comentarios: task.comentarios.filter((comment) => comment.id !== commentId),
+              }
+            : task
+        );
+        return acc;
+      }, {});
+
+      return { ...currentData, board: { ...board, tasks: updatedTasks } };
     },
     false
   );

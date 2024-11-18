@@ -2,9 +2,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { z as zod } from 'zod';
 import { useMemo, useState, useEffect } from 'react';
-
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, Controller, useFormContext } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 
 import { DatePicker } from '@mui/x-date-pickers';
 import {
@@ -24,6 +23,8 @@ import {
 
 import { useRouter } from 'src/routes/hooks';
 
+import { categoriasDespesas } from 'src/utils/constants/categorias';
+
 import {
   listarBancos,
   criarContaPagar,
@@ -33,8 +34,6 @@ import {
 
 import { toast } from 'src/components/snackbar';
 import { Form } from 'src/components/hook-form';
-
-import { categoriasDespesas } from 'src/utils/constants/categorias';
 
 const decodificarLinhaDigitavel = (codigoBarras) => {
   const valor = parseFloat(codigoBarras.substring(37, 47)) / 100;

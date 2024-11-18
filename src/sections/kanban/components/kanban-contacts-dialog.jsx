@@ -11,34 +11,33 @@ import ListItemText from '@mui/material/ListItemText';
 import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
 
-import { _contacts } from 'src/_mock';
-
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { SearchNotFound } from 'src/components/search-not-found';
 
-// ----------------------------------------------------------------------
-
 const ITEM_HEIGHT = 64;
 
-// ----------------------------------------------------------------------
-
-export function KanbanContactsDialog({ assignee = [], open, onClose }) {
+export function KanbanContactsDialog({ clientes = [], cliente, handleChangeCliente, open, onClose }) {
   const [searchContact, setSearchContact] = useState('');
 
   const handleSearchContacts = useCallback((event) => {
     setSearchContact(event.target.value);
   }, []);
 
-  const dataFiltered = applyFilter({ inputData: _contacts, query: searchContact });
+  const handleAssign = useCallback(
+    (contact) => {
+      const isAssigned = cliente && cliente.nome === contact.nome;
+      handleChangeCliente(isAssigned ? null : contact); // Remove se já estiver selecionado, adiciona caso contrário
+    },
+    [cliente, handleChangeCliente]
+  );
 
+  const dataFiltered = applyFilter({ inputData: clientes, query: searchContact });
   const notFound = !dataFiltered.length && !!searchContact;
 
   return (
     <Dialog fullWidth maxWidth="xs" open={open} onClose={onClose}>
-      <DialogTitle sx={{ pb: 0 }}>
-        Contacts <Typography component="span">({_contacts.length})</Typography>
-      </DialogTitle>
+      <DialogTitle>Clientes <Typography component="span">({clientes.length})</Typography></DialogTitle>
 
       <Box sx={{ px: 3, py: 2.5 }}>
         <TextField
@@ -63,7 +62,7 @@ export function KanbanContactsDialog({ assignee = [], open, onClose }) {
           <Scrollbar sx={{ height: ITEM_HEIGHT * 6, px: 2.5 }}>
             <Box component="ul">
               {dataFiltered.map((contact) => {
-                const checked = assignee.map((person) => person.name).includes(contact.name);
+                const isAssigned = cliente && cliente.nome === contact.nome;
 
                 return (
                   <Box
@@ -77,26 +76,25 @@ export function KanbanContactsDialog({ assignee = [], open, onClose }) {
                     }}
                   >
                     <Avatar src={contact.avatarUrl} />
-
                     <ListItemText
                       primaryTypographyProps={{ typography: 'subtitle2', sx: { mb: 0.25 } }}
                       secondaryTypographyProps={{ typography: 'caption' }}
-                      primary={contact.name}
+                      primary={contact.nome}
                       secondary={contact.email}
                     />
-
                     <Button
                       size="small"
-                      color={checked ? 'primary' : 'inherit'}
+                      color={isAssigned ? 'primary' : 'inherit'}
+                      onClick={() => handleAssign(contact)}
                       startIcon={
                         <Iconify
                           width={16}
-                          icon={checked ? 'eva:checkmark-fill' : 'mingcute:add-line'}
+                          icon={isAssigned ? 'eva:checkmark-fill' : 'mingcute:add-line'}
                           sx={{ mr: -0.5 }}
                         />
                       }
                     >
-                      {checked ? 'Assigned' : 'Assign'}
+                      {isAssigned ? 'Remover' : 'Adicionar'}
                     </Button>
                   </Box>
                 );
@@ -113,10 +111,9 @@ function applyFilter({ inputData, query }) {
   if (query) {
     inputData = inputData.filter(
       (contact) =>
-        contact.name.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
-        contact.email.toLowerCase().indexOf(query.toLowerCase()) !== -1
+        contact.nome.toLowerCase().includes(query.toLowerCase()) ||
+        contact.email.toLowerCase().includes(query.toLowerCase())
     );
   }
-
   return inputData;
 }

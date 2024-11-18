@@ -22,7 +22,7 @@ export function CustomDateRangePicker({
   onChangeEndDate,
   variant = 'input',
   onChangeStartDate,
-  title = 'Select date range',
+  title = 'Selecione as datas',
 }) {
   const mdUp = useResponsive('up', 'md');
 
@@ -72,18 +72,18 @@ export function CustomDateRangePicker({
 
         {error && (
           <FormHelperText error sx={{ px: 2 }}>
-            End date must be later than start date
+            Data final deve ser maior que a data inicial
           </FormHelperText>
         )}
       </DialogContent>
 
       <DialogActions>
         <Button variant="outlined" color="inherit" onClick={onClose}>
-          Cancel
+          Cancelar
         </Button>
 
         <Button disabled={error} variant="contained" onClick={onClose}>
-          Apply
+          Aplicar
         </Button>
       </DialogActions>
     </Dialog>

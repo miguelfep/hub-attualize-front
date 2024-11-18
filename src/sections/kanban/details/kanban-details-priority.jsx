@@ -8,9 +8,10 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 export function KanbanDetailsPriority({ priority, onChangePriority }) {
+  
   return (
     <Stack direction="row" flexWrap="wrap" spacing={1}>
-      {['low', 'medium', 'hight'].map((option) => (
+      {['baixa', 'média', 'alta'].map((option) => (
         <ButtonBase
           key={option}
           onClick={() => onChangePriority(option)}
@@ -32,15 +33,15 @@ export function KanbanDetailsPriority({ priority, onChangePriority }) {
         >
           <Iconify
             icon={
-              (option === 'low' && 'solar:double-alt-arrow-down-bold-duotone') ||
-              (option === 'medium' && 'solar:double-alt-arrow-right-bold-duotone') ||
+              (option === 'baixa' && 'solar:double-alt-arrow-down-bold-duotone') ||
+              (option === 'média' && 'solar:double-alt-arrow-right-bold-duotone') ||
               'solar:double-alt-arrow-up-bold-duotone'
             }
             sx={{
               mr: 0.5,
-              ...(option === 'low' && { color: 'info.main' }),
-              ...(option === 'medium' && { color: 'warning.main' }),
-              ...(option === 'hight' && { color: 'error.main' }),
+              ...(option === 'baixa' && { color: 'info.main' }),
+              ...(option === 'média' && { color: 'warning.main' }),
+              ...(option === 'alta' && { color: 'error.main' }),
             }}
           />
 

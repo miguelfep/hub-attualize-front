@@ -56,6 +56,11 @@ export const navData = [
         roles: ['financeiro', 'admin', 'comercial'],
         children: [
           {
+            title: 'Funil',
+            roles: ['admin', 'financeiro', 'comercial'],
+            path: paths.dashboard.comercial.funil,
+          },
+          {
             title: 'Vendas',
             roles: ['admin', 'financeiro', 'comercial'],
             path: paths.dashboard.invoice.root,
@@ -95,6 +100,11 @@ export const navData = [
             title: 'Abertura',
             roles: ['admin', 'operacional', 'comercial'],
             path: paths.dashboard.aberturas.root,
+          },
+          {
+            title: 'Licenças',
+            roles: ['admin', 'operacional', 'comercial'],
+            path: paths.dashboard.aberturas.licenca,
           },
         ],
       },

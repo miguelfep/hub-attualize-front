@@ -33,7 +33,7 @@ export const fetcher = async (args) => {
 
 export const endpoints = {
   chat: '/api/chat',
-  kanban: '/api/kanban',
+  kanban: 'https://api.attualizecontabil.com.br/api/comercial/board',
   calendar: '/api/calendar',
   auth: {
     signIn: 'https://api.attualizecontabil.com.br/api/users/authenticate',
@@ -57,6 +57,7 @@ export const endpoints = {
   },
   clientes: {
     list: 'https://api.attualizecontabil.com.br/api/clientes',
+    leads: 'https://api.attualizecontabil.com.br/api/clientes/leads/all',
     create: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/create',
     update: 'https://api.attualizecontabil.com.br/api/clientes',
   },

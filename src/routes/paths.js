@@ -156,6 +156,10 @@ export const paths = {
     aberturas: {
       root: `${ROOTS.DASHBOARD}/societario`,
       edit: (id) => `${ROOTS.DASHBOARD}/societario/abertura/${id}/edit`,
+      licenca: `${ROOTS.DASHBOARD}/licencas`,
+    },
+    comercial: {
+      funil: `${ROOTS.DASHBOARD}/comercial/vendas`,
     },
     product: {
       root: `${ROOTS.DASHBOARD}/product`,
