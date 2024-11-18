@@ -1,28 +1,28 @@
 import axios from 'src/utils/axios';
 
-const baseUrl = 'http://localhost:9443/api/';
+const baseUrl = 'https://api.attualizecontabil.com.br/api/';
 // ----------------------------------------------------------------------
 
 export async function getAberturasSocietario() {
-  return axios.get('http://localhost:9443/api/societario/aberturas');
+  return axios.get('https://api.attualizecontabil.com.br/api/societario/aberturas');
 }
 
 // ----------------------------------------------------------------------
 
 export async function getAberturaById(id) {
-  return axios.get(`http://localhost:9443/api/societario/abertura/id/${id}`);
+  return axios.get(`https://api.attualizecontabil.com.br/api/societario/abertura/id/${id}`);
 }
 
 // ----------------------------------------------------------------------
 
 export async function createAbertura(itemData) {
-  return axios.post('http://localhost:9443/api/societario/abertura', itemData);
+  return axios.post('https://api.attualizecontabil.com.br/api/societario/abertura', itemData);
 }
 
 // ----------------------------------------------------------------------
 
 export async function updateAbertura(id, itemData) {
-  return axios.put(`http://localhost:9443/api/societario/abertura/atualizar/${id}`, itemData);
+  return axios.put(`https://api.attualizecontabil.com.br/api/societario/abertura/atualizar/${id}`, itemData);
 }
 
 // Função para fazer upload de arquivos
@@ -202,7 +202,6 @@ export async function downloadLicenca(id) {
     throw error;
   }
 }
-
 
 export async function deletarArquivoLicenca(id) {
   try {
