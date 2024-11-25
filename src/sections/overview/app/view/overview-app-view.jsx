@@ -22,6 +22,8 @@ export function OverviewAppView() {
   const [dashboardData, setDashboardData] = useState({
     totalContasPagar: 0,
     percentualVariacaoContasPagar: 0,
+    ticketMedioContratos: 0,
+    totalContratos: 0,
     categoriesContasPagar: [],
     seriesContasPagar: [],
     totalCobrancas: 0,
@@ -50,6 +52,8 @@ export function OverviewAppView() {
       setDashboardData({
         totalContasPagar: response.totalContasPagar || 0,
         percentualVariacaoContasPagar: response.percentualVariacaoContasPagar || 0,
+        ticketMedioContratos: response.ticketMedioContratos || 0,
+        totalContratos: response.totalContratos || 0,
         categoriesContasPagar: response.categoriesContasPagar || [],
         seriesContasPagar: response.seriesContasPagar || [],
         totalCobrancas: response.totalCobrancas || 0,
@@ -132,16 +136,13 @@ export function OverviewAppView() {
                 }}
               />
             </Grid>
-          </>
-        )}
+     
    
         <Grid xs={12} md={4}>          
           <EcommerceCurrentBalance
             title="Ticket Médio"
-            earning={837}
-            refunded={1600}
-            orderTotal={287650}
-            currentBalance={837}
+            orderTotal={dashboardData.totalContratos}
+            currentBalance={dashboardData.ticketMedioContratos}
           />
         </Grid>
 
@@ -200,7 +201,9 @@ export function OverviewAppView() {
             ]}
           />
         </Grid>
-      </Grid>
+        </>
+        )}
+      </Grid>      
     </DashboardContent>
   );
 }

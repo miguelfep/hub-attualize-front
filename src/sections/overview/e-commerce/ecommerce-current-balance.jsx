@@ -30,7 +30,7 @@ export function EcommerceCurrentBalance({
       <Box sx={{ gap: 2, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ typography: 'h3' }}>{fCurrency(currentBalance)}</Box>
 
-        {row('Total de vendas', orderTotal)}
+        {row('Total de contratos', orderTotal)}
      
 
       </Box>
