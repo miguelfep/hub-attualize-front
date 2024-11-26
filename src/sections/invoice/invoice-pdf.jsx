@@ -185,7 +185,7 @@ export function InvoicePDF({ invoice, currentStatus }) {
 
           {[
             { name: 'Subtotal', value: subTotal },
-            { name: 'Disconto', value: -desconto },
+            { name: 'Desconto', value: -desconto },
             { name: 'Total', value: total, styles: styles.h4 },
           ].map((item) => (
             <View key={item.name} style={[styles.row, styles.noBorder]}>
