@@ -1,0 +1,10 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://attualize.com.br
+
+# Sitemaps
+Sitemap: https://attualize.com.br/sitemap.xml
+Sitemap: https://attualize.com.br/server-sitemap.xml

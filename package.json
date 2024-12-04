@@ -16,7 +16,8 @@
     "re:start": "yarn rm:all && yarn install && yarn dev",
     "re:build": "yarn rm:all && yarn install && yarn build",
     "re:build-npm": "npm run rm:all && npm install && npm run build",
-    "start:out": "npx serve@latest out -p 3032"
+    "start:out": "npx serve@latest out -p 3032",
+    "build:sitemap": "next-sitemap"
   },
   "dependencies": {
     "@auth0/auth0-react": "^2.2.4",
@@ -83,6 +84,7 @@
     "mapbox-gl": "^3.4.0",
     "mui-one-time-password-input": "^2.0.2",
     "next": "^14.2.4",
+    "next-sitemap": "^4.2.3",
     "nprogress": "^0.2.0",
     "react": "^18.3.1",
     "react-apexcharts": "^1.4.1",

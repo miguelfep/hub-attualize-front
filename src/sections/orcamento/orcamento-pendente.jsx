@@ -1,5 +1,4 @@
 import React from 'react';
-
 import Stack from '@mui/material/Stack';
 import {
   Box,
@@ -20,12 +19,8 @@ export function OrcamentoPendente({ invoice }) {
     <>
       <TableRow>
         <TableCell colSpan={3} />
-        <TableCell sx={{ color: 'text.secondary' }}>
-          <Box sx={{ mt: 2 }} />
-          Subtotal
-        </TableCell>
+        <TableCell sx={{ color: 'text.secondary' }}>Subtotal</TableCell>
         <TableCell width={120} sx={{ typography: 'subtitle2' }}>
-          <Box sx={{ mt: 2 }} />
           {fCurrency(invoice?.subTotal)}
         </TableCell>
       </TableRow>
@@ -49,12 +44,13 @@ export function OrcamentoPendente({ invoice }) {
   );
 
   return (
-    <Box sx={{ my: 3 }}>
+    <Box sx={{ my: { xs: 2, md: 3 } }}>
+      {/* Informações da Contratada e Contratante */}
       <Grid container spacing={3}>
-        <Grid item xs={12} md={4}>
-          <Stack sx={{ typography: 'body2' }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <Stack spacing={1} sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Contratada:
+              Contratada
             </Typography>
             Attualize Contabil LTDA
             <br />
@@ -63,11 +59,10 @@ export function OrcamentoPendente({ invoice }) {
             Curitiba - PR
             <br />
             Telefone: (41) 3068-1800
-            <br />
           </Stack>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <Stack sx={{ typography: 'body2' }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <Stack spacing={1} sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Contratante
             </Typography>
@@ -76,11 +71,10 @@ export function OrcamentoPendente({ invoice }) {
             {invoice?.cliente.email}
             <br />
             Telefone: {invoice?.cliente.whatsapp}
-            <br />
           </Stack>
         </Grid>
-        <Grid item xs={12} md={4}>
-          <Stack sx={{ typography: 'body2' }}>
+        <Grid item xs={12} sm={6} md={4}>
+          <Stack spacing={1} sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Proposta válida até
             </Typography>
@@ -89,11 +83,12 @@ export function OrcamentoPendente({ invoice }) {
         </Grid>
       </Grid>
 
-      <Box sx={{ mt: 2 }}>
-        <Table sx={{ minWidth: 960 }}>
+      {/* Tabela com Itens */}
+      <Box sx={{ mt: { xs: 2, md: 3 }, overflowX: 'auto' }}>
+        <Table sx={{ minWidth: 720, maxWidth: '100%' }}>
           <TableHead>
             <TableRow>
-              <TableCell width={40}>#</TableCell>
+              <TableCell>#</TableCell>
               <TableCell sx={{ typography: 'subtitle2' }}>Titulo</TableCell>
               <TableCell sx={{ typography: 'subtitle2' }}>Descrição</TableCell>
               <TableCell>Qtd</TableCell>
@@ -105,14 +100,14 @@ export function OrcamentoPendente({ invoice }) {
               <TableRow key={index}>
                 <TableCell>{index + 1}</TableCell>
                 <TableCell>
-                  <Box sx={{ maxWidth: 560 }}>
+                  <Box sx={{ maxWidth: { xs: 240, md: 560 } }}>
                     <Typography variant="body" sx={{ color: 'text.primary' }} noWrap>
                       {row.titulo}
                     </Typography>
                   </Box>
                 </TableCell>
                 <TableCell>
-                  <Box sx={{ maxWidth: 560 }}>
+                  <Box sx={{ maxWidth: { xs: 240, md: 560 } }}>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
                       {row.descricao}
                     </Typography>

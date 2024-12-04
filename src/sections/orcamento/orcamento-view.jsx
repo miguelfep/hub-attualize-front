@@ -106,15 +106,15 @@ export function OrcamentoView({ invoice }) {
   }
 
   return (
-    <Container sx={{ mb: 10 }}>
-      <Box sx={{ textAlign: 'center', my: { xs: 3, md: 5 } }}>
+    <Container maxWidth="md" sx={{ mb: 10, px: { xs: 2, sm: 3 } }}>
+        <Box sx={{ textAlign: 'center', my: { xs: 2, md: 5 } }}>
         <Box
           component="img"
           alt="logo"
           src="/logo/hub-tt.png"
           sx={{
-            width: 48,
-            height: 48,
+            width: { xs: 32, sm: 48 },
+            height: { xs: 32, sm: 48 },
             backgroundSize: 'contain',
             backgroundRepeat: 'no-repeat',
             backgroundPosition: 'center',
@@ -123,8 +123,8 @@ export function OrcamentoView({ invoice }) {
         <Typography variant="h4">Orçamento {currentInvoice?.invoiceNumber}</Typography>
       </Box>
 
-      <Grid container justifyContent={activeStep === 2 ? 'center' : 'flex-start'}>
-        <Grid item xs={12} md={12}>
+          <Grid container spacing={2} justifyContent="center">
+        <Grid item xs={12}>
           <CheckoutSteps activeStep={activeStep} steps={ORCAMENTO_CHECKOUT_STEPS} />
         </Grid>
       </Grid>

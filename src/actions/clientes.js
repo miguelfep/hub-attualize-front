@@ -9,6 +9,15 @@ export async function getClientes() {
 
 // ----------------------------------------------------------------------
 
+export async function getClientesAndLeads() {
+  const res = await axios.get(endpoints.clientes.leads);
+  console.log(res);
+  
+  return res.data;
+}
+
+// ----------------------------------------------------------------------
+
 export async function getClienteById(id) {
   const res = await axios.get(`${endpoints.clientes.list}/${id}`);
   return res.data;
