@@ -69,8 +69,9 @@ export function PostListHomeView({ initialPosts, totalPages }) {
     slug: post.slug,
     link: post.link,
     author: post._embedded?.author[0]?.name || 'Autor Desconhecido',
-    imageUrl: post.jetpack_featured_media_url || '/default-image.png',
+    imageUrl: post.yoast_head_json.og_image[0].url || '/default-image.png',
   }));
+
 
   // Aplicar ordenação e filtros nos posts
   const dataFiltered = applyFilter({ inputData: formattedPosts, sortBy });
