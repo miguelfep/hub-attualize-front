@@ -41,7 +41,14 @@ const formatCurrency = (value) => {
   });
 };
 
-const parseCurrency = (formattedValue) => Number(formattedValue.replace(/[R$,]/g, '')) / 100;
+const parseCurrency = (formattedValue) => {
+  // Remove o prefixo "R$" e espaços
+  const sanitizedValue = formattedValue.replace(/[R$\s]/g, '');
+  // Substitui o separador de milhar (.) por nada e o separador decimal (,) por "."
+  const normalizedValue = sanitizedValue.replace(/\./g, '').replace(',', '.');
+  // Converte para número
+  return parseFloat(normalizedValue);
+};
 
 const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobrancaAtual }) => {
   const [observacoes, setObservacoes] = useState('');
@@ -162,10 +169,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
               label="Valor"
               fullWidth
               value={formattedValue}
-              onChange={handleValorChange}
-              InputProps={{
-                startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-              }}
+              onChange={handleValorChange}             
               error={!formattedValue}
               helperText={!formattedValue && 'Valor é obrigatório'}
               disabled={!!cobrancaAtual?.boleto}
