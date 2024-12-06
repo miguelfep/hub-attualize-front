@@ -92,6 +92,7 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
         </TableCell>
 
         <TableCell>{fCurrency(row.total)}</TableCell>
+        <TableCell>{fCurrency(row.desconto)}</TableCell>
 
         <TableCell>
           <Label
