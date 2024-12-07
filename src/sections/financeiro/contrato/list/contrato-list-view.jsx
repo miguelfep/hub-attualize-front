@@ -216,7 +216,7 @@ export function ContratoListView() {
               />
             ))}
           </Tabs>
-          <ContratoTableToolbar filters={filters} onResetPage={table.onResetPage} />
+          <ContratoTableToolbar filters={filters} onResetPage={table.onResetPage} tableData={dataFiltered} />
 
           {canReset && (
             <ContratoTableFiltersResult

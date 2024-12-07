@@ -37,6 +37,8 @@ export function PostDetailsHomeView({ post, latestPosts }) {
       imageUrl: latest.jetpack_featured_media_url || '/default-image.png',
     }));
 
+    
+
   return (
     <>
       <PostDetailsHero
