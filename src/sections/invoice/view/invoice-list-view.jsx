@@ -69,7 +69,6 @@ const TABLE_HEAD = [
 export function InvoiceListView() {
   const theme = useTheme();
   const router = useRouter();
-  const confirm = useBoolean();
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);

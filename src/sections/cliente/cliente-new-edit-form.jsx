@@ -26,6 +26,9 @@ import { useRouter } from 'src/routes/hooks';
 import { buscarCep } from 'src/actions/cep';
 import { criarCliente, updateCliente, getClienteById } from 'src/actions/clientes';
 
+import { Iconify } from 'src/components/iconify';
+import { yellow } from '@mui/material/colors'; // Cor para destacar o selo
+
 import { toast } from 'src/components/snackbar';
 import { Form, Field } from 'src/components/hook-form';
 
@@ -72,6 +75,7 @@ export const NewUClienteSchema = zod.object({
   emailFinanceiro: zod.string().optional(),
   whatsapp: zod.string().min(1, { message: 'Telefone é obrigatório!' }),
   telefoneComercial: zod.string().optional(),
+  clienteVip: zod.boolean().optional(),
   observacao: zod.string().optional(),
   im: zod.string().optional(),
   ie: zod.string().optional(),
@@ -100,10 +104,11 @@ export const NewUClienteSchema = zod.object({
     .optional(),
   dadosFiscal: zod.string().optional(),
   dadosContabil: zod.string().optional(),
+  dadosDepartamentoPessoal: zod.string().optional(),
   status: zod.boolean().optional(),
   tipoContato: zod.enum(['cliente', 'lead']).optional(),
   tipoNegocio: zod.array(zod.string()).optional(),
-  contadorResponsavel: zod.enum(['luan', 'geremias', 'semresponsavel', 'anne']).optional(),
+  contadorResponsavel: zod.enum(['geremias', 'semresponsavel', 'anne']).optional(),
   endereco: zod
     .array(
       zod.object({
@@ -153,8 +158,10 @@ export function ClienteNewEditForm({ currentCliente }) {
       ie: currentCliente?.ie || '',
       atividade_principal: currentCliente?.atividade_principal || [],
       atividades_secundarias: currentCliente?.atividades_secundarias || [],
+      clienteVip: currentCliente?.clienteVip || false,
       dadosFiscal: currentCliente?.dadosFiscal || '',
       dadosContabil: currentCliente?.dadosContabil || '',
+      dadosDepartamentoPessoal: currentCliente?.dadosDepartamentoPessoal || '',
       planoEmpresa: currentCliente?.planoEmpresa || '',
       status: currentCliente?.status || true,
       tipoContato: currentCliente?.tipoContato || 'cliente',
@@ -178,16 +185,11 @@ export function ClienteNewEditForm({ currentCliente }) {
     defaultValues,
   });
 
-  const {
-    reset,
-    watch,
-    control,
-    handleSubmit,
-    setValue,
-    formState: { isSubmitting, errors },
-  } = methods;
+  const { reset, watch, control, handleSubmit, setValue, formState } = methods;
+  const { isSubmitting, errors } = formState;
 
-  const values = watch();
+  const clienteVip = watch('clienteVip'); // Observar o valor de clienteVip
+
 
   const {
     fields: enderecoFields,
@@ -204,9 +206,17 @@ export function ClienteNewEditForm({ currentCliente }) {
         let response;
         if (currentCliente) {
           response = await updateCliente(currentCliente._id, data);
-
+  
+          // Atualize os valores do formulário garantindo que datas sejam `Date`
           const updatedCliente = await getClienteById(currentCliente._id);
-          reset(updatedCliente);
+          reset({
+            ...updatedCliente,
+            dataEntrada: updatedCliente.dataEntrada
+              ? new Date(updatedCliente.dataEntrada)
+              : null,
+            dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
+          });
+  
           toast.success('Cliente Atualizado com sucesso!');
         } else {
           response = await criarCliente(data);
@@ -266,12 +276,12 @@ export function ClienteNewEditForm({ currentCliente }) {
 
   return (
     <Form methods={methods} onSubmit={onSubmit}>
-      <Tabs value={tabIndex} onChange={handleTabChange} aria-label="Client Edit Tabs">
+      <Tabs value={tabIndex} onChange={handleTabChange} aria-label="Cliente Editar">
         <Tab label="Dados da Empresa" />
         <Tab label="Sócios" />
         <Tab label="Dados Fiscais" />
         <Tab label="Dados Contábeis" />
-        <Tab label="Endereço" />
+        <Tab label="Departamento Pessoal" />
       </Tabs>
       <Grid container spacing={3} mt={2}>
         {tabIndex === 0 && (
@@ -279,6 +289,25 @@ export function ClienteNewEditForm({ currentCliente }) {
             <Card sx={{ p: 3 }}>
               <Box display="flex" justifyContent="space-between">
                 <Typography variant="h6">Dados da Empresa</Typography>
+                {clienteVip && (
+                  <Box display="flex" alignItems="center" gap={2}>
+                    <Iconify
+                      icon="mdi:star" // Ícone do pacote mdi
+                      width={24}
+                      height={24}
+                      style={{ color: yellow[700] }}
+                    />
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: yellow[700],
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      Cliente VIP
+                    </Typography>
+                  </Box>
+                )}
                 <Button
                   variant="outlined"
                   onClick={handleAtualizarReceita}
@@ -313,7 +342,7 @@ export function ClienteNewEditForm({ currentCliente }) {
                 </Grid>
                 <Grid xs={12} sm={4}>
                   <Field.Text name="nome" label="Nome" fullWidth />
-                </Grid>
+                </Grid>             
                 <Grid xs={12} sm={4}>
                   <Field.Text name="email" label="Email" fullWidth />
                 </Grid>
@@ -326,7 +355,112 @@ export function ClienteNewEditForm({ currentCliente }) {
                 <Grid xs={12} sm={6}>
                   <Field.Text name="telefoneComercial" label="Telefone Comercial" fullWidth />
                 </Grid>
-                <Grid xs={12} sm={6}>
+                {enderecoFields.map((item, index) => (
+                <Grid container spacing={2} key={item.id} mt={2}>
+                  <Grid xs={12} sm={3}>
+                    <Controller
+                      name={`endereco.${index}.cep`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="CEP"
+                          fullWidth
+                          error={!!errors.endereco?.[index]?.cep}
+                          helperText={errors.endereco?.[index]?.cep?.message}
+                          onBlur={() => handleCepChange(index, field.value)}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={3}>
+                    <Controller
+                      name={`endereco.${index}.rua`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Rua"
+                          fullWidth
+                          disabled={loadingCep}
+                          error={!!errors.endereco?.[index]?.rua}
+                          helperText={errors.endereco?.[index]?.rua?.message}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={2}>
+                    <Controller
+                      name={`endereco.${index}.numero`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Número"
+                          fullWidth
+                          error={!!errors.endereco?.[index]?.numero}
+                          helperText={errors.endereco?.[index]?.numero?.message}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={4}>
+                    <Controller
+                      name={`endereco.${index}.complemento`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Complemento"
+                          fullWidth
+                          error={!!errors.endereco?.[index]?.complemento}
+                          helperText={errors.endereco?.[index]?.complemento?.message}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={3}>
+                    <Controller
+                      name={`endereco.${index}.cidade`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Cidade"
+                          fullWidth
+                          disabled={loadingCep}
+                          error={!!errors.endereco?.[index]?.cidade}
+                          helperText={errors.endereco?.[index]?.cidade?.message}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={3}>
+                    <Controller
+                      name={`endereco.${index}.estado`}
+                      control={control}
+                      render={({ field }) => (
+                        <TextField
+                          {...field}
+                          label="Estado"
+                          fullWidth
+                          disabled={loadingCep}
+                          error={!!errors.endereco?.[index]?.estado}
+                          helperText={errors.endereco?.[index]?.estado?.message}
+                        />
+                      )}
+                    />
+                  </Grid>
+                </Grid>
+              ))}
+              
+               <Grid xs={12} sm={2}>
+                <Field.Select name="clienteVip" label="Cliente VIP" fullWidth>
+                  <MenuItem value={true}>Sim</MenuItem>
+                  <MenuItem value={false}>Não</MenuItem>
+                </Field.Select>
+              </Grid>
+                <Grid xs={12} sm={4}>
                   <Field.Text name="im" label="Inscrição Municipal" fullWidth />
                 </Grid>
                 <Grid xs={12} sm={6}>
@@ -368,7 +502,7 @@ export function ClienteNewEditForm({ currentCliente }) {
                 </Grid>
                 <Grid xs={12} sm={12}>
                   <Field.Select name="contadorResponsavel" label="Contador Responsável" fullWidth>
-                    {['luan', 'anne', 'geremias', 'semresponsavel'].map((option) => (
+                    {['anne', 'geremias', 'semresponsavel'].map((option) => (
                       <MenuItem key={option} value={option}>
                         {option}
                       </MenuItem>
@@ -385,9 +519,9 @@ export function ClienteNewEditForm({ currentCliente }) {
                     render={({ field }) => (
                       <DatePicker
                         label="Data de Entrada"
-                        value={field.value ? dayjs(field.value) : null} // Convertendo para dayjs
+                        value={field.value ? dayjs(field.value) : null} // Converte para `dayjs` para manipulação
                         onChange={(newValue) => {
-                          field.onChange(newValue ? newValue.toDate() : null); // Convertendo de volta para Date
+                          field.onChange(newValue ? newValue.toDate() : null); // Converte `dayjs` de volta para `Date`
                         }}
                         renderInput={(params) => (
                           <TextField
@@ -508,108 +642,14 @@ export function ClienteNewEditForm({ currentCliente }) {
             </Card>
           </Grid>
         )}
-        {tabIndex === 4 && (
+         {tabIndex === 4 && (
           <Grid xs={12}>
             <Card sx={{ p: 3 }}>
-              <Typography variant="h6">Endereço</Typography>
-              {enderecoFields.map((item, index) => (
-                <Grid container spacing={2} key={item.id} mt={2}>
-                  <Grid xs={12} sm={3}>
-                    <Controller
-                      name={`endereco.${index}.cep`}
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="CEP"
-                          fullWidth
-                          error={!!errors.endereco?.[index]?.cep}
-                          helperText={errors.endereco?.[index]?.cep?.message}
-                          onBlur={() => handleCepChange(index, field.value)}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid xs={12} sm={3}>
-                    <Controller
-                      name={`endereco.${index}.rua`}
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Rua"
-                          fullWidth
-                          disabled={loadingCep}
-                          error={!!errors.endereco?.[index]?.rua}
-                          helperText={errors.endereco?.[index]?.rua?.message}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid xs={12} sm={2}>
-                    <Controller
-                      name={`endereco.${index}.numero`}
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Número"
-                          fullWidth
-                          error={!!errors.endereco?.[index]?.numero}
-                          helperText={errors.endereco?.[index]?.numero?.message}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid xs={12} sm={4}>
-                    <Controller
-                      name={`endereco.${index}.complemento`}
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Complemento"
-                          fullWidth
-                          error={!!errors.endereco?.[index]?.complemento}
-                          helperText={errors.endereco?.[index]?.complemento?.message}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid xs={12} sm={3}>
-                    <Controller
-                      name={`endereco.${index}.cidade`}
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Cidade"
-                          fullWidth
-                          disabled={loadingCep}
-                          error={!!errors.endereco?.[index]?.cidade}
-                          helperText={errors.endereco?.[index]?.cidade?.message}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid xs={12} sm={3}>
-                    <Controller
-                      name={`endereco.${index}.estado`}
-                      control={control}
-                      render={({ field }) => (
-                        <TextField
-                          {...field}
-                          label="Estado"
-                          fullWidth
-                          disabled={loadingCep}
-                          error={!!errors.endereco?.[index]?.estado}
-                          helperText={errors.endereco?.[index]?.estado?.message}
-                        />
-                      )}
-                    />
-                  </Grid>
+              <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <Field.Editor name="dadosDepartamentoPessoal" label="Dados do Departamento Pessoal" fullWidth />
                 </Grid>
-              ))}
+              </Grid>
             </Card>
           </Grid>
         )}

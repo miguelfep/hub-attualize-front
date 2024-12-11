@@ -10,6 +10,7 @@ import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
+import { yellow } from '@mui/material/colors'; 
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -63,6 +64,14 @@ export function ClienteTableRow({
             <Stack sx={{ typography: 'body2', flex: '1 1 auto', alignItems: 'flex-start' }}>
               <Link color="inherit" onClick={onEditRow} sx={{ cursor: 'pointer' }}>
                 {row.nome}
+                {row.clienteVip && (
+                  <Iconify
+                    icon="mdi:star" // Ícone de estrela VIP
+                    width={20}
+                    height={20}
+                    style={{ color: yellow[700] }} // Cor amarela
+                  />
+                )}
               </Link>
               <Box component="span" sx={{ color: 'text.disabled' }}>
                 {row.email}
