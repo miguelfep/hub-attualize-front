@@ -26,8 +26,8 @@ import { useRouter } from 'src/routes/hooks';
 import { buscarCep } from 'src/actions/cep';
 import { criarCliente, updateCliente, getClienteById } from 'src/actions/clientes';
 
+import { yellow } from '@mui/material/colors';
 import { Iconify } from 'src/components/iconify';
-import { yellow } from '@mui/material/colors'; // Cor para destacar o selo
 
 import { toast } from 'src/components/snackbar';
 import { Form, Field } from 'src/components/hook-form';
@@ -454,9 +454,9 @@ export function ClienteNewEditForm({ currentCliente }) {
                 </Grid>
               ))}
               
-               <Grid xs={12} sm={2}>
+              <Grid xs={12} sm={2}>
                 <Field.Select name="clienteVip" label="Cliente VIP" fullWidth>
-                  <MenuItem value={true}>Sim</MenuItem>
+                  <MenuItem value>Sim</MenuItem>
                   <MenuItem value={false}>Não</MenuItem>
                 </Field.Select>
               </Grid>
