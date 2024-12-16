@@ -33,7 +33,7 @@ const columns = [
     headerName: 'Total (R$)',
     width: 150,
     valueGetter: (params) => {
-      const total = params?.value || 0;
+            const total = params || 0;
       return fCurrency(total);
     },
   },
@@ -171,12 +171,11 @@ export function RelatorioComercialView() {
 
   const exportToExcel = () => {
     const worksheetData = [
-      ['ID', 'Venda', 'Cliente', 'Total (R$)', 'Status', 'Vendedor', 'Data'], // Headers
-      ...filteredSales.map((sale) => [
-        sale.id,
+      [ 'Venda', 'Cliente', 'Total (R$)', 'Status', 'Vendedor', 'Data'], // Headers
+      ...filteredSales.map((sale) => [       
         sale.invoiceNumber,
         sale.cliente,
-        fCurrency(sale.total),
+        sale.total,
         sale.status,
         sale.proprietario,
         sale.formattedDate,
@@ -185,6 +184,15 @@ export function RelatorioComercialView() {
   
     // Create a worksheet and workbook
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
+    for (let row = 1; row <= range.e.r; row += 1) {
+      const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 }); // Coluna C (índice 2)
+      const cell = worksheet[cellAddress];
+      if (cell && typeof cell.v === 'number') {
+        cell.z = '"R$"#,##0.00'; // Define o formato de moeda
+      }
+    }
+  
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório de Vendas');
   
