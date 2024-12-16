@@ -223,5 +223,9 @@ export const paths = {
         edit: `${ROOTS.DASHBOARD}/tour/${MOCK_ID}/edit`,
       },
     },
+    relatorios: {
+      comercial: `${ROOTS.DASHBOARD}/relatorios/comercial`,
+      financeiro: `${ROOTS.DASHBOARD}/relatorios/financeiro`,
+    }
   },
 };

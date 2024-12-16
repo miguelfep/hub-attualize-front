@@ -1,12 +1,16 @@
 'use client';
 
+import { toast } from 'sonner';
 import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
+import Modal from '@mui/material/Modal';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import Select from '@mui/material/Select';
+import { Typography } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import MenuList from '@mui/material/MenuList';
 import MenuItem from '@mui/material/MenuItem';
@@ -14,25 +18,23 @@ import TableRow from '@mui/material/TableRow';
 import { useTheme } from '@mui/material/styles';
 import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
-import { Typography } from '@mui/material';
+import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import CardHeader from '@mui/material/CardHeader';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
 import ListItemText from '@mui/material/ListItemText';
 import TablePagination from '@mui/material/TablePagination';
-import Modal from '@mui/material/Modal';
-import TextField from '@mui/material/TextField';
-import FormControl from '@mui/material/FormControl';
-import InputLabel from '@mui/material/InputLabel';
-import Select from '@mui/material/Select';
-import { toast } from 'sonner';
 
 import { fDate } from 'src/utils/format-time';
+
+import { deleteLicenca, downloadLicenca, updateLicencaWithFile, deletarArquivoLicenca } from 'src/actions/societario';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TableHeadCustom } from 'src/components/table';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
-import { updateLicencaWithFile, deleteLicenca, downloadLicenca, deletarArquivoLicenca } from 'src/actions/societario';
 
 export function BookingDetails({ fetchLicencas, title, subheader, headLabel, tableData, ...other }) {
   const [page, setPage] = useState(0);

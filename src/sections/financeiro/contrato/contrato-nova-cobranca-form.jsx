@@ -16,7 +16,6 @@ import {
   FormControl,
   DialogContent,
   DialogActions,
-  InputAdornment,
 } from '@mui/material';
 
 import { today } from 'src/utils/format-time';

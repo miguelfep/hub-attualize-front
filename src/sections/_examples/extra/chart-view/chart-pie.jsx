@@ -2,9 +2,7 @@ import { useTheme, alpha as hexAlpha } from '@mui/material/styles';
 
 import { Chart, useChart, ChartLegends } from 'src/components/chart';
 
-// ----------------------------------------------------------------------
-
-export function ChartPie({ chart }) {
+export function ChartPie({ chart, onClick }) {
   const theme = useTheme();
 
   const chartColors = chart.colors ?? [
@@ -15,7 +13,19 @@ export function ChartPie({ chart }) {
   ];
 
   const chartOptions = useChart({
-    chart: { sparkline: { enabled: true } },
+    chart: {
+      sparkline: { enabled: true },
+      events: {
+        dataPointSelection: (event, chartContext, config) => {
+          if (onClick && config?.dataPointIndex !== undefined) {
+            const selectedCategory = chart.categories[config.dataPointIndex];
+            if (selectedCategory) {
+              onClick(selectedCategory); // Propaga o vendedor selecionado
+            }
+          }
+        },
+      },
+    },
     colors: chartColors,
     labels: chart.categories,
     stroke: { width: 0 },

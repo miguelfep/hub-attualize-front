@@ -70,7 +70,7 @@ export const navData = [
       {
         title: 'Financeiro',
         path: paths.dashboard.general.analytics,
-        icon: ICONS.analytics,
+        icon: ICONS.banking,
         roles: ['financeiro', 'admin'],
         children: [
           {
@@ -106,6 +106,19 @@ export const navData = [
             roles: ['admin', 'operacional', 'comercial'],
             path: paths.dashboard.aberturas.licenca,
           },
+        ],
+      },
+      {
+        title: 'Relatórios',
+        path: paths.dashboard.aberturas.root,
+        icon: ICONS.analytics,
+        roles: ['admin'],
+        children: [
+          {
+            title: 'Comercial',
+            roles: ['admin'],
+            path: paths.dashboard.relatorios.comercial,
+          },          
         ],
       },
     
