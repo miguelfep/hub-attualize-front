@@ -143,6 +143,7 @@ export function OverviewAppView() {
             title="Ticket Médio"
             orderTotal={dashboardData.totalContratos}
             currentBalance={dashboardData.ticketMedioContratos}
+            texto="Contratos"
           />
         </Grid>
 

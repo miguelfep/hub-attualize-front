@@ -12,6 +12,7 @@ export function EcommerceCurrentBalance({
   refunded,
   orderTotal,
   currentBalance,
+  texto,
   ...other
 }) {
   const row = (label, value) => (
@@ -30,7 +31,7 @@ export function EcommerceCurrentBalance({
       <Box sx={{ gap: 2, display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ typography: 'h3' }}>{fCurrency(currentBalance)}</Box>
 
-        {row('Total de contratos', orderTotal)}
+        {row(texto, orderTotal)}
      
 
       </Box>

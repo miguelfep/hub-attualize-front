@@ -290,6 +290,14 @@ export function RelatorioComercialView() {
           )}
         </Box>
       </Card>
+              {/* Valor Total das Vendas */}
+              <Box sx={{ mb: 2 }}>    
+          <EcommerceCurrentBalance
+            title="Valor total"
+            currentBalance={totalFilteredSales}
+            texto="Vendas no periodo"
+          />
+      </Box>   
 
       <Card sx={{ mb: 4 }}>
         <CardHeader title="Vendas por Vendedor" />
@@ -307,19 +315,12 @@ export function RelatorioComercialView() {
             <p>Nenhum dado disponível.</p>
           )}
         </Box>
-      </Card>
-           {/* Valor Total das Vendas */}
-           <Box sx={{ mb: 2 }}>    
-            <EcommerceCurrentBalance
-              title="Valor total"
-              currentBalance={totalFilteredSales}
-            />
-        </Box>      
-              
+      </Card>     
+
       <Card>
         <CardHeader title="Detalhamento de Vendas" />
-        <Box sx={{ height: 400, px: 3, py: 2 }}>
-          <DataGrid rows={filteredSales} columns={columns} pageSize={5} rowsPerPageOptions={[5]} />
+        <Box sx={{ flexGrow: 1, px: 3, py: 2, height: 'auto' }}>
+        <DataGrid rows={filteredSales} columns={columns} pageSize={5} rowsPerPageOptions={[5]} autoHeight disableExtendRowFullWidth />
         </Box>
       </Card>
     </DashboardContent>
