@@ -22,6 +22,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import { EcommerceCurrentBalance } from 'src/sections/overview/e-commerce/ecommerce-current-balance';
 
 import { ChartPie } from 'src/sections/_examples/extra/chart-view/chart-pie';
 
@@ -70,6 +71,10 @@ export function RelatorioComercialView() {
     categories: [],
     series: [],
   });
+
+  const totalFilteredSales = filteredSales
+  .filter((sale) => ['pago', 'aprovada'].includes(sale.status.toLowerCase()))
+  .reduce((sum, sale) => sum + sale.total, 0);
 
   useEffect(() => {
     const now = new Date();
@@ -244,7 +249,8 @@ export function RelatorioComercialView() {
         heading="Relatório Comercial"
         links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Relatório Comercial' }]}
         sx={{ mb: { xs: 3, md: 5 } }}
-      />
+      /> 
+
 
       <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
         <TextField
@@ -266,7 +272,7 @@ export function RelatorioComercialView() {
         </Button>
         <Button variant="contained" onClick={exportToExcel}>
           Exportar
-        </Button>
+        </Button>        
       </Box>
 
       <Card sx={{ mb: 4 }}>
@@ -302,7 +308,14 @@ export function RelatorioComercialView() {
           )}
         </Box>
       </Card>
-
+           {/* Valor Total das Vendas */}
+           <Box sx={{ mb: 2 }}>    
+            <EcommerceCurrentBalance
+              title="Valor total"
+              currentBalance={totalFilteredSales}
+            />
+        </Box>      
+              
       <Card>
         <CardHeader title="Detalhamento de Vendas" />
         <Box sx={{ height: 400, px: 3, py: 2 }}>
