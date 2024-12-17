@@ -18,8 +18,10 @@ import {
   FormControl,
   CardContent,
   InputAdornment,
+  Autocomplete,
   CircularProgress,
 } from '@mui/material';
+
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -67,7 +69,16 @@ export function PagarNewEditForm({ currentConta }) {
   const [loading, setLoading] = useState(false);
   const [bancos, setBancos] = useState([]);
   const [bancoMap, setBancoMap] = useState({});
+  const [categoriasOrdenadas, setCategoriasOrdenadas] = useState([]);
   const router = useRouter();
+
+  useEffect(() => {
+    // Ordenar as categorias por ordem alfabética
+    const categorias = [...categoriasDespesas].sort((a, b) =>
+      a.nome.localeCompare(b.nome)
+    );
+    setCategoriasOrdenadas(categorias);
+  }, []);
 
   const defaultValues = useMemo(
     () => ({
@@ -238,22 +249,27 @@ export function PagarNewEditForm({ currentConta }) {
               />
             </Grid>
             <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Categoria</InputLabel>
-                <Controller
-                  name="categoria"
-                  control={control}
-                  render={({ field }) => (
-                    <Select {...field} label="Categoria" fullWidth>
-                      {categoriasDespesas.map((categoria) => (
-                        <MenuItem key={categoria._id} value={categoria._id}>
-                          {categoria.nome} {/* Mostrando o nome da categoria */}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  )}
-                />
-              </FormControl>
+              <Controller
+                name="categoria"
+                control={control}
+                render={({ field }) => (
+                  <Autocomplete
+                    {...field}
+                    options={categoriasOrdenadas} // Lista ordenada
+                    getOptionLabel={(option) => option.nome} // Mostra o nome da categoria
+                    isOptionEqualToValue={(option, value) => option._id === value} // Verifica igualdade
+                    value={
+                      categoriasOrdenadas.find((cat) => cat._id === field.value) || null
+                    } 
+                    onChange={(event, newValue) =>
+                      setValue('categoria', newValue?._id || '') // Salva apenas o ID da categoria
+                    }
+                    renderInput={(params) => (
+                      <TextField {...params} label="Categoria" fullWidth required />
+                    )}
+                  />
+                )}
+              />
             </Grid>
             {/* Descrição */}
             <Grid item xs={12}>

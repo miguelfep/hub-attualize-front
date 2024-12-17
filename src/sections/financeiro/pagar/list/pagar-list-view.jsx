@@ -47,6 +47,7 @@ import {
 
 import { ContaPagarTableRow } from './pagar-table-row';
 import { ReceberAnalytic } from '../../receber/receber-analytic';
+import { ReceberTableToolbar } from './pagar-table-toolbar';
 
 // ----------------------------------------------------------------------
 
@@ -256,7 +257,11 @@ export function ContasPagarListView() {
           <Iconify icon="mingcute:arrow-right-fill" />
         </IconButton>
       </Stack>
-
+        <ReceberTableToolbar
+          filters={filters}
+          setFilters={setFilters} // Passe o setFilters corretamente
+          onResetPage={table.onResetPage}
+        />
       <Card>
         <Box sx={{ position: 'relative' }}>
           <Scrollbar>

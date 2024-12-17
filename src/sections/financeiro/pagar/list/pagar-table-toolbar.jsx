@@ -12,15 +12,18 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export function ReceberTableToolbar({ filters, onResetPage }) {
+export function ReceberTableToolbar({ filters, setFilters, onResetPage }) {
   const popover = usePopover();
 
   const handleFilterTituloOrRazaoSocial = useCallback(
     (event) => {
       onResetPage();
-      filters.setState({ descricao: event.target.value }); // Altera o estado para buscar pelo título ou razão social
+      setFilters((prevFilters) => ({
+        ...prevFilters,
+        descricao: event.target.value, // Atualiza a descrição no estado
+      }));
     },
-    [filters, onResetPage]
+    [setFilters, onResetPage]
   );
 
   return (
@@ -35,9 +38,9 @@ export function ReceberTableToolbar({ filters, onResetPage }) {
           {/* Campo de busca por título ou razão social */}
           <TextField
             fullWidth
-            value={filters.state.descricao}
+            value={filters.descricao}
             onChange={handleFilterTituloOrRazaoSocial}
-            placeholder="Buscar por Nome ou Descricao..."
+            placeholder="Buscar cobrança..."
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
