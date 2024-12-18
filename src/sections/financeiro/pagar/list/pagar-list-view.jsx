@@ -82,6 +82,7 @@ export function ContasPagarListView() {
     total: 0,
     pagos: 0,
     pendentes: 0,
+    apagar: 0
   });
 
   const [rowsPerPage, setRowsPerPage] = useState(50);
@@ -117,7 +118,12 @@ export function ContasPagarListView() {
       (conta) => conta.valor
     );
 
-    setAnaliticoData({ total, pagos, pendentes });
+    const apagar = sumBy(
+      tableData.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO' ),
+      (conta) => conta.valor
+    );
+
+    setAnaliticoData({ total, pagos, pendentes, apagar });
   }, [filters.startDate, filters.endDate, tableData]);
 
   // Função para avançar um mês
@@ -220,6 +226,14 @@ export function ContasPagarListView() {
               price={analiticoData.pendentes}
               icon="solar:bell-bing-bold-duotone"
               color={theme.vars.palette.warning.main}
+            />
+            <ReceberAnalytic
+              title="A Pagar"
+              total={dataFiltered.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO').length}
+              percent={(analiticoData.apagar / analiticoData.total) * 100}
+              price={analiticoData.apagar}
+              icon="solar:wad-of-money-broken" // Ícone que representa dinheiro ou débito
+              color={theme.vars.palette.error.main} // Cor diferente para representar urgência ou atenção
             />
           </Stack>
         </Scrollbar>
