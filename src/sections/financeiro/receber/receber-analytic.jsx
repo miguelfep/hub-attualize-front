@@ -11,13 +11,14 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export function ReceberAnalytic({ title, total, icon, color, percent, price }) {
+export function ReceberAnalytic({ title, total, icon, color, percent, price, onClick }) {
   return (
     <Stack
       spacing={2.5}
       direction="row"
       alignItems="center"
       justifyContent="center"
+      onClick={onClick}
       sx={{ width: 1, minWidth: 160 }}
     >
       <Stack alignItems="center" justifyContent="center" sx={{ position: 'relative' }}>

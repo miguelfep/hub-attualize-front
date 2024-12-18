@@ -167,8 +167,14 @@ export function ContasPagarListView() {
   };
 
   const dataFiltered = tableData
-    .filter((row) => row.descricao.toLowerCase().includes(filters.descricao.toLowerCase()))
-    .filter((row) => filters.status === 'all' || row.status === filters.status);
+  .filter((row) => row.descricao.toLowerCase().includes(filters.descricao.toLowerCase()))
+  .filter((row) =>
+    filters.status === 'all'
+      ? true
+      : filters.status === 'a_pagar'
+      ? ['PENDENTE', 'AGENDADO'].includes(row.status)
+      : row.status === filters.status
+  );
 
   const dataInPage = rowInPage(dataFiltered, page, rowsPerPage);
 
@@ -196,56 +202,66 @@ export function ContasPagarListView() {
 
       <Card sx={{ mb: { xs: 3, md: 5 } }}>
         <Scrollbar sx={{ minHeight: 108 }}>
-          <Stack
-            direction="row"
-            divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
-            sx={{ py: 2 }}
-          >
-            <ReceberAnalytic
-              title="Total"
-              total={tableData.length}
-              percent={100}
-              price={analiticoData.total}
-              icon="solar:bill-list-bold-duotone"
-              color={theme.vars.palette.info.main}
-            />
+        <Stack
+          direction="row"
+          divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
+          sx={{ py: 2 }}
+        >
+          <ReceberAnalytic
+            title="Total"
+            total={tableData.length}
+            percent={100}
+            price={analiticoData.total}
+            icon="solar:bill-list-bold-duotone"
+            color={theme.vars.palette.info.main}
+            onClick={() => {
+              console.log('Total clicado');
+              setFilters({ ...filters, status: 'all' });
+            }}
+          />
 
-            <ReceberAnalytic
-              title="Pagos"
-              total={dataFiltered.filter((d) => d.status === 'PAGO').length}
-              percent={(analiticoData.pagos / analiticoData.total) * 100}
-              price={analiticoData.pagos}
-              icon="solar:file-check-bold-duotone"
-              color={theme.vars.palette.success.main}
-            />
+          <ReceberAnalytic
+            title="Pagos"
+            total={tableData.filter((d) => d.status === 'PAGO').length}
+            percent={(analiticoData.pagos / analiticoData.total) * 100}
+            price={analiticoData.pagos}
+            icon="solar:file-check-bold-duotone"
+            color={theme.vars.palette.success.main}
+            onClick={() => setFilters({ ...filters, status: 'PAGO' })} // Filtro Pagos
+          />
 
-            <ReceberAnalytic
-              title="Pendentes"
-              total={dataFiltered.filter((d) => d.status === 'PENDENTE').length}
-              percent={(analiticoData.pendentes / analiticoData.total) * 100}
-              price={analiticoData.pendentes}
-              icon="solar:bell-bing-bold-duotone"
-              color={theme.vars.palette.warning.main}
-            />
-            <ReceberAnalytic
-              title="A Pagar"
-              total={dataFiltered.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO').length}
-              percent={(analiticoData.apagar / analiticoData.total) * 100}
-              price={analiticoData.apagar}
-              icon="solar:wad-of-money-broken" // Ícone que representa dinheiro ou débito
-              color={theme.vars.palette.error.main} // Cor diferente para representar urgência ou atenção
-            />
-          </Stack>
+          <ReceberAnalytic
+            title="Pendentes"
+            total={tableData.filter((d) => d.status === 'PENDENTE').length}
+            percent={(analiticoData.pendentes / analiticoData.total) * 100}
+            price={analiticoData.pendentes}
+            icon="solar:bell-bing-bold-duotone"
+            color={theme.vars.palette.warning.main}
+            onClick={() => setFilters({ ...filters, status: 'PENDENTE' })} // Filtro Pendentes
+          />
+
+          <ReceberAnalytic
+            title="A Pagar"
+            total={tableData.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO').length}
+            percent={(analiticoData.apagar / analiticoData.total) * 100}
+            price={analiticoData.apagar}
+            icon="solar:wad-of-money-broken"
+            color={theme.vars.palette.error.main}
+            onClick={() => setFilters({ ...filters, status: 'a_pagar' })} // Filtro A Pagar
+          />
+        </Stack>
+
         </Scrollbar>
       </Card>
 
       <Card sx={{ mb: 3 }}>
-        <Tabs value={filters.status} onChange={handleFilterStatus} sx={{ px: 2.5 }}>
-          <Tab value="all" label="Todos" />
-          <Tab value="PAGO" label="Pagos" />
-          <Tab value="PENDENTE" label="Pendentes" />
-          <Tab value="AGENDADO" label="Agendado" />
-        </Tabs>
+      <Tabs value={filters.status} onChange={handleFilterStatus} sx={{ px: 2.5 }}>
+        <Tab value="all" label="Todos" />
+        <Tab value="PAGO" label="Pagos" />
+        <Tab value="PENDENTE" label="Pendentes" />
+        <Tab value="AGENDADO" label="Agendado" />
+        <Tab value="a_pagar" label="A Pagar" /> {/* Novo filtro */}
+      </Tabs>
       </Card>
 
       {/* Adicionando botões de avanço e retrocesso */}
