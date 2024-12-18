@@ -15,7 +15,6 @@ import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { detectSettings } from 'src/components/settings/server';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
-
 import { CheckoutProvider } from 'src/sections/checkout/context';
 
 import { AuthProvider as JwtAuthProvider } from 'src/auth/context/jwt';
@@ -23,6 +22,8 @@ import { AuthProvider as Auth0AuthProvider } from 'src/auth/context/auth0';
 import { AuthProvider as AmplifyAuthProvider } from 'src/auth/context/amplify';
 import { AuthProvider as SupabaseAuthProvider } from 'src/auth/context/supabase';
 import { AuthProvider as FirebaseAuthProvider } from 'src/auth/context/firebase';
+
+import ClientAnalytics from './client-analytics';
 
 // ----------------------------------------------------------------------
 
@@ -41,11 +42,27 @@ export const viewport = {
 
 export default async function RootLayout({ children }) {
   const lang = CONFIG.isStaticExport ? 'en' : await detectLanguage();
-
   const settings = CONFIG.isStaticExport ? defaultSettings : await detectSettings();
 
   return (
     <html lang={lang ?? 'en'} suppressHydrationWarning>
+      <head>
+        {/* Google Analytics */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-L5BFBLV0Z4"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-L5BFBLV0Z4');
+            `,
+          }}
+        />
+      </head>
       <body>
         {getInitColorSchemeScript}
         <I18nProvider lang={CONFIG.isStaticExport ? undefined : lang}>
@@ -62,6 +79,7 @@ export default async function RootLayout({ children }) {
                       <Snackbar />
                       <ProgressBar />
                       <SettingsDrawer />
+                      <ClientAnalytics />
                       {children}
                     </CheckoutProvider>
                   </MotionLazy>
