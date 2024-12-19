@@ -14,6 +14,7 @@ const FaturaViewPage = ({ faturaData }) => {
 
   // Dados da fatura
   const { valor, dataVencimento, observacoes, boleto, status } = faturaData;
+   
 
   const boletoData = boleto ? JSON.parse(boleto) : null; // Verifica se há dados de boleto e os parseia
 
@@ -104,7 +105,7 @@ const FaturaViewPage = ({ faturaData }) => {
               {/* Exibir observações */}
               <Grid item xs={12}>
                 <Typography variant="subtitle1">Descrição:</Typography>
-                <Typography variant="body1" sx={{ mt: 1 }}>
+                <Typography variant="body1" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
                   {observacoes}
                 </Typography>
               </Grid>
