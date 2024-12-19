@@ -141,9 +141,7 @@ export function ContratoCobrancas({ contratoId, contrato }) {
     return <p>Carregando cobranças...</p>;
   }
 
-  if (!cobrancas.length) {
-    return <p>Nenhuma cobrança encontrada para este contrato.</p>;
-  }
+
 
   return (
     <>

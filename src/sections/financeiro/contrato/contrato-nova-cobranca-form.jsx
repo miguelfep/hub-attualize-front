@@ -22,7 +22,6 @@ import { today } from 'src/utils/format-time';
 
 import { atualizarCobrancaPorId, criarCobrancasPorContrato } from 'src/actions/financeiro';
 
-// Define o schema de validação usando zod
 const cobrancaSchema = zod.object({
   observacoes: zod.string().min(1, 'Descrição é obrigatória'),
   valor: zod.string().min(1, 'Valor é obrigatório'),
@@ -31,7 +30,6 @@ const cobrancaSchema = zod.object({
   }),
 });
 
-// Funções auxiliares para formatar e remover formatação de moeda
 const formatCurrency = (value) => {
   const numberValue = Number(value.replace(/[^\d]/g, '')) / 100;
   return numberValue.toLocaleString('pt-BR', {
@@ -41,11 +39,8 @@ const formatCurrency = (value) => {
 };
 
 const parseCurrency = (formattedValue) => {
-  // Remove o prefixo "R$" e espaços
   const sanitizedValue = formattedValue.replace(/[R$\s]/g, '');
-  // Substitui o separador de milhar (.) por nada e o separador decimal (,) por "."
   const normalizedValue = sanitizedValue.replace(/\./g, '').replace(',', '.');
-  // Converte para número
   return parseFloat(normalizedValue);
 };
 
@@ -53,32 +48,39 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
   const [observacoes, setObservacoes] = useState('');
   const [formattedValue, setFormattedValue] = useState('');
   const [dataVencimento, setDataVencimento] = useState(dayjs(today()));
-  const [status, setStatus] = useState('EMABERTO'); 
-
-  const defaultValues = useMemo(
-    () => ({
-      observacoes: cobrancaAtual?.observacoes || '',
-      valor:
-        cobrancaAtual?.valor?.toLocaleString('pt-br', {
-          style: 'currency',
-          currency: 'BRL',
-        }) || '',
-      dataVencimento: cobrancaAtual?.dataVencimento
-        ? dayjs(cobrancaAtual.dataVencimento)
-        : dayjs(today()),
-      status: cobrancaAtual?.status || 'EMABERTO', 
-    }),
-    [cobrancaAtual]
-  );
+  const [status, setStatus] = useState('EMABERTO');
 
   useEffect(() => {
     if (open) {
-      setObservacoes(defaultValues.observacoes);
-      setFormattedValue(defaultValues.valor || '');
-      setDataVencimento(defaultValues.dataVencimento);
-      setStatus(defaultValues.status); 
+      if (contrato.tipoContrato === 'parceiroid') {
+        const descricaoObservacoes = contrato.items
+          .map((item) => item.descricao)
+          .join('\n');
+        const valorTotal = contrato.items.reduce(
+          (acc, item) => acc + item.valorUnitario * item.quantidade,
+          0
+        );
+
+        setObservacoes(descricaoObservacoes);
+        setFormattedValue(valorTotal.toLocaleString('pt-BR', {
+          style: 'currency',
+          currency: 'BRL',
+        }));
+      } else {
+        setObservacoes(cobrancaAtual?.observacoes || '');
+        setFormattedValue(
+          cobrancaAtual?.valor?.toLocaleString('pt-br', {
+            style: 'currency',
+            currency: 'BRL',
+          }) || ''
+        );
+        setDataVencimento(
+          cobrancaAtual?.dataVencimento ? dayjs(cobrancaAtual.dataVencimento) : dayjs(today())
+        );
+        setStatus(cobrancaAtual?.status || 'EMABERTO');
+      }
     }
-  }, [open, defaultValues]);
+  }, [open, contrato, cobrancaAtual]);
 
   const handleValorChange = (event) => {
     const rawValue = event.target.value;
@@ -93,7 +95,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
         valor: parsedValue,
         dataVencimento: dataVencimento.toDate(),
         contrato: contrato._id,
-        status, 
+        status,
       };
 
       if (cobrancaAtual && cobrancaAtual.boleto && status === cobrancaAtual.status) {
@@ -102,15 +104,15 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
       }
 
       if (cobrancaAtual) {
-        await atualizarCobrancaPorId(cobrancaAtual._id, data); 
+        await atualizarCobrancaPorId(cobrancaAtual._id, data);
         toast.success('Cobrança atualizada com sucesso!');
       } else {
-        await criarCobrancasPorContrato(data); 
+        await criarCobrancasPorContrato(data);
         toast.success('Cobrança criada com sucesso!');
       }
 
-      await fetchCobrancas(); 
-      handleClose(); 
+      await fetchCobrancas();
+      handleClose();
     } catch (error) {
       console.error('Erro ao criar/editar cobrança:', error);
       toast.error(
@@ -168,7 +170,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
               label="Valor"
               fullWidth
               value={formattedValue}
-              onChange={handleValorChange}             
+              onChange={handleValorChange}
               error={!formattedValue}
               helperText={!formattedValue && 'Valor é obrigatório'}
               disabled={!!cobrancaAtual?.boleto}
