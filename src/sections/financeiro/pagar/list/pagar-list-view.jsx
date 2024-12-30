@@ -287,11 +287,16 @@ export function ContasPagarListView() {
           <Iconify icon="mingcute:arrow-right-fill" />
         </IconButton>
       </Stack>
-        <ReceberTableToolbar
-          filters={filters}
-          setFilters={setFilters} // Passe o setFilters corretamente
-          onResetPage={table.onResetPage}
-        />
+      <ReceberTableToolbar
+        filters={filters}
+        setFilters={setFilters}
+        onResetPage={table.onResetPage}
+        contas={dataFiltered} // Passa as contas filtradas
+        contasSelecionadas={table.selected.map((id) =>
+          tableData.find((conta) => conta._id === id)
+        )} // Mapeia as contas selecionadas
+      />
+
       <Card>
         <Box sx={{ position: 'relative' }}>
           <Scrollbar>
