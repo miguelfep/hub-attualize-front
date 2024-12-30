@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 
+import * as XLSX from 'xlsx';
+
 import Stack from '@mui/material/Stack';
 import MenuList from '@mui/material/MenuList';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
-
-import * as XLSX from 'xlsx';
 
 import { Iconify } from 'src/components/iconify';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
@@ -48,7 +48,7 @@ export function ReceberTableToolbar({ filters, setFilters, onResetPage, contas, 
 
     // Aplica o formato de moeda às células da coluna "Valor"
     const range = XLSX.utils.decode_range(worksheet['!ref']);
-    for (let row = range.s.r + 1; row <= range.e.r; row++) {
+    for (let row = range.s.r + 1; row <= range.e.r; row += 1) { 
       const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 }); // Coluna "Valor" (índice 2)
       if (worksheet[cellAddress]) {
         worksheet[cellAddress].z = 'R$ #,##0.00'; // Formato de moeda brasileira
