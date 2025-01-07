@@ -1,3 +1,5 @@
+
+import * as XLSX from 'xlsx';
 import { useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
@@ -12,7 +14,7 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export function ClienteTableToolbar({ filters, onResetPage }) {
+export function ClienteTableToolbar({ filters, onResetPage, tableData }) {
   const popover = usePopover();
 
   const handleFilterName = useCallback(
@@ -22,6 +24,28 @@ export function ClienteTableToolbar({ filters, onResetPage }) {
     },
     [filters, onResetPage]
   );
+
+  const handleExport = useCallback(() => {
+    if (!tableData || tableData.length === 0) {
+      return;
+    }
+
+    // Prepara os dados para exportação
+    const exportData = tableData.map((row) => ({
+      Código: row.codigo,
+      Nome: row.nome,
+      'Razão Social': row.razaoSocial,
+      Status: row.status ? 'Ativo' : 'Inativo',
+    }));
+
+    // Cria a planilha XLSX
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Clientes');
+
+    // Baixa o arquivo
+    XLSX.writeFile(workbook, 'clientes.xlsx');
+  }, [tableData]);
 
   return (
     <>
@@ -59,15 +83,7 @@ export function ClienteTableToolbar({ filters, onResetPage }) {
         <MenuList>
           <MenuItem
             onClick={() => {
-              popover.onClose();
-            }}
-          >
-            <Iconify icon="solar:import-bold" />
-            Importar
-          </MenuItem>
-
-          <MenuItem
-            onClick={() => {
+              handleExport();
               popover.onClose();
             }}
           >

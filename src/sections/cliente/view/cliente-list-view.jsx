@@ -211,17 +211,22 @@ export function ClienteListView() {
                     }
                   >
                     {tab.value === 'all'
-                      ? tableData.length
-                      : tab.value === 'lead'
-                        ? tableData.filter((user) => user.tipoContato === 'lead').length
-                        : tableData.filter((user) => user.status === tab.value).length}
+            ? tableData.length
+            : tab.value === 'lead'
+              ? tableData.filter((user) => user.tipoContato === 'lead').length
+              : tab.value === true
+                ? tableData.filter((user) => user.status === true && user.tipoContato !== 'lead').length // Contagem correta para Ativos
+                : tableData.filter((user) => user.status === false).length}
                   </Label>
                 }
               />
             ))}
           </Tabs>
-          <ClienteTableToolbar filters={filters} onResetPage={table.onResetPage} />
-
+          <ClienteTableToolbar
+            filters={filters}
+            onResetPage={table.onResetPage}
+            tableData={dataFiltered} // Passa os dados filtrados para exportação
+          />
           {canReset && (
             <ClienteTableFiltersResult
               filters={filters}
@@ -339,6 +344,7 @@ export function ClienteListView() {
 function applyFilter({ inputData, comparator, filters }) {
   const { nome, status } = filters;
 
+  // Ordenação estável
   const stabilizedThis = inputData.map((el, index) => [el, index]);
 
   stabilizedThis.sort((a, b) => {
@@ -349,15 +355,22 @@ function applyFilter({ inputData, comparator, filters }) {
 
   inputData = stabilizedThis.map((el) => el[0]);
 
+  // Filtro por nome
   if (nome) {
     inputData = inputData.filter(
       (user) => user.nome.toLowerCase().indexOf(nome.toLowerCase()) !== -1
     );
   }
 
+  // Filtro por status
   if (status !== 'all') {
     if (status === 'lead') {
       inputData = inputData.filter((user) => user.tipoContato === 'lead');
+    } else if (status === true) {
+      // Mostrar apenas Ativos que não são Leads
+      inputData = inputData.filter(
+        (user) => user.status === true && user.tipoContato !== 'lead'
+      );
     } else {
       const isActive = status === true;
       inputData = inputData.filter((user) => user.status === isActive);
@@ -366,3 +379,4 @@ function applyFilter({ inputData, comparator, filters }) {
 
   return inputData;
 }
+
