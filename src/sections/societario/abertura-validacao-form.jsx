@@ -1,287 +1,119 @@
 'use client';
 
 import { toast } from 'sonner';
-import InputMask from 'react-input-mask';
-import { useForm } from 'react-hook-form';
 import React, { useState, useEffect } from 'react';
 import { NumericFormat } from 'react-number-format';
 
-import Divider from '@mui/material/Divider';
-import { styled } from '@mui/material/styles';
 import {
-  Box,
   Grid,
   Card,
   Stack,
   Button,
   Switch,
+  Divider,
   MenuItem,
   TextField,
   Typography,
-  InputAdornment,
   FormControlLabel,
-  CircularProgress,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
 
-import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/societario';
+import { updateAbertura } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
 
-import DialogDocumentsAbertura from './abertura-dialog-documento';
+import DocumentsManager from '../abertura/empresa/DocumentsManager';
 
-export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValue }) { 
-  const { register, setValue, watch } = useForm({
-    defaultValues: {
-      nomeEmpresarial: '',
-      dataCriacao: '',
-      nomeFantasia: '',
-      nome: '',
-      cpf: '',
-      telefone: '',
-      email: '',
-      emailFinanceiro: '',
-      horarioFuncionamento: '',
-      metragemImovel: '',
-      metragemUtilizada: '',
-      senhaGOV: '',
-      capitalSocial: '',
-      valorMensalidade: '',
-      observacoes: '',
-      situacaoAbertura: 0,
-      notificarWhats: false,
-      marcaRegistrada: false,
-      interesseRegistroMarca: false,
-      possuiRT: false,
-      iptuAnexo: null,
-      rgAenxo: null,
-      numSocios: 1,
-      socios: Array(currentAbertura.socios?.length || 1).fill({
+export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValue }) {
+  const [formData, setFormData] = useState({
+    nomeEmpresarial: '',
+    nomeFantasia: '',
+    nome: '',
+    cpf: '',
+    telefone: '',
+    telefoneComercial: '',
+    email: '',
+    emailFinanceiro: '',
+    horarioFuncionamento: '',
+    enderecoComercial: {
+      cep: '',
+      logradouro: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
+    },
+    socios: [
+      {
         nome: '',
         cpf: '',
         rg: '',
-        profissao: '',
-        porcentagem: '',
         estadoCivil: '',
         naturalidade: '',
+        porcentagem: '',
         administrador: false,
-      }),
-      enderecoComercial: {
-        cep: '',
-        logradouro: '',
-        numero: '',
-        complemento: '',
-        bairro: '',
-        cidade: '',
-        estado: '',
+        endereco: '',
+        profissao: '',
+        cnh: '',
       },
-      responsavelReceitaFederal: '',
-      formaAtuacao: '',
-    },
+    ],
+    senhaGov: '',
+    valorMensalidade: '',
+    capitalSocial: '',
+    observacoes: '',
+    ...currentAbertura,
   });
 
-  const [documentosEnviados, setDocumentosEnviados] = useState({
-    RG: currentAbertura?.rgAnexo != null,
-    IPTU: currentAbertura?.iptuAnexo != null,
-    RT: currentAbertura?.documentoRT != null,
-  });
-
-
-  const loading = useBoolean();
   const [loadingCep, setLoadingCep] = useState(false);
-  const [numSocios, setNumSocios] = useState(currentAbertura.socios?.length || 1);
-  const formData = watch();
+  const loading = useBoolean();
 
-  const StyledGrid = styled(Grid)(({ theme }) => ({
-    marginTop: theme.spacing(4.8),
-    [theme.breakpoints.down('md')]: {
-      order: -1,
-    },
-  }));
-
-
-  const handleFileUploaded = (fieldName, updatedData) => {
-    // Atualizar o estado de documentos enviados
-    setDocumentosEnviados((prev) => ({
-      ...prev,
-      [fieldName]: true, // Documento foi enviado
-    }));
-
-    // Atualizar o valor do campo no formulário
-    setValue(fieldName, updatedData[fieldName]);
+  const handleSocioChange = (index, field) => (e) => {
+    const { value } = e.target;
+    setFormData((prev) => {
+      const updatedSocios = [...prev.socios];
+      updatedSocios[index][field] = value;
+      return { ...prev, socios: updatedSocios };
+    });
   };
 
-  const handleDownload = async (clientId, documentType, filename) => {
-    try {
-      const response = await downloadArquivo(clientId, documentType, filename);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      toast.error('Erro ao baixar o arquivo');
-    }
-  };
-
-  const handleDelete = async (clientId, documentType) => {
-    try {
-      const response = await deletarArquivo(clientId, documentType);
-
-      setDocumentosEnviados((prev) => ({
-        ...prev,
-        [documentType]: false, // Documento foi removido
-      }));
-
-      setValue(documentType, null);
-
-
-      toast.success('Arquivo deletado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao deletar o arquivo');
-    }
-  };
-
-  const renderDocument = (url, name, id,) => {
-    if (!documentosEnviados[name]) {
-       return <DialogDocumentsAbertura name={name} id={currentAbertura._id}  onFileUploaded={handleFileUploaded} />;
-    }
-    const filename = url.split('/').pop();
-    return (
-      <StyledGrid item xs={12} md={12}>
-        <Box
-          sx={{
-            borderRadius: 1,
-            p: (theme) => theme.spacing(2.5, 5.75, 4.75),
-            border: (theme) => `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Box sx={{ ml: -2.25, display: 'flex', alignItems: 'center' }}>
-            <Typography variant="h6">{name}</Typography>
-          </Box>
-          <Box sx={{ mt: 3, display: 'flex', alignItems: 'center' }}>
-            <Typography variant="body2">Faça o download do {name} abaixo</Typography>
-          </Box>
-          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'center' }}>
-            <Stack direction="row" spacing={2}>
-              <Button
-                size="small"
-                variant="contained"
-                color="success"
-                onClick={() => handleDownload(id, name, filename)}
-                startIcon={<Iconify icon="eva:file-text-outline" width={20} />} // Ícone de arquivo
-              >
-                Baixar {name}
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                onClick={() => handleDelete(id, name)}
-                startIcon={<Iconify icon="eva:trash-2-outline" width={20} />} // Ícone de lixeira
-              >
-                Deletar
-              </Button>
-            </Stack>
-          </Box>
-        </Box>
-      </StyledGrid>
-    );
+  const handleSwitchChange = (index, field) => (e) => {
+    const { checked } = e.target;
+    setFormData((prev) => {
+      const updatedSocios = [...prev.socios];
+      updatedSocios[index][field] = checked;
+      return { ...prev, socios: updatedSocios };
+    });
   };
 
   useEffect(() => {
     if (currentAbertura) {
-      setValue('nomeEmpresarial', currentAbertura.nomeEmpresarial || '');
-      setValue('dataCriacao', currentAbertura.dataCriacao || '');
-      setValue('nomeFantasia', currentAbertura.nomeFantasia || '');
-      setValue('nome', currentAbertura.nome || '');
-      setValue('cpf', currentAbertura.cpf || '');
-      setValue('telefone', currentAbertura.telefone || '');
-      setValue('telefoneComercial', currentAbertura.telefoneComercial || '');
-      setValue('email', currentAbertura.email || '');
-      setValue('emailFinanceiro', currentAbertura.emailFinanceiro || '');
-      setValue('horarioFuncionamento', currentAbertura.horarioFuncionamento || '');
-      setValue('metragemImovel', currentAbertura.metragemImovel || '');
-      setValue('metragemUtilizada', currentAbertura.metragemUtilizada || '');
-      setValue('senhaGOV', currentAbertura.senhaGOV || '');
-      setValue('capitalSocial', formatToBRL(currentAbertura.capitalSocial || 0)); // Formatar capital social
-      setValue('observacoes', currentAbertura.observacoes || '');
-      setValue('notificarWhats', currentAbertura.notificarWhats || false);
-      setValue('marcaRegistrada', currentAbertura.marcaRegistrada || false);
-      setValue('interesseRegistroMarca', currentAbertura.interesseRegistroMarca || false);
-      setValue('possuiRT', currentAbertura.possuiRT || false);
-      setNumSocios(currentAbertura.socios.length);
-      setValue('responsavelReceitaFederal', currentAbertura.responsavelReceitaFederal || '');
-      setValue('formaAtuacao', currentAbertura.formaAtuacao || '');
-      setValue('valorMensalidade', formatToBRL(currentAbertura.valorMensalidade || 0));
-
-       // Preencher os valores para cada sócio
-       currentAbertura.socios?.forEach((socio, index) => {
-        setValue(`socios.${index}`, socio);
-      });
-      // Preenchendo o endereço comercial
-      if (currentAbertura.enderecoComercial) {
-        setValue('enderecoComercial.cep', currentAbertura.enderecoComercial.cep || '');
-        setValue('enderecoComercial.logradouro', currentAbertura.enderecoComercial.logradouro || '');
-        setValue('enderecoComercial.numero', currentAbertura.enderecoComercial.numero || '');
-        setValue('enderecoComercial.complemento', currentAbertura.enderecoComercial.complemento || '');
-        setValue('enderecoComercial.bairro', currentAbertura.enderecoComercial.bairro || '');
-        setValue('enderecoComercial.cidade', currentAbertura.enderecoComercial.cidade || '');
-        setValue('enderecoComercial.estado', currentAbertura.enderecoComercial.estado || '');
-      }     
+      setFormData((prev) => ({ ...prev, ...currentAbertura }));
     }
-  }, [currentAbertura, setValue]);
+  }, [currentAbertura]);
 
-  const handleChange = (field) => (values) => {
-    const { value } = values;
-    setValue(field, value); // Atualiza o valor no formato numérico (sem símbolos de moeda)
+  const handleInputChange = (field) => (e) => {
+    const { value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
-  const formatToBRL = (value) =>
-    new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(value);
-
-  const parseBRL = (value) => Number(value.replace(/\D/g, '')) / 100;
-
-  const handleSave = async () => {
-    loading.onTrue();
-  
-    // Obtenha os dados do formulário preenchido
-    const data = formData;
-  
-    // Prepare os dados que serão enviados para o servidor
-    const preparedData = {
-      ...data,
-      capitalSocial: parseBRL(data.capitalSocial), // Converte o valor do capital social para número
-      valorMensalidade: parseBRL(data.valorMensalidade), // Converte o valor da mensalidade para número
-    };
-  
-    try {
-      // Envia a requisição PUT para atualizar os dados do cliente
-      const response = await updateAbertura(currentAbertura._id, preparedData);
-      
-      // Verifica se a requisição foi bem-sucedida
-      if (response.status !== 200) {
-        throw new Error('Erro ao atualizar os dados do cliente');
-      }
-  
-      // Notifica o sucesso
-      toast.success('Dados salvos com sucesso!');
-    } catch (error) {
-      console.error(error);
-      toast.error('Erro ao salvar os dados');
-    } finally {
-      loading.onFalse();
-    }
+  const handleNestedInputChange = (parent, field) => (e) => {
+    const { value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [parent]: {
+        ...prev[parent],
+        [field]: value,
+      },
+    }));
   };
-  
+
   const handleCepBlur = async () => {
     const cep = formData.enderecoComercial.cep.replace('-', '');
     if (cep.length === 8) {
@@ -291,11 +123,17 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
         if (data.erro) {
           toast.error('CEP não encontrado');
         } else {
-          setValue('enderecoComercial.logradouro', data.logradouro);
-          setValue('enderecoComercial.complemento', data.complemento);
-          setValue('enderecoComercial.bairro', data.bairro);
-          setValue('enderecoComercial.cidade', data.localidade);
-          setValue('enderecoComercial.estado', data.uf);
+          setFormData((prev) => ({
+            ...prev,
+            enderecoComercial: {
+              ...prev.enderecoComercial,
+              logradouro: data.logradouro || '',
+              complemento: data.complemento || '',
+              bairro: data.bairro || '',
+              cidade: data.localidade || '',
+              estado: data.uf || '',
+            },
+          }));
         }
       } catch (error) {
         toast.error('Erro ao buscar o CEP');
@@ -305,14 +143,25 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
     }
   };
 
+  const handleSave = async () => {
+    loading.onTrue();
+    try {
+      await updateAbertura(currentAbertura._id, formData);
+      toast.success('Dados salvos com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao salvar os dados');
+    } finally {
+      loading.onFalse();
+    }
+  };
+
   const handleApprove = async () => {
     loading.onTrue();
     try {
-      await updateAbertura(currentAbertura._id, { statusAbertura: 'kickoff', somenteAtualizar:false,  });
-      setParentValue('statusAbertura', 'kickoff')
+      await updateAbertura(currentAbertura._id, { statusAbertura: 'kickoff' });
+      setParentValue('statusAbertura', 'kickoff');
       toast.success('Abertura aprovada!');
     } catch (error) {
-      console.error(error);
       toast.error('Erro ao aprovar a abertura');
     } finally {
       loading.onFalse();
@@ -323,10 +172,9 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
     loading.onTrue();
     try {
       await updateAbertura(currentAbertura._id, { statusAbertura: 'Iniciado' });
+      setParentValue('statusAbertura', 'Iniciado');
       toast.error('Abertura reprovada!');
-      setParentValue('Iniciado');
     } catch (error) {
-      console.error(error);
       toast.error('Erro ao reprovar a abertura');
     } finally {
       loading.onFalse();
@@ -334,422 +182,380 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
   };
 
   return (
-      <Card sx={{ p: 3, mb: 3 }}>
-        <Box display="flex" justifyContent="space-between">
-          <Typography variant="h6">Dados da Abertura</Typography>
-        </Box>
-        <Grid container spacing={2} mt={2}>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Nome Empresarial"
-              {...register('nomeEmpresarial')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Nome Fantasia"
-              {...register('nomeFantasia')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={4}>
-            <TextField fullWidth label="Nome" {...register('nome')} margin="dense" />
-          </Grid>
-          <Grid item xs={12} sm={2}>
-            <TextField fullWidth label="CPF" {...register('cpf')} margin="dense" />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField fullWidth label="Telefone" {...register('telefone')} margin="dense" />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              label="Telefone Comercial"
-              {...register('telefoneComercial')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField fullWidth label="Email" {...register('email')} margin="dense" />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Email Financeiro"
-              {...register('emailFinanceiro')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              fullWidth
-              label="Horário de Funcionamento"
-              {...register('horarioFuncionamento')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              label="Metragem do Imóvel"
-              {...register('metragemImovel')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={3}>
-            <TextField
-              fullWidth
-              label="Metragem Utilizada"
-              {...register('metragemUtilizada')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12}>
-            <Typography variant="h6">Endereço Comercial</Typography>
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <InputMask
-              mask="99999-999"
-              onBlur={handleCepBlur}
-              {...register('enderecoComercial.cep')}
-            >
-              {(inputProps) => (
-                <TextField
-                  {...inputProps}
-                  label="CEP"
-                  fullWidth
-                  margin="dense"
-                  InputProps={{
-                    endAdornment: loadingCep && (
-                      <InputAdornment position="end">
-                        <CircularProgress size={20} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-            </InputMask>
-          </Grid>
-          <Grid item xs={12} sm={6} md={6}>
-            <TextField
-              fullWidth
-              label="Logradouro"
-              {...register('enderecoComercial.logradouro')}
-              margin="dense"
-              disabled={loadingCep}
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Número"
-              {...register('enderecoComercial.numero')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Complemento"
-              {...register('enderecoComercial.complemento')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Bairro"
-              {...register('enderecoComercial.bairro')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Cidade"
-              {...register('enderecoComercial.cidade')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6} md={3}>
-            <TextField
-              fullWidth
-              label="Estado"
-              {...register('enderecoComercial.estado')}
-              margin="dense"
-            />
-          </Grid>
+    <Card sx={{ p: 3, mb: 3 }}>
+      <Typography variant="h6">Dados da Abertura</Typography>
+      <Grid container spacing={2} mt={2}>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Nome Empresarial"
+            value={formData.nomeEmpresarial}
+            onChange={handleInputChange('nomeEmpresarial')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Nome Fantasia"
+            value={formData.nomeFantasia}
+            onChange={handleInputChange('nomeFantasia')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <TextField
+            fullWidth
+            label="Nome"
+            value={formData.nome}
+            onChange={handleInputChange('nome')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <TextField
+            fullWidth
+            label="CPF"
+            value={formData.cpf}
+            onChange={handleInputChange('cpf')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <TextField
+            fullWidth
+            label="Email"
+            value={formData.email}
+            onChange={handleInputChange('email')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={3}>
+          <TextField
+            fullWidth
+            label="Email Financeiro"
+            value={formData.emailFinanceiro}
+            onChange={handleInputChange('emailFinanceiro')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label="Telefone"
+            value={formData.telefone}
+            onChange={handleInputChange('telefone')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label="Telefone Comercial"
+            value={formData.telefoneComercial}
+            onChange={handleInputChange('telefoneComercial')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label="Horario"
+            value={formData.horarioFuncionamento}
+            onChange={handleInputChange('horarioFuncionamento')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Metragem"
+            value={formData.metragemImovel}
+            onChange={handleInputChange('metragemImovel')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Metragem Utilizada"
+            value={formData.metragemUtilizada}
+            onChange={handleInputChange('metragemUtilizada')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={12}>
+          <TextField
+            fullWidth
+            label="Senha GOV"
+            value={formData.senhaGOV}
+            onChange={handleInputChange('senhaGOV')}
+            margin="dense"
+          />
+        </Grid>
+        {/* Endereço Comercial */}
+        <Grid item xs={12}>
+          <Typography variant="h6">Endereço Comercial</Typography>
+        </Grid>
+        <Grid item xs={12} sm={6} md={4}>
+          <TextField
+            fullWidth
+            label="CEP"
+            value={formData.enderecoComercial.cep}
+            onChange={handleNestedInputChange('enderecoComercial', 'cep')}
+            onBlur={handleCepBlur}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6} md={8}>
+          <TextField
+            fullWidth
+            label="Logradouro"
+            value={formData.enderecoComercial.logradouro}
+            onChange={handleNestedInputChange('enderecoComercial', 'logradouro')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label="Número"
+            value={formData.enderecoComercial.numero}
+            onChange={handleNestedInputChange('enderecoComercial', 'numero')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label="Complemento"
+            value={formData.enderecoComercial.complemento}
+            onChange={handleNestedInputChange('enderecoComercial', 'complemento')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <TextField
+            fullWidth
+            label="Bairro"
+            value={formData.enderecoComercial.bairro}
+            onChange={handleNestedInputChange('enderecoComercial', 'bairro')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Cidade"
+            value={formData.enderecoComercial.cidade}
+            onChange={handleNestedInputChange('enderecoComercial', 'cidade')}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Estado"
+            value={formData.enderecoComercial.estado}
+            onChange={handleNestedInputChange('enderecoComercial', 'estado')}
+            margin="dense"
+          />
+        </Grid>
 
-       {/* Sócios */}
-       <Grid item xs={12}>
-            <Typography variant="h6">Informações dos Sócios</Typography>
-          </Grid>
-          {[...Array(numSocios)].map((_, index) => (
-            <React.Fragment key={index}>
-              <Grid item xs={12} sm={4}>
-              <TextField
-                  fullWidth
-                  label={`Nome Sócio ${index + 1}`}
-                  {...register(`socios.${index}.nome`)}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label={`CPF Sócio ${index + 1}`}
-                  {...register(`socios.${index}.cpf`)}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label={`RG Sócio ${index + 1}`}
-                  {...register(`socios.${index}.rg`)}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label={`CNH Sócio ${index + 1}`}
-                  {...register(`socios.${index}.cnh`)}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label={`Endereço Sócio ${index + 1}`}
-                  {...register(`socios.${index}.endereco`)}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label={`Profissão Sócio ${index + 1}`}
-                  {...register(`socios.${index}.profissao`)}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label={`Naturalidade Sócio ${index + 1}`}
-                  {...register(`socios.${index}.naturalidade`)}
-                  margin="dense"
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label={`Porcentagem Sócio ${index + 1}`}
-                  {...register(`socios.${index}.porcentagem`)}
-                  margin="dense"
-                  InputProps={{
-                    endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                    inputProps: { min: 0, max: 100, type: 'number' },
-                  }}
-                />
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  select
-                  fullWidth
-                  label={`Estado Civil Sócio ${index + 1}`}
-                  {...register(`socios.${index}.estadoCivil`)}
-                  value={formData.socios[index]?.estadoCivil || ''} // Define o valor do campo
-                  margin="dense"
-                >
-                  <MenuItem value="Solteiro">Solteiro</MenuItem>
-                  <MenuItem value="Casado">Casado</MenuItem>
-                  <MenuItem value="Divorciado">Divorciado</MenuItem>
-                  <MenuItem value="Viúvo">Viúvo</MenuItem>
-                  <MenuItem value="União estável">União estável</MenuItem>
-                </TextField>
-            </Grid>
-            {formData.socios[index]?.estadoCivil === 'Casado' && (
-                <Grid item xs={12} sm={6}>
-                  <TextField
-                    select
-                    fullWidth
-                    label={`Regime de Bens Sócio ${index + 1}`}
-                    {...register(`socios.${index}.regimeBens`)}
-                    value={formData.socios[index]?.regimeBens || ''} // Define o valor do campo
-                    margin="dense"
-                  >
-                    <MenuItem value="Comunhão Parcial de Bens">Comunhão Parcial de Bens</MenuItem>
-                    <MenuItem value="Comunhão Universal de Bens">Comunhão Universal de Bens</MenuItem>
-                    <MenuItem value="Separação Total de Bens">Separação Total de Bens</MenuItem>
-                  </TextField>
-                </Grid>
-              )}
+        {/* Sócios */}
+        <Grid item xs={12}>
+          <Typography variant="h6">Informações dos Sócios</Typography>
+        </Grid>
+         {formData.socios.map((socio, index) => (
+          <React.Fragment key={index}>
             <Grid item xs={12} sm={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      {...register(`socios.${index}.administrador`)}
-                      checked={formData.socios[index]?.administrador || false} // Usa checked para controlar o valor
-                      onChange={(event) => setValue(`socios.${index}.administrador`, event.target.checked)} // Atualiza o valor quando alterado
-                    />
-                  }
-                  label="É Administrador?"
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-              </Grid>
-            </React.Fragment>
-          ))}
+              <TextField
+                fullWidth
+                label={`Nome Sócio ${index + 1}`}
+                value={socio.nome}
+                onChange={handleSocioChange(index, 'nome')}
+                margin="dense"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={`CPF Sócio ${index + 1}`}
+                value={socio.cpf}
+                onChange={handleSocioChange(index, 'cpf')}
+                margin="dense"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={`RG Sócio ${index + 1}`}
+                value={socio.rg}
+                onChange={handleSocioChange(index, 'rg')}
+                margin="dense"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={`Estado Civil Sócio ${index + 1}`}
+                select
+                value={socio.estadoCivil}
+                onChange={handleSocioChange(index, 'estadoCivil')}
+                margin="dense"
+              >
+                <MenuItem value="Solteiro">Solteiro</MenuItem>
+                <MenuItem value="Casado">Casado</MenuItem>
+                <MenuItem value="Divorciado">Divorciado</MenuItem>
+                <MenuItem value="Viúvo">Viúvo</MenuItem>
+              </TextField>
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={`Naturalidade Sócio ${index + 1}`}
+                value={socio.naturalidade}
+                onChange={handleSocioChange(index, 'naturalidade')}
+                margin="dense"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <NumericFormat
+                fullWidth
+                label={`Porcentagem Sócio ${index + 1}`}
+                customInput={TextField}
+                value={socio.porcentagem}
+                decimalScale={2}
+                suffix="%"
+                onValueChange={(values) => {
+                  setFormData((prev) => {
+                    const updatedSocios = [...prev.socios];
+                    updatedSocios[index].porcentagem = values.value;
+                    return { ...prev, socios: updatedSocios };
+                  });
+                }}
+                margin="dense"
+              />
+            </Grid>           
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={`Regime de Bens Sócio ${index + 1}`}
+                value={socio.regimeBens}
+                onChange={handleSocioChange(index, 'regimeBens')}
+                margin="dense"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={`Endereço Sócio ${index + 1}`}
+                value={socio.endereco}
+                onChange={handleSocioChange(index, 'endereco')}
+                margin="dense"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={`Profissão Sócio ${index + 1}`}
+                value={socio.profissao}
+                onChange={handleSocioChange(index, 'profissao')}
+                margin="dense"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField
+                fullWidth
+                label={`CNH Sócio ${index + 1}`}
+                value={socio.cnh}
+                onChange={handleSocioChange(index, 'cnh')}
+                margin="dense"
+              />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={socio.administrador}
+                    onChange={handleSwitchChange(index, 'administrador')}
+                  />
+                }
+                label={`Administrador Sócio ${index + 1}`}
+              />
+            </Grid>
+            <Divider sx={{ my: 2, width: '100%' }} />
+          </React.Fragment>
+        ))}
 
-          {/* Outros campos */}
-          <Grid item xs={12} sm={6}>
-            <NumericFormat
-              fullWidth
-              label="Capital Social"
-              customInput={TextField}
-              value={formData.capitalSocial}
-              thousandSeparator="."
-              decimalSeparator=","
-              decimalScale={2}
-              fixedDecimalScale
-              prefix="R$ "
-              onValueChange={handleChange('capitalSocial')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              label="Responsável na Receita Federal"
-              {...register('responsavelReceitaFederal')}
-              value={formData.responsavelReceitaFederal || ''} // Define o valor do campo
-              fullWidth
-              margin="dense"
-            >
-              {formData.socios.map((socio, index) => (
-                <MenuItem key={index} value={socio.nome}>
-                  {socio.nome}
-                </MenuItem>
-              ))}
-            </TextField>
-          </Grid>
-
-          <Grid item xs={12} sm={6}>
-            <TextField
-              select
-              label="Forma de Atuação"
-              {...register('formaAtuacao')}
-              value={formData.formaAtuacao || ''} // Define o valor do campo
-              fullWidth
-              margin="dense"
-            >
-              <MenuItem value="Internet">Internet</MenuItem>
-              <MenuItem value="Fora do estabelecimento">Fora do estabelecimento</MenuItem>
-              <MenuItem value="Escritório administrativo">Escritório administrativo</MenuItem>
-              <MenuItem value="Local próprio">Local próprio</MenuItem>
-              <MenuItem value="Em estabelecimento de terceiros">
-                Em estabelecimento de terceiros
-              </MenuItem>
-              <MenuItem value="Casa do cliente">Casa do cliente</MenuItem>
-              <MenuItem value="Outros">Outros</MenuItem>
-            </TextField>
-          </Grid>
-          <Grid item xs={12} sm={6}>
+        {/* Outros Campos */}
+        <Grid item xs={12} sm={6}>
           <NumericFormat
             fullWidth
-            label="Valor da Mensalidade"
+            label="Capital Social"
             customInput={TextField}
-            value={formData.valorMensalidade}  // O valor formatado em BRL será exibido aqui
+            value={formData.capitalSocial}
             thousandSeparator="."
             decimalSeparator=","
             decimalScale={2}
             fixedDecimalScale
             prefix="R$ "
-            onValueChange={handleChange('valorMensalidade')}
+            onValueChange={(values) => {
+              setFormData((prev) => ({
+                ...prev,
+                capitalSocial: values.value,
+              }));
+            }}
             margin="dense"
           />
-          </Grid>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              multiline
-              rows={2}
-              label="Observações"
-              {...register('observacoes')}
-              margin="dense"
-            />
-          </Grid>
-          <Grid item xs={12} sm={12}>
-            <FormControlLabel
-              control={
-                <Switch
-                  {...register('notificarWhats')}
-                  defaultChecked={currentAbertura?.notificarWhats || false}
-                />
-              }
-              label="Notificar pelo WhatsApp?"
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  {...register('marcaRegistrada')}
-                  defaultChecked={currentAbertura?.marcaRegistrada || false}
-                />
-              }
-              label="Tem marca registrada?"
-            />
-
-            {/* Mostrar o campo de interesse em registrar a marca somente quando marcaRegistrada for falso */}
-            {!formData.marcaRegistrada && (
-              <FormControlLabel
-                control={
-                  <Switch
-                    {...register('interesseRegistroMarca')}
-                    defaultChecked={currentAbertura?.interesseRegistroMarca || false}
-                  />
-                }
-                label="Interesse em registrar marca?"
-              />
-            )}
-            <FormControlLabel
-              control={
-                <Switch
-                  {...register('possuiRT')}
-                  defaultChecked={currentAbertura?.possuiRT || false}
-                />
-              }
-              label="Possui RT?"
-            />
-          </Grid>
-          <Divider />
-          {/* Documentos */}
-          <Grid item xs={12}>
-            <Typography variant="h6">Documentos</Typography>
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            {renderDocument(currentAbertura.rgAnexo, 'RG', currentAbertura._id)}
-          </Grid>
-          <Grid item xs={12} sm={6} md={4}>
-            {renderDocument(currentAbertura.iptuAnexo, 'IPTU', currentAbertura._id)}
-          </Grid>
-          {formData.possuiRT && (
-            <Grid item xs={12} sm={6} md={4}>
-              {renderDocument(currentAbertura.documentoRT, 'RT', currentAbertura._id)}
-            </Grid>
-          )}
         </Grid>
-      <Stack direction="row" spacing={2} sx={{ mt: 3, mb: 3 }} justifyContent="center">
+        <Grid item xs={12} sm={6}>
+          <NumericFormat
+            fullWidth
+            label="Valor Mensalidade"
+            customInput={TextField}
+            value={formData.valorMensalidade}
+            thousandSeparator="."
+            decimalSeparator=","
+            decimalScale={2}
+            fixedDecimalScale
+            prefix="R$ "
+            onValueChange={(values) => {
+              setFormData((prev) => ({
+                ...prev,
+                valorMensalidade: values.value,
+              }));
+            }}
+            margin="dense"
+          />
+        </Grid>
+        <Grid item xs={12}>
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            label="Observações"
+            value={formData.observacoes}
+            onChange={handleInputChange('observacoes')}
+            margin="dense"
+          />
+        </Grid>
+
+        {/* DocumentsManager */}
+        <DocumentsManager
+          formData={formData}
+          setFormData={setFormData}
+          aberturaId={currentAbertura._id}
+        />
+      </Grid>
+
+      {/* Botões de Ação */}
+      <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
         <Button
           variant="contained"
-          onClick={handleSave} // Chame a função handleSave ao clicar
+          onClick={handleSave}
           disabled={loading.value}
-          startIcon={<Iconify icon="eva:checkmark-circle-2-fill" width={20} />}
+          startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
         >
           Salvar
         </Button>
@@ -758,7 +564,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
           color="error"
           onClick={handleReject}
           disabled={loading.value}
-          startIcon={<Iconify icon="eva:close-circle-fill" width={20} />}
+          startIcon={<Iconify icon="eva:close-circle-fill" />}
         >
           Reprovar
         </Button>
@@ -767,7 +573,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
           color="success"
           onClick={handleApprove}
           disabled={loading.value}
-          startIcon={<Iconify icon="eva:checkmark-circle-2-fill" width={20} />}
+          startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
         >
           Aprovar
         </Button>

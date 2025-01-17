@@ -46,8 +46,8 @@ import {
 } from 'src/components/table';
 
 import { ContaPagarTableRow } from './pagar-table-row';
-import { ReceberAnalytic } from '../../receber/receber-analytic';
 import { ReceberTableToolbar } from './pagar-table-toolbar';
+import { ReceberAnalytic } from '../../receber/receber-analytic';
 
 // ----------------------------------------------------------------------
 

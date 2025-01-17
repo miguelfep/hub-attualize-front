@@ -11,7 +11,6 @@ export default async function Page({ params }) {
   const { id } = params;
 
   const currentAbertura = await getAberturaById(id);
-  console.log(currentAbertura.data);
 
   return <AberturaEditView abertura={currentAbertura.data} />;
 }

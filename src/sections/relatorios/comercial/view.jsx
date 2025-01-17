@@ -1,6 +1,5 @@
 'use client';
 
-import { saveAs } from 'file-saver';
 import * as XLSX from 'xlsx'; // Import the XLSX library
 
 import ReactApexChart from 'react-apexcharts';
@@ -22,9 +21,9 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
-import { EcommerceCurrentBalance } from 'src/sections/overview/e-commerce/ecommerce-current-balance';
 
 import { ChartPie } from 'src/sections/_examples/extra/chart-view/chart-pie';
+import { EcommerceCurrentBalance } from 'src/sections/overview/e-commerce/ecommerce-current-balance';
 
 const columns = [
   { field: 'invoiceNumber', headerName: 'Venda', width: 100 },

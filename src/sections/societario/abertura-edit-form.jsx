@@ -11,8 +11,6 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 
-import { useRouter } from 'src/routes/hooks';
-
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { today } from 'src/utils/format-time';
@@ -23,7 +21,7 @@ import { Form, schemaHelper } from 'src/components/hook-form';
 
 import AberturaIniciadoForm from './abertura-iniciado-form';
 // Importação dos componentes específicos para cada status
-import { AberturaValidacaoForm } from './abertura-validacao-form';
+import  { AberturaValidacaoForm }  from './abertura-validacao-form';
 import { AberturaConstituicaoForm } from './abertura-constituicao-form';
 
 // Definir o esquema de validação usando Zod
@@ -72,7 +70,6 @@ const statusDisplayMap = {
 // ----------------------------------------------------------------------
 
 export function AberturaEditForm({ currentAbertura }) {
-  const router = useRouter();
   const loading = useBoolean();
 
   const defaultValues = useMemo(
@@ -98,7 +95,7 @@ export function AberturaEditForm({ currentAbertura }) {
         if (nextStatus) {
       loading.onTrue();
       try {
-        const response = await updateAbertura(currentAbertura._id, { statusAbertura: nextStatus, somenteAtualizar: false });
+        updateAbertura(currentAbertura._id, { statusAbertura: nextStatus, somenteAtualizar: false });
         setValue('statusAbertura', nextStatus);
         toast.success('Status avançado com sucesso!');
       } catch (error) {

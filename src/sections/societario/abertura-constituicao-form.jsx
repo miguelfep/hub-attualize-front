@@ -33,7 +33,7 @@ import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/soc
 
 import { Iconify } from 'src/components/iconify';
 
-import DialogDocumentsAbertura from './abertura-dialog-documento';
+import DocumentsManager from '../abertura/empresa/DocumentsManager';
 
 
 export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
@@ -57,8 +57,8 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     marcaRegistrada: false,
     interesseRegistroMarca: false,
     possuiRT: false,
-    iptuAnexo: null,
-    rgAnexo: null,
+    iptuAnexo: currentAbertura.iptuAnexo || null,
+    rgAnexo: currentAbertura.rgAnexo || null,
     documentoRT: currentAbertura.documentoRT || null,
     situacaoAbertura: 0,
     somenteAtualizar: true,
@@ -115,7 +115,9 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   }, []);
 
   const handleFileUploaded = (documentType, updatedData) => {
+    
     const fieldName = documentFieldMapping[documentType]; // Mapeia o documentType para o campo correto
+    
     setFormData((prevState) => ({
       ...prevState,
       [fieldName]: updatedData[fieldName], // Atualiza o campo correspondente
@@ -296,62 +298,10 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   };
 
 
-  const handleTabChange = (event, newValue) => {
-    setActiveTab(newValue);
-  };
+  const handleTabChange = (event, newValue) => setActiveTab(newValue);
 
-  const StyledGrid = styled(Grid)(({ theme }) => ({
-    marginTop: theme.spacing(4.8),
-    [theme.breakpoints.down('md')]: {
-      order: -1,
-      width: '100%',
-    },
-  }));
+  
 
-  const renderDocument = (url, name, id) => {
-    if (!url) {
-      return (
-        <DialogDocumentsAbertura name={name} id={id} fetchAbertura={fetchAbertura} onFileUploaded={handleFileUploaded} />
-      );
-    }
-    const filename = url.split('/').pop();
-    return (
-      <StyledGrid item xs={12} md={12}>
-        <Box
-          sx={{
-            borderRadius: 1,
-            p: (theme) => theme.spacing(2.5, 5.75, 4.75),
-            border: (theme) => `1px solid ${theme.palette.divider}`,
-          }}
-        >
-          <Box sx={{ ml: -2.25, display: 'flex', alignItems: 'center' }}>
-            <Typography variant="h6">{name}</Typography>
-          </Box>
-          <Box sx={{ mt: 3, display: 'flex', alignItems: 'center' }}>
-            <Typography variant="body2">Faça o download do {name} abaixo</Typography>
-          </Box>
-          <Box sx={{ mt: 3, display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Button
-              size="small"
-              variant="contained"
-              color="success"
-              onClick={() => handleDownload(id, name, filename)}
-              >
-              Baixar {name}
-            </Button>
-            <Button
-              size="small"
-              variant="contained"
-              color="error"
-              onClick={() => handleDelete(id, name)}
-            >
-              Deletar
-            </Button>
-          </Box>
-        </Box>
-      </StyledGrid>
-    );
-  };
 
   return (
     <Card sx={{ p: 3, mb: 3 }}>
@@ -743,7 +693,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 </React.Fragment>
               ))}
               <Grid item xs={12} sm={6} md={6}>
-              <NumericFormat
+              <TextField
                   label="Capital Social"
                   customInput={TextField}
                   value={formData.capitalSocial}
@@ -879,65 +829,18 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   }
                   label="Notificar Whatsapp?"
                 />
-              </Grid>
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.marcaRegistrada || false}
-                      onChange={handleChange}
-                      name="marcaRegistrada"
-                    />
-                  }
-                  label="Tem marca registrada?"
+              </Grid>               
+              <Grid item xs={12} sm={6} md={12}>
+              <DocumentsManager
+                  formData={formData}
+                  setFormData={setFormData}
+                  aberturaId={currentAbertura._id}
                 />
-              </Grid>
-
-              {/* Interesse em registrar marca */}
-              {!formData.marcaRegistrada && (
-                <Grid item xs={12} sm={6} md={4}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={formData.interesseRegistroMarca || false}
-                        onChange={handleChange}
-                        name="interesseRegistroMarca"
-                      />
-                    }
-                    label="Interesse em registrar marca?"
-                  />
                 </Grid>
-              )}
 
-              {/* Possui RT */}
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.possuiRT || false}
-                      onChange={handleChange}
-                      name="possuiRT"
-                    />
-                  }
-                  label="Possui RT?"
-                />
-              </Grid>
 
               {/* Upload de Documentos */}
-              <Grid item xs={12}>
-                <Typography variant="h6">Documentos</Typography>
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                {renderDocument(formData.rgAnexo, 'RG', currentAbertura._id)}
-              </Grid>
-              <Grid item xs={12} sm={4}>
-                {renderDocument(formData.iptuAnexo, 'IPTU', currentAbertura._id)}
-              </Grid>
-              {formData.possuiRT && (
-                <Grid item xs={12} sm={4} md={4}>
-                  {renderDocument(formData.documentoRT, 'RT', currentAbertura._id)}
-                </Grid>
-              )}
+       
             </Grid>
       )}
 
