@@ -5,7 +5,6 @@ import InputMask from 'react-input-mask';
 import { NumericFormat } from 'react-number-format';
 import React, { useState, useEffect, useCallback } from 'react';
 
-import { styled } from '@mui/material/styles';
 import {
   Box,
   Tab,

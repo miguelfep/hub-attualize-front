@@ -1,6 +1,6 @@
-import { Parser } from 'json2csv';
 import { useCallback } from 'react';
 import { saveAs } from 'file-saver';
+import * as XLSX from 'xlsx';
 
 import Stack from '@mui/material/Stack';
 import MenuList from '@mui/material/MenuList';
@@ -15,7 +15,6 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 export function ContratoTableToolbar({ filters, onResetPage, tableData }) {
   const popover = usePopover();
 
-
   const handleFilterTituloOrRazaoSocial = useCallback(
     (event) => {
       onResetPage();
@@ -24,16 +23,46 @@ export function ContratoTableToolbar({ filters, onResetPage, tableData }) {
     [filters, onResetPage]
   );
 
-  const handleExportCSV = useCallback(() => {
+  const handleExportXLSX = useCallback(() => {
     try {
-      const fields = ['titulo', 'cliente.cnpj', 'cliente.razaoSocial', 'tipoContrato', 'status', 'metodoCobranca', 'valorMensalidade'];
-      const parser = new Parser({ fields });
-      const csv = parser.parse(tableData);
+      // Define os campos e os dados para exportação
+      const fields = [
+        'titulo',
+        'cliente.cnpj',
+        'cliente.razaoSocial',
+        'tipoContrato',
+        'status',
+        'metodoCobranca',
+        'valorMensalidade',
+      ];
 
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      saveAs(blob, 'contratos.csv');
+      // Mapeia os dados para um formato legível no Excel
+      const exportData = tableData.map((row) => {
+        const mappedRow = {};
+        fields.forEach((field) => {
+          const keys = field.split('.');
+          let value = row;
+          keys.forEach((key) => {
+            value = value ? value[key] : '';
+          });
+          mappedRow[field] = value;
+        });
+        return mappedRow;
+      });
+
+      // Cria uma planilha
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Contratos');
+
+      // Converte a planilha para um arquivo binário
+      const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+      // Salva o arquivo como .xlsx
+      const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+      saveAs(blob, 'contratos.xlsx');
     } catch (error) {
-      console.error('Erro ao exportar CSV:', error);
+      console.error('Erro ao exportar XLSX:', error);
     }
   }, [tableData]);
 
@@ -89,7 +118,7 @@ export function ContratoTableToolbar({ filters, onResetPage, tableData }) {
           <MenuItem
             onClick={() => {
               popover.onClose();
-              handleExportCSV();
+              handleExportXLSX();
             }}
             sx={{
               typography: 'body2',
@@ -101,7 +130,7 @@ export function ContratoTableToolbar({ filters, onResetPage, tableData }) {
             }}
           >
             <Iconify icon="solar:export-bold" sx={{ mr: 1.5 }} />
-            Exportar CSV
+            Exportar XLSX
           </MenuItem>
         </MenuList>
       </CustomPopover>
