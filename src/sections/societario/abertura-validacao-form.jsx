@@ -158,7 +158,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
   const handleApprove = async () => {
     loading.onTrue();
     try {
-      await updateAbertura(currentAbertura._id, { statusAbertura: 'kickoff' });
+      await updateAbertura(currentAbertura._id, { statusAbertura: 'kickoff', somenteAtualizar: false });
       setParentValue('statusAbertura', 'kickoff');
       toast.success('Abertura aprovada!');
     } catch (error) {

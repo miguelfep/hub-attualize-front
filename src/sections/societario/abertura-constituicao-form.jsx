@@ -816,19 +816,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 />
               </Grid>
 
-              {/* Marca Registrada */}
-              <Grid item xs={12} sm={6} md={4}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.notificarWhats || false}
-                      onChange={handleChange}
-                      name="notificarWhats"
-                    />
-                  }
-                  label="Notificar Whatsapp?"
-                />
-              </Grid>               
+                
               <Grid item xs={12} sm={6} md={12}>
               <DocumentsManager
                   formData={formData}

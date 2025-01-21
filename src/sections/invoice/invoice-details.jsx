@@ -313,6 +313,15 @@ export function InvoiceDetails({ invoice }) {
             </Typography>
             {fDate(invoice?.dataVencimento)}
           </Stack>
+          {invoice?.approvalDate && ( // Apenas exibir se approvalDate existir
+            <Stack sx={{ typography: 'body2' }}>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Data de Aprovação
+              </Typography>
+              {fDate(invoice?.approvalDate)}
+            </Stack>
+          )}
+
         </Box>
         {renderList}
         <Divider sx={{ mt: 5, borderStyle: 'dashed' }} />

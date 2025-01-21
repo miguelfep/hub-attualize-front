@@ -110,6 +110,15 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
 
       {/* Toggles */}
       <Box sx={{ mb: 3 }}>
+      <FormControlLabel
+          control={
+            <Switch
+              checked={formData.notificarWhats || false}
+              onChange={() => handleToggleChange('notificarWhats')}
+            />
+          }
+          label="Notificar whatsapp?"
+        />
         <FormControlLabel
           control={
             <Switch
