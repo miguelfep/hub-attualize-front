@@ -1,11 +1,5 @@
-import dayjs from 'dayjs';
-import { toast } from 'sonner';
-import { z as zod } from 'zod';
 import React, { useState, useEffect } from 'react';
-
-import { DatePicker } from '@mui/x-date-pickers';
 import {
-  Grid,
   Dialog,
   Button,
   Select,
@@ -16,19 +10,15 @@ import {
   FormControl,
   DialogContent,
   DialogActions,
+  Grid,
 } from '@mui/material';
-
-import { today } from 'src/utils/format-time';
-
+import { DatePicker } from '@mui/x-date-pickers';
+import dayjs from 'dayjs';
+import { toast } from 'sonner';
 import { atualizarCobrancaPorId, criarCobrancasPorContrato } from 'src/actions/financeiro';
+import { getUser } from 'src/auth/context/jwt';
 
-const cobrancaSchema = zod.object({
-  observacoes: zod.string().min(1, 'Descrição é obrigatória'),
-  valor: zod.string().min(1, 'Valor é obrigatório'),
-  dataVencimento: zod.date({
-    required_error: 'Data de vencimento é obrigatória',
-  }),
-});
+const user = getUser();
 
 const formatCurrency = (value) => {
   const numberValue = Number(value.replace(/[^\d]/g, '')) / 100;
@@ -39,15 +29,14 @@ const formatCurrency = (value) => {
 };
 
 const parseCurrency = (formattedValue) => {
-  const sanitizedValue = formattedValue.replace(/[R$\s]/g, '');
-  const normalizedValue = sanitizedValue.replace(/\./g, '').replace(',', '.');
-  return parseFloat(normalizedValue);
+  const sanitizedValue = formattedValue.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+  return parseFloat(sanitizedValue);
 };
 
 const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobrancaAtual }) => {
   const [observacoes, setObservacoes] = useState('');
   const [formattedValue, setFormattedValue] = useState('');
-  const [dataVencimento, setDataVencimento] = useState(dayjs(today()));
+  const [dataVencimento, setDataVencimento] = useState(dayjs());
   const [status, setStatus] = useState('EMABERTO');
 
   useEffect(() => {
@@ -60,7 +49,6 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
           (acc, item) => acc + item.valorUnitario * item.quantidade,
           0
         );
-
         setObservacoes(descricaoObservacoes);
         setFormattedValue(valorTotal.toLocaleString('pt-BR', {
           style: 'currency',
@@ -69,13 +57,13 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
       } else {
         setObservacoes(cobrancaAtual?.observacoes || '');
         setFormattedValue(
-          cobrancaAtual?.valor?.toLocaleString('pt-br', {
+          cobrancaAtual?.valor?.toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL',
           }) || ''
         );
         setDataVencimento(
-          cobrancaAtual?.dataVencimento ? dayjs(cobrancaAtual.dataVencimento) : dayjs(today())
+          cobrancaAtual?.dataVencimento ? dayjs(cobrancaAtual.dataVencimento) : dayjs()
         );
         setStatus(cobrancaAtual?.status || 'EMABERTO');
       }
@@ -115,20 +103,15 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
       handleClose();
     } catch (error) {
       console.error('Erro ao criar/editar cobrança:', error);
-      toast.error(
-        `Erro ao criar/editar cobrança: ${error.response?.data?.message || error.message}`
-      );
+      toast.error(`Erro ao criar/editar cobrança: ${error.response?.data?.message || error.message}`);
     }
   };
 
+  const isAdmin = user.role === 'admin';
+  const isFinanceiro = user.role === 'financeiro';
+
   return (
-    <Dialog
-      open={open}
-      onClose={handleClose}
-      aria-labelledby="form-dialog-title"
-      maxWidth="md"
-      fullWidth
-    >
+    <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title" maxWidth="md" fullWidth>
       <DialogTitle id="form-dialog-title">
         {cobrancaAtual ? 'Editar Cobrança' : 'Nova Cobrança'}
       </DialogTitle>
@@ -140,11 +123,9 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
               onChange={(e) => setObservacoes(e.target.value)}
               fullWidth
               multiline
-              rows={6}
+              rows={4}
               label="Descrição"
-              error={!observacoes}
-              helperText={!observacoes && 'Descrição é obrigatória'}
-              disabled={!!cobrancaAtual?.boleto}
+              disabled={!isAdmin || !!cobrancaAtual?.boleto}
             />
           </Grid>
 
@@ -157,9 +138,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
                 <TextField
                   {...params}
                   fullWidth
-                  error={!dataVencimento}
-                  helperText={!dataVencimento && 'Data de vencimento é obrigatória'}
-                  disabled={!!cobrancaAtual?.boleto}
+                  disabled={!isAdmin && !isFinanceiro}
                 />
               )}
             />
@@ -171,26 +150,26 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
               fullWidth
               value={formattedValue}
               onChange={handleValorChange}
-              error={!formattedValue}
-              helperText={!formattedValue && 'Valor é obrigatório'}
-              disabled={!!cobrancaAtual?.boleto}
+              disabled={!isAdmin && !isFinanceiro}
             />
           </Grid>
 
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel>Status da Cobrança</InputLabel>
-              <Select
-                value={status}
-                onChange={(e) => setStatus(e.target.value)}
-                label="Status da Cobrança"
-              >
-                <MenuItem value="RECEBIDO">Pago</MenuItem>
-                <MenuItem value="EMABERTO">Pendente</MenuItem>
-                <MenuItem value="CANCELADO">Cancelado</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+          {isAdmin && (
+            <Grid item xs={12}>
+              <FormControl fullWidth>
+                <InputLabel>Status da Cobrança</InputLabel>
+                <Select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  label="Status da Cobrança"
+                >
+                  <MenuItem value="RECEBIDO">Pago</MenuItem>
+                  <MenuItem value="EMABERTO">Pendente</MenuItem>
+                  <MenuItem value="CANCELADO">Cancelado</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+          )}
         </Grid>
       </DialogContent>
       <DialogActions>
@@ -201,7 +180,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
           onClick={handleCreateOrUpdate}
           color="primary"
           variant="contained"
-          disabled={!observacoes || !formattedValue || !dataVencimento}
+          disabled={(!observacoes || !formattedValue || !dataVencimento) || (!isAdmin && !isFinanceiro)}
         >
           {cobrancaAtual ? 'Atualizar' : 'Criar'}
         </Button>

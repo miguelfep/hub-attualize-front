@@ -90,7 +90,6 @@ export function AberturasListView() {
 
   const onSubmit = async (data) => {
     try {
-      console.log(data);
 
       await createAbertura(data);
       toast.success('Abertura criada com sucesso!');
@@ -98,6 +97,8 @@ export function AberturasListView() {
       handleCloseModal();
       reset();
     } catch (error) {
+      console.log(error);
+      
       toast.error('Erro ao criar abertura');
     }
   };

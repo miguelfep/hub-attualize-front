@@ -63,6 +63,17 @@ export default async function RootLayout({ children }) {
             `,
           }}
         />
+         {/* Digisac Web Chat */}
+         <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window._digisac = { 
+                id: "c0517922-0328-4ccf-8027-fa9f7b78f6e2"
+              };
+            `,
+          }}
+        />
+        <script src="https://webchat.digisac.app/embedded.js" async></script>
       </head>
       <body>
         {getInitColorSchemeScript}

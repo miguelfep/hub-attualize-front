@@ -23,14 +23,14 @@ export function BackToTop({ value = 90, sx, ...other }) {
 
   return (
     <Fab
-      aria-label="Back to top"
+      aria-label="Voltar"
       onClick={backToTop}
       sx={{
         width: 48,
         height: 48,
         position: 'fixed',
         transform: 'scale(0)',
-        right: { xs: 24, md: 32 },
+        left: { xs: 24, md: 32 },
         bottom: { xs: 24, md: 32 },
         zIndex: (theme) => theme.zIndex.speedDial,
         transition: (theme) => theme.transitions.create(['transform']),
