@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import { styled, useTheme } from '@mui/material/styles';
@@ -69,6 +70,23 @@ export function HeaderBase({
 }) {
   const theme = useTheme();
 
+  // UseEffect para adicionar o script do Digisac Web Chat
+  useEffect(() => {
+    // Configura o objeto global _digisac
+    window._digisac = { id: "c0517922-0328-4ccf-8027-fa9f7b78f6e2" };
+
+    // Cria e adiciona o script externo ao DOM
+    const script = document.createElement('script');
+    script.src = "https://webchat.digisac.app/embedded.js";
+    script.async = true;
+    document.head.appendChild(script);
+
+    // Remove o script ao desmontar o componente (limpeza)
+    return () => {
+      document.head.removeChild(script);
+    };
+  }, []);
+
   return (
     <HeaderSection
       sx={sx}
@@ -132,20 +150,6 @@ export function HeaderBase({
 
               {/* -- Searchbar -- */}
               {searchbar && <Searchbar data-slot="searchbar" data={data?.nav} />}
-
-              {/* -- Language popover -- */}
-              {/* {localization && <LanguagePopover data-slot="localization" data={data?.langs} />} */}
-
-              {/* -- Notifications popover -- */}
-              {/* {notifications && (
-                <NotificationsDrawer data-slot="notifications" data={data?.notifications} />
-              )} */}
-
-              {/* -- Contacts popover -- */}
-              {/* {contacts && <ContactsPopover data-slot="contacts" data={data?.contacts} />} */}
-
-              {/* -- Settings button -- */}
-              {/* {settings && <SettingsButton data-slot="settings" />} */}
 
               {/* -- Account drawer -- */}
               {account && <AccountDrawer data-slot="account" data={data?.account} />}
