@@ -205,7 +205,7 @@ export async function downloadLicenca(id) {
 
 export async function deletarArquivoLicenca(id) {
   try {
-    const response = await axios.delete(`${baseUrl}societario//licenca/delete/file/${id}`);
+    const response = await axios.delete(`${baseUrl}societario/licenca/delete/file/${id}`);
    
     return response;
 
