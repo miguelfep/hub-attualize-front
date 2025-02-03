@@ -3,7 +3,6 @@ import { m } from 'framer-motion';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Accordion, { accordionClasses } from '@mui/material/Accordion';
@@ -16,7 +15,6 @@ import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
 
 import { SectionTitle } from './components/section-title';
-import { FloatLine, FloatPlusIcon, FloatTriangleDownIcon } from './components/svg-elements';
 
 // ----------------------------------------------------------------------
 
@@ -24,16 +22,19 @@ const FAQs = [
   {
     question: 'A Attualize atende todo o Brasil?',
     answer: (
-      <Typography>Sim, por ser uma contabilidade digital atendemos todo o Brasil!</Typography>
+      <Typography component="p">
+        Sim, por ser uma contabilidade digital, atendemos todo o Brasil, oferecendo nossos serviços
+        de maneira remota e prática.
+      </Typography>
     ),
   },
   {
     question: 'Quais são as especialidades da Attualize?',
     answer: (
       <Box component="ul" sx={{ pl: 3, listStyleType: 'disc' }}>
-        <li>Área da Beleza.</li>
-        <li>Área da Saúde</li>
-        <li>Área do Bem Estar</li>
+        <li>Clínicas de estética.</li>
+        <li>Profissionais da área da saúde (médicos, dentistas, fisioterapeutas).</li>
+        <li>Academias, estúdios de pilates, crossfit e outras atividades de bem-estar.</li>
       </Box>
     ),
   },
@@ -41,22 +42,52 @@ const FAQs = [
     question: 'Quais serviços vocês fornecem mensalmente?',
     answer: (
       <Box component="ul" sx={{ pl: 3, listStyleType: 'disc' }}>
+        <li>Elaboração da contabilidade de acordo com a legislação, incluindo balancetes e balanços.</li>
+        <li>Apuração de tributos conforme a emissão de notas fiscais da empresa.</li>
         <li>
-          {' '}
-          Elaboração da CONTABILIDADE de acordo com a legislação, balancetes, balanço patrimonial e
-          demonstrações contábeis obrigatórias.
-        </li>
-        <li>
-          {' '}
-          Aplicação dos dispositivos legais vigentes, escrituração dos documentos fiscais emitidos
-          pela empresa, APURAÇÃO dos tributos devidos conforme a emissão dos impostos da empresa.
-        </li>
-        <li>
-          ORIENTAÇÃO e aplicação dos preceitos da Consolidação das Leis do Trabalho, MANUTENÇÃO dos
-          registros de sócios, ELABORAÇÃO de Pró-Labore dos sócios, bem como as guias dos encargos
-          sociais e tributos a serem recolhidos pela empresa.
+          Orientação trabalhista, elaboração de pró-labore e guias de encargos sociais para sócios.
         </li>
       </Box>
+    ),
+  },
+  {
+    question: 'Por que escolher a Attualize para sua contabilidade?',
+    answer: (
+      <Typography component="p">
+        Somos especializados em contabilidade digital para estética, saúde e bem-estar. Oferecemos
+        um atendimento humanizado, acompanhamento personalizado e conhecimento profundo das
+        particularidades do seu setor.
+      </Typography>
+    ),
+  },
+  {
+    question: 'Como funciona o atendimento da Attualize?',
+    answer: (
+      <Typography component="p">
+        Nosso atendimento é 100% digital, mas totalmente humanizado. Você pode entrar em contato
+        conosco por canais como WhatsApp, e-mail ou até agendar uma reunião virtual com nossos
+        especialistas.
+      </Typography>
+    ),
+  },
+  {
+    question: 'Quais documentos preciso para abrir minha empresa?',
+    answer: (
+      <Box component="ul" sx={{ pl: 3, listStyleType: 'disc' }}>
+        <li>RG e CPF do responsável legal.</li>
+        <li>Comprovante de endereço atualizado.</li>
+        <li>Definição da atividade (CNAE).</li>
+        <li>Nome fantasia e razão social da empresa.</li>
+      </Box>
+    ),
+  },
+  {
+    question: 'Quais são os benefícios de contratar uma contabilidade digital?',
+    answer: (
+      <Typography component="p">
+        A contabilidade digital permite mais agilidade, redução de custos e maior comodidade no
+        acompanhamento de seus resultados financeiros, sem perder a qualidade do atendimento.
+      </Typography>
     ),
   },
 ];
@@ -64,7 +95,7 @@ const FAQs = [
 // ----------------------------------------------------------------------
 
 export function HomeFAQs({ sx, ...other }) {
-  const [expanded, setExpanded] = useState(FAQs[0].question);
+  const [expanded, setExpanded] = useState(false);
 
   const handleChange = (panel) => (event, isExpanded) => {
     setExpanded(isExpanded ? panel : false);
@@ -135,7 +166,7 @@ export function HomeFAQs({ sx, ...other }) {
             aria-controls={`panel${index}bh-content`}
             id={`panel${index}bh-header`}
           >
-            <Typography variant="h6"> {item.question}</Typography>
+            <Typography variant="h6">{item.question}</Typography>
           </AccordionSummary>
           <AccordionDetails>{item.answer}</AccordionDetails>
         </Accordion>
@@ -143,96 +174,14 @@ export function HomeFAQs({ sx, ...other }) {
     </Stack>
   );
 
-  const renderContact = (
-    <Stack
-      alignItems="center"
-      sx={{
-        px: 3,
-        py: 8,
-        textAlign: 'center',
-        background: (theme) =>
-          `linear-gradient(270deg, ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}, ${varAlpha(theme.vars.palette.grey['500Channel'], 0)})`,
-      }}
-    >
-      <m.div variants={varFade().in}>
-        <Typography variant="h4">Ainda tem duvida?</Typography>
-      </m.div>
-
-      <m.div variants={varFade().in}>
-        <Typography sx={{ mt: 2, mb: 3, color: 'text.secondary' }}>
-          Deixe nossos especialistas ajudar você, fale conosco agora mesmo
-        </Typography>
-      </m.div>
-
-      <m.div variants={varFade().in}>
-        <Button
-          color="success"
-          variant="contained"
-          href="https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20contabilidade"
-          startIcon={<Iconify icon="mdi:whatsapp" />}
-        >
-          Whatsapp
-        </Button>
-      </m.div>
-    </Stack>
-  );
-
   return (
     <Stack component="section" sx={{ ...sx }} {...other}>
       <MotionViewport sx={{ py: 10, position: 'relative' }}>
-        <TopLines />
-
         <Container>
           {renderDescription}
           {renderContent}
         </Container>
-
-        <Stack sx={{ position: 'relative' }}>
-          <BottomLines />
-          {renderContact}
-        </Stack>
       </MotionViewport>
     </Stack>
-  );
-}
-
-// ----------------------------------------------------------------------
-
-function TopLines() {
-  return (
-    <>
-      <Stack
-        spacing={8}
-        alignItems="center"
-        sx={{
-          top: 64,
-          left: 80,
-          position: 'absolute',
-          transform: 'translateX(-15px)',
-        }}
-      >
-        <FloatTriangleDownIcon sx={{ position: 'static', opacity: 0.12 }} />
-        <FloatTriangleDownIcon
-          sx={{
-            position: 'static',
-            opacity: 0.24,
-            width: 30,
-            height: 15,
-          }}
-        />
-      </Stack>
-      <FloatLine vertical sx={{ top: 0, left: 80 }} />
-    </>
-  );
-}
-
-function BottomLines() {
-  return (
-    <>
-      <FloatLine sx={{ top: 0, left: 0 }} />
-      <FloatLine sx={{ bottom: 0, left: 0 }} />
-      <FloatPlusIcon sx={{ top: -8, left: 72 }} />
-      <FloatPlusIcon sx={{ bottom: -8, left: 72 }} />
-    </>
   );
 }

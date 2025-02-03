@@ -17,6 +17,7 @@ const ROOTS = {
 // ----------------------------------------------------------------------
 
 export const paths = {
+  esteticaHome: '/contabilidade-para-clinicas-de-estetica',
   comingSoon: '/coming-soon',
   maintenance: '/maintenance',
   pricing: '/pricing',

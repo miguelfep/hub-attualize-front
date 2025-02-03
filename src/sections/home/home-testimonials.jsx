@@ -220,6 +220,7 @@ const base = (index) => ({
 
 const TESTIMONIALS = [
   {
+    id: 1,
     name: 'Monica Camozele',
     postedAt: 'April 20, 2024 23:15:30',
     rating: 5,
@@ -227,6 +228,7 @@ const TESTIMONIALS = [
     content: `“A Attualize foi muito importante ao valorizar o que eu tinha pra contar sobre o meu trabalho. Um outro contador mal me ouviu e disse que não valeria a pena eu abrir empresa. Senti um desdém, não sabia se pelo meu trabalho, por mim, ou por eu ser mulher. A disponibilidade em tirar minhas dúvidas, mesmo que eu pergunte 5 vezes a mesma coisa por não ter entendido ainda, é uma das coisas que me mantém com vocês. A atenção e cuidado de vocês com o cliente, é um baita diferencial. Me sinto respeitada e segura com vocês. Só tenho a agradecer.”`,
   },
   {
+    id: 2,
     name: 'Juliana Romualdo',
     postedAt: 'April 20, 2024 23:15:30',
     category: 'Contabilidade',
@@ -235,6 +237,7 @@ const TESTIMONIALS = [
     content: `Sou nova por aqui, estou em fase de migração, estou aliviada de ter vcs. Mas preocupadas com as informações que nunca tive acesso. Enfim eu estou me sentindo segura e amparada. Adoro a página, as dicas. Foi através disso que pensei, tem algo errado na minha empresa e procurei vocês.`,
   },
   {
+    id: 3,
     name: 'Celso Marchioretto',
     postedAt: 'April 20, 2024 23:15:30',
     category: 'Contabilidade',
@@ -243,6 +246,7 @@ const TESTIMONIALS = [
     content: `Sempre sou muito bem atendido, parabenizo a todo equipe. O Serviço é muito bom, sempre tivemos um ótimo atendimento.`,
   },
   {
+    id: 4,
     name: 'Mauricio Penteado',
     postedAt: 'April 20, 2024 23:15:30',
     category: 'Contabilidade',
@@ -251,6 +255,7 @@ const TESTIMONIALS = [
     content: `Um estritório com ótimo atendimento e pessoas super atenciosas.`,
   },
   {
+    id: 5,
     name: 'Tamara resi',
     postedAt: 'April 20, 2024 23:15:30',
     category: 'Contabilidade',

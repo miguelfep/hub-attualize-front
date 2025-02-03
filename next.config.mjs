@@ -18,17 +18,26 @@ const nextConfig = {
     },
   },
   webpack(config) {
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: ['@svgr/webpack'],
-    });
+    config.module.rules.push(
+      {
+        test: /\.svg$/,
+        use: ['@svgr/webpack'],
+      },
+      {
+        test: /pdf\.worker\.mjs$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'static/worker/[name].[hash][ext]', // Salva o worker em uma pasta estática
+        },
+      }
+    );
 
     return config;
   },
   ...(isStaticExport === 'true' && {
     output: 'export',
   }),
-  reactStrictMode: true, 
+  reactStrictMode: true,
   swcMinify: true,
 };
 

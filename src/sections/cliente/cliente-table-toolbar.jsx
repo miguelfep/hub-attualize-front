@@ -20,7 +20,7 @@ export function ClienteTableToolbar({ filters, onResetPage, tableData }) {
   const handleFilterName = useCallback(
     (event) => {
       onResetPage();
-      filters.setState({ nome: event.target.value });
+      filters.setState({ razaoSocial: event.target.value });
     },
     [filters, onResetPage]
   );

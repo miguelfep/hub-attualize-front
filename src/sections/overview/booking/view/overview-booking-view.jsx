@@ -109,9 +109,12 @@ export function OverviewBookingView() {
   };
 
   const filteredLicencas = licencas.filter((licenca) =>
-    licenca.nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    licenca.cliente.razaoSocial.toLowerCase().includes(searchQuery.toLowerCase())
+    (licenca.nome?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+    (licenca.cliente?.razaoSocial?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
+
+  console.log(filteredLicencas);
+  
 
   return (
     <DashboardContent maxWidth="xl">
