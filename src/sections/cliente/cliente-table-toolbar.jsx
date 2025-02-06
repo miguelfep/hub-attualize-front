@@ -17,10 +17,11 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 export function ClienteTableToolbar({ filters, onResetPage, tableData }) {
   const popover = usePopover();
 
-  const handleFilterName = useCallback(
+
+  const handleFilterSearch = useCallback(
     (event) => {
       onResetPage();
-      filters.setState({ razaoSocial: event.target.value });
+      filters.setState({ search: event.target.value }); // Usa um único estado para buscar em ambos os campos
     },
     [filters, onResetPage]
   );
@@ -58,8 +59,8 @@ export function ClienteTableToolbar({ filters, onResetPage, tableData }) {
         <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
           <TextField
             fullWidth
-            value={filters.state.nome}
-            onChange={handleFilterName}
+            value={filters.state.search}
+            onChange={handleFilterSearch}
             placeholder="Buscar..."
             InputProps={{
               startAdornment: (

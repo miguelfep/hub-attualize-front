@@ -74,7 +74,7 @@ export function ClienteListView() {
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const filters = useSetState({ name: '', status: 'all' });
+  const filters = useSetState({ razaoSocial: '', status: 'all' });
 
   const fetchClientes = useCallback(async () => {
     try {
@@ -99,7 +99,7 @@ export function ClienteListView() {
 
   const dataInPage = rowInPage(dataFiltered, table.page, table.rowsPerPage);
 
-  const canReset = !!filters.state.nome || filters.state.status !== 'todos';
+  const canReset = !!filters.state.razaoSocial || filters.state.status !== 'todos';
 
   const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
 
@@ -342,7 +342,7 @@ export function ClienteListView() {
 }
 
 function applyFilter({ inputData, comparator, filters }) {
-  const { nome, status } = filters;
+  const { search, status } = filters || {};
 
   // Ordenação estável
   const stabilizedThis = inputData.map((el, index) => [el, index]);
@@ -355,10 +355,13 @@ function applyFilter({ inputData, comparator, filters }) {
 
   inputData = stabilizedThis.map((el) => el[0]);
 
-  // Filtro por nome
-  if (nome) {
+  // Filtro por nome ou razão social
+  if (search) {
+    const searchLower = search.toLowerCase();
     inputData = inputData.filter(
-      (user) => user.nome.toLowerCase().indexOf(nome.toLowerCase()) !== -1
+      (user) =>
+        user.nome?.toLowerCase().includes(searchLower) ||
+        user.razaoSocial?.toLowerCase().includes(searchLower)
     );
   }
 
@@ -367,7 +370,6 @@ function applyFilter({ inputData, comparator, filters }) {
     if (status === 'lead') {
       inputData = inputData.filter((user) => user.tipoContato === 'lead');
     } else if (status === true) {
-      // Mostrar apenas Ativos que não são Leads
       inputData = inputData.filter(
         (user) => user.status === true && user.tipoContato !== 'lead'
       );
