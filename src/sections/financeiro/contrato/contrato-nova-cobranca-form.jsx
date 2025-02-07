@@ -128,7 +128,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
               multiline
               rows={4}
               label="Descrição"
-              disabled={!isAdmin || !!cobrancaAtual?.boleto}
+              disabled={!!cobrancaAtual?.boleto}
             />
           </Grid>
 
