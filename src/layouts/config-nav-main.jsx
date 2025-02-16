@@ -5,7 +5,12 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 export const navData = [
-  { title: 'Home', path: '/', icon: <Iconify width={22} icon="solar:home-2-bold-duotone" /> },
+  { title: 'Home', path: '/', icon: <Iconify width={22} icon="solar:home-2-bold-duotone" /> }, 
+  { 
+    title: 'Contabilidade Estética', 
+    path: paths.esteticaHome, 
+    icon: <Iconify width={22} icon="streamline:health-medical-syringe-instrument-medical-syringe-health-beauty-needle" /> // Ícone que remete à estética 
+  },
   {
     title: 'Quem somos',
     path: paths.about,

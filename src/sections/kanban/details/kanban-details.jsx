@@ -31,6 +31,7 @@ import { useDateRangePicker, CustomDateRangePicker } from 'src/components/custom
 import { KanbanDetailsToolbar } from './kanban-details-toolbar';
 import { KanbanInputName } from '../components/kanban-input-name';
 import { KanbanDetailsPriority } from './kanban-details-priority';
+import { KanbanOrcamentosInput } from './kanban-orcamentos-input';
 import { KanbanDetailsCommentInput } from './kanban-details-comment-input';
 import { KanbanContactsDialog } from '../components/kanban-contacts-dialog';
 
@@ -164,6 +165,8 @@ export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, o
       {[
         { value: 'geral', label: 'Dados' },
         { value: 'comentarios', label: `Comentarios (${task.comentarios.length})` },
+        { value: 'orcamentos', label: 'Orçamentos' },
+
       ].map((tab) => (
         <Tab key={tab.value} value={tab.value} label={tab.label} />
       ))}
@@ -308,7 +311,7 @@ export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, o
       onClose={onCloseDetails}
       anchor="right"
       slotProps={{ backdrop: { invisible: true } }}
-      PaperProps={{ sx: { width: { xs: 1, sm: 480 } } }}
+      PaperProps={{ sx: { width: { xs: 1, sm: 680 } } }}
     >
       {renderToolbar}
       {renderTabs}
@@ -316,6 +319,8 @@ export function KanbanDetails({ task, openDetails, onUpdateTask, onDeleteTask, o
         {tabs.value === 'geral' && renderTabOverview}
       </Scrollbar>
       {tabs.value === 'comentarios' && <KanbanDetailsCommentInput comentarios={task.comentarios} onAddComment={handleAddComment}  onDeleteComment={handleDeleteComment}/>}
+      {tabs.value === 'orcamentos' && <KanbanOrcamentosInput task={task} />}
+
       <Box sx={{ p: 2, textAlign: 'center' }}>
         <Button
           variant="contained"

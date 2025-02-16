@@ -57,7 +57,7 @@ import { ReceberTableFiltersResult } from './receber-table-filters-result';
 
 const TABLE_HEAD = [
   { id: 'cliente', label: 'Cliente' },
-  { id: 'valor', label: 'Valor do contrato' },
+  { id: 'valor', label: 'Valor da cobrança' },
   { id: 'vencimento', label: 'Vencimento' },
   { id: 'status', label: 'Status' },
   { id: 'emitido', label: 'Emitido' },
@@ -174,21 +174,23 @@ export function ReceberListView() {
       value: 'EMABERTO',
       label: 'Pendentes',
       color: 'warning',
-      count: tableData.filter((d) => d.status === 'EMABERTO').length,
+      count: tableData.filter((d) => ["EMABERTO", "A_RECEBER"].includes(d.status)).length,
     },
   ];
 
   const total = sumBy(tableData, (cobranca) => cobranca.valor);
+  
   const pagas = sumBy(
-    tableData.filter((d) => d.status === 'RECEBIDO'),
+    tableData.filter((d) => ["RECEBIDO", "PAGA"].includes(d.status)), 
     (cobranca) => cobranca.valor
   );
+
   const vencidas = sumBy(
     tableData.filter((d) => d.status === 'VENCIDO'),
     (cobranca) => cobranca.valor
   );
   const pendentes = sumBy(
-    tableData.filter((d) => d.status === 'EMABERTO'),
+    tableData.filter((d) => ["EMABERTO", "A_RECEBER"].includes(d.status)), // Filtra os dois status
     (cobranca) => cobranca.valor
   );
 

@@ -54,7 +54,7 @@ export async function registrarContaNoBancoInter(id) {
 }
 
 export async function listarBancos() {
-  const response = await axios.get('https://api.attualizecontabil.com.br/api/financeiro/bancos');
+  const response = await axios.get('http://localhost:9443/api/financeiro/bancos');
   return response.data;
 }
 
