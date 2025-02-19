@@ -1,24 +1,26 @@
+import { z } from 'zod';
 import React, { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, Controller, FormProvider } from 'react-hook-form';
+
 import {
   Box,
   Step,
   Stack,
+  Radio,
   Dialog,
   AppBar,
   Button,
   Toolbar,
   Stepper,
   StepLabel,
+  TextField,
   Typography,
   IconButton,
   RadioGroup,
   FormControlLabel,
-  Radio,
-  TextField,
 } from '@mui/material';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider, Controller } from 'react-hook-form';
-import { z } from 'zod';
+
 import { Iconify } from 'src/components/iconify';
 import { Field } from 'src/components/hook-form';
 import EstadoCidadeSelect from 'src/components/abertura/componente-estados-brasil';
