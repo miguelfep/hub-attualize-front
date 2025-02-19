@@ -1,6 +1,8 @@
 'use client';
 
-import { useForm } from 'react-hook-form';
+import InputMask from 'react-input-mask';
+import { NumericFormat } from 'react-number-format';
+import { useForm, Controller } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -86,7 +88,7 @@ export function AberturasListView() {
   const handleOpenModal = () => setOpenModal(true);
   const handleCloseModal = () => setOpenModal(false);
 
-  const { register, handleSubmit, reset, watch } = useForm();
+  const { register, handleSubmit, reset, watch, control } = useForm();
 
   const onSubmit = async (data) => {
     try {
@@ -363,13 +365,58 @@ export function AberturasListView() {
               {...register('email', { required: true })}
               margin="normal"
             />
-            <TextField
-              fullWidth
-              label="Telefone"
-              {...register('telefone', { required: true })}
-              margin="normal"
+            <Controller
+              name="telefone"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <InputMask
+                  mask="(99) 9 9999-9999"
+                  value={field.value}
+                  onChange={(e) => field.onChange(e.target.value)}
+                  onBlur={field.onBlur}
+                >
+                  {(inputProps) => (
+                    <TextField
+                      {...inputProps}
+                      label="Telefone"
+                      fullWidth
+                      margin="normal"
+                    />
+                  )}
+                </InputMask>
+              )}
             />
-            <TextField fullWidth label="CPF" {...register('cpf')} margin="normal" />
+            <Controller 
+              name="cpf"
+              control={control}
+              render= {({ field }) => (
+              <InputMask mask="999.999.999-99" fullWidth label="CPF" {... field}>
+                {(inputProps) => (<TextField {...inputProps} label="CPF" margin="normal"/>)}
+              </InputMask>
+            )}/>
+
+            <Controller
+              name="valorMensalidade"
+              control={control}
+              defaultValue=""
+              render={({ field }) => (
+                <NumericFormat
+                  {...field}
+                  customInput={TextField}
+                  label="Valor Mensalidade"
+                  thousandSeparator="."
+                  decimalSeparator=","
+                  prefix="R$ "
+                  decimalScale={2}
+                  fixedDecimalScale
+                  value={field.value}
+                  onValueChange={(values) => field.onChange(values.floatValue)}
+                  fullWidth
+                  margin="normal"
+                />
+              )}
+            />
             <FormControlLabel
               control={<Switch {...register('notificarWhats')} color="primary" />}
               label="Notificar pelo WhatsApp"
