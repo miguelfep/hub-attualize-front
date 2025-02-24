@@ -8,7 +8,7 @@ import { Field } from 'src/components/hook-form';
 // ----------------------------------------------------------------------
 
 export function InvoiceNewEditStatusDate() {
-  const { watch, setValue } = useFormContext();
+  const { watch } = useFormContext();
 
   const values = watch();
 

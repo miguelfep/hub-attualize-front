@@ -105,7 +105,6 @@ export function InvoiceNewEditForm({ currentInvoice }) {
     try {
       loadingSave.onTrue();
       const res = await updateInvoice(currentInvoice._id, data);
-      console.log('Retorno do await' ,res);
       reset();
       loadingSave.onFalse();
       router.push(paths.dashboard.invoice.root);
