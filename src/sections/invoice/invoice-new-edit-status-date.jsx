@@ -8,7 +8,7 @@ import { Field } from 'src/components/hook-form';
 // ----------------------------------------------------------------------
 
 export function InvoiceNewEditStatusDate() {
-  const { watch } = useFormContext();
+  const { watch, setValue } = useFormContext();
 
   const values = watch();
 
@@ -18,6 +18,7 @@ export function InvoiceNewEditStatusDate() {
     { value: 'perdida', label: 'Perdida' },
     { value: 'orcamento', label: 'Orçamento' },
   ];
+
 
   return (
     <Stack
@@ -33,8 +34,8 @@ export function InvoiceNewEditStatusDate() {
         ))}
       </Field.Select>
 
-      <Field.DatePicker name="createdDate" label="Data Criação" />
-      <Field.DatePicker name="dataVencimento" label="Vencimento" />
+      <Field.DatePicker name="createdDate" label="Data Criação" disabled/>  
+      <Field.DatePicker name="dataVencimento" label="Vencimento"/>
     </Stack>
   );
 }

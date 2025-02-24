@@ -59,7 +59,7 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
           />
         </TableCell>
 
-        <TableCell>
+        <TableCell onClick={onViewRow} sx={{ cursor: 'pointer' }}>
           <Stack spacing={2} direction="row" alignItems="center">
             <Avatar alt={row.cliente.nome}>{row.cliente.nome.charAt(0).toUpperCase()}</Avatar>
             <ListItemText
@@ -70,12 +70,7 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
                 </Typography>
               }
               secondary={
-                <Link
-                  noWrap
-                  variant="body2"
-                  onClick={onViewRow}
-                  sx={{ color: 'text.disabled', cursor: 'pointer' }}
-                >
+                <Link noWrap variant="body2"  sx={{ color: 'text.disabled' }}>
                   {row.invoiceNumber}
                 </Link>
               }
@@ -83,7 +78,7 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
           </Stack>
         </TableCell>
 
-        <TableCell>
+        <TableCell onClick={onViewRow} sx={{ cursor: 'pointer' }}>
           <ListItemText
             primary={fDate(row.dataVencimento)}
             primaryTypographyProps={{ typography: 'body2', noWrap: true }}
@@ -91,10 +86,14 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
           />
         </TableCell>
 
-        <TableCell>{fCurrency(row.total)}</TableCell>
-        <TableCell>{fCurrency(row.desconto)}</TableCell>
+        <TableCell onClick={onViewRow} sx={{ cursor: 'pointer' }}>
+          {fCurrency(row.total)}
+        </TableCell>
+        <TableCell onClick={onViewRow} sx={{ cursor: 'pointer' }}>
+          {fCurrency(row.desconto)}
+        </TableCell>
 
-        <TableCell>
+        <TableCell onClick={onViewRow} sx={{ cursor: 'pointer' }}>
           <Label
             variant="soft"
             color={
