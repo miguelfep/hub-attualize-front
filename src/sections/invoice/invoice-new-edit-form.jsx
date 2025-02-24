@@ -26,7 +26,6 @@ import { InvoiceNewEditAddress } from './invoice-new-edit-address';
 import { InvoiceNewEditPayment } from './invoice-new-edit-payment';
 import { InvoiceNewEditStatusDate } from './invoice-new-edit-status-date';
 
-
 export const NewInvoiceSchema = zod
   .object({
     cliente: zod.custom().refine((data) => data !== null, { message: 'Cliente é obrigatório!' }),
@@ -59,25 +58,22 @@ export const NewInvoiceSchema = zod
 
 export function InvoiceNewEditForm({ currentInvoice }) {
   const router = useRouter();
-
-  const user = getUser()
- 
+  const user = getUser();
   const loadingSave = useBoolean();
 
-  const loadingSend = useBoolean();
-
+  const loadingSend = useBoolean(); 
 
   const defaultValues = useMemo(
     () => ({
-      createdDate: currentInvoice?.createdDate || today(),
+      createdDate: currentInvoice?.createdAt ?? today(),
       dataVencimento: currentInvoice?.dataVencimento || today(),
       status: currentInvoice?.status || 'orcamento',
       desconto: currentInvoice?.desconto || 0,
       totalAmount: currentInvoice?.total || 0,
-      cliente: currentInvoice?.cliente || null,    
+      cliente: currentInvoice?.cliente || null,
       motivoPerda: currentInvoice?.motivoPerda || " ",
       items: currentInvoice?.items || [
-        {
+      {
           titulo: '',
           descricao: '',
           servico: '',
@@ -121,7 +117,7 @@ export function InvoiceNewEditForm({ currentInvoice }) {
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
 
-    const dataToSend = {...data,   proprietarioVenda: user.name }
+    const dataToSend = {...data, proprietarioVenda: user.name };
     try {
       const response = await createInvoice(dataToSend);
       if (response.status === 201) {
@@ -161,15 +157,17 @@ export function InvoiceNewEditForm({ currentInvoice }) {
           Salvar
         </LoadingButton>
 
-        <LoadingButton
-          size="large"
-          variant="contained"
-          loading={loadingSend.value && isSubmitting}
-          onClick={handleCreateAndSend}
-        >
-          {currentInvoice ? 'Duplicar' : 'Criar'}
-        </LoadingButton>
+        {!currentInvoice && (
+          <LoadingButton
+            size="large"
+            variant="contained"
+            loading={loadingSend.value && isSubmitting}
+            onClick={handleCreateAndSend}
+          >
+            Criar
+          </LoadingButton>
+        )}
       </Stack>
     </Form>
   );
-}
+} 

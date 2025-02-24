@@ -19,6 +19,7 @@ export function InvoiceNewEditStatusDate() {
     { value: 'orcamento', label: 'Orçamento' },
   ];
 
+
   return (
     <Stack
       spacing={2}
@@ -33,8 +34,8 @@ export function InvoiceNewEditStatusDate() {
         ))}
       </Field.Select>
 
-      <Field.DatePicker name="createdDate" label="Data Criação" />
-      <Field.DatePicker name="dataVencimento" label="Vencimento" />
+      <Field.DatePicker name="createdDate" label="Data Criação" disabled/>  
+      <Field.DatePicker name="dataVencimento" label="Vencimento"/>
     </Stack>
   );
 }
