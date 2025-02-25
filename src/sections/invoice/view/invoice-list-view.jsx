@@ -11,8 +11,8 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import { IconButton } from '@mui/material';
 import Divider from '@mui/material/Divider';
+import { IconButton }  from '@mui/material';
 import TableBody from '@mui/material/TableBody';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
@@ -202,20 +202,15 @@ export function InvoiceListView() {
     [dataInPage.length, table, fetchInvoices]
   );
 
+  const handleEditRow = (id) => {
+    const url = paths.dashboard.invoice.edit(id);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
 
-  const handleEditRow = useCallback(
-    (id) => {
-      router.push(paths.dashboard.invoice.edit(id));
-    },
-    [router]
-  );
-
-  const handleViewRow = useCallback(
-    (id) => {
-      router.push(paths.dashboard.invoice.details(id));
-    },
-    [router]
-  );
+  const handleViewRow = (id) => {
+    const url = paths.dashboard.invoice.details(id);
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleFilterStatus = useCallback(
     (event, newValue) => {
