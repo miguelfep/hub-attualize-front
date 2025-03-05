@@ -15,7 +15,7 @@ import { varFade, AnimateText, MotionContainer, animateTextClasses } from 'src/c
 const CONTACTS = [
   {
     country: 'Curitiba',
-    address: 'R. Dias da Rocha Filho, 670 - Alto da XV, Curitiba - PR, 80045-275',
+    address: 'Avenida Sen. Salgado Filho, 1847 - Prado Velho, Curitiba - PR, 81510-001',
     phoneNumber: '(41) 3068-1800',
   },
 ];

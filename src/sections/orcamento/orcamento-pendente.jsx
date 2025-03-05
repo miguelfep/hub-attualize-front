@@ -55,7 +55,7 @@ export function OrcamentoPendente({ invoice }) {
             </Typography>
             Attualize Contabil LTDA
             <br />
-            Rua Dias Da Rocha Filho 640 - Alto da XV
+            Avenida Senador Salgado Filho 1847 - Prado Velho
             <br />
             Curitiba - PR
             <br />

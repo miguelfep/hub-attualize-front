@@ -107,7 +107,7 @@ export function InvoicePDF({ invoice, currentStatus }) {
       <View style={{ width: '50%' }}>
         <Text style={[styles.subtitle2, styles.mb4]}>Contratado</Text>
         <Text style={styles.body2}>Attualize Contabil LTDA</Text>
-        <Text style={styles.body2}>Rua dias da rocha Filho 640</Text>
+        <Text style={styles.body2}>Avenida Sen. Salgado Filho 1847</Text>
         <Text style={styles.body2}>Curitiba - PR</Text>
         <Link src="https://wa.me/554130681800" style={styles.body2}>
           (41) 3068-1800 (WhatsApp)
