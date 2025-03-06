@@ -77,7 +77,7 @@ export function ContratoNewEditAddress() {
           <Stack spacing={1}>
             <Typography variant="subtitle2">Attualize Contabil LTDA</Typography>
             <Typography variant="body2">Avenida Senador Salgado Filho 1847</Typography>
-            <Typography variant="body2">41 99698-2267</Typography>
+            <Typography variant="body2">41 9 9698-2267</Typography>
           </Stack>
         </Stack>
 

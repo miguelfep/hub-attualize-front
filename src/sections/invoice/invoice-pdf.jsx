@@ -95,7 +95,7 @@ export function InvoicePDF({ invoice, currentStatus }) {
       </View>
       <View style={{ width: '25%', textAlign: 'right' }}>
         <Text style={styles.subtitle2}>Alguma duvida?</Text>
-        <Link src="https://wa.me/554196982267" style={styles.body2}>
+        <Link src="https://wa.me/5541996982267" style={styles.body2}>
           (41) 99698-2267 (WhatsApp)
         </Link>
       </View>
@@ -109,8 +109,8 @@ export function InvoicePDF({ invoice, currentStatus }) {
         <Text style={styles.body2}>Attualize Contabil LTDA</Text>
         <Text style={styles.body2}>Avenida Sen. Salgado Filho 1847</Text>
         <Text style={styles.body2}>Curitiba - PR</Text>
-        <Link src="https://wa.me/554130681800" style={styles.body2}>
-          (41) 3068-1800 (WhatsApp)
+        <Link src="https://wa.me/5541996982267" style={styles.body2}>
+          (41) 9 9698-2267 (WhatsApp)
         </Link>
       </View>
 

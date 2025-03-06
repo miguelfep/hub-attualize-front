@@ -104,8 +104,8 @@ export const _notifications = [...Array(9)].map((_, index) => ({
 export const _mapContact = [
   {
     latlng: [-49.24942, -25.4259292],
-    address: 'Avenida Senador Salgado Filho 1847, Prado Velho',
-    phoneNumber: '41 3068-1800',
+    address: 'Avenida Senador Salgado Filho 1847, Guabirotuba',
+    phoneNumber: '41 9 9698-2267',
   },
 ];
 

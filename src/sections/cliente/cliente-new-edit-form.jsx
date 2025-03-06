@@ -107,7 +107,7 @@ export const NewUClienteSchema = zod.object({
   status: zod.boolean().optional(),
   tipoContato: zod.enum(['cliente', 'lead']).optional(),
   tipoNegocio: zod.array(zod.string()).optional(),
-  contadorResponsavel: zod.enum(['geremias', 'semresponsavel', 'anne']).optional(),
+  contadorResponsavel: zod.enum(['semresponsavel', 'anne']).optional(),
   endereco: zod
     .array(
       zod.object({
@@ -501,7 +501,7 @@ export function ClienteNewEditForm({ currentCliente }) {
                 </Grid>
                 <Grid xs={12} sm={12}>
                   <Field.Select name="contadorResponsavel" label="Contador Responsável" fullWidth>
-                    {['anne', 'geremias', 'semresponsavel'].map((option) => (
+                    {['anne', 'semresponsavel'].map((option) => (
                       <MenuItem key={option} value={option}>
                         {option}
                       </MenuItem>

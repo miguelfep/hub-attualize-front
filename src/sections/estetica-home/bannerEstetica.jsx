@@ -15,7 +15,7 @@ export function BannerEstetica() {
 
   const handleTrocarContador = async () => {
     try {
-      const whatsappUrl = `https://wa.me/554196982267?text=Olá,%20e%20tenho%20interesse%20em%20trocar%20minha%20contabilidade!`;
+      const whatsappUrl = `https://wa.me/5541996982267?text=Olá,%20e%20tenho%20interesse%20em%20trocar%20minha%20contabilidade!`;
       window.location.href = whatsappUrl;
     } catch (error) {
       console.error('Erro ao enviar os dados:', error);

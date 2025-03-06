@@ -167,7 +167,7 @@ export function LegalizarClinicaEsteticaStepper() {
   const handleSubmit = async () => {
     try {
       // await axios.post('/api/enviar-dados', formData);
-      const whatsappUrl = `https://wa.me/554130681800?text=Olá,%20meu%20nome%20é%20${encodeURIComponent(
+      const whatsappUrl = `https://wa.me/5541996982267?text=Olá,%20meu%20nome%20é%20${encodeURIComponent(
         formData.nome
       )},%20e%20tenho%20interesse%20em%20regularizar%20minha%20clínica%20de%20estética!`;
       window.location.href = whatsappUrl;

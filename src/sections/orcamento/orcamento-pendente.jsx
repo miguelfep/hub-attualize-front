@@ -55,11 +55,11 @@ export function OrcamentoPendente({ invoice }) {
             </Typography>
             Attualize Contabil LTDA
             <br />
-            Avenida Senador Salgado Filho 1847 - Prado Velho
+            Avenida Senador Salgado Filho 1847 - Guabirotuba
             <br />
             Curitiba - PR
             <br />
-            Telefone: (41) 3068-1800
+            Telefone: (41) 9 9698-2267
           </Stack>
         </Grid>
         <Grid item xs={12} sm={6} md={4}>

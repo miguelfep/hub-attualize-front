@@ -15,8 +15,8 @@ import { varFade, AnimateText, MotionContainer, animateTextClasses } from 'src/c
 const CONTACTS = [
   {
     country: 'Curitiba',
-    address: 'Avenida Sen. Salgado Filho, 1847 - Prado Velho, Curitiba - PR, 81510-001',
-    phoneNumber: '(41) 3068-1800',
+    address: 'Avenida Sen. Salgado Filho, 1847 - Guabirotuba, Curitiba - PR, 81510-001',
+    phoneNumber: '(41) 9 9698-2267',
   },
 ];
 
