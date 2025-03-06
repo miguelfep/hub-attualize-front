@@ -35,16 +35,6 @@ const teamMembers = [
     avatarUrl: '/assets/images/about/miguel.jpg',
     socials: [{ name: 'youtube', url: 'https://www.youtube.com/c/AttualizeCont%C3%A1bil' }],
   },
-  {
-    id: 3,
-    name: 'Geremias',
-    role: 'Head de operação',
-    avatarUrl: '/assets/images/about/geremias-head.webp',
-    socials: [
-      { name: 'instagram', url: 'https://instagram.com/bobjohnson' },
-      { name: 'youtube', url: 'https://www.youtube.com/c/AttualizeCont%C3%A1bil' },
-    ],
-  },
 ];
 
 export function AboutTeam() {

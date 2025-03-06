@@ -213,7 +213,7 @@ export function OrcamentoView({ invoice }) {
               variant="contained"
               color="success"
               startIcon={<Iconify width={16} icon="mdi:whatsapp" />}
-              onClick={() => window.open('https://wa.me/554130681800', '_blank')}
+              onClick={() => window.open('https://wa.me/5541996982267', '_blank')}
             >
               Fale com nosso time
             </Button>
