@@ -1,39 +1,27 @@
 'use client';
 
 import { toast } from 'sonner';
-import { useState } from 'react';
-import { useFormContext } from 'react-hook-form';
+import  InputMask  from 'react-input-mask';
 import { NumericFormat } from 'react-number-format';
+import { control, Controller, useFormContext }from 'react-hook-form';
 
 import { Card, Button, Switch, TextField, CardContent, CardActions, FormControlLabel } from '@mui/material';
 
 import { updateAbertura, enviarLinkAbertura } from 'src/actions/societario';
 
 export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvanceStatus }) {
-  const { register, handleSubmit, setValue, watch } = useFormContext();
-  const [valorMensalidade, setValorMensalidade] = useState(
-    currentAbertura.valorMensalidade || '' // Valor inicial formatado
-  );
-
-  // Lidar com a alteração do valorMensalidade
-  const handleValueChange = (values) => {
-    setValorMensalidade(values.formattedValue); // Formato para exibição (R$ 25.000,00)
-    setValue('valorMensalidade', values.formattedValue); // Atualiza no estado do formulário
-  };
+  const { register, handleSubmit, getValues } = useFormContext({});
 
   // Função para lidar com o envio do formulário
   const onSave = async (data) => {
     try {
       // Adiciona o ID da abertura no payload
+      const editedData = getValues();
       const preparedData = {
-        ...currentAbertura,
-        valorMensalidade, // Garante que o valor é enviado formatado
+        ...editedData,
         aberturaId: currentAbertura._id,
       };
-
-      console.log(data);
-      
-
+    
       // Envia os dados para o backend
       const res = await updateAbertura(currentAbertura._id, preparedData);
       if (res.status === 200) {
@@ -84,26 +72,49 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
             margin="normal"
           />
 
-          <TextField
-            fullWidth
-            label="Telefone"
-            defaultValue={currentAbertura.telefone || ''}
-            {...register('telefone', { required: true })}
-            margin="normal"
+         <Controller
+          name="telefone"
+          control={control}
+          defaultValue={currentAbertura.telefone || ''}
+          render={({ field }) => (
+            <InputMask
+              mask="(99) 9 9999-9999"
+              value={field.value}
+              onChange={(e) => field.onChange(e.target.value)}
+              onBlur={field.onBlur}
+            >
+              {(inputProps) => (
+                <TextField
+                  {...inputProps}
+                  label="Telefone"
+                  fullWidth
+                  margin="normal"
+                />
+              )}
+            </InputMask>
+          )}
           />
 
-          <NumericFormat
-            fullWidth
-            label="Valor Mensalidade"
-            customInput={TextField}
-            value={valorMensalidade}
-            thousandSeparator="."
-            decimalSeparator=","
-            prefix="R$ "
-            decimalScale={2}
-            fixedDecimalScale
-            onValueChange={handleValueChange}
-            margin="normal"
+          <Controller
+            name="valorMensalidade"
+            control={control}
+            defaultValue={currentAbertura.valorMensalidade || ''}
+            render={({ field }) => (
+              <NumericFormat
+                {...field}
+                customInput={TextField}
+                label="Valor Mensalidade"
+                thousandSeparator="."
+                decimalSeparator=","
+                prefix="R$ "
+                decimalScale={2}
+                fixedDecimalScale
+                value={field.value}
+                onValueChange={(values) => field.onChange(values.floatValue)}
+                fullWidth
+                margin="normal"
+              />
+            )}
           />
 
           <FormControlLabel
