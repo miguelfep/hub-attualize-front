@@ -1,15 +1,13 @@
 'use client';
 
 import * as z from 'zod';
-import { useState, useEffect } from 'react';
 import InputMask from 'react-input-mask';
+import { useState, useEffect } from 'react';
 import { NumericFormat } from 'react-number-format';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { openMEI, getAllCnaes } from 'src/actions/parceiroId';
 
 import {
-  Autocomplete,
   Box,
   Step,
   Grid,
@@ -26,14 +24,15 @@ import {
   Typography,
   IconButton,
   CardContent,
+  Autocomplete,
   CircularProgress,
   FormControlLabel,
 } from '@mui/material';
 
 import { buscarCep } from 'src/actions/cep';
+import { openMEI, getAllCnaes } from 'src/actions/parceiroId';
 
 import { Iconify } from '../iconify';
-import { toast } from 'sonner';
 
 const atuacoesOptions = [
   { id: 0, label: 'Estabelecimento Fixo' },

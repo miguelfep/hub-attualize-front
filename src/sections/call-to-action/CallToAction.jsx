@@ -73,10 +73,7 @@ export function CallToAction({ pageSource }) {
               borderRadius: 2,
             }}
           >
-            <IconButton
-              onClick={handleClose}
-              sx={{ position: 'absolute', top: 8, right: 8 }}
-            >
+            <IconButton onClick={handleClose} sx={{ position: 'absolute', top: 8, right: 8 }}>
               <Icon icon="mdi:close" width={24} height={24} />
             </IconButton>
 
@@ -108,11 +105,7 @@ export function CallToAction({ pageSource }) {
                     type="tel"
                     fullWidth
                   />
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={handleSubmit}
-                  >
+                  <Button variant="contained" color="primary" onClick={handleSubmit}>
                     Enviar
                   </Button>
                 </Stack>
