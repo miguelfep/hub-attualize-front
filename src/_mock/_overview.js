@@ -345,31 +345,42 @@ export const _coursesReminder = [...Array(4)].map((_, index) => ({
   currentLesson: index + 7,
 }));
 
-
 // COMPANY LICENSES
 // ----------------------------------------------------------------------
 
 export const _companyLicenses = [...Array(5)].map((_, index) => {
-  const licenseTypes = ['Alvará de Funcionamento', 'Licença Sanitária', 'Certificado de Inspeção', 'Licença Ambiental', 'Certificado de Segurança'];
-  const clientNames = ['Empresa ABC', 'Comércio XYZ', 'Indústria LMN', 'Serviços QRS', 'Instituição TUV'];
+  const licenseTypes = [
+    'Alvará de Funcionamento',
+    'Licença Sanitária',
+    'Certificado de Inspeção',
+    'Licença Ambiental',
+    'Certificado de Segurança',
+  ];
+  const clientNames = [
+    'Empresa ABC',
+    'Comércio XYZ',
+    'Indústria LMN',
+    'Serviços QRS',
+    'Instituição TUV',
+  ];
   const states = ['SP', 'RJ', 'MG', 'RS', 'PR', 'SC', 'BA', 'PE', 'CE', 'DF']; // Exemplo com estados brasileiros
   const status = ['Válida', 'Válida', 'A Vencer', 'A Vencer', 'Vencida'][index];
 
   // Função para gerar telefone brasileiro no formato (XX) XXXXX-XXXX
   const generateBrazilianPhoneNumber = (indexa) => {
     const areaCode = (11 + indexa).toString().padStart(2, '0'); // Gera código de área de 11 a 19
-    const phoneNumber = `${`9${_mock.number.nativeL(indexa)}`.slice(0, 4)  }-${  `${_mock.number.nativeL(indexa)}`.slice(0, 4)}`;
+    const phoneNumber = `${`9${_mock.number.nativeL(indexa)}`.slice(0, 4)}-${`${_mock.number.nativeL(indexa)}`.slice(0, 4)}`;
     return `(${areaCode}) ${phoneNumber}`;
   };
 
   return {
     id: _mock.id(index),
-    licenseName: licenseTypes[index % licenseTypes.length],  // Nome da licença
-    clientName: clientNames[index % clientNames.length],     // Nome do cliente
-    phoneNumber: generateBrazilianPhoneNumber(index),        // Telefone no formato brasileiro
-    state: states[index % states.length],                    // Estado brasileiro
+    licenseName: licenseTypes[index % licenseTypes.length], // Nome da licença
+    clientName: clientNames[index % clientNames.length], // Nome do cliente
+    phoneNumber: generateBrazilianPhoneNumber(index), // Telefone no formato brasileiro
+    state: states[index % states.length], // Estado brasileiro
     startDate: _mock.time(index),
-    status,                            
-    expirationDate: _mock.time(index + 1),                   // Data de vencimento da licença
+    status,
+    expirationDate: _mock.time(index + 1), // Data de vencimento da licença
   };
 });

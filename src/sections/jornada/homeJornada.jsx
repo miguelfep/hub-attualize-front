@@ -13,6 +13,7 @@ export function HomeJornada() {
 
   return (
     <>
+      {/* Barra de progresso de rolagem */}
       <ScrollProgress
         variant="linear"
         progress={pageProgress.scrollYProgress}
@@ -21,18 +22,26 @@ export function HomeJornada() {
 
       <BackToTop />
 
+      {/* Banner Principal */}
       <Stack sx={{ position: 'relative' }}>
         <BannerJornada
           title="Defina + Attualize"
           subtitle="Descubra como podemos transformar seu negócio"
           backgroundImage="/assets/background/background-defina.jpg"
+          logoAttualize="/logo/hub-tt.png"
+          logoDefina="/logo/logo_defina_alta-01.png"
         />
       </Stack>
 
-      <LeadCapture />
+      {/* Section - Pegar Meu Presente */}
+      <section id="presente" >
+          <LeadCapture />
+      </section>
 
-      {/* Aqui removemos o bgcolor para definir no próprio MeiStepper */}
-      <MeiStepper />
+      {/* Section - Abrir Meu MEI */}
+      <section id="abrir-mei" >
+          <MeiStepper />
+      </section>
 
       <Stack sx={{ position: 'relative' }} />
     </>
