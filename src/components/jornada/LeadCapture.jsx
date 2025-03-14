@@ -22,7 +22,7 @@ export function LeadCapture() {
     setLoading(true);
 
     try {
-      const response = await fetch('http://localhost:9443/api/marketing/criar/lead/defina', {
+      const response = await fetch('https://api.attualizecontabil.com.br/api/marketing/criar/lead/defina', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
