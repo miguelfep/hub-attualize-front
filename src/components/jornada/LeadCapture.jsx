@@ -47,9 +47,8 @@ export function LeadCapture() {
         </Typography>
         <Typography variant="body1" sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 4 }}>
           A <strong>Attualize Contábil</strong> e a <strong>Defina Estética</strong> se uniram para
-          apoiar você no caminho do sucesso! Como participante dos eventos da Defina Estética, você
-          pode receber materiais **exclusivos** que irão te ajudar na abertura da sua empresa ou
-          MEI.
+          apoiar você no caminho do sucesso! Como participante da jornada seu espaço em dia com a vigilância, 
+          você vai receber materiais <strong>EXCLUSIVOS</strong> que irão te ajudar nas burocracias contábeis e tributárias do seu espaço.
         </Typography>
         <Typography
           variant="body1"
