@@ -16,13 +16,14 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
       sx={{
         position: 'relative',
         width: '100%',
-        height: { xs: 300, md: 500 },
+        height: { xs: 400, md: 500 }, // Banner maior para impacto
         backgroundImage: `url(${backgroundImage})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',
         alignItems: 'center',
-        textAlign: 'right',
+        justifyContent: 'center',
+        textAlign: 'center',
         color: 'common.white',
         '&::before': {
           content: '""',
@@ -31,20 +32,32 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backgroundColor: 'rgba(0, 0, 0, 0.5)', // Overlay mais sutil
         },
       }}
     >
       <Container sx={{ position: 'relative', zIndex: 2 }}>
-        <Grid container alignItems="center">
-          {/* Logos */}
-          <Grid item xs={12} md={6} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Image src={logoAttualize} alt="Logo Attualize" width={90} height={60} />
-            <Image src={logoDefina} alt="Logo Defina" width={120} height={60} />
+        <Grid container spacing={2} justifyContent="center" alignItems="center">
+          {/* Logos centralizadas */}
+          <Grid item xs={12} sx={{ textAlign: 'center', mb: 3 }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 4,
+              }}
+            >
+              <Image src={logoAttualize} alt="Logo Attualize" width={110} height={60} />
+              <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                +
+              </Typography>
+              <Image src={logoDefina} alt="Logo Defina" width={140} height={70} />
+            </Box>
           </Grid>
-          
-          {/* Texto e Botões */}
-          <Grid item xs={12} md={6} sx={{ textAlign: 'right' }}>
+
+          {/* Texto principal */}
+          <Grid item xs={12}>
             <Typography variant="h2" sx={{ fontWeight: 700 }}>
               {title}
             </Typography>
@@ -53,11 +66,17 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
                 {subtitle}
               </Typography>
             )}
-            
-            {/* Botões */}
-            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-              <Button variant="contained" color="primary" onClick={() => scrollToSection('presente')}>Pegar Meu Presente</Button>
-              <Button variant="contained" color="secondary" onClick={() => scrollToSection('abrir-mei')}>Abrir Meu MEI</Button>
+          </Grid>
+
+          {/* Botões de ação */}
+          <Grid item xs={12} sx={{ mt: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
+              <Button variant="contained" color="primary" size="large" onClick={() => scrollToSection('presente')}>
+                Pegar Meu Presente
+              </Button>
+              <Button variant="outlined" color="secondary" size="large" onClick={() => scrollToSection('abrir-mei')}>
+                Abrir Meu MEI
+              </Button>
             </Box>
           </Grid>
         </Grid>

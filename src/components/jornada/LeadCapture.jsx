@@ -1,13 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-
 import { Box, Button, TextField, Container, Typography, CircularProgress } from '@mui/material';
 
 export function LeadCapture() {
   const [leadCaptured, setLeadCaptured] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ name: '', email: '', phone: '' });
+  const [formData, setFormData] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
+    origem: 'defina', // 🔹 Adiciona origem fixa "defina"
+  });
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -18,21 +22,19 @@ export function LeadCapture() {
     setLoading(true);
 
     try {
-      // // Enviar os dados para a API
-      // const response = await fetch('/api/capturar-lead', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData),
-      // });
+      const response = await fetch('http://localhost:9443/api/marketing/criar/lead/defina', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
 
-      // if (!response.ok) {
-      //   throw new Error('Erro ao enviar os dados. Tente novamente.');
-      // }
+      if (!response.ok) {
+        throw new Error('Erro ao enviar os dados. Tente novamente.');
+      }
 
-      // Após sucesso, exibe a mensagem e oculta o formulário
       setLeadCaptured(true);
     } catch (error) {
-      console.error(error);
+      console.error('Erro ao criar lead:', error);
       alert('Houve um problema ao processar seu pedido. Tente novamente.');
     } finally {
       setLoading(false);
@@ -47,7 +49,7 @@ export function LeadCapture() {
         </Typography>
         <Typography variant="body1" sx={{ textAlign: 'center', maxWidth: 800, mx: 'auto', mb: 4 }}>
           A <strong>Attualize Contábil</strong> e a <strong>Defina Estética</strong> se uniram para
-          apoiar você no caminho do sucesso! Como participante da jornada seu espaço em dia com a vigilância, 
+          apoiar você no caminho do sucesso! Como participante da jornada Seu Espaço em Dia com a Vigilância, 
           você vai receber materiais <strong>EXCLUSIVOS</strong> que irão te ajudar nas burocracias contábeis e tributárias do seu espaço.
         </Typography>
         <Typography
@@ -58,7 +60,6 @@ export function LeadCapture() {
         </Typography>
 
         {!leadCaptured ? (
-          // Formulário para capturar leads
           <Box
             component="form"
             onSubmit={handleSubmit}
@@ -66,11 +67,11 @@ export function LeadCapture() {
           >
             <TextField
               fullWidth
-              name="name"
+              name="nome"
               label="Nome"
               variant="outlined"
               required
-              value={formData.name}
+              value={formData.nome}
               onChange={handleInputChange}
               sx={{ mb: 2 }}
             />
@@ -87,11 +88,11 @@ export function LeadCapture() {
             />
             <TextField
               fullWidth
-              name="phone"
+              name="telefone"
               label="WhatsApp"
               variant="outlined"
               required
-              value={formData.phone}
+              value={formData.telefone}
               onChange={handleInputChange}
               sx={{ mb: 3 }}
             />
@@ -104,7 +105,6 @@ export function LeadCapture() {
             </Button>
           </Box>
         ) : (
-          // Mensagem de confirmação após envio
           <Box sx={{ textAlign: 'center', mt: 4 }}>
             <Typography variant="h5" sx={{ fontWeight: 600, mb: 2, color: 'green' }}>
               🎉 Presentes enviados com sucesso!
