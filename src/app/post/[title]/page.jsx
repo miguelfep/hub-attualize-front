@@ -62,7 +62,7 @@ export { dynamic };
 export async function generateStaticParams() {
   if (CONFIG.isStaticExport) {
     const res = await axios.get('https://attualizecontabil.com.br/wp-json/wp/v2/posts');
-    return res.data.map((post) => ({ title: post.slug }));  // Usa o slug para gerar os caminhos estáticos
+    return res.data.map((post) => ({ title: post.slug })); // Usa o slug para gerar os caminhos estáticos
   }
   return [];
 }

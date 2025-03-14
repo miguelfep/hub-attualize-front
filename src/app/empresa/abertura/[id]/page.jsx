@@ -10,8 +10,7 @@ export const metadata = { title: `Abertura de empresa - ${CONFIG.site.name}` };
 export default async function Page({ params }) {
   const { id } = params;
 
-  const currentAbertura = await  getAberturaById(id);
- 
+  const currentAbertura = await getAberturaById(id);
 
   if (!currentAbertura.data) {
     throw new Error('Abertura Não encontrada');

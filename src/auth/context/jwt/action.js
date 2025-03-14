@@ -55,7 +55,6 @@ export const signUp = async ({ email, password, firstName, lastName }) => {
 
     sessionStorage.setItem(STORAGE_KEY, accessToken);
     Cookies.set('accessToken', accessToken, { expires: 7 });
-
   } catch (error) {
     console.error('Error during sign up:', error);
     throw error;

@@ -52,7 +52,6 @@ export default function EstadoCidadeSelect() {
       if (estadoSelecionado) {
         try {
           const cidadesData = await cities.getCitiesByState(estadoSelecionado);
-          console.log('Cidades retornadas:', cidadesData);
 
           // Verifique se cidadesData é um array
           if (Array.isArray(cidadesData)) {

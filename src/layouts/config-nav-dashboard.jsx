@@ -47,7 +47,7 @@ export const navData = [
     subheader: 'Geral',
     items: [
       { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
-      
+
       { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
       {
         title: 'Comercial',
@@ -65,7 +65,7 @@ export const navData = [
             roles: ['admin', 'financeiro', 'comercial'],
             path: paths.dashboard.invoice.root,
           },
-           ],
+        ],
       },
       {
         title: 'Financeiro',
@@ -118,10 +118,9 @@ export const navData = [
             title: 'Comercial',
             roles: ['admin'],
             path: paths.dashboard.relatorios.comercial,
-          },          
+          },
         ],
       },
-    
     ],
   },
 ];

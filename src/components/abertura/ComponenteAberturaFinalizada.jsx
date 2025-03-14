@@ -76,8 +76,7 @@ const ComponenteAberturaFinalizada = ({ formData }) => {
               - Converse com nosso time.
               <br />
               - Consulte serviços de abertura de conta bancária PJ.
-              <br />
-              - Explore as melhores práticas de gestão de negócios.
+              <br />- Explore as melhores práticas de gestão de negócios.
             </Typography>
           </CardContent>
         </Card>

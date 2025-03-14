@@ -49,10 +49,7 @@ export default async function RootLayout({ children }) {
     <html lang={lang ?? 'en'} suppressHydrationWarning>
       <head>
         {/* Google Analytics */}
-        <script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-L5BFBLV0Z4"
-        />
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-L5BFBLV0Z4" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -62,7 +59,7 @@ export default async function RootLayout({ children }) {
               gtag('config', 'G-L5BFBLV0Z4');
             `,
           }}
-        />    
+        />
       </head>
       <body>
         {getInitColorSchemeScript}

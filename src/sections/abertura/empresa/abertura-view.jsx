@@ -21,8 +21,6 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
   const [formData, setFormData] = useState(getInitialFormData(aberturaData));
   const [loadingApproval, setLoadingApproval] = useState(false);
 
-  
-
   useEffect(() => {
     if (aberturaData) {
       setFormData((prev) => ({ ...prev, ...aberturaData }));
@@ -85,12 +83,21 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
           <AddressForm formData={formData} setFormData={setFormData} />
           <SociosForm formData={formData} setFormData={setFormData} />
           <OthersInfo formData={formData} setFormData={setFormData} />
-          <DocumentsManager formData={formData} setFormData={setFormData} aberturaId={aberturaData._id} />
+          <DocumentsManager
+            formData={formData}
+            setFormData={setFormData}
+            aberturaId={aberturaData._id}
+          />
           <Box display="flex" justifyContent="space-between" mt={3}>
             <Button variant="contained" color="secondary" onClick={handleSave}>
               Salvar Alterações
             </Button>
-            <Button variant="contained" color="primary" onClick={handleApproval} disabled={loadingApproval}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={handleApproval}
+              disabled={loadingApproval}
+            >
               {loadingApproval ? 'Enviando...' : 'Enviar para Aprovação'}
             </Button>
           </Box>
@@ -103,7 +110,6 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
 export default AberturaEmpresaViewPage;
 
 function getInitialFormData(data) {
- 
   return {
     statusAbertura: data.statusAbertura || '',
     situacaoAbertura: data.situacaoAbertura || '',
@@ -136,23 +142,24 @@ function getInitialFormData(data) {
       cidade: '',
       estado: '',
     },
-    socios: Array.isArray(data.socios) && data.socios.length > 0
-    ? data.socios
-    : [
-        {
-          nome: '',
-          cpf: '',
-          rg: '',
-          estadoCivil: '',
-          naturalidade: '',
-          porcentagem: 0,
-          administrador: false,
-          regimeBens: '',
-          endereco: '',
-          profissao: '',
-          cnh: '',
-        },
-      ],
+    socios:
+      Array.isArray(data.socios) && data.socios.length > 0
+        ? data.socios
+        : [
+            {
+              nome: '',
+              cpf: '',
+              rg: '',
+              estadoCivil: '',
+              naturalidade: '',
+              porcentagem: 0,
+              administrador: false,
+              regimeBens: '',
+              endereco: '',
+              profissao: '',
+              cnh: '',
+            },
+          ],
     rgAnexo: data.rgAnexo || null,
     iptuAnexo: data.iptuAnexo || null,
     documentoRT: data.documentoRT || null,

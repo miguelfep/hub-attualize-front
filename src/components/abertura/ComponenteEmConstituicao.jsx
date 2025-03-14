@@ -33,8 +33,8 @@ const Circle = styled('div')(({ theme, status, currentStatus }) => ({
     status === currentStatus
       ? theme.palette.success.main // Verde para o status atual
       : status < currentStatus
-      ? theme.palette.primary.main // Azul para os passos completados
-      : theme.palette.grey[400], // Cinza para os passos futuros
+        ? theme.palette.primary.main // Azul para os passos completados
+        : theme.palette.grey[400], // Cinza para os passos futuros
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
@@ -105,8 +105,13 @@ const ComponenteEmConstituicao = ({ formData }) => {
       </Typography>
 
       {/* Container com Scrollbar horizontal */}
-      <Scrollbar ref={containerProgress.elementRef} sx={{ whiteSpace: 'nowrap', overflowX: 'auto', paddingBottom: 3 }}>
-        <Box display="flex" gap={8} paddingX={3}> {/* Aumentei o gap entre os itens */}
+      <Scrollbar
+        ref={containerProgress.elementRef}
+        sx={{ whiteSpace: 'nowrap', overflowX: 'auto', paddingBottom: 3 }}
+      >
+        <Box display="flex" gap={8} paddingX={3}>
+          {' '}
+          {/* Aumentei o gap entre os itens */}
           {statuses.map((status, index) => (
             <Box
               key={index}

@@ -227,6 +227,6 @@ export const paths = {
     relatorios: {
       comercial: `${ROOTS.DASHBOARD}/relatorios/comercial`,
       financeiro: `${ROOTS.DASHBOARD}/relatorios/financeiro`,
-    }
+    },
   },
 };

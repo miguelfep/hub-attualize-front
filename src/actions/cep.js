@@ -6,6 +6,7 @@ export async function buscarCep(cep) {
       throw new Error('CEP não encontrado');
     }
     return {
+      ...data,
       rua: data.logradouro,
       cidade: data.localidade,
       estado: data.uf,
