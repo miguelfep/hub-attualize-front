@@ -38,10 +38,6 @@ const atuacoesOptions = [
   { id: 0, label: 'Estabelecimento Fixo' },
   { id: 1, label: 'Internet' },
   { id: 2, label: 'Local Fixo Fora da Loja' },
-  { id: 3, label: 'Correio' },
-  { id: 4, label: 'Porta a porta, postos móveis ou por ambulantes' },
-  { id: 5, label: 'Televenda' },
-  { id: 6, label: 'Máquinas automáticas' },
 ];
 
 const estadosOptions = [
@@ -229,8 +225,6 @@ export function MeiStepper() {
           uf_emissor: data.ufEmissor,
         numero: data.numero,
       };
-
-      console.log(requestBody);
       
 
 const res = await openMEI(requestBody)
@@ -649,7 +643,7 @@ if(res.data.success === false){
                         render={({ field }) => (
                             <Autocomplete
                             options={cnaes}
-                            getOptionLabel={(option) => option.descricao}
+                            getOptionLabel={(option) => option.ocupacao}
                             value={field.value || null}
                             onChange={(_, newValue) => {
                                 setValue("atividadePrincipal", newValue || null); // ⬅️ Armazena objeto completo
@@ -673,7 +667,7 @@ if(res.data.success === false){
                             <Autocomplete
                             multiple
                             options={cnaes.filter((cnae) => cnae._id !== getValues("atividadePrincipal")?._id)}
-                            getOptionLabel={(option) => option.descricao}
+                            getOptionLabel={(option) => option.ocupacao}
                             value={field.value || []}
                             onChange={(_, newValue) => {
                                 setValue("atividadesSecundarias", newValue || []);
