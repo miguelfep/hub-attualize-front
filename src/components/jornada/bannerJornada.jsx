@@ -71,7 +71,7 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
           <Grid item xs={12} sx={{ mt: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button variant="contained" color="primary" size="large" onClick={() => scrollToSection('presente')}>
-                Pegar Meu Presente
+                Quero meu presente
               </Button>
               <Button
                 variant="contained"
@@ -86,7 +86,7 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
                 }}
                 onClick={() => scrollToSection('abrir-mei')}
               >
-                Abrir Meu MEI
+                Abrir MEI grátis
               </Button>
             </Box>
           </Grid>
