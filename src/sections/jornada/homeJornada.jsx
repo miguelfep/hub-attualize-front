@@ -29,9 +29,9 @@ export function HomeJornada() {
       {/* Banner Principal */}
       <Stack sx={{ position: 'relative' }}>
         <BannerJornada
-          title="Defina + Attualize"
-          subtitle="Descubra como podemos transformar seu negócio"
-          backgroundImage="/assets/background/background-defina.jpg"
+          title="Defina e Attualize"
+          subtitle="Conheça os beneficos dessa parceria e como podemos ajudar seu negócio"
+          backgroundImage="/assets/background/banner-defina.png"
           logoAttualize="/logo/hub-tt.png"
           logoDefina="/logo/logo_defina_alta-01.png"
         />
