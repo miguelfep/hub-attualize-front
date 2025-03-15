@@ -32,7 +32,6 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
           left: 0,
           width: '100%',
           height: '100%',
-          backgroundColor: 'rgba(0, 0, 0, 0.5)', // Overlay mais sutil
         },
       }}
     >
@@ -74,7 +73,19 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
               <Button variant="contained" color="primary" size="large" onClick={() => scrollToSection('presente')}>
                 Pegar Meu Presente
               </Button>
-              <Button variant="outlined" color="secondary" size="large" onClick={() => scrollToSection('abrir-mei')}>
+              <Button
+                variant="contained"
+                size="large"
+                sx={{
+                  backgroundColor: 'white', // Fundo branco para contraste
+                  color: '#680a87', // Texto roxo para destacar
+                  fontWeight: 'bold',
+                  '&:hover': {
+                    backgroundColor: '#f4e1ff', // Tom de roxo claro ao passar o mouse
+                  },
+                }}
+                onClick={() => scrollToSection('abrir-mei')}
+              >
                 Abrir Meu MEI
               </Button>
             </Box>
