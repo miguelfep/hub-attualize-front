@@ -209,7 +209,7 @@ export function MeiStepper() {
         rg: data.rg,
         orgao_emissor: data.orgaoEmissor,
         capital_social: data.capitalSocial,
-        cnpj_empresa: '32610190000155',
+        cnpj_empresa: '53654503000147',
         email: data.email,
         telefone: data.phone.replace(/\D/g, ''),
         ddd: data.ddd,
