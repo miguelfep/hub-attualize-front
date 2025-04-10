@@ -15,7 +15,7 @@ export function KanbanTaskAdd({ status, openAddTask, onAddTask, onCloseAddTask }
   const [taskName, setTaskName] = useState('');
   const [descricao, setDescription] = useState('');
   const [responsavel, setResponsavel] = useState('');
-  const user = getUser()
+  const user = getUser();
 
   const defaultTask = useMemo(
     () => ({
@@ -37,7 +37,6 @@ export function KanbanTaskAdd({ status, openAddTask, onAddTask, onCloseAddTask }
     }),
     [taskName, descricao, responsavel, status, user.name]
   );
-  
 
   const handleChangeName = useCallback((event) => {
     setTaskName(event.target.value);

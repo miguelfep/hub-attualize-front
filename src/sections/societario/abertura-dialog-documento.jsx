@@ -25,13 +25,11 @@ const StyledGrid = styled(Grid)(({ theme }) => ({
   },
 }));
 
-const DialogDocumentsAbertura = ({  name, id, onFileUploaded }) => {
+const DialogDocumentsAbertura = ({ name, id, onFileUploaded }) => {
   // ** States
   const [open, setOpen] = useState(false);
   const handleClickOpen = () => setOpen(true);
   const handleDialogClose = () => setOpen(false);
-
-
 
   return (
     <StyledGrid item xs={12} md={12}>
@@ -65,27 +63,32 @@ const DialogDocumentsAbertura = ({  name, id, onFileUploaded }) => {
           aria-labelledby="simple-dialog-title"
           open={open}
         >
-           <IconButton
-              size="small"
-              onClick={handleDialogClose}
-              sx={{ position: 'absolute', right: '1rem', top: '1rem' }}
-            >
-              <Iconify icon="eva:close-fill" width={24} height={24} /> {/* Ícone de fechar */}
-            </IconButton>
-            <DialogTitle id="simple-dialog-title" sx={{ textAlign: 'center' }}>
-              Faça o upload do arquivo
-            </DialogTitle>
-          <DialogContent
-              sx={{
-                px: { xs: 8, sm: 15 },
-                py: { xs: 8, sm: 12.5 },
-                display: 'flex',  // Flexbox para centralizar o conteúdo
-                justifyContent: 'center',  // Centraliza horizontalmente
-                alignItems: 'center',  // Centraliza verticalmente
-                flexDirection: 'column',  // Conteúdo em formato de coluna
-              }}
+          <IconButton
+            size="small"
+            onClick={handleDialogClose}
+            sx={{ position: 'absolute', right: '1rem', top: '1rem' }}
           >
-            <UploadArquivoAbertura handleDialogClose={handleDialogClose} name={name} clientId={id} onFileUploaded={onFileUploaded} />
+            <Iconify icon="eva:close-fill" width={24} height={24} /> {/* Ícone de fechar */}
+          </IconButton>
+          <DialogTitle id="simple-dialog-title" sx={{ textAlign: 'center' }}>
+            Faça o upload do arquivo
+          </DialogTitle>
+          <DialogContent
+            sx={{
+              px: { xs: 8, sm: 15 },
+              py: { xs: 8, sm: 12.5 },
+              display: 'flex', // Flexbox para centralizar o conteúdo
+              justifyContent: 'center', // Centraliza horizontalmente
+              alignItems: 'center', // Centraliza verticalmente
+              flexDirection: 'column', // Conteúdo em formato de coluna
+            }}
+          >
+            <UploadArquivoAbertura
+              handleDialogClose={handleDialogClose}
+              name={name}
+              clientId={id}
+              onFileUploaded={onFileUploaded}
+            />
           </DialogContent>
         </Dialog>
       </Box>

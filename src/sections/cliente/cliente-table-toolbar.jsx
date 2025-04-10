@@ -1,4 +1,3 @@
-
 import * as XLSX from 'xlsx';
 import { useCallback } from 'react';
 
@@ -16,7 +15,6 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 export function ClienteTableToolbar({ filters, onResetPage, tableData }) {
   const popover = usePopover();
-
 
   const handleFilterSearch = useCallback(
     (event) => {

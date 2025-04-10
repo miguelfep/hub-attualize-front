@@ -211,12 +211,14 @@ export function ClienteListView() {
                     }
                   >
                     {tab.value === 'all'
-            ? tableData.length
-            : tab.value === 'lead'
-              ? tableData.filter((user) => user.tipoContato === 'lead').length
-              : tab.value === true
-                ? tableData.filter((user) => user.status === true && user.tipoContato !== 'lead').length // Contagem correta para Ativos
-                : tableData.filter((user) => user.status === false).length}
+                      ? tableData.length
+                      : tab.value === 'lead'
+                        ? tableData.filter((user) => user.tipoContato === 'lead').length
+                        : tab.value === true
+                          ? tableData.filter(
+                              (user) => user.status === true && user.tipoContato !== 'lead'
+                            ).length // Contagem correta para Ativos
+                          : tableData.filter((user) => user.status === false).length}
                   </Label>
                 }
               />
@@ -370,9 +372,7 @@ function applyFilter({ inputData, comparator, filters }) {
     if (status === 'lead') {
       inputData = inputData.filter((user) => user.tipoContato === 'lead');
     } else if (status === true) {
-      inputData = inputData.filter(
-        (user) => user.status === true && user.tipoContato !== 'lead'
-      );
+      inputData = inputData.filter((user) => user.status === true && user.tipoContato !== 'lead');
     } else {
       const isActive = status === true;
       inputData = inputData.filter((user) => user.status === isActive);
@@ -381,4 +381,3 @@ function applyFilter({ inputData, comparator, filters }) {
 
   return inputData;
 }
-

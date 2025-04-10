@@ -73,9 +73,7 @@ export function PagarNewEditForm({ currentConta }) {
 
   useEffect(() => {
     // Ordenar as categorias por ordem alfabética
-    const categorias = [...categoriasDespesas].sort((a, b) =>
-      a.nome.localeCompare(b.nome)
-    );
+    const categorias = [...categoriasDespesas].sort((a, b) => a.nome.localeCompare(b.nome));
     setCategoriasOrdenadas(categorias);
   }, []);
 
@@ -94,7 +92,7 @@ export function PagarNewEditForm({ currentConta }) {
       tipo: currentConta?.tipo || 'AVULSA',
       parcelas: currentConta?.parcelas || 1,
       status: currentConta?.status || 'PENDENTE',
-      banco: currentConta?.banco?.codigo || '', 
+      banco: currentConta?.banco?.codigo || '',
       categoria: currentConta?.categoria || '',
       statusPagamento: currentConta?.statusPagamento || '',
       codigoTransacao: currentConta?.codigoTransacao || '',
@@ -112,7 +110,7 @@ export function PagarNewEditForm({ currentConta }) {
   const values = watch();
 
   const tipo = watch('tipo'); // Observa o valor do campo `tipo`
- 
+
   useEffect(() => {
     const fetchBancos = async () => {
       try {
@@ -257,11 +255,9 @@ export function PagarNewEditForm({ currentConta }) {
                     options={categoriasOrdenadas} // Lista ordenada
                     getOptionLabel={(option) => option.nome} // Mostra o nome da categoria
                     isOptionEqualToValue={(option, value) => option._id === value} // Verifica igualdade
-                    value={
-                      categoriasOrdenadas.find((cat) => cat._id === field.value) || null
-                    } 
-                    onChange={(event, newValue) =>
-                      setValue('categoria', newValue?._id || '') // Salva apenas o ID da categoria
+                    value={categoriasOrdenadas.find((cat) => cat._id === field.value) || null}
+                    onChange={
+                      (event, newValue) => setValue('categoria', newValue?._id || '') // Salva apenas o ID da categoria
                     }
                     renderInput={(params) => (
                       <TextField {...params} label="Categoria" fullWidth required />

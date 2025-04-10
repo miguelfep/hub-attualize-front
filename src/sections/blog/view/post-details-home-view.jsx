@@ -24,7 +24,7 @@ import { PostDetailsHero } from '../post-details-hero';
 
 export function PostDetailsHomeView({ post, latestPosts }) {
   const formattedPosts = latestPosts
-    .filter((latestPost) => latestPost.id !== post.id)  // Remover a postagem atual
+    .filter((latestPost) => latestPost.id !== post.id) // Remover a postagem atual
     .map((latest) => ({
       id: latest.id,
       title: latest.title.rendered,
@@ -36,8 +36,6 @@ export function PostDetailsHomeView({ post, latestPosts }) {
       author: latest._embedded?.author[0]?.name || 'Autor Desconhecido',
       imageUrl: latest.jetpack_featured_media_url || '/default-image.png',
     }));
-
-    
 
   return (
     <>
@@ -97,7 +95,6 @@ export function PostDetailsHomeView({ post, latestPosts }) {
                 label={fShortenNumber(post?.totalFavorites)}
                 sx={{ mr: 1 }}
               />
-
             </Stack>
           </Stack>
 

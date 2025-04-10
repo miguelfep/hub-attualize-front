@@ -1,20 +1,12 @@
 import React from 'react';
 
-import {
-  Box,
-  Grid, 
-  Paper, 
-  Container,  
-  Typography,
-} from '@mui/material';
+import { Box, Grid, Paper, Container, Typography } from '@mui/material';
 
 import { MotionViewport } from 'src/components/animate';
 
 import { Calculadora } from './CalculadoraEstetica';
 
 export function ImpostosClinicaEstetica() {
-  
-
   return (
     <Box
       sx={{
@@ -22,17 +14,9 @@ export function ImpostosClinicaEstetica() {
         py: { xs: 8, md: 12 },
       }}
     >
-      <Container
-        component={MotionViewport}
-        sx={{ textAlign: { xs: 'center', md: 'left' } }}
-      >
+      <Container component={MotionViewport} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
         {/* Título Centralizado */}
-        <Typography
-          variant="h3"
-          component="h2"
-          gutterBottom
-          sx={{ textAlign: 'center', mb: 4 }}
-        >
+        <Typography variant="h3" component="h2" gutterBottom sx={{ textAlign: 'center', mb: 4 }}>
           Impostos para Clínicas de Estética
         </Typography>
 
@@ -70,7 +54,8 @@ export function ImpostosClinicaEstetica() {
               </Typography>
               <Typography variant="body2">
                 Indicado para empresas com faturamento maior que R$ 4,8 milhões e margem de lucro
-                elevada. A tributação é calculada com base em uma margem presumida definida pelo governo.
+                elevada. A tributação é calculada com base em uma margem presumida definida pelo
+                governo.
               </Typography>
             </Paper>
           </Grid>
@@ -80,26 +65,18 @@ export function ImpostosClinicaEstetica() {
                 Lucro Real
               </Typography>
               <Typography variant="body2">
-                Necessário para empresas com faturamento elevado ou que trabalham com margens de lucro
-                reduzidas. A tributação é calculada com base no lucro real apurado.
+                Necessário para empresas com faturamento elevado ou que trabalham com margens de
+                lucro reduzidas. A tributação é calculada com base no lucro real apurado.
               </Typography>
             </Paper>
           </Grid>
         </Grid>
 
-         {/* Título Centralizado */}
-            <Typography
-          variant="h3"
-          component="h2"
-          gutterBottom
-          sx={{ textAlign: 'center', mb: 4 }}
-        >
+        {/* Título Centralizado */}
+        <Typography variant="h3" component="h2" gutterBottom sx={{ textAlign: 'center', mb: 4 }}>
           Descubra qual será seu imposto
         </Typography>
         <Calculadora />
-
-
-
       </Container>
     </Box>
   );

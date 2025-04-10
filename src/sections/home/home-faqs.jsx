@@ -42,7 +42,9 @@ const FAQs = [
     question: 'Quais serviços vocês fornecem mensalmente?',
     answer: (
       <Box component="ul" sx={{ pl: 3, listStyleType: 'disc' }}>
-        <li>Elaboração da contabilidade de acordo com a legislação, incluindo balancetes e balanços.</li>
+        <li>
+          Elaboração da contabilidade de acordo com a legislação, incluindo balancetes e balanços.
+        </li>
         <li>Apuração de tributos conforme a emissão de notas fiscais da empresa.</li>
         <li>
           Orientação trabalhista, elaboração de pró-labore e guias de encargos sociais para sócios.

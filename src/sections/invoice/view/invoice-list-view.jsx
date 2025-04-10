@@ -11,8 +11,8 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import { IconButton } from '@mui/material';
 import Divider from '@mui/material/Divider';
-import { IconButton }  from '@mui/material';
 import TableBody from '@mui/material/TableBody';
 import { useTheme } from '@mui/material/styles';
 import TextField from '@mui/material/TextField';
@@ -187,7 +187,7 @@ export function InvoiceListView() {
     },
   ];
 
-   const handleDeleteRow = useCallback(
+  const handleDeleteRow = useCallback(
     async (id) => {
       const res = await deleteInvoiceById(id);
       if (res) {
@@ -205,7 +205,7 @@ export function InvoiceListView() {
   const handleEditRow = (id) => {
     const url = paths.dashboard.invoice.edit(id);
     window.open(url, '_blank', 'noopener,noreferrer');
-  }
+  };
 
   const handleViewRow = (id) => {
     const url = paths.dashboard.invoice.details(id);
@@ -221,169 +221,175 @@ export function InvoiceListView() {
   );
 
   return (
-      <DashboardContent>
-        <CustomBreadcrumbs
-          heading="Lista de vendas"
-          links={[
-            { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'Vendas', href: paths.dashboard.invoice.root },
-            { name: 'Todas' },
-          ]}
-          action={
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.invoice.new}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
-              Nova Venda
-            </Button>
-          }
-          sx={{ mb: { xs: 3, md: 5 } }}
-        />
+    <DashboardContent>
+      <CustomBreadcrumbs
+        heading="Lista de vendas"
+        links={[
+          { name: 'Dashboard', href: paths.dashboard.root },
+          { name: 'Vendas', href: paths.dashboard.invoice.root },
+          { name: 'Todas' },
+        ]}
+        action={
+          <Button
+            component={RouterLink}
+            href={paths.dashboard.invoice.new}
+            variant="contained"
+            startIcon={<Iconify icon="mingcute:add-line" />}
+          >
+            Nova Venda
+          </Button>
+        }
+        sx={{ mb: { xs: 3, md: 5 } }}
+      />
 
-        <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
+      <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
         <IconButton onClick={handlePreviousMonth}>
           <Iconify icon="mingcute:arrow-left-fill" />
         </IconButton>
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-            <DatePicker
-              label="Data Inicio"
-              value={filters.state.startDate}
-              onChange={(newValue) => filters.setState({ startDate: newValue })}
-              renderInput={(params) => <TextField {...params} />}
-            />
-            <DatePicker
-              label="Data Fim"
-              value={filters.state.endDate}
-              onChange={(newValue) => filters.setState({ endDate: newValue })}
-              renderInput={(params) => <TextField {...params} />}
-            />
-          </LocalizationProvider>
-          <IconButton onClick={handleNextMonth}>
+        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+          <DatePicker
+            label="Data Inicio"
+            value={filters.state.startDate}
+            onChange={(newValue) => filters.setState({ startDate: newValue })}
+            renderInput={(params) => <TextField {...params} />}
+          />
+          <DatePicker
+            label="Data Fim"
+            value={filters.state.endDate}
+            onChange={(newValue) => filters.setState({ endDate: newValue })}
+            renderInput={(params) => <TextField {...params} />}
+          />
+        </LocalizationProvider>
+        <IconButton onClick={handleNextMonth}>
           <Iconify icon="mingcute:arrow-right-circle-fill" />
         </IconButton>
-        </Stack>
+      </Stack>
 
-        <Card sx={{ mb: { xs: 3, md: 5 } }}>
-          <Scrollbar sx={{ minHeight: 108 }}>
-            <Stack direction="row" divider={<Divider orientation="vertical" flexItem />} sx={{ py: 2 }}>
-              <InvoiceAnalytic
-                title="Total"
-                total={filteredData.length}
-                percent={100}
-                price={sumBy(filteredData, (invoice) => invoice.total)}
-                icon="solar:bill-list-bold-duotone"
-                color={theme.vars.palette.info.main}
-              />
-              <InvoiceAnalytic
-                title="Pago"
-                total={getInvoiceLength('pago')}
-                percent={getPercentByStatus('pago')}
-                price={getTotalAmount('pago')}
-                icon="solar:file-check-bold-duotone"
-                color={theme.vars.palette.success.main}
-              />
-              <InvoiceAnalytic
-                title="Aprovada"
-                total={getInvoiceLength('aprovada')}
-                percent={getPercentByStatus('aprovada')}
-                price={getTotalAmount('aprovada')}
-                icon="solar:sort-by-time-bold-duotone"
-                color={theme.vars.palette.secondary.main}
-              />   
-            <InvoiceAnalytic
-                title="Perdida"
-                total={getInvoiceLength('perdida')}
-                percent={getPercentByStatus('perdida')}
-                price={getTotalAmount('perdida')}
-                icon="solar:bell-bing-bold-duotone"
-                color={theme.vars.palette.error.main}
-              />
-              <InvoiceAnalytic
-                title="Orçamentos"
-                total={getInvoiceLength('orcamento')}
-                percent={getPercentByStatus('orcamento')}
-                price={getTotalAmount('orcamento')}
-                icon="solar:file-corrupted-bold-duotone"
-                color={theme.vars.palette.text.secondary}
-              />
-            </Stack>
-          </Scrollbar>
-        </Card>
-
-        <Card>
-          <Tabs
-            value={filters.state.status}
-            onChange={handleFilterStatus}
-            sx={{
-              px: 2.5,
-              boxShadow: `inset 0 -2px 0 0 ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}`,
-            }}
+      <Card sx={{ mb: { xs: 3, md: 5 } }}>
+        <Scrollbar sx={{ minHeight: 108 }}>
+          <Stack
+            direction="row"
+            divider={<Divider orientation="vertical" flexItem />}
+            sx={{ py: 2 }}
           >
-            {TABS.map((tab) => (
-              <Tab
-                key={tab.value}
-                value={tab.value}
-                label={tab.label}
-                iconPosition="end"
-                icon={
-                  <Label variant="soft" color={tab.color}>
-                    {tab.count}
-                  </Label>
+            <InvoiceAnalytic
+              title="Total"
+              total={filteredData.length}
+              percent={100}
+              price={sumBy(filteredData, (invoice) => invoice.total)}
+              icon="solar:bill-list-bold-duotone"
+              color={theme.vars.palette.info.main}
+            />
+            <InvoiceAnalytic
+              title="Pago"
+              total={getInvoiceLength('pago')}
+              percent={getPercentByStatus('pago')}
+              price={getTotalAmount('pago')}
+              icon="solar:file-check-bold-duotone"
+              color={theme.vars.palette.success.main}
+            />
+            <InvoiceAnalytic
+              title="Aprovada"
+              total={getInvoiceLength('aprovada')}
+              percent={getPercentByStatus('aprovada')}
+              price={getTotalAmount('aprovada')}
+              icon="solar:sort-by-time-bold-duotone"
+              color={theme.vars.palette.secondary.main}
+            />
+            <InvoiceAnalytic
+              title="Perdida"
+              total={getInvoiceLength('perdida')}
+              percent={getPercentByStatus('perdida')}
+              price={getTotalAmount('perdida')}
+              icon="solar:bell-bing-bold-duotone"
+              color={theme.vars.palette.error.main}
+            />
+            <InvoiceAnalytic
+              title="Orçamentos"
+              total={getInvoiceLength('orcamento')}
+              percent={getPercentByStatus('orcamento')}
+              price={getTotalAmount('orcamento')}
+              icon="solar:file-corrupted-bold-duotone"
+              color={theme.vars.palette.text.secondary}
+            />
+          </Stack>
+        </Scrollbar>
+      </Card>
+
+      <Card>
+        <Tabs
+          value={filters.state.status}
+          onChange={handleFilterStatus}
+          sx={{
+            px: 2.5,
+            boxShadow: `inset 0 -2px 0 0 ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}`,
+          }}
+        >
+          {TABS.map((tab) => (
+            <Tab
+              key={tab.value}
+              value={tab.value}
+              label={tab.label}
+              iconPosition="end"
+              icon={
+                <Label variant="soft" color={tab.color}>
+                  {tab.count}
+                </Label>
+              }
+            />
+          ))}
+        </Tabs>
+
+        <Box sx={{ position: 'relative' }}>
+          <Scrollbar>
+            <Table size={table.dense ? 'small' : 'medium'}>
+              <TableHeadCustom
+                order={table.order}
+                orderBy={table.orderBy}
+                headLabel={TABLE_HEAD}
+                rowCount={tableFilteredData.length}
+                numSelected={table.selected.length}
+                onSort={table.onSort}
+                onSelectAllRows={(checked) =>
+                  table.onSelectAllRows(
+                    checked,
+                    tableFilteredData.map((row) => row._id)
+                  )
                 }
               />
-            ))}
-          </Tabs>
-
-          <Box sx={{ position: 'relative' }}>
-            <Scrollbar>
-              <Table size={table.dense ? 'small' : 'medium'}>
-                <TableHeadCustom
-                  order={table.order}
-                  orderBy={table.orderBy}
-                  headLabel={TABLE_HEAD}
-                  rowCount={tableFilteredData.length}
-                  numSelected={table.selected.length}
-                  onSort={table.onSort}
-                  onSelectAllRows={(checked) =>
-                    table.onSelectAllRows(
-                      checked,
-                      tableFilteredData.map((row) => row._id)
-                    )
-                  }
+              <TableBody>
+                {tableFilteredData.map((row) => (
+                  <InvoiceTableRow
+                    key={row._id}
+                    row={row}
+                    selected={table.selected.includes(row._id)}
+                    onSelectRow={() => table.onSelectRow(row._id)}
+                    onViewRow={() => handleViewRow(row._id)}
+                    onEditRow={() => handleEditRow(row._id)}
+                    onDeleteRow={() => handleDeleteRow(row._id)}
+                  />
+                ))}
+                <TableEmptyRows
+                  height={table.dense ? 56 : 76}
+                  emptyRows={emptyRows(table.page, table.rowsPerPage, tableFilteredData.length)}
                 />
-                <TableBody>
-                  {tableFilteredData.map((row) => (
-                    <InvoiceTableRow
-                      key={row._id}
-                      row={row}
-                      selected={table.selected.includes(row._id)}
-                      onSelectRow={() => table.onSelectRow(row._id)}
-                      onViewRow={() => handleViewRow(row._id)}
-                      onEditRow={() => handleEditRow(row._id)}
-                      onDeleteRow={() => handleDeleteRow(row._id)}
-                    />
-                  ))}
-                  <TableEmptyRows height={table.dense ? 56 : 76} emptyRows={emptyRows(table.page, table.rowsPerPage, tableFilteredData.length)} />
-                  <TableNoData notFound={notFound} />
-                </TableBody>
-              </Table>
-            </Scrollbar>
-            <TablePaginationCustom
-              page={table.page}
-              dense={table.dense}
-              count={tableFilteredData.length}
-              rowsPerPage={table.rowsPerPage}
-              onPageChange={table.onChangePage}
-              onRowsPerPageChange={table.onChangeRowsPerPage}
-            />
-          </Box>
-        </Card>
-      </DashboardContent>
+                <TableNoData notFound={notFound} />
+              </TableBody>
+            </Table>
+          </Scrollbar>
+          <TablePaginationCustom
+            page={table.page}
+            dense={table.dense}
+            count={tableFilteredData.length}
+            rowsPerPage={table.rowsPerPage}
+            onPageChange={table.onChangePage}
+            onRowsPerPageChange={table.onChangeRowsPerPage}
+          />
+        </Box>
+      </Card>
+    </DashboardContent>
   );
 }
-
 
 function applyFilter({ inputData, comparator, filters, dateError }) {
   const { name, status, service, startDate, endDate } = filters;

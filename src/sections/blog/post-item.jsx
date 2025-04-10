@@ -28,7 +28,6 @@ function truncateText(htmlString, maxLength) {
 
 export function PostItem({ post }) {
   const theme = useTheme();
-    
 
   const linkTo = paths.post.details(post.slug);
 
@@ -48,7 +47,7 @@ export function PostItem({ post }) {
 
         <Avatar
           alt={post.author || 'Autor desconhecido'}
-          src={post.author_avatar || ''} 
+          src={post.author_avatar || ''}
           sx={{
             left: 24,
             zIndex: 9,
@@ -79,7 +78,7 @@ export function PostItem({ post }) {
           component="p"
           sx={{ mt: 1, color: 'text.secondary' }}
           dangerouslySetInnerHTML={{ __html: truncateText(post.excerpt, 100) }}
-        />    
+        />
       </CardContent>
     </Card>
   );
@@ -88,17 +87,17 @@ export function PostItem({ post }) {
 // ----------------------------------------------------------------------
 
 export function PostItemLatest({ post, index }) {
-  const theme = useTheme();  
+  const theme = useTheme();
 
   const linkTo = paths.post.details(post.slug);
 
   const postSmall = index === 1 || index === 2;
-  
+
   return (
     <Card>
       <Avatar
         alt={post.author || 'Autor desconhecido'}
-        src={post.author || '/default-avatar.png'} 
+        src={post.author || '/default-avatar.png'}
         sx={{
           top: 24,
           left: 24,
@@ -147,7 +146,7 @@ export function PostItemLatest({ post, index }) {
           component="p"
           sx={{ mt: 1, color: 'text.white' }}
           dangerouslySetInnerHTML={{ __html: truncateText(post.excerpt, 55) }}
-        />       
+        />
       </CardContent>
     </Card>
   );

@@ -21,7 +21,7 @@ import { Form, schemaHelper } from 'src/components/hook-form';
 
 import AberturaIniciadoForm from './abertura-iniciado-form';
 // Importação dos componentes específicos para cada status
-import  { AberturaValidacaoForm }  from './abertura-validacao-form';
+import { AberturaValidacaoForm } from './abertura-validacao-form';
 import { AberturaConstituicaoForm } from './abertura-constituicao-form';
 
 // Definir o esquema de validação usando Zod
@@ -58,7 +58,6 @@ const reverseStatusMap = {
   Iniciado: null, // Não volta mais a partir daqui
 };
 
-
 const statusDisplayMap = {
   Iniciado: 'Iniciado',
   em_validacao: 'Em Validação',
@@ -92,10 +91,13 @@ export function AberturaEditForm({ currentAbertura }) {
 
   const handleAdvanceStatus = async (customStatus) => {
     const nextStatus = customStatus || statusMap[statusAbertura];
-        if (nextStatus) {
+    if (nextStatus) {
       loading.onTrue();
       try {
-        updateAbertura(currentAbertura._id, { statusAbertura: nextStatus, somenteAtualizar: false });
+        updateAbertura(currentAbertura._id, {
+          statusAbertura: nextStatus,
+          somenteAtualizar: false,
+        });
         setValue('statusAbertura', nextStatus);
         toast.success('Status avançado com sucesso!');
       } catch (error) {
@@ -127,23 +129,28 @@ export function AberturaEditForm({ currentAbertura }) {
   const renderStatusComponent = () => {
     switch (statusAbertura) {
       case 'Iniciado':
-        return <AberturaIniciadoForm currentAbertura={currentAbertura} handleAdvanceStatus={handleAdvanceStatus} />;
+        return (
+          <AberturaIniciadoForm
+            currentAbertura={currentAbertura}
+            handleAdvanceStatus={handleAdvanceStatus}
+          />
+        );
       case 'em_validacao':
         return <AberturaValidacaoForm currentAbertura={currentAbertura} setValue={setValue} />;
       case 'onboarding':
-        return <div>Usuário gerado, clique em avançar</div>;  
+        return <div>Usuário gerado, clique em avançar</div>;
       default:
         return <AberturaConstituicaoForm currentAbertura={currentAbertura} />;
     }
   };
 
-  const shouldShowAdvanceButton = ['Iniciado', 'kickoff', 'em_constituicao', 'onboarding'].includes(statusAbertura);
-
-
+  const shouldShowAdvanceButton = ['Iniciado', 'kickoff', 'em_constituicao', 'onboarding'].includes(
+    statusAbertura
+  );
 
   return (
     <Form methods={methods}>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
         <Chip
           label={`Status: ${statusDisplayMap[statusAbertura] || statusAbertura}`}
           color="success"
@@ -153,15 +160,15 @@ export function AberturaEditForm({ currentAbertura }) {
       <>{renderStatusComponent()}</>
 
       <Stack justifyContent="space-between" direction="row" spacing={2} sx={{ mt: 3 }}>
-      {shouldShowAdvanceButton && (
-        <Button
-          variant="outlined"
-          disabled={!reverseStatusMap[statusAbertura]}
-          onClick={handleGoBackStatus}
-          loading={loading.value}
-        >
-          Voltar
-        </Button>
+        {shouldShowAdvanceButton && (
+          <Button
+            variant="outlined"
+            disabled={!reverseStatusMap[statusAbertura]}
+            onClick={handleGoBackStatus}
+            loading={loading.value}
+          >
+            Voltar
+          </Button>
         )}
         {shouldShowAdvanceButton && (
           <Button

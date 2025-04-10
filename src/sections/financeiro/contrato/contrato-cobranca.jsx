@@ -62,7 +62,7 @@ export function ContratoCobrancas({ contratoId, contrato }) {
       setLoading(false);
     }
   }, [contratoId]);
-  
+
   useEffect(() => {
     if (contratoId) {
       fetchCobrancas();
@@ -104,13 +104,12 @@ export function ContratoCobrancas({ contratoId, contrato }) {
     setLoadingBoleto(true); // Inicia o estado de loading
 
     try {
-      await gerarBoletoPorId(cobrancaId);  
+      await gerarBoletoPorId(cobrancaId);
       toast.success('Boleto gerado com sucesso!');
       fetchCobrancas();
     } catch (error) {
       toast.error('Erro ao gerar boleto');
-    }
-    finally {
+    } finally {
       setLoadingBoleto(false); // Reseta o estado de loading após o fim da ação
     }
   };
@@ -140,8 +139,6 @@ export function ContratoCobrancas({ contratoId, contrato }) {
   if (loading) {
     return <p>Carregando cobranças...</p>;
   }
-
-
 
   return (
     <>
@@ -232,8 +229,9 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                           disabled={loadingBoleto}
                         >
                           <Iconify icon="mdi:bank-plus" />
-                          {loadingBoleto ? 'Gerando...' : 'Gerar Boleto'} {/* Exibe mensagem de carregamento */}
-                          </MenuItem>
+                          {loadingBoleto ? 'Gerando...' : 'Gerar Boleto'}{' '}
+                          {/* Exibe mensagem de carregamento */}
+                        </MenuItem>
                       ) : (
                         <>
                           <MenuItem

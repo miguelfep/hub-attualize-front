@@ -130,81 +130,76 @@ export function OverviewAppView() {
                       ? dashboardData.categoriesCobrancas
                       : ['Nenhum dado'],
                   series:
-                    dashboardData.seriesCobrancas.length > 0
-                      ? dashboardData.seriesCobrancas
-                      : [0],
+                    dashboardData.seriesCobrancas.length > 0 ? dashboardData.seriesCobrancas : [0],
                 }}
               />
             </Grid>
-     
-   
-        <Grid xs={12} md={4}>          
-          <EcommerceCurrentBalance
-            title="Ticket Médio"
-            orderTotal={dashboardData.totalContratos}
-            currentBalance={dashboardData.ticketMedioContratos}
-            texto="Contratos"
-          />
-        </Grid>
 
-        <Grid xs={12} md={12} lg={12}>
-          <AppAreaInstalled
-            title="Carteira de clientes"
-            chart={{
-              categories: [
-                'Jan',
-                'Fev',
-                'Mar',
-                'Abr',
-                'Mai',
-                'Jun',
-                'Jul',
-                'Ago',
-                'Set',
-                'Out',
-                'Nov',
-                'Dez',
-              ],
-              series: [
-                {
-                  name: '2023',
-                  data: [
-                    { name: 'Entrada', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
-                    { name: 'Churn', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
-                    { name: 'Pontual', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
+            <Grid xs={12} md={4}>
+              <EcommerceCurrentBalance
+                title="Ticket Médio"
+                orderTotal={dashboardData.totalContratos}
+                currentBalance={dashboardData.ticketMedioContratos}
+                texto="Contratos"
+              />
+            </Grid>
+
+            <Grid xs={12} md={12} lg={12}>
+              <AppAreaInstalled
+                title="Carteira de clientes"
+                chart={{
+                  categories: [
+                    'Jan',
+                    'Fev',
+                    'Mar',
+                    'Abr',
+                    'Mai',
+                    'Jun',
+                    'Jul',
+                    'Ago',
+                    'Set',
+                    'Out',
+                    'Nov',
+                    'Dez',
                   ],
-                },
-                {
-                  name: '2024',
-                  data: [
-                    { name: 'Entrada', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
-                    { name: 'Churn', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
-                    { name: 'Pontual', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
+                  series: [
+                    {
+                      name: '2023',
+                      data: [
+                        { name: 'Entrada', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
+                        { name: 'Churn', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
+                        { name: 'Pontual', data: [12, 10, 18, 22, 20, 12, 8, 21, 20, 14, 15, 16] },
+                      ],
+                    },
+                    {
+                      name: '2024',
+                      data: [
+                        { name: 'Entrada', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
+                        { name: 'Churn', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
+                        { name: 'Pontual', data: [6, 18, 14, 9, 20, 6, 22, 19, 8, 22, 8] },
+                      ],
+                    },
                   ],
-                },                
-              ],
-            }}
-          />
-        </Grid>
+                }}
+              />
+            </Grid>
 
-
-    
-        <Grid xs={12} lg={12}>
-          <AppNewInvoice
-            title="Leads"
-            tableData={dashboardData.leads}
-            headLabel={[
-              { id: 'nome', label: 'Nome' },
-              { id: 'segment', label: 'Segmento' },
-              { id: 'local', label: 'Local' },
-              { id: 'status', label: 'Contato' },
-              { id: '' },
-            ]}
-          />
-        </Grid>
-        </>
+            <Grid xs={12} lg={12}>
+              <AppNewInvoice
+                title="Leads"
+                tableData={dashboardData.leads}
+                headLabel={[
+                  { id: 'nome', label: 'Nome' },
+                  { id: 'segment', label: 'Segmento' },
+                  { id: 'local', label: 'Local' },
+                  { id: 'status', label: 'Contato' },
+                  { id: '' },
+                ]}
+              />
+            </Grid>
+          </>
         )}
-      </Grid>      
+      </Grid>
     </DashboardContent>
   );
 }

@@ -11,7 +11,6 @@ import { AberturaEditForm } from '../abertura-edit-form';
 // ----------------------------------------------------------------------
 
 export function AberturaEditView({ abertura }) {
-  
   return (
     <DashboardContent>
       <CustomBreadcrumbs

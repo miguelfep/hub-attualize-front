@@ -34,7 +34,6 @@ export function KanbanDetailsToolbar({
 
   const handleChangeStatus = useCallback(
     (newValue) => {
-     
       popover.onClose();
       setStatus(newValue);
     },
@@ -69,8 +68,6 @@ export function KanbanDetailsToolbar({
         </Button>
 
         <Stack direction="row" justifyContent="flex-end" flexGrow={1}>
-         
-
           <Tooltip title="Delete task">
             <IconButton onClick={confirm.onTrue}>
               <Iconify icon="solar:trash-bin-trash-bold" />
@@ -90,17 +87,19 @@ export function KanbanDetailsToolbar({
         slotProps={{ arrow: { placement: 'top-right' } }}
       >
         <MenuList>
-          {['Lead', 'Contato Feito', 'Negociando', 'Proposta Enviada', 'Ganho', 'Perdido'].map((option) => (
-            <MenuItem
-              key={option}
-              selected={status === option}
-              onClick={() => {
-                handleChangeStatus(option);
-              }}
-            >
-              {option}
-            </MenuItem>
-          ))}
+          {['Lead', 'Contato Feito', 'Negociando', 'Proposta Enviada', 'Ganho', 'Perdido'].map(
+            (option) => (
+              <MenuItem
+                key={option}
+                selected={status === option}
+                onClick={() => {
+                  handleChangeStatus(option);
+                }}
+              >
+                {option}
+              </MenuItem>
+            )
+          )}
         </MenuList>
       </CustomPopover>
 

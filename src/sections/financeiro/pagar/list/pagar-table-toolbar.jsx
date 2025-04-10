@@ -13,7 +13,13 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
-export function ReceberTableToolbar({ filters, setFilters, onResetPage, contas, contasSelecionadas }) {
+export function ReceberTableToolbar({
+  filters,
+  setFilters,
+  onResetPage,
+  contas,
+  contasSelecionadas,
+}) {
   const popover = usePopover();
 
   const handleFilterTituloOrRazaoSocial = useCallback(
@@ -47,7 +53,7 @@ export function ReceberTableToolbar({ filters, setFilters, onResetPage, contas, 
 
     // Aplica o formato de moeda às células da coluna "Valor"
     const range = XLSX.utils.decode_range(worksheet['!ref']);
-    for (let row = range.s.r + 1; row <= range.e.r; row += 1) { 
+    for (let row = range.s.r + 1; row <= range.e.r; row += 1) {
       const cellAddress = XLSX.utils.encode_cell({ r: row, c: 2 }); // Coluna "Valor" (índice 2)
       if (worksheet[cellAddress]) {
         worksheet[cellAddress].z = 'R$ #,##0.00'; // Formato de moeda brasileira

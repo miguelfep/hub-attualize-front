@@ -73,7 +73,7 @@ export const ABERTURA_STATUS_OPTIONS = [
 // ----------------------------------------------------------------------
 
 export function AberturasListView() {
-  const table = useTable({ defaultDense: true , defaultRowsPerPage: 50});
+  const table = useTable({ defaultDense: true, defaultRowsPerPage: 50 });
 
   const router = useRouter();
 
@@ -92,7 +92,6 @@ export function AberturasListView() {
 
   const onSubmit = async (data) => {
     try {
-
       await createAbertura(data);
       toast.success('Abertura criada com sucesso!');
       fetchAberturas();
@@ -100,7 +99,7 @@ export function AberturasListView() {
       reset();
     } catch (error) {
       console.log(error);
-      
+
       toast.error('Erro ao criar abertura');
     }
   };
@@ -377,24 +376,20 @@ export function AberturasListView() {
                   onBlur={field.onBlur}
                 >
                   {(inputProps) => (
-                    <TextField
-                      {...inputProps}
-                      label="Telefone"
-                      fullWidth
-                      margin="normal"
-                    />
+                    <TextField {...inputProps} label="Telefone" fullWidth margin="normal" />
                   )}
                 </InputMask>
               )}
             />
-            <Controller 
+            <Controller
               name="cpf"
               control={control}
-              render= {({ field }) => (
-              <InputMask mask="999.999.999-99" fullWidth label="CPF" {... field}>
-                {(inputProps) => (<TextField {...inputProps} label="CPF" margin="normal"/>)}
-              </InputMask>
-            )}/>
+              render={({ field }) => (
+                <InputMask mask="999.999.999-99" fullWidth label="CPF" {...field}>
+                  {(inputProps) => <TextField {...inputProps} label="CPF" margin="normal" />}
+                </InputMask>
+              )}
+            />
 
             <Controller
               name="valorMensalidade"

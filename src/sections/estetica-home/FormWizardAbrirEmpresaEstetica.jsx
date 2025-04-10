@@ -1,4 +1,9 @@
+import { z } from 'zod';
+import { toast } from 'sonner';
 import React, { useState } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, FormProvider } from 'react-hook-form';
+
 import {
   Box,
   Step,
@@ -12,16 +17,12 @@ import {
   Typography,
   IconButton,
 } from '@mui/material';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider } from 'react-hook-form';
-import { z } from 'zod';
-import { Iconify } from 'src/components/iconify';
-import { Field } from 'src/components/hook-form';
-import { toast } from 'sonner';
 
 import { buscarCep } from 'src/actions/cep';
-
 import { criarLead } from 'src/actions/lead';
+
+import { Iconify } from 'src/components/iconify';
+import { Field } from 'src/components/hook-form';
 
 const stepOneSchema = z.object({
   nome: z.string().min(1, 'O nome é obrigatório'),
@@ -54,7 +55,7 @@ export function FormWizardAbrirEmpresa({ open, onClose }) {
       receberOrcamento: '',
       observacoes: '',
       segment: 'estetica',
-      origem: 'site-pagina-estetica'
+      origem: 'site-pagina-estetica',
     },
     mode: 'onBlur',
   });
@@ -95,10 +96,10 @@ export function FormWizardAbrirEmpresa({ open, onClose }) {
         segment: 'estetica',
         origem: 'site-pagina-estetica',
       };
-        
+
       await criarLead(payload);
       methods.reset();
-      setActiveStep(0)
+      setActiveStep(0);
       toast.success('Enviado com sucesso! Entraremos em contato em breve.');
 
       onClose();
@@ -112,9 +113,27 @@ export function FormWizardAbrirEmpresa({ open, onClose }) {
     <Stack spacing={2} sx={{ alignItems: 'center', width: '80%', mx: 'auto' }}>
       {step === 0 && (
         <>
-          <Field.Text name="nome" label="Nome" fullWidth error={!!errors.nome} helperText={errors.nome?.message} />
-          <Field.Text name="email" label="Email" fullWidth error={!!errors.email} helperText={errors.email?.message} />
-          <Field.Phone name="telefone" label="Telefone" fullWidth error={!!errors.telefone} helperText={errors.telefone?.message} />
+          <Field.Text
+            name="nome"
+            label="Nome"
+            fullWidth
+            error={!!errors.nome}
+            helperText={errors.nome?.message}
+          />
+          <Field.Text
+            name="email"
+            label="Email"
+            fullWidth
+            error={!!errors.email}
+            helperText={errors.email?.message}
+          />
+          <Field.Phone
+            name="telefone"
+            label="Telefone"
+            fullWidth
+            error={!!errors.telefone}
+            helperText={errors.telefone?.message}
+          />
         </>
       )}
       {step === 1 && (
@@ -153,7 +172,10 @@ export function FormWizardAbrirEmpresa({ open, onClose }) {
           </Typography>
           <Field.RadioGroup
             name="receberOrcamento"
-            options={[{ label: 'WhatsApp', value: 'whatsapp' }, { label: 'Email', value: 'email' }]}
+            options={[
+              { label: 'WhatsApp', value: 'whatsapp' },
+              { label: 'Email', value: 'email' },
+            ]}
             row
             error={!!errors.receberOrcamento}
             helperText={errors.receberOrcamento?.message}
@@ -177,7 +199,9 @@ export function FormWizardAbrirEmpresa({ open, onClose }) {
     <Dialog open={open} onClose={onClose}>
       <AppBar sx={{ position: 'relative' }}>
         <Toolbar>
-          <Typography sx={{ flex: 1, textAlign: 'center' }} variant="h6">Abrir Minha Empresa</Typography>
+          <Typography sx={{ flex: 1, textAlign: 'center' }} variant="h6">
+            Abrir Minha Empresa
+          </Typography>
           <IconButton edge="end" color="inherit" onClick={onClose}>
             <Iconify icon="solar:close-circle-bold-duotone" width={24} />
           </IconButton>
@@ -187,7 +211,9 @@ export function FormWizardAbrirEmpresa({ open, onClose }) {
         <Box sx={{ p: 4, textAlign: 'center' }}>
           <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
             {steps.map((label) => (
-              <Step key={label}><StepLabel>{label}</StepLabel></Step>
+              <Step key={label}>
+                <StepLabel>{label}</StepLabel>
+              </Step>
             ))}
           </Stepper>
           <Box>{renderStepContent(activeStep)}</Box>
@@ -195,7 +221,12 @@ export function FormWizardAbrirEmpresa({ open, onClose }) {
             {activeStep === 0 ? (
               <>
                 <Box sx={{ width: '150px' }} />
-                <Button variant="contained" color="primary" onClick={handleNext} sx={{ minWidth: '150px' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleNext}
+                  sx={{ minWidth: '150px' }}
+                >
                   Próximo
                 </Button>
               </>
@@ -204,7 +235,12 @@ export function FormWizardAbrirEmpresa({ open, onClose }) {
                 <Button onClick={() => setActiveStep(0)} sx={{ minWidth: '150px' }}>
                   Voltar
                 </Button>
-                <Button variant="contained" color="primary" onClick={handleSubmit(handleFinish)} sx={{ minWidth: '150px' }}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  onClick={handleSubmit(handleFinish)}
+                  sx={{ minWidth: '150px' }}
+                >
                   Finalizar
                 </Button>
               </>

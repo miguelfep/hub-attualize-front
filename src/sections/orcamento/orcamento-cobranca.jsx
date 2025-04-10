@@ -160,7 +160,9 @@ export function CobrancaExistente({ invoice }) {
                       <Button
                         variant="contained"
                         startIcon={<Iconify width={16} icon="eva:copy-outline" />}
-                        onClick={() => handleCopy('de6ce328-8119-4256-84c5-e3bd0fd9f9fa', 'Chave PIX copiada!')}
+                        onClick={() =>
+                          handleCopy('de6ce328-8119-4256-84c5-e3bd0fd9f9fa', 'Chave PIX copiada!')
+                        }
                         fullWidth
                       >
                         Copiar Chave PIX

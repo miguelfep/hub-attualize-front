@@ -19,7 +19,7 @@ const swrOptions = {
 
 export function useGetBoard() {
   const { data, isLoading, error, isValidating } = useSWR(KANBAN_ENDPOINT, fetcher, swrOptions);
-  
+
   const memoizedValue = useMemo(() => {
     const tasks = data?.board?.tasks ?? {};
     const columns = data?.board?.columns ?? [];
@@ -226,7 +226,6 @@ export async function updateTask(columnId, taskData) {
    * Work on server
    */
 
-  
   if (enableServer) {
     const data = { columnId, taskData };
     await axios.post(KANBAN_ENDPOINT, data, { params: { endpoint: 'update-task' } });
@@ -342,9 +341,7 @@ export async function addCommentToTask(taskId, commentData) {
       // Find the column containing the task and update the task's comments
       const updatedTasks = Object.keys(board.tasks).reduce((acc, columnId) => {
         acc[columnId] = board.tasks[columnId].map((task) =>
-          task.id === taskId
-            ? { ...task, comentarios: [...task.comentarios, commentData] }
-            : task
+          task.id === taskId ? { ...task, comentarios: [...task.comentarios, commentData] } : task
         );
         return acc;
       }, {});

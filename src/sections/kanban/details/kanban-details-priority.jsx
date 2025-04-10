@@ -8,7 +8,6 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 export function KanbanDetailsPriority({ priority, onChangePriority }) {
-  
   return (
     <Stack direction="row" flexWrap="wrap" spacing={1}>
       {['baixa', 'média', 'alta'].map((option) => (

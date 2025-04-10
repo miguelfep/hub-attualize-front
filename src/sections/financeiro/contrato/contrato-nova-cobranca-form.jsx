@@ -32,7 +32,10 @@ const formatCurrency = (value) => {
 };
 
 const parseCurrency = (formattedValue) => {
-  const sanitizedValue = formattedValue.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+  const sanitizedValue = formattedValue
+    .replace(/[R$\s]/g, '')
+    .replace(/\./g, '')
+    .replace(',', '.');
   return parseFloat(sanitizedValue);
 };
 
@@ -45,18 +48,18 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
   useEffect(() => {
     if (open) {
       if (contrato.tipoContrato === 'parceiroid') {
-        const descricaoObservacoes = contrato.items
-          .map((item) => item.descricao)
-          .join('\n');
+        const descricaoObservacoes = contrato.items.map((item) => item.descricao).join('\n');
         const valorTotal = contrato.items.reduce(
           (acc, item) => acc + item.valorUnitario * item.quantidade,
           0
         );
         setObservacoes(descricaoObservacoes);
-        setFormattedValue(valorTotal.toLocaleString('pt-BR', {
-          style: 'currency',
-          currency: 'BRL',
-        }));
+        setFormattedValue(
+          valorTotal.toLocaleString('pt-BR', {
+            style: 'currency',
+            currency: 'BRL',
+          })
+        );
       } else {
         setObservacoes(cobrancaAtual?.observacoes || '');
         setFormattedValue(
@@ -106,7 +109,9 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
       handleClose();
     } catch (error) {
       console.error('Erro ao criar/editar cobrança:', error);
-      toast.error(`Erro ao criar/editar cobrança: ${error.response?.data?.message || error.message}`);
+      toast.error(
+        `Erro ao criar/editar cobrança: ${error.response?.data?.message || error.message}`
+      );
     }
   };
 
@@ -114,7 +119,13 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
   const isFinanceiro = user.role === 'financeiro';
 
   return (
-    <Dialog open={open} onClose={handleClose} aria-labelledby="form-dialog-title" maxWidth="md" fullWidth>
+    <Dialog
+      open={open}
+      onClose={handleClose}
+      aria-labelledby="form-dialog-title"
+      maxWidth="md"
+      fullWidth
+    >
       <DialogTitle id="form-dialog-title">
         {cobrancaAtual ? 'Editar Cobrança' : 'Nova Cobrança'}
       </DialogTitle>
@@ -138,11 +149,7 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
               value={dataVencimento}
               onChange={(newValue) => setDataVencimento(newValue)}
               renderInput={(params) => (
-                <TextField
-                  {...params}
-                  fullWidth
-                  disabled={!isAdmin && !isFinanceiro}
-                />
+                <TextField {...params} fullWidth disabled={!isAdmin && !isFinanceiro} />
               )}
             />
           </Grid>
@@ -183,7 +190,9 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
           onClick={handleCreateOrUpdate}
           color="primary"
           variant="contained"
-          disabled={(!observacoes || !formattedValue || !dataVencimento) || (!isAdmin && !isFinanceiro)}
+          disabled={
+            !observacoes || !formattedValue || !dataVencimento || (!isAdmin && !isFinanceiro)
+          }
         >
           {cobrancaAtual ? 'Atualizar' : 'Criar'}
         </Button>

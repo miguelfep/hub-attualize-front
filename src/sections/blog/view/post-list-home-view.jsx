@@ -34,11 +34,11 @@ export function PostListHomeView({ initialPosts, totalPages }) {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Debounce para evitar chamadas frequentes de busca
-  const debouncedQuery = useDebounce(searchQuery);  
+  const debouncedQuery = useDebounce(searchQuery);
 
   // Hook customizado para buscar os posts
-   // Função para buscar posts
-   const loadSearchResults = useCallback(async () => {
+  // Função para buscar posts
+  const loadSearchResults = useCallback(async () => {
     setLoading(true);
 
     try {
@@ -71,7 +71,6 @@ export function PostListHomeView({ initialPosts, totalPages }) {
     author: post._embedded?.author[0]?.name || 'Autor Desconhecido',
     imageUrl: post.yoast_head_json.og_image[0].url || '/default-image.png',
   }));
-
 
   // Aplicar ordenação e filtros nos posts
   const dataFiltered = applyFilter({ inputData: formattedPosts, sortBy });
@@ -125,7 +124,7 @@ export function PostListHomeView({ initialPosts, totalPages }) {
         direction={{ xs: 'column', sm: 'row' }}
         sx={{ mb: { xs: 3, md: 5 } }}
       >
-          <PostSearch
+        <PostSearch
           query={debouncedQuery}
           results={posts}
           onSearch={handleSearch}
@@ -142,12 +141,7 @@ export function PostListHomeView({ initialPosts, totalPages }) {
       {/* Botão "Ver mais" */}
       {hasMorePosts && (
         <Stack alignItems="center" sx={{ mt: 8, mb: { xs: 10, md: 15 } }}>
-          <Button
-            size="large"
-            variant="outlined"
-            onClick={loadMorePosts}
-            disabled={loading}
-          >
+          <Button size="large" variant="outlined" onClick={loadMorePosts} disabled={loading}>
             {loading ? 'Carregando...' : 'Ver mais'}
           </Button>
         </Stack>

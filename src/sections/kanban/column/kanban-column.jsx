@@ -24,7 +24,7 @@ export function KanbanColumn({ children, column, tasks, disabled, sx }) {
       animateLayoutChanges,
     });
 
-    const tasksIds = tasks ? tasks.map((task) => task.id) : [];
+  const tasksIds = tasks ? tasks.map((task) => task.id) : [];
 
   const isOverContainer = over
     ? (column.id === over.id && active?.data.current?.type !== 'container') ||

@@ -206,10 +206,7 @@ export function Calculadora() {
             {/* Toggle CNPJ */}
             <FormControlLabel
               control={
-                <Switch
-                  checked={possuiCnpj}
-                  onChange={(e) => setPossuiCnpj(e.target.checked)}
-                />
+                <Switch checked={possuiCnpj} onChange={(e) => setPossuiCnpj(e.target.checked)} />
               }
               label="Já possui CNPJ?"
             />

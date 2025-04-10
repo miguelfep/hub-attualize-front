@@ -1,21 +1,9 @@
 import React from 'react';
 import { toast } from 'sonner';
 
-import {
-  Box,
-  Grid,
-  Button,
-  Switch,
-  Divider,
-  Typography,
-  FormControlLabel,
-} from '@mui/material';
+import { Box, Grid, Button, Switch, Divider, Typography, FormControlLabel } from '@mui/material';
 
-import {
-  uploadArquivo,
-  deletarArquivo,
-  downloadArquivo,
-} from 'src/actions/societario';
+import { uploadArquivo, deletarArquivo, downloadArquivo } from 'src/actions/societario';
 
 const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
   const handleUpload = async (name) => {
@@ -52,7 +40,7 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
     try {
       const fileUrl = formData[name];
       if (!fileUrl) throw new Error('Arquivo não disponível para download.');
-      
+
       const filename = fileUrl.split('/').pop();
       const response = await downloadArquivo(aberturaId, name, filename);
 
@@ -110,7 +98,7 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
 
       {/* Toggles */}
       <Box sx={{ mb: 3 }}>
-      <FormControlLabel
+        <FormControlLabel
           control={
             <Switch
               checked={formData.notificarWhats || false}
@@ -190,11 +178,7 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
                     </Button>
                   </Box>
                 ) : (
-                  <Button
-                    variant="contained"
-                    onClick={() => handleUpload(doc.name)}
-                    fullWidth
-                  >
+                  <Button variant="contained" onClick={() => handleUpload(doc.name)} fullWidth>
                     Enviar Documento
                   </Button>
                 )}

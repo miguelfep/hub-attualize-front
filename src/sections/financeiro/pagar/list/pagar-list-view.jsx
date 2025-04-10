@@ -82,7 +82,7 @@ export function ContasPagarListView() {
     total: 0,
     pagos: 0,
     pendentes: 0,
-    apagar: 0
+    apagar: 0,
   });
 
   const [rowsPerPage, setRowsPerPage] = useState(50);
@@ -119,7 +119,7 @@ export function ContasPagarListView() {
     );
 
     const apagar = sumBy(
-      tableData.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO' ),
+      tableData.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO'),
       (conta) => conta.valor
     );
 
@@ -167,14 +167,14 @@ export function ContasPagarListView() {
   };
 
   const dataFiltered = tableData
-  .filter((row) => row.descricao.toLowerCase().includes(filters.descricao.toLowerCase()))
-  .filter((row) =>
-    filters.status === 'all'
-      ? true
-      : filters.status === 'a_pagar'
-      ? ['PENDENTE', 'AGENDADO'].includes(row.status)
-      : row.status === filters.status
-  );
+    .filter((row) => row.descricao.toLowerCase().includes(filters.descricao.toLowerCase()))
+    .filter((row) =>
+      filters.status === 'all'
+        ? true
+        : filters.status === 'a_pagar'
+          ? ['PENDENTE', 'AGENDADO'].includes(row.status)
+          : row.status === filters.status
+    );
 
   const dataInPage = rowInPage(dataFiltered, page, rowsPerPage);
 
@@ -202,71 +202,72 @@ export function ContasPagarListView() {
 
       <Card sx={{ mb: { xs: 3, md: 5 } }}>
         <Scrollbar sx={{ minHeight: 108 }}>
-        <Stack
-          direction="row"
-          divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
-          sx={{ py: 2 }}
-        >
-          <ReceberAnalytic
-            title="Total"
-            total={tableData.length}
-            percent={100}
-            price={analiticoData.total}
-            icon="solar:bill-list-bold-duotone"
-            color={theme.vars.palette.info.main}
-            onClick={() => {
-              console.log('Total clicado');
-              setFilters({ ...filters, status: 'all' });
-            }}
-          />
+          <Stack
+            direction="row"
+            divider={<Divider orientation="vertical" flexItem sx={{ borderStyle: 'dashed' }} />}
+            sx={{ py: 2 }}
+          >
+            <ReceberAnalytic
+              title="Total"
+              total={tableData.length}
+              percent={100}
+              price={analiticoData.total}
+              icon="solar:bill-list-bold-duotone"
+              color={theme.vars.palette.info.main}
+              onClick={() => {
+                console.log('Total clicado');
+                setFilters({ ...filters, status: 'all' });
+              }}
+            />
 
-          <ReceberAnalytic
-            title="Pagos"
-            total={tableData.filter((d) => d.status === 'PAGO').length}
-            percent={(analiticoData.pagos / analiticoData.total) * 100}
-            price={analiticoData.pagos}
-            icon="solar:file-check-bold-duotone"
-            color={theme.vars.palette.success.main}
-            onClick={() => setFilters({ ...filters, status: 'PAGO' })} // Filtro Pagos
-          />
+            <ReceberAnalytic
+              title="Pagos"
+              total={tableData.filter((d) => d.status === 'PAGO').length}
+              percent={(analiticoData.pagos / analiticoData.total) * 100}
+              price={analiticoData.pagos}
+              icon="solar:file-check-bold-duotone"
+              color={theme.vars.palette.success.main}
+              onClick={() => setFilters({ ...filters, status: 'PAGO' })} // Filtro Pagos
+            />
 
-          <ReceberAnalytic
-            title="Pendentes"
-            total={tableData.filter((d) => d.status === 'PENDENTE').length}
-            percent={(analiticoData.pendentes / analiticoData.total) * 100}
-            price={analiticoData.pendentes}
-            icon="solar:bell-bing-bold-duotone"
-            color={theme.vars.palette.warning.main}
-            onClick={() => setFilters({ ...filters, status: 'PENDENTE' })} // Filtro Pendentes
-          />
+            <ReceberAnalytic
+              title="Pendentes"
+              total={tableData.filter((d) => d.status === 'PENDENTE').length}
+              percent={(analiticoData.pendentes / analiticoData.total) * 100}
+              price={analiticoData.pendentes}
+              icon="solar:bell-bing-bold-duotone"
+              color={theme.vars.palette.warning.main}
+              onClick={() => setFilters({ ...filters, status: 'PENDENTE' })} // Filtro Pendentes
+            />
 
-          <ReceberAnalytic
-            title="A Pagar"
-            total={tableData.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO').length}
-            percent={(analiticoData.apagar / analiticoData.total) * 100}
-            price={analiticoData.apagar}
-            icon="solar:wad-of-money-broken"
-            color={theme.vars.palette.error.main}
-            onClick={() => setFilters({ ...filters, status: 'a_pagar' })} // Filtro A Pagar
-          />
-        </Stack>
-
+            <ReceberAnalytic
+              title="A Pagar"
+              total={
+                tableData.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO').length
+              }
+              percent={(analiticoData.apagar / analiticoData.total) * 100}
+              price={analiticoData.apagar}
+              icon="solar:wad-of-money-broken"
+              color={theme.vars.palette.error.main}
+              onClick={() => setFilters({ ...filters, status: 'a_pagar' })} // Filtro A Pagar
+            />
+          </Stack>
         </Scrollbar>
       </Card>
 
       <Card sx={{ mb: 3 }}>
-      <Tabs value={filters.status} onChange={handleFilterStatus} sx={{ px: 2.5 }}>
-        <Tab value="all" label="Todos" />
-        <Tab value="PAGO" label="Pagos" />
-        <Tab value="PENDENTE" label="Pendentes" />
-        <Tab value="AGENDADO" label="Agendado" />
-        <Tab value="a_pagar" label="A Pagar" /> {/* Novo filtro */}
-      </Tabs>
+        <Tabs value={filters.status} onChange={handleFilterStatus} sx={{ px: 2.5 }}>
+          <Tab value="all" label="Todos" />
+          <Tab value="PAGO" label="Pagos" />
+          <Tab value="PENDENTE" label="Pendentes" />
+          <Tab value="AGENDADO" label="Agendado" />
+          <Tab value="a_pagar" label="A Pagar" /> {/* Novo filtro */}
+        </Tabs>
       </Card>
 
       {/* Adicionando botões de avanço e retrocesso */}
       <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
-        <IconButton  onClick={handlePreviousMonth} >
+        <IconButton onClick={handlePreviousMonth}>
           <Iconify icon="mingcute:arrow-left-fill" />
         </IconButton>
         <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
@@ -292,9 +293,7 @@ export function ContasPagarListView() {
         setFilters={setFilters}
         onResetPage={table.onResetPage}
         contas={dataFiltered} // Passa as contas filtradas
-        contasSelecionadas={table.selected.map((id) =>
-          tableData.find((conta) => conta._id === id)
-        )} // Mapeia as contas selecionadas
+        contasSelecionadas={table.selected.map((id) => tableData.find((conta) => conta._id === id))} // Mapeia as contas selecionadas
       />
 
       <Card>

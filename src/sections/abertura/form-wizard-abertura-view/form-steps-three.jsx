@@ -12,7 +12,7 @@ import PsicologoComponent from './form-psicologoComponent';
 
 // ----------------------------------------------------------------------
 
-export default function StepThree() {
+export function StepThree() {
   const { getValues } = useFormContext();
   const segment = getValues('stepTwo.segment');
 

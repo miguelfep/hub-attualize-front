@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import { useState, useEffect } from 'react';
 
@@ -17,7 +17,11 @@ import Autocomplete from '@mui/material/Autocomplete';
 import { getClientes } from 'src/actions/clientes';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getLicencas, createLicenca } from 'src/actions/societario';
-import { BookingIllustration, MotivationIllustration, ServerErrorIllustration } from 'src/assets/illustrations';
+import {
+  BookingIllustration,
+  MotivationIllustration,
+  ServerErrorIllustration,
+} from 'src/assets/illustrations';
 
 import { BookingDetails } from '../booking-details';
 import { BookingWidgetSummary } from '../booking-widget-summary';
@@ -46,7 +50,7 @@ export function OverviewBookingView() {
     dataVencimento: '',
     status: 'em_processo',
     urlDeAcesso: '',
-    observacao: ''
+    observacao: '',
   });
   const [errors, setErrors] = useState({});
 
@@ -81,7 +85,8 @@ export function OverviewBookingView() {
     if (!newLicense.nome) newErrors.nome = 'O tipo de licença é obrigatório.';
     if (!newLicense.clienteId) newErrors.clienteId = 'O cliente é obrigatório.';
     if (!newLicense.dataInicio) newErrors.dataInicio = 'A data de início é obrigatória.';
-    if (!newLicense.dataVencimento) newErrors.dataVencimento = 'A data de vencimento é obrigatória.';
+    if (!newLicense.dataVencimento)
+      newErrors.dataVencimento = 'A data de vencimento é obrigatória.';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -103,18 +108,18 @@ export function OverviewBookingView() {
     setNewLicense({
       ...newLicense,
       clienteId: newValue ? newValue._id : '',
-      estado,  // Preenche automaticamente se houver estado no endereço
-      cidade,  // Preenche automaticamente se houver cidade no endereço
+      estado, // Preenche automaticamente se houver estado no endereço
+      cidade, // Preenche automaticamente se houver cidade no endereço
     });
   };
 
-  const filteredLicencas = licencas.filter((licenca) =>
-    (licenca.nome?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-    (licenca.cliente?.razaoSocial?.toLowerCase() || '').includes(searchQuery.toLowerCase())
+  const filteredLicencas = licencas.filter(
+    (licenca) =>
+      (licenca.nome?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
+      (licenca.cliente?.razaoSocial?.toLowerCase() || '').includes(searchQuery.toLowerCase())
   );
 
   console.log(filteredLicencas);
-  
 
   return (
     <DashboardContent maxWidth="xl">
@@ -199,7 +204,9 @@ export function OverviewBookingView() {
           <Autocomplete
             options={licencasBrasil}
             getOptionLabel={(option) => option.nome}
-            onChange={(event, newValue) => setNewLicense({ ...newLicense, nome: newValue ? newValue.nome : '' })}
+            onChange={(event, newValue) =>
+              setNewLicense({ ...newLicense, nome: newValue ? newValue.nome : '' })
+            }
             renderInput={(params) => (
               <TextField
                 {...params}

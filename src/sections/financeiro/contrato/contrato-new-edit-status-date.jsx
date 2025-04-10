@@ -40,7 +40,7 @@ export function ContratoNewEditStatusDate() {
           ))}
         </Field.Select>
 
-        <Field.DatePicker name="createdDate" label="Data Criação" />
+        <Field.DatePicker name="dataInicio" label="Data Inicio" />
 
         <Field.Select
           fullWidth

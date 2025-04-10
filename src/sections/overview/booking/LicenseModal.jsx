@@ -15,13 +15,17 @@ import {
   FormControl,
 } from '@mui/material';
 
-import { downloadLicenca, updateLicencaWithFile, deletarArquivoLicenca } from 'src/actions/societario';
+import {
+  downloadLicenca,
+  updateLicencaWithFile,
+  deletarArquivoLicenca,
+} from 'src/actions/societario';
 
-export default function LicenseModal({ licenca, fetchLicencas, onClose }) { 
+export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
   const [editedLicense, setEditedLicense] = useState({
     ...licenca,
     dataInicio: licenca.dataInicio ? licenca.dataInicio.slice(0, 10) : '',
-    dataVencimento: licenca.dataVencimento ? licenca.dataVencimento.slice(0, 10) : ''
+    dataVencimento: licenca.dataVencimento ? licenca.dataVencimento.slice(0, 10) : '',
   });
   const [file, setFile] = useState(null);
   const [fileName, setFileName] = useState(licenca.arquivo ? licenca.arquivo.split('/').pop() : '');
@@ -33,7 +37,7 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
 
     const dataToSend = {
       ...editedLicense,
-      clienteId: editedLicense.cliente?._id
+      clienteId: editedLicense.cliente?._id,
     };
 
     try {
@@ -75,7 +79,7 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
   const handleSaveChanges = async () => {
     const dataToSend = {
       ...editedLicense,
-      clienteId: editedLicense.cliente?._id
+      clienteId: editedLicense.cliente?._id,
     };
 
     try {
@@ -90,13 +94,56 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
 
   return (
     <Modal open={Boolean(licenca)} onClose={onClose}>
-      <Box p={3} sx={{ bgcolor: 'background.paper', boxShadow: 24, width: 600, maxHeight: '90vh', overflowY: 'auto', mx: 'auto', mt: 5 }}>
+      <Box
+        p={3}
+        sx={{
+          bgcolor: 'background.paper',
+          boxShadow: 24,
+          width: 600,
+          maxHeight: '90vh',
+          overflowY: 'auto',
+          mx: 'auto',
+          mt: 5,
+        }}
+      >
         <Typography variant="h6">Editar Licença de {editedLicense.cliente?.razaoSocial}</Typography>
-        <TextField fullWidth margin="normal" label="Nome" value={editedLicense.nome} InputProps={{ readOnly: true }} />
-        <TextField fullWidth margin="normal" label="Estado" value={editedLicense.estado} onChange={(e) => setEditedLicense({ ...editedLicense, estado: e.target.value })} />
-        <TextField fullWidth margin="normal" label="Cidade" value={editedLicense.cidade} onChange={(e) => setEditedLicense({ ...editedLicense, cidade: e.target.value })} />
-        <TextField fullWidth margin="normal" label="URL de Acesso" value={editedLicense.urldeacesso || ''} onChange={(e) => setEditedLicense({ ...editedLicense, urldeacesso: e.target.value })} />
-        <TextField fullWidth margin="normal" label="Observação" multiline rows={3} value={editedLicense.observacao || ''} onChange={(e) => setEditedLicense({ ...editedLicense, observacao: e.target.value })} />
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Nome"
+          value={editedLicense.nome}
+          InputProps={{ readOnly: true }}
+        />
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Estado"
+          value={editedLicense.estado}
+          onChange={(e) => setEditedLicense({ ...editedLicense, estado: e.target.value })}
+        />
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Cidade"
+          value={editedLicense.cidade}
+          onChange={(e) => setEditedLicense({ ...editedLicense, cidade: e.target.value })}
+        />
+        <TextField
+          fullWidth
+          margin="normal"
+          label="URL de Acesso"
+          value={editedLicense.urldeacesso || ''}
+          onChange={(e) => setEditedLicense({ ...editedLicense, urldeacesso: e.target.value })}
+        />
+        <TextField
+          fullWidth
+          margin="normal"
+          label="Observação"
+          multiline
+          rows={3}
+          value={editedLicense.observacao || ''}
+          onChange={(e) => setEditedLicense({ ...editedLicense, observacao: e.target.value })}
+        />
         <TextField
           fullWidth
           margin="normal"
@@ -130,8 +177,12 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
         </FormControl>
         {fileName ? (
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 2 }}>
-            <Button variant="contained" onClick={handleDownloadLicenca}>Baixar Arquivo</Button>
-            <Button variant="contained" color="error" onClick={handleDeleteFile}>Deletar Arquivo</Button>
+            <Button variant="contained" onClick={handleDownloadLicenca}>
+              Baixar Arquivo
+            </Button>
+            <Button variant="contained" color="error" onClick={handleDeleteFile}>
+              Deletar Arquivo
+            </Button>
           </Box>
         ) : (
           <Button fullWidth variant="contained" component="label" sx={{ mt: 2, mb: 1 }}>
@@ -139,7 +190,13 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
             <input type="file" hidden onChange={handleFileUpload} />
           </Button>
         )}
-        <Button fullWidth variant="contained" color="primary" onClick={handleSaveChanges} sx={{ mt: 2 }}>
+        <Button
+          fullWidth
+          variant="contained"
+          color="primary"
+          onClick={handleSaveChanges}
+          sx={{ mt: 2 }}
+        >
           Salvar Alterações
         </Button>
         <Button fullWidth variant="outlined" onClick={onClose} sx={{ mt: 2 }}>

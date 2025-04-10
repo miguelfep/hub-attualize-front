@@ -88,7 +88,8 @@ export function KanbanView() {
       }
 
       const pointerIntersections = pointerWithin(args);
-      const intersections = pointerIntersections.length > 0 ? pointerIntersections : rectIntersection(args);
+      const intersections =
+        pointerIntersections.length > 0 ? pointerIntersections : rectIntersection(args);
       let overId = getFirstCollision(intersections, 'id');
 
       if (overId != null) {
@@ -245,9 +246,7 @@ export function KanbanView() {
     </Stack>
   );
 
-  const renderEmpty = (
-    <EmptyContent filled sx={{ py: 10, maxHeight: { md: 480 } }} />
-  );
+  const renderEmpty = <EmptyContent filled sx={{ py: 10, maxHeight: { md: 480 } }} />;
 
   const renderList = (
     <DndContext

@@ -82,7 +82,9 @@ const OthersInfo = ({ formData, setFormData }) => {
           <MenuItem value="Fora do estabelecimento">Fora do estabelecimento</MenuItem>
           <MenuItem value="Escritório administrativo">Escritório administrativo</MenuItem>
           <MenuItem value="Local próprio">Local próprio</MenuItem>
-          <MenuItem value="Em estabelecimento de terceiros">Em estabelecimento de terceiros</MenuItem>
+          <MenuItem value="Em estabelecimento de terceiros">
+            Em estabelecimento de terceiros
+          </MenuItem>
           <MenuItem value="Casa do cliente">Casa do cliente</MenuItem>
           <MenuItem value="Outros">Outros</MenuItem>
         </TextField>

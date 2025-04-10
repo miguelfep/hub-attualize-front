@@ -70,7 +70,7 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
                 </Typography>
               }
               secondary={
-                <Link noWrap variant="body2"  sx={{ color: 'text.disabled' }}>
+                <Link noWrap variant="body2" sx={{ color: 'text.disabled' }}>
                   {row.invoiceNumber}
                 </Link>
               }

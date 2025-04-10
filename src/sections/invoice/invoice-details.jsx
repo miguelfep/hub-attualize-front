@@ -54,7 +54,6 @@ const cobrancaStatusTexts = {
   VENCIDO: 'Vencida',
   CANCELADO: 'Cancelado',
   RECEBIDO: 'Pago',
-
 };
 
 export function InvoiceDetails({ invoice }) {
@@ -321,7 +320,6 @@ export function InvoiceDetails({ invoice }) {
               {fDate(invoice?.approvalDate)}
             </Stack>
           )}
-
         </Box>
         {renderList}
         <Divider sx={{ mt: 5, borderStyle: 'dashed' }} />
@@ -329,7 +327,7 @@ export function InvoiceDetails({ invoice }) {
 
         {/* Mostrar o campo de edição do motivo se o status for 'perdida' */}
         {currentStatus === 'perdida' && (
-           <Box sx={{ mt: 4, mb: 6 }}> 
+          <Box sx={{ mt: 4, mb: 6 }}>
             <Typography variant="h6" sx={{ mb: 2 }}>
               Motivo da perda
             </Typography>

@@ -32,7 +32,14 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 import LicenseModal from './LicenseModal';
 
-export function BookingDetails({ fetchLicencas, title, subheader, headLabel, tableData, ...other }) {
+export function BookingDetails({
+  fetchLicencas,
+  title,
+  subheader,
+  headLabel,
+  tableData,
+  ...other
+}) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(50);
   const [selectedLicense, setSelectedLicense] = useState(null);
@@ -57,7 +64,12 @@ export function BookingDetails({ fetchLicencas, title, subheader, headLabel, tab
           <TableHeadCustom headLabel={headLabel} />
           <TableBody>
             {paginatedData.map((row) => (
-              <RowItem key={row.id} row={row} fetchLicencas={fetchLicencas} onOpenModal={handleOpenModal} />
+              <RowItem
+                key={row.id}
+                row={row}
+                fetchLicencas={fetchLicencas}
+                onOpenModal={handleOpenModal}
+              />
             ))}
           </TableBody>
         </Table>
@@ -73,14 +85,20 @@ export function BookingDetails({ fetchLicencas, title, subheader, headLabel, tab
         rowsPerPageOptions={[10, 25, 50, 100]}
         labelRowsPerPage="Linhas por página:"
       />
-      {selectedLicense && <LicenseModal licenca={selectedLicense} fetchLicencas={fetchLicencas} onClose={() => setSelectedLicense(null)} />}
+      {selectedLicense && (
+        <LicenseModal
+          licenca={selectedLicense}
+          fetchLicencas={fetchLicencas}
+          onClose={() => setSelectedLicense(null)}
+        />
+      )}
     </Card>
   );
 }
 
 function RowItem({ row, fetchLicencas, onOpenModal }) {
-  console.log('row ',row);
-  
+  console.log('row ', row);
+
   const popover = usePopover();
   const statusMap = {
     em_processo: { label: 'Em Processo', color: 'secondary' },
@@ -94,7 +112,12 @@ function RowItem({ row, fetchLicencas, onOpenModal }) {
     <TableRow>
       <TableCell>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar variant="rounded" alt={row.cliente.razaoSocial || ' '} src={row.razaoSocial} sx={{ width: 48, height: 48 }} />
+          <Avatar
+            variant="rounded"
+            alt={row.cliente.razaoSocial || ' '}
+            src={row.razaoSocial}
+            sx={{ width: 48, height: 48 }}
+          />
           <ListItemText primary={row.cliente.razaoSocial} secondary={row.cliente.cnpj} />
         </Box>
       </TableCell>
@@ -117,11 +140,13 @@ function RowItem({ row, fetchLicencas, onOpenModal }) {
             <Iconify icon="eva:edit-2-fill" /> Ver Licença
           </MenuItem>
           <Divider sx={{ borderStyle: 'dashed' }} />
-          <MenuItem onClick={async () => {
-            await deleteLicenca(row.id);
-            fetchLicencas();
-            toast.success('Licença deletada');
-          }}>
+          <MenuItem
+            onClick={async () => {
+              await deleteLicenca(row.id);
+              fetchLicencas();
+              toast.success('Licença deletada');
+            }}
+          >
             <Iconify icon="solar:trash-bin-trash-bold" /> Deletar
           </MenuItem>
         </MenuList>

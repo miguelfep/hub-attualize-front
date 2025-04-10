@@ -10,7 +10,6 @@ import { ImpostosClinicaEstetica } from './ImpostosClinicaEstetica';
 import { LegalizarClinicaEsteticaStepper } from './legalizarClinicaEstetica';
 import { ImportanciaContabilidadeEstetica } from './ImportanciaContabilidadeEstetica';
 
-
 // ----------------------------------------------------------------------
 
 export function HomeEstetica() {
@@ -26,17 +25,14 @@ export function HomeEstetica() {
 
       <BackToTop />
 
-
       <Stack sx={{ position: 'relative', bgcolor: 'background.default' }}>
-
         <BannerEstetica />
-        
+
         <ImportanciaContabilidadeEstetica />
 
         <LegalizarClinicaEsteticaStepper />
 
         <ImpostosClinicaEstetica />
-        
       </Stack>
     </>
   );

@@ -1,7 +1,16 @@
 import React, { useEffect } from 'react';
 import InputMask from 'react-input-mask';
 
-import { Box, Grid, Switch, Divider, MenuItem, TextField, Typography, FormControlLabel } from '@mui/material';
+import {
+  Box,
+  Grid,
+  Switch,
+  Divider,
+  MenuItem,
+  TextField,
+  Typography,
+  FormControlLabel,
+} from '@mui/material';
 
 const SociosForm = ({ formData, setFormData }) => {
   // Inicializa com 1 sócio por padrão
@@ -109,9 +118,7 @@ const SociosForm = ({ formData, setFormData }) => {
               value={socio.cpf || ''}
               onChange={(e) => handleChange(index, 'cpf', e.target.value)}
             >
-              {(inputProps) => (
-                <TextField {...inputProps} label="CPF" fullWidth />
-              )}
+              {(inputProps) => <TextField {...inputProps} label="CPF" fullWidth />}
             </InputMask>
           </Grid>
 
@@ -121,9 +128,7 @@ const SociosForm = ({ formData, setFormData }) => {
               value={socio.rg || ''}
               onChange={(e) => handleChange(index, 'rg', e.target.value)}
             >
-              {(inputProps) => (
-                <TextField {...inputProps} label="RG" fullWidth />
-              )}
+              {(inputProps) => <TextField {...inputProps} label="RG" fullWidth />}
             </InputMask>
           </Grid>
 
@@ -133,9 +138,7 @@ const SociosForm = ({ formData, setFormData }) => {
               value={socio.cnh || ''}
               onChange={(e) => handleChange(index, 'cnh', e.target.value)}
             >
-              {(inputProps) => (
-                <TextField {...inputProps} label="CNH" fullWidth />
-              )}
+              {(inputProps) => <TextField {...inputProps} label="CNH" fullWidth />}
             </InputMask>
           </Grid>
 

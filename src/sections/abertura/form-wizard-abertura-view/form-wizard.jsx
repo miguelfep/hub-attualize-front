@@ -15,7 +15,7 @@ import { criarLead, atualizarLead } from 'src/actions/lead';
 import { toast } from 'src/components/snackbar';
 import { Form } from 'src/components/hook-form';
 
-import StepThree from './form-steps-three';
+import  { StepThree } from './form-steps-three';
 import { Stepper, StepOne, StepTwo, StepCompleted } from './form-steps';
 
 // Novo componente de pré-visualização

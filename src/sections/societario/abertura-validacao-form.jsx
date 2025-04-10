@@ -158,7 +158,10 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
   const handleApprove = async () => {
     loading.onTrue();
     try {
-      await updateAbertura(currentAbertura._id, { statusAbertura: 'kickoff', somenteAtualizar: false });
+      await updateAbertura(currentAbertura._id, {
+        statusAbertura: 'kickoff',
+        somenteAtualizar: false,
+      });
       setParentValue('statusAbertura', 'kickoff');
       toast.success('Abertura aprovada!');
     } catch (error) {
@@ -366,7 +369,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
         <Grid item xs={12}>
           <Typography variant="h6">Informações dos Sócios</Typography>
         </Grid>
-         {formData.socios.map((socio, index) => (
+        {formData.socios.map((socio, index) => (
           <React.Fragment key={index}>
             <Grid item xs={12} sm={6}>
               <TextField
@@ -436,7 +439,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 }}
                 margin="dense"
               />
-            </Grid>           
+            </Grid>
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth

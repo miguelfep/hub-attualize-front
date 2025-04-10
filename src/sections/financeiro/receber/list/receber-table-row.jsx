@@ -51,18 +51,16 @@ export function ReceberTableRow({ row, selected, onSelectRow, fetchCobrancas }) 
   };
 
   const handleGenerateBoleto = async () => {
-    if (loading) return;     
+    if (loading) return;
     setLoading(true);
     try {
-      
       // Executa a chamada para gerar o boleto
       const res = await gerarBoletoPorId(row._id);
-    
+
       // Valida se a resposta foi bem-sucedida
       if (res.status === 200 || res.status === 201) {
         toast.success('Boleto gerado com sucesso!');
         await fetchCobrancas();
-        
       } else {
         console.error('Erro ao gerar boleto: resposta inesperada', res);
         toast.error('Erro ao gerar boleto: resposta inesperada');
@@ -75,8 +73,6 @@ export function ReceberTableRow({ row, selected, onSelectRow, fetchCobrancas }) 
       console.log('Finalizando geração de boleto');
     }
   };
-  
-  
 
   // Função para cancelar boleto
   const handleCancelarBoleto = async () => {

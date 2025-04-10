@@ -120,7 +120,7 @@ export function ContratoListView() {
   const handleActivateRow = useCallback(
     async (id) => {
       try {
-        await updateContrato(id, { status: 'ativo' });
+        await updateContrato(id, { status: 'ativo', atualizarCobrancas: true });
         toast.success('Contrato ativado!');
         fetchContratos();
       } catch (error) {
@@ -216,7 +216,11 @@ export function ContratoListView() {
               />
             ))}
           </Tabs>
-          <ContratoTableToolbar filters={filters} onResetPage={table.onResetPage} tableData={dataFiltered} />
+          <ContratoTableToolbar
+            filters={filters}
+            onResetPage={table.onResetPage}
+            tableData={dataFiltered}
+          />
 
           {canReset && (
             <ContratoTableFiltersResult

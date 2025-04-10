@@ -10,7 +10,7 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 export function PostSort({ sort, sortOptions, onSort }) {
   const popover = usePopover();
-  
+
   // Mapeando sortOptions para exibir os valores traduzidos
   const translatedSortOptions = sortOptions.map((option) => ({
     ...option,

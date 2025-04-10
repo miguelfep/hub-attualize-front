@@ -1,11 +1,19 @@
 'use client';
 
 import { toast } from 'sonner';
-import  InputMask  from 'react-input-mask';
+import InputMask from 'react-input-mask';
 import { NumericFormat } from 'react-number-format';
-import { control, Controller, useFormContext }from 'react-hook-form';
+import { control, Controller, useFormContext } from 'react-hook-form';
 
-import { Card, Button, Switch, TextField, CardContent, CardActions, FormControlLabel } from '@mui/material';
+import {
+  Card,
+  Button,
+  Switch,
+  TextField,
+  CardContent,
+  CardActions,
+  FormControlLabel,
+} from '@mui/material';
 
 import { updateAbertura, enviarLinkAbertura } from 'src/actions/societario';
 
@@ -21,7 +29,7 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
         ...editedData,
         aberturaId: currentAbertura._id,
       };
-    
+
       // Envia os dados para o backend
       const res = await updateAbertura(currentAbertura._id, preparedData);
       if (res.status === 200) {
@@ -30,7 +38,7 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
         const errorMessage = res.data?.message || 'Erro ao salvar os dados';
         toast.error(`Erro: ${errorMessage}`);
       }
-    } catch (error) {      
+    } catch (error) {
       const errorMessage = error.response?.data?.message || 'Erro ao salvar os dados';
       toast.error(`Erro: ${errorMessage}`);
     }
@@ -72,27 +80,22 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
             margin="normal"
           />
 
-         <Controller
-          name="telefone"
-          control={control}
-          defaultValue={currentAbertura.telefone || ''}
-          render={({ field }) => (
-            <InputMask
-              mask="(99) 9 9999-9999"
-              value={field.value}
-              onChange={(e) => field.onChange(e.target.value)}
-              onBlur={field.onBlur}
-            >
-              {(inputProps) => (
-                <TextField
-                  {...inputProps}
-                  label="Telefone"
-                  fullWidth
-                  margin="normal"
-                />
-              )}
-            </InputMask>
-          )}
+          <Controller
+            name="telefone"
+            control={control}
+            defaultValue={currentAbertura.telefone || ''}
+            render={({ field }) => (
+              <InputMask
+                mask="(99) 9 9999-9999"
+                value={field.value}
+                onChange={(e) => field.onChange(e.target.value)}
+                onBlur={field.onBlur}
+              >
+                {(inputProps) => (
+                  <TextField {...inputProps} label="Telefone" fullWidth margin="normal" />
+                )}
+              </InputMask>
+            )}
           />
 
           <Controller

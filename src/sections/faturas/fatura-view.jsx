@@ -14,7 +14,6 @@ const FaturaViewPage = ({ faturaData }) => {
 
   // Dados da fatura
   const { valor, dataVencimento, observacoes, boleto, status } = faturaData;
-   
 
   const boletoData = boleto ? JSON.parse(boleto) : null; // Verifica se há dados de boleto e os parseia
 

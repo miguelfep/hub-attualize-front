@@ -5,14 +5,11 @@ import { Grid, Tooltip, TextField, IconButton } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
-
-
 const GeneralInfoForm = ({ formData, setFormData }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
 
   return (
     <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -96,21 +93,21 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
         />
       </Grid>
       <Grid item xs={12} sm={4}>
-      <InputMask 
-        mask="(99) 9999-9999" 
-        maskChar={null}
-        value={formData.telefoneComercial || ''} 
-        onChange={handleChange}
-      >
-        {(inputProps) => (
-          <TextField
-            label="Telefone Comercial"
-            name="telefoneComercial"
-            fullWidth
-            {...inputProps} 
-          />
-        )}
-      </InputMask>
+        <InputMask
+          mask="(99) 9999-9999"
+          maskChar={null}
+          value={formData.telefoneComercial || ''}
+          onChange={handleChange}
+        >
+          {(inputProps) => (
+            <TextField
+              label="Telefone Comercial"
+              name="telefoneComercial"
+              fullWidth
+              {...inputProps}
+            />
+          )}
+        </InputMask>
       </Grid>
       <Grid item xs={12} sm={4}>
         <TextField

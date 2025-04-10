@@ -33,7 +33,7 @@ const columns = [
     headerName: 'Total (R$)',
     width: 150,
     valueGetter: (params) => {
-            const total = params || 0;
+      const total = params || 0;
       return fCurrency(total);
     },
   },
@@ -72,8 +72,8 @@ export function RelatorioComercialView() {
   });
 
   const totalFilteredSales = filteredSales
-  .filter((sale) => ['pago', 'aprovada'].includes(sale.status.toLowerCase()))
-  .reduce((sum, sale) => sum + sale.total, 0);
+    .filter((sale) => ['pago', 'aprovada'].includes(sale.status.toLowerCase()))
+    .reduce((sum, sale) => sum + sale.total, 0);
 
   useEffect(() => {
     const now = new Date();
@@ -175,8 +175,8 @@ export function RelatorioComercialView() {
 
   const exportToExcel = () => {
     const worksheetData = [
-      [ 'Venda', 'Cliente', 'Total (R$)', 'Status', 'Vendedor', 'Data'], // Headers
-      ...filteredSales.map((sale) => [       
+      ['Venda', 'Cliente', 'Total (R$)', 'Status', 'Vendedor', 'Data'], // Headers
+      ...filteredSales.map((sale) => [
         sale.invoiceNumber,
         sale.cliente,
         sale.total,
@@ -185,7 +185,7 @@ export function RelatorioComercialView() {
         sale.formattedDate,
       ]),
     ];
-  
+
     // Create a worksheet and workbook
     const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
     const range = XLSX.utils.decode_range(worksheet['!ref']);
@@ -196,10 +196,10 @@ export function RelatorioComercialView() {
         cell.z = '"R$"#,##0.00'; // Define o formato de moeda
       }
     }
-  
+
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Relatório de Vendas');
-  
+
     // Write the workbook to a file and trigger a download
     XLSX.writeFile(workbook, 'relatorio_vendas.xlsx');
   };
@@ -248,8 +248,7 @@ export function RelatorioComercialView() {
         heading="Relatório Comercial"
         links={[{ name: 'Dashboard', href: paths.dashboard.root }, { name: 'Relatório Comercial' }]}
         sx={{ mb: { xs: 3, md: 5 } }}
-      /> 
-
+      />
 
       <Box sx={{ display: 'flex', gap: 2, mb: 4, flexWrap: 'wrap' }}>
         <TextField
@@ -271,7 +270,7 @@ export function RelatorioComercialView() {
         </Button>
         <Button variant="contained" onClick={exportToExcel}>
           Exportar
-        </Button>        
+        </Button>
       </Box>
 
       <Card sx={{ mb: 4 }}>
@@ -289,14 +288,14 @@ export function RelatorioComercialView() {
           )}
         </Box>
       </Card>
-              {/* Valor Total das Vendas */}
-              <Box sx={{ mb: 2 }}>    
-          <EcommerceCurrentBalance
-            title="Valor total"
-            currentBalance={totalFilteredSales}
-            texto="Vendas no periodo"
-          />
-      </Box>   
+      {/* Valor Total das Vendas */}
+      <Box sx={{ mb: 2 }}>
+        <EcommerceCurrentBalance
+          title="Valor total"
+          currentBalance={totalFilteredSales}
+          texto="Vendas no periodo"
+        />
+      </Box>
 
       <Card sx={{ mb: 4 }}>
         <CardHeader title="Vendas por Vendedor" />
@@ -314,12 +313,19 @@ export function RelatorioComercialView() {
             <p>Nenhum dado disponível.</p>
           )}
         </Box>
-      </Card>     
+      </Card>
 
       <Card>
         <CardHeader title="Detalhamento de Vendas" />
         <Box sx={{ flexGrow: 1, px: 3, py: 2, height: 'auto' }}>
-        <DataGrid rows={filteredSales} columns={columns} pageSize={5} rowsPerPageOptions={[5]} autoHeight disableExtendRowFullWidth />
+          <DataGrid
+            rows={filteredSales}
+            columns={columns}
+            pageSize={5}
+            rowsPerPageOptions={[5]}
+            autoHeight
+            disableExtendRowFullWidth
+          />
         </Box>
       </Card>
     </DashboardContent>

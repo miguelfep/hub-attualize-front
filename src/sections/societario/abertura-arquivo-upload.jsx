@@ -25,7 +25,7 @@ const documentFieldMapping = {
 
 const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUploaded }) => {
   const [files, setFiles] = useState([]);
-  
+
   // Dropzone configuration
   const { getRootProps, getInputProps } = useDropzone({
     multiple: false,
@@ -51,11 +51,13 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
     try {
       const response = await uploadArquivo(clientId, name, arquivo);
       if (response.status === 200) {
-        const updatedData = { [documentFieldMapping[name]]: response.data[documentFieldMapping[name]] }; 
+        const updatedData = {
+          [documentFieldMapping[name]]: response.data[documentFieldMapping[name]],
+        };
         console.log(updatedData);
-        
-        handleDialogClose();  // Fecha o diálogo após upload
-        onFileUploaded(name, updatedData);  // Atualiza os dados no componente pai
+
+        handleDialogClose(); // Fecha o diálogo após upload
+        onFileUploaded(name, updatedData); // Atualiza os dados no componente pai
         toast.success('Arquivo enviado com sucesso');
       }
     } catch (error) {
@@ -98,7 +100,7 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
           onClick={(e) => {
             // Parando a propagação do evento de clique para evitar o envio do formulário principal
             e.preventDefault();
-            e.stopPropagation(); 
+            e.stopPropagation();
             handleSubmit(e); // Função de envio de arquivo
           }}
         >

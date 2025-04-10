@@ -107,7 +107,7 @@ export function OrcamentoView({ invoice }) {
 
   return (
     <Container maxWidth="md" sx={{ mb: 10, px: { xs: 2, sm: 3 } }}>
-        <Box sx={{ textAlign: 'center', my: { xs: 2, md: 5 } }}>
+      <Box sx={{ textAlign: 'center', my: { xs: 2, md: 5 } }}>
         <Box
           component="img"
           alt="logo"
@@ -123,7 +123,7 @@ export function OrcamentoView({ invoice }) {
         <Typography variant="h4">Orçamento {currentInvoice?.invoiceNumber}</Typography>
       </Box>
 
-          <Grid container spacing={2} justifyContent="center">
+      <Grid container spacing={2} justifyContent="center">
         <Grid item xs={12}>
           <CheckoutSteps activeStep={activeStep} steps={ORCAMENTO_CHECKOUT_STEPS} />
         </Grid>

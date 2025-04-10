@@ -76,16 +76,22 @@ const ItemBase = forwardRef(({ task, stateProps, sx, ...other }, ref) => {
   const renderPriority = (
     <Iconify
       icon={
-        task.prioridade === 'baixa' ? 'solar:double-alt-arrow-down-bold-duotone' :
-        task.prioridade === 'média' ? 'solar:double-alt-arrow-right-bold-duotone' :
-        'solar:double-alt-arrow-up-bold-duotone'
+        task.prioridade === 'baixa'
+          ? 'solar:double-alt-arrow-down-bold-duotone'
+          : task.prioridade === 'média'
+            ? 'solar:double-alt-arrow-right-bold-duotone'
+            : 'solar:double-alt-arrow-up-bold-duotone'
       }
       sx={{
         top: 4,
         right: 4,
         position: 'absolute',
-        color: task.prioridade === 'baixa' ? 'info.main' :
-               task.prioridade === 'média' ? 'warning.main' : 'error.main',
+        color:
+          task.prioridade === 'baixa'
+            ? 'info.main'
+            : task.prioridade === 'média'
+              ? 'warning.main'
+              : 'error.main',
       }}
     />
   );
@@ -124,7 +130,7 @@ const ItemBase = forwardRef(({ task, stateProps, sx, ...other }, ref) => {
         <Box component="span">{task.attachments.length}</Box>
       </Stack>
       <AvatarGroup sx={{ [`& .${avatarGroupClasses.avatar}`]: { width: 24, height: 24 } }}>
-          <Avatar key={task.responsavel} alt={task.responsavel} />
+        <Avatar key={task.responsavel} alt={task.responsavel} />
       </AvatarGroup>
     </Stack>
   );

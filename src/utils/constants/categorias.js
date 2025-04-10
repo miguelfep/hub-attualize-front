@@ -54,7 +54,6 @@ export const categoriasDespesas = [
   { _id: '50', nome: 'Despesa com Telefonia' },
   { _id: '52', nome: 'Despesas Comerciais' },
   { _id: '53', nome: 'Despesas Empréstimos Bancários' },
-
 ];
 
 // Função para obter o nome da categoria com base no _id

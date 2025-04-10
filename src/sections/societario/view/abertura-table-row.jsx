@@ -53,7 +53,6 @@ export function AberturaTableRow({ row, selected, onSelectRow, onEditRow, onDele
     Iniciado: { label: 'Iniciado', color: 'warning' },
     Inativo: { label: 'Encerrada', color: 'error' },
   };
-  
 
   const popover = usePopover();
   return (
@@ -100,10 +99,7 @@ export function AberturaTableRow({ row, selected, onSelectRow, onEditRow, onDele
         </TableCell>
 
         <TableCell>
-        <Label
-            variant="soft"
-            color={statusMap[row.statusAbertura]?.color || 'default'}
-          >
+          <Label variant="soft" color={statusMap[row.statusAbertura]?.color || 'default'}>
             {statusMap[row.statusAbertura]?.label || 'Desconhecido'}
           </Label>
         </TableCell>

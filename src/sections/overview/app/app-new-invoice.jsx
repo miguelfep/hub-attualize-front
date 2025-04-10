@@ -15,6 +15,7 @@ import TextField from '@mui/material/TextField';
 import CardHeader from '@mui/material/CardHeader';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import TablePagination from '@mui/material/TablePagination';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -25,6 +26,15 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 // ----------------------------------------------------------------------
 
 export function AppNewInvoice({ title, subheader, tableData, headLabel, ...other }) {
+  const [page, setPage] = useState(0);
+  const rowsPerPage = 50;
+
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+  };
+
+  const paginatedData = tableData.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
+
   return (
     <Card {...other}>
       <CardHeader title={title} subheader={subheader} sx={{ mb: 3 }} />
@@ -34,27 +44,30 @@ export function AppNewInvoice({ title, subheader, tableData, headLabel, ...other
           <TableHeadCustom headLabel={headLabel} />
 
           <TableBody>
-            {tableData.map((row) => (
+            {paginatedData.map((row) => (
               <RowItem key={row._id} row={row} />
             ))}
           </TableBody>
         </Table>
       </Scrollbar>
 
+      <TablePagination
+        rowsPerPageOptions={[100]}
+        component="div"
+        count={tableData.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={handleChangePage}
+      />
+
       <Divider sx={{ borderStyle: 'dashed' }} />
 
-      <Box sx={{ p: 2, textAlign: 'right' }}>
-        <Button
-          size="small"
-          color="inherit"
-          endIcon={<Iconify icon="eva:arrow-ios-forward-fill" width={18} sx={{ ml: -0.5 }} />}
-        >
-          Ver todos
-        </Button>
-      </Box>
+     
     </Card>
   );
 }
+
+// ----------------------------------------------------------------------
 
 function RowItem({ row }) {
   const popover = usePopover();
@@ -64,12 +77,12 @@ function RowItem({ row }) {
 
   const handleDownload = () => {
     popover.onClose();
-    setOpenViewModal(true); // Abre o modal de visualização
+    setOpenViewModal(true);
   };
 
   const handleSendWhats = () => {
     popover.onClose();
-    setOpenMessageModal(true); // Abre o modal de envio de mensagem
+    setOpenMessageModal(true);
   };
 
   const handleDelete = () => {
@@ -81,11 +94,8 @@ function RowItem({ row }) {
     <>
       <TableRow>
         <TableCell>{row.nome}</TableCell>
-
         <TableCell>{row.segment}</TableCell>
-
         <TableCell>{row.origem}</TableCell>
-
         <TableCell>
           <Label
             variant="soft"
@@ -95,10 +105,9 @@ function RowItem({ row }) {
               'success'
             }
           >
-            {row.receberOrcamento}
+            {row.receberOrcamento || "Não definido" }
           </Label>
         </TableCell>
-
         <TableCell align="right" sx={{ pr: 1 }}>
           <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
@@ -117,14 +126,11 @@ function RowItem({ row }) {
             <Iconify icon="eva:eye-fill" />
             Ver
           </MenuItem>
-
           <MenuItem onClick={handleSendWhats}>
             <Iconify icon="logos:whatsapp-icon" />
             Enviar Mensagem
           </MenuItem>
-
           <Divider sx={{ borderStyle: 'dashed' }} />
-
           <MenuItem onClick={handleDelete} sx={{ color: 'error.main' }}>
             <Iconify icon="solar:trash-bin-trash-bold" />
             Deletar
@@ -132,7 +138,7 @@ function RowItem({ row }) {
         </MenuList>
       </CustomPopover>
 
-      {/* Modal para Visualizar Informações */}
+      {/* Modal de Visualização */}
       <Modal
         open={openViewModal}
         onClose={() => setOpenViewModal(false)}
@@ -175,7 +181,7 @@ function RowItem({ row }) {
         </Box>
       </Modal>
 
-      {/* Modal para Enviar Mensagem */}
+      {/* Modal de Envio de Mensagem */}
       <Modal
         open={openMessageModal}
         onClose={() => setOpenMessageModal(false)}

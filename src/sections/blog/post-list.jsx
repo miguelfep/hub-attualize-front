@@ -9,8 +9,7 @@ import { PostItem, PostItemLatest } from './post-item';
 // ----------------------------------------------------------------------
 
 export function PostList({ posts, loading }) {
-  const [visiblePosts, setVisiblePosts] = useState(posts.length); 
-  
+  const [visiblePosts, setVisiblePosts] = useState(posts.length);
 
   useEffect(() => {
     setVisiblePosts(posts.length); // Atualiza o número de posts visíveis ao mudar a lista de posts
@@ -55,9 +54,5 @@ export function PostList({ posts, loading }) {
     </Grid>
   );
 
-  return (
-    <>
-      {loading ? renderLoading : renderList}
-    </>
-  );
+  return <>{loading ? renderLoading : renderList}</>;
 }

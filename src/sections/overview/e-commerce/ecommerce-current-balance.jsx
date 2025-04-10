@@ -32,8 +32,6 @@ export function EcommerceCurrentBalance({
         <Box sx={{ typography: 'h3' }}>{fCurrency(currentBalance)}</Box>
 
         {row(texto, orderTotal)}
-     
-
       </Box>
     </Card>
   );

@@ -61,7 +61,7 @@ export function InvoiceNewEditForm({ currentInvoice }) {
   const user = getUser();
   const loadingSave = useBoolean();
 
-  const loadingSend = useBoolean(); 
+  const loadingSend = useBoolean();
 
   const defaultValues = useMemo(
     () => ({
@@ -71,9 +71,9 @@ export function InvoiceNewEditForm({ currentInvoice }) {
       desconto: currentInvoice?.desconto || 0,
       totalAmount: currentInvoice?.total || 0,
       cliente: currentInvoice?.cliente || null,
-      motivoPerda: currentInvoice?.motivoPerda || " ",
+      motivoPerda: currentInvoice?.motivoPerda || ' ',
       items: currentInvoice?.items || [
-      {
+        {
           titulo: '',
           descricao: '',
           servico: '',
@@ -117,7 +117,7 @@ export function InvoiceNewEditForm({ currentInvoice }) {
   const handleCreateAndSend = handleSubmit(async (data) => {
     loadingSend.onTrue();
 
-    const dataToSend = {...data, proprietarioVenda: user.name };
+    const dataToSend = { ...data, proprietarioVenda: user.name };
     try {
       const response = await createInvoice(dataToSend);
       if (response.status === 201) {
@@ -170,4 +170,4 @@ export function InvoiceNewEditForm({ currentInvoice }) {
       </Stack>
     </Form>
   );
-} 
+}

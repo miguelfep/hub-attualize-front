@@ -21,21 +21,20 @@ import { Iconify, SocialIcon } from 'src/components/iconify';
 export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
   const theme = useTheme();
 
-
   const _socialsShare = [
     {
       name: 'Facebook',
       icon: 'eva:facebook-fill',
-      url: (postUrl, postTitle) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}&title=${encodeURIComponent(postTitle)}`,
+      url: (postUrl, postTitle) =>
+        `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}&title=${encodeURIComponent(postTitle)}`,
     },
-     {
+    {
       name: 'LinkedIn',
       icon: 'eva:linkedin-fill',
-      url: (postUrl, postTitle) => `https://www.linkedin.com/shareArticle?url=${encodeURIComponent(postUrl)}&title=${encodeURIComponent(postTitle)}`,
+      url: (postUrl, postTitle) =>
+        `https://www.linkedin.com/shareArticle?url=${encodeURIComponent(postUrl)}&title=${encodeURIComponent(postTitle)}`,
     },
   ];
-  
-  
 
   const smUp = useResponsive('up', 'sm');
 
@@ -110,7 +109,6 @@ export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
                 tooltipPlacement="top"
                 FabProps={{ color: 'default' }}
                 onClick={() => window.open(action.url(window.location.href, title), '_blank')} // Abertura em nova aba
-
               />
             ))}
           </SpeedDial>

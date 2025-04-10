@@ -69,7 +69,7 @@ export function ContratoNewEditForm({ currentContrato }) {
   const [openConfirmDialog, setOpenConfirmDialog] = useState(false); // Controle do modal
   const [initialTotal, setInitialTotal] = useState(0); // Valor inicial do contrato para comparação
 
-  const calculateTotal = (items) => 
+  const calculateTotal = (items) =>
     items.reduce((acc, item) => acc + item.quantidade * item.valorUnitario, 0);
 
   // Ao carregar o contrato, definimos o valor total inicial
@@ -129,8 +129,10 @@ export function ContratoNewEditForm({ currentContrato }) {
         : await postContrato(contratoData);
 
       if (response.status === 200 || response.status === 201) {
+        const contratoCriado = response.data;
+
         toast.success('Contrato salvo com sucesso!');
-       
+        router.push(`/dashboard/financeiro/contratos/${contratoCriado._id}/edit`);
       } else {
         toast.error('Erro ao salvar contrato');
       }
@@ -161,7 +163,7 @@ export function ContratoNewEditForm({ currentContrato }) {
     setOpenConfirmDialog(false); // Fechar o modal
 
     const data = methods.getValues(); // Obter dados do formulário
-    
+
     await saveContrato(data, shouldUpdate); // Salvar contrato com a decisão
   };
 
@@ -224,7 +226,9 @@ export function ContratoNewEditForm({ currentContrato }) {
       {/* Diálogo de confirmação */}
       <Dialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)}>
         <DialogTitle>Atualizar cobranças?</DialogTitle>
-        <DialogContent>O valor total do contrato foi alterado. Deseja atualizar as cobranças?</DialogContent>
+        <DialogContent>
+          O valor total do contrato foi alterado. Deseja atualizar as cobranças?
+        </DialogContent>
         <DialogActions>
           <Button onClick={() => handleConfirmUpdate(false)} color="secondary">
             Não

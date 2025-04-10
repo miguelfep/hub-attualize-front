@@ -7,7 +7,6 @@ import { MeiStepper } from 'src/components/jornada/MeiStepper';
 import { LeadCapture } from 'src/components/jornada/LeadCapture';
 import { BannerJornada } from 'src/components/jornada/bannerJornada';
 import { ScrollProgress, useScrollProgress } from 'src/components/animate/scroll-progress';
-import { Footer } from 'src/layouts/main/footer';
 
 
 

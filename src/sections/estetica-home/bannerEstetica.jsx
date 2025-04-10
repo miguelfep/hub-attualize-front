@@ -22,7 +22,6 @@ export function BannerEstetica() {
     }
   };
 
-
   return (
     <Box
       sx={{
@@ -69,7 +68,8 @@ export function BannerEstetica() {
             lineHeight: 1.5,
           }}
         >
-          Especialistas em contabilidade digital para o setor de beleza e bem-estar em todo o Brasil.
+          Especialistas em contabilidade digital para o setor de beleza e bem-estar em todo o
+          Brasil.
         </Typography>
         <Stack
           direction="row"

@@ -19,18 +19,15 @@ import { fCurrency } from 'src/utils/format-number'; // Formatação de moeda
 import { toast } from 'sonner';
 
 import { usePopover, CustomPopover } from 'src/components/custom-popover'; // Biblioteca de toast para feedback visual
-import  {getCategoriaNome } from 'src/utils/constants/categorias';
+import { getCategoriaNome } from 'src/utils/constants/categorias';
 
 import { deletarContaPagarPorId } from 'src/actions/contas';
-
-
 
 // ----------------------------------------------------------------------
 
 export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) {
   const popover = usePopover();
   const [confirm, setConfirm] = useState({ open: false, action: null });
-
 
   // Função para deletar ou outra ação que precise ser realizada na conta
   const handleDeleteConta = async (id) => {

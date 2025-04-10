@@ -52,7 +52,9 @@ const AddressForm = ({ formData, setFormData }) => {
   };
 
   return (
-    <Grid container spacing={3} sx={{ mb: 4 }}> {/* Adicionado margem inferior */}
+    <Grid container spacing={3} sx={{ mb: 4 }}>
+      {' '}
+      {/* Adicionado margem inferior */}
       {/* Campo de CEP */}
       <Grid item xs={12} sm={3}>
         <TextField
@@ -71,7 +73,6 @@ const AddressForm = ({ formData, setFormData }) => {
           }}
         />
       </Grid>
-
       {/* Outros campos de endereço */}
       <Grid item xs={12} sm={7}>
         <TextField

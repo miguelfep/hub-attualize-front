@@ -17,7 +17,13 @@ import { SearchNotFound } from 'src/components/search-not-found';
 
 const ITEM_HEIGHT = 64;
 
-export function KanbanContactsDialog({ clientes = [], cliente, handleChangeCliente, open, onClose }) {
+export function KanbanContactsDialog({
+  clientes = [],
+  cliente,
+  handleChangeCliente,
+  open,
+  onClose,
+}) {
   const [searchContact, setSearchContact] = useState('');
 
   const handleSearchContacts = useCallback((event) => {
@@ -37,7 +43,9 @@ export function KanbanContactsDialog({ clientes = [], cliente, handleChangeClien
 
   return (
     <Dialog fullWidth maxWidth="xs" open={open} onClose={onClose}>
-      <DialogTitle>Clientes <Typography component="span">({clientes.length})</Typography></DialogTitle>
+      <DialogTitle>
+        Clientes <Typography component="span">({clientes.length})</Typography>
+      </DialogTitle>
 
       <Box sx={{ px: 3, py: 2.5 }}>
         <TextField
