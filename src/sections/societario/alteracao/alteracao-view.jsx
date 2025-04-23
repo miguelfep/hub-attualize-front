@@ -72,8 +72,6 @@ const AlteracaoSchema = z.object({
 export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
   const [isValidating, setIsValidating] = useState(false);
 
-  const router = useRouter();
-
   const methods = useForm({
     defaultValues: {
       _id: alteracaoData?._id || '',
@@ -276,7 +274,6 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
               const data = prepareData(rawData);
               handleApproval(data);
               setIsValidating(true);
-              router.refresh();
             })}
           />
         </form>
