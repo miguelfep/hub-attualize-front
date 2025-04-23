@@ -102,6 +102,11 @@ export const navData = [
             path: paths.dashboard.aberturas.root,
           },
           {
+            title: 'Alteração',
+            roles: ['admin', 'operacional', 'comercial'],
+            path: paths.dashboard.alteracao.root, 
+          },
+          {
             title: 'Licenças',
             roles: ['admin', 'operacional', 'comercial'],
             path: paths.dashboard.aberturas.licenca,

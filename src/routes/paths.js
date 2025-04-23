@@ -155,9 +155,13 @@ export const paths = {
       pagarnovo: `${ROOTS.DASHBOARD}/financeiro/pagar/new`,
     },
     aberturas: {
-      root: `${ROOTS.DASHBOARD}/societario`,
+      root: `${ROOTS.DASHBOARD}/societario/abertura`,
       edit: (id) => `${ROOTS.DASHBOARD}/societario/abertura/${id}/edit`,
       licenca: `${ROOTS.DASHBOARD}/licencas`,
+    },
+    alteracao: {
+      root: `${ROOTS.DASHBOARD}/societario/alteracao`,
+      edit: (id) => `${ROOTS.DASHBOARD}/societario/alteracao/${id}/edit`,
     },
     comercial: {
       funil: `${ROOTS.DASHBOARD}/comercial/vendas`,
