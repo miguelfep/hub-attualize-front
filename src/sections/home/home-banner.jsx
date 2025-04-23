@@ -28,7 +28,7 @@ const slides = [
       { text: 'Abrir Empresa', link: '/abertura', color: 'success', textColor: 'white' },
       {
         text: 'Trocar de Contador',
-        link: 'https://wa.me/554196982267',
+        link: 'https://wa.me/5541996982267',
         color: 'info',
         textColor: 'white',
       },

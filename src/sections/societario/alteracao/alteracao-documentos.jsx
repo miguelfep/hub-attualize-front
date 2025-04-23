@@ -13,78 +13,70 @@ import {
 } from '@mui/material';
 
 import {
-    uploadArquivo,
-    deletarArquivo,
-    downloadArquivo,
-} from 'src/actions/mockalteracoes';
+    uploadArquivoAlteracao,
+    deletarArquivoAlteracao,
+    downloadArquivoAlteracao,
+} from 'src/actions/societario';
 
-export default function AlteracaoDocumentos({ aberturaId }) {
+export default function AlteracaoDocumentos({ alteracaoId }) {
     const { getValues, setValue, control } = useFormContext();
-    
+
     const [editarDocs, possuiRT] = useWatch({
         control,
         name: ['editarDocs', 'possuiRT'],
         defaultValue: [false, false]
     });
 
+    // Função para obter o nome amigável do documento
+    const getDocumentName = (name) => {
+        switch (name) {
+            case 'documentoRT':
+                return 'Documento de Classe';
+            case 'rgAnexo':
+                return 'RG do Representante';
+            case 'iptuAnexo':
+                return 'IPTU do Imóvel';
+            default:
+                return 'Documento';
+        }
+    };
+
     const handleUpload = async (name) => {
         try {
             const fileInput = document.createElement('input');
             fileInput.type = 'file';
-            fileInput.accept = '.pdf';
-            if (name === 'documentoRT') {
-                fileInput.multiple = true; 
-            }
+            fileInput.accept = '.pdf,image/*';
             fileInput.onchange = async (event) => {
-                const files = [...event.target.files];
-                if (files && files.length > 0) {
+                const file = event.target.files[0];
+                if (file) {
                     try {
-                        if (name === 'documentoRT') {
-                            const uploadedFiles = [];
-                            files.forEach(async (file) => {
-                                const response = await uploadArquivo(aberturaId, name, file);
-                                if (response.status === 200) {
-                                    uploadedFiles.push(response.data);
-                                    toast.success(`Arquivo de ${name} enviado com sucesso!`);
-                                } else {
-                                    throw new Error('Erro ao enviar arquivo.');
-                                }
-                            });
-                            setValue(name, uploadedFiles.map(file => file[name]));
+                        const response = await uploadArquivoAlteracao(alteracaoId, name, file);
+                        if (response.data.message === 'Arquivo enviado com sucesso') {
+                            setValue(name, response.data.filename, { shouldValidate: true });
+                            toast.success(`${getDocumentName(name)} enviado com sucesso!`);
                         } else {
-                            const file = files[0];
-                            const response = await uploadArquivo(aberturaId, name, file);
-                            if (response.status === 200) {
-                                const updatedData = response.data;
-                                Object.keys(updatedData).forEach((key) => {
-                                    setValue(key, updatedData[key]);
-                                });
-                                toast.success(`${name} enviado com sucesso!`);
-                            } else {
-                                throw new Error('Erro ao enviar arquivo.');
-                            }
+                            throw new Error('Erro ao enviar arquivo.');
                         }
                     } catch (error) {
-                        console.error('Erro ao enviar arquivo(s):', error);
-                        toast.error(`Erro ao enviar ${name}.`);
+                        toast.error(`Erro ao enviar ${getDocumentName(name)}.`);
                     }
                 }
             };
             fileInput.click();
         } catch (error) {
-            toast.error(`Erro ao iniciar o envio de ${name}.`);
+            toast.error(`Erro ao iniciar o envio de ${getDocumentName(name)}.`);
         }
     };
 
-    const handleDownload = async (name, fileIndex = 0) => {
+    const handleDownload = async (name) => {
         try {
-            const fileUrl = Array.isArray(getValues(name)) ? getValues(name)[fileIndex] : getValues(name);
+            const fileUrl = getValues(name);
             if (!fileUrl) throw new Error('Arquivo não disponível para download.');
 
-            const filename = fileUrl.split('/').pop();
-            const response = await downloadArquivo(aberturaId, name, filename);
+            const filename = fileUrl.split('/').pop() || fileUrl;
+            const response = await downloadArquivoAlteracao(alteracaoId, name, filename);
             if (response?.data) {
-                const blob = new Blob([response.data], { type: response.data.type });
+                const blob = new Blob([response.data], { type: response.data.type || 'application/pdf' });
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = downloadUrl;
@@ -93,201 +85,168 @@ export default function AlteracaoDocumentos({ aberturaId }) {
                 link.click();
                 link.remove();
                 window.URL.revokeObjectURL(downloadUrl);
-                toast.success(`${name} baixado com sucesso.`);
+                toast.success(`${getDocumentName(name)} baixado com sucesso.`);
             } else {
                 throw new Error('Erro ao baixar arquivo.');
             }
         } catch (error) {
-            toast.error(`Erro ao baixar ${name}.`);
+            toast.error(`Erro ao baixar ${getDocumentName(name)}.`);
         }
     };
 
-    const handleDelete = async (name, fileIndex = null) => {
+    const handleDelete = async (name) => {
         try {
-            const response = await deletarArquivo(aberturaId, name);
+            const response = await deletarArquivoAlteracao(alteracaoId, name);
             if (response.status === 200) {
-                const updatedData = response.data;
-                if (name === 'documentoRT' && fileIndex !== null) {
-                    const currentFiles = getValues(name) || [];
-                    const updatedFiles = currentFiles.filter((_, idx) => idx !== fileIndex);
-                    setValue(name, updatedFiles);
-                } else {
-                    Object.keys(updatedData).forEach((key) => {
-                        setValue(key, updatedData[key]);
-                    });
-                }
-                toast.success(`${name} deletado com sucesso.`);
+                setValue(name, '', { shouldValidate: true });
+                toast.success(`${getDocumentName(name)} deletado com sucesso.`);
             } else {
                 throw new Error('Erro ao deletar arquivo.');
             }
         } catch (error) {
-            toast.error(`Erro ao deletar ${name}.`);
+            toast.error(`Erro ao deletar ${getDocumentName(name)}.`);
         }
     };
 
     const documents = [
-        { label: 'RG', name: 'rgAnexo' },
-        { label: 'IPTU', name: 'iptuAnexo' },
-        { label: 'Documento RT', name: 'documentoRT', toggle: 'possuiRT' },
+        { label: 'RG do Representante', name: 'rgAnexo' },
+        { label: 'IPTU do Imóvel', name: 'iptuAnexo' },
+        { label: 'Documento de Classe (Responsável Técnico)', name: 'documentoRT', toggle: 'possuiRT' },
     ];
 
     return (
         <Box>
-            <Typography variant="h6" gutterBottom>
-                Documentos
-            </Typography>
-            <Divider sx={{ mb: 2 }} />
+            <>
+                <Typography variant="h6" gutterBottom>
+                    Documentos
+                </Typography>
 
-            <Box sx={{ mb: 3 }}>
-                <FormControlLabel
-                    control={
-                        <Controller
-                            name="notificarWhats"
-                            control={control}
-                            render={({ field }) => (
-                                <Switch
-                                    checked={field.value || false}
-                                    onChange={field.onChange}
-                                    disabled={!editarDocs}
-                                />
-                            )}
-                        />
-                    }
-                    label="Notificar whatsapp?"
-                />
-                <FormControlLabel
-                    control={
-                        <Controller
-                            name="marcaRegistrada"
-                            control={control}
-                            render={({ field }) => (
-                                <Switch
-                                    checked={field.value || false}
-                                    onChange={field.onChange}
-                                    disabled={!editarDocs}
-                                />
-                            )}
-                        />
-                    }
-                    label="Tem marca registrada?"
-                />
-                <FormControlLabel
-                    control={
-                        <Controller
-                            name="possuiRT"
-                            control={control}
-                            render={({ field }) => (
-                                <Switch
-                                    checked={field.value || false}
-                                    onChange={field.onChange}
-                                    disabled={!editarDocs}
-                                />
-                            )}
-                        />
-                    }
-                    label="Possui RT?"
-                />
-                <FormControlLabel
-                    control={
-                        <Controller
-                            name="editarDocs"
-                            control={control}
-                            render={({ field }) => (
-                                <Switch
-                                    checked={field.value || false}
-                                    onChange={field.onChange}
-                                />
-                            )}
-                        />
-                    }
-                    label="Editar Documentos"
-                />
-            </Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
+                    Esse área é dedicada ao anexo dos documentos. Caso deseje, é possível baixar, alterar e deletar os documentos.
+                    <br /> <br />
+                    Para realizar um upload, habilite o campo <strong>Editar Documentos</strong>, localizado ao lado direito logo abaixo, e anexe os documentos correspondentes em <strong>Enviar Documento</strong>. Para o anexo do documento de classe do Responsável Técnico, é necessário habilitar o campo <strong>Possui RT?</strong>, localizado logo abaixo.
+                </Typography>
 
-            <Grid container spacing={3}>
-                {documents.map((doc) => {
-                    if (doc.toggle && !possuiRT) return null;
-
-                    const files = getValues(doc.name);
-                    const isMultiple = doc.name === 'documentoRT' && Array.isArray(files);
-
-                    return (
-                        <Grid item xs={12} sm={6} md={4} key={doc.name}>
-                            <Box
-                                sx={{
-                                    border: '1px solid',
-                                    borderColor: 'divider',
-                                    borderRadius: 2,
-                                    padding: 2,
-                                    textAlign: 'center',
-                                }}
-                            >
-                                <Typography variant="subtitle1" gutterBottom>
-                                    {doc.label}
-                                </Typography>
-                                {files ? (
-                                    isMultiple ? (
-                                        files.map((_, index) => (
-                                            <Box key={index} sx={{ mb: 1 }}>
+                <Divider sx={{ mb: 3 }} />
+                <Grid container spacing={3}>
+                    <Grid item xs={12} sm={6}>
+                        <Box sx={{ mb: 1 }}>
+                            <FormControlLabel
+                                control={
+                                    <Controller
+                                        name="marcaRegistrada"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Switch
+                                                checked={field.value || false}
+                                                onChange={field.onChange}
+                                                disabled={!editarDocs}
+                                            />
+                                        )}
+                                    />
+                                }
+                                label="Tem marca registrada?"
+                            />
+                            <FormControlLabel
+                                control={
+                                    <Controller
+                                        name="possuiRT"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Switch
+                                                checked={field.value || false}
+                                                onChange={field.onChange}
+                                                disabled={!editarDocs}
+                                            />
+                                        )}
+                                    />
+                                }
+                                label="Possui RT?"
+                            />
+                        </Box>
+                    </Grid>
+                    <Grid item xs={12} sm={6} sx={{ textAlign: 'end' }} >
+                        <Box>
+                            <FormControlLabel
+                                control={
+                                    <Controller
+                                        name="editarDocs"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <Switch
+                                                checked={field.value || false}
+                                                onChange={field.onChange}
+                                            />
+                                        )}
+                                    />
+                                }
+                                label="Editar Documentos"
+                            />
+                        </Box>
+                    </Grid>
+                </Grid>
+                <Grid container spacing={3} sx={{ mt: 1 }}>
+                    {documents.map((doc) => {
+                        if (doc.toggle && !possuiRT) return null;
+                        const file = getValues(doc.name);
+                        return (
+                            <Grid item xs={12} sm={6} md={6} key={doc.name}>
+                                <Box
+                                    sx={{
+                                        border: '1px solid',
+                                        borderColor: 'divider',
+                                        borderRadius: 2,
+                                        padding: 2,
+                                        textAlign: 'center',
+                                    }}
+                                >
+                                    <Typography variant="subtitle1" gutterBottom>
+                                        {doc.label}
+                                    </Typography>
+                                    <Box>
+                                        <Button
+                                            variant="contained"
+                                            onClick={() => handleUpload(doc.name)}
+                                            fullWidth
+                                            disabled={!editarDocs || !!file}
+                                        >
+                                            Enviar Documento
+                                        </Button>
+                                        {file && (
+                                            <>
                                                 <Button
                                                     variant="contained"
                                                     color="success"
-                                                    onClick={() => handleDownload(doc.name, index)}
+                                                    onClick={() => handleDownload(doc.name)}
                                                     fullWidth
-                                                    sx={{ mb: 1 }}
+                                                    sx={{ mt: 1, mb: 1 }}
                                                     disabled={!editarDocs}
                                                 >
-                                                    Baixar Arquivo {index + 1}
+                                                    Baixar
                                                 </Button>
                                                 <Button
                                                     variant="outlined"
                                                     color="error"
-                                                    onClick={() => handleDelete(doc.name, index)}
+                                                    onClick={() => handleDelete(doc.name)}
                                                     fullWidth
                                                     disabled={!editarDocs}
                                                 >
-                                                    Deletar Arquivo {index + 1}
+                                                    Deletar
                                                 </Button>
-                                            </Box>
-                                        ))
-                                    ) : (
-                                        <Box>
-                                            <Button
-                                                variant="contained"
-                                                color="success"
-                                                onClick={() => handleDownload(doc.name)}
-                                                fullWidth
-                                                sx={{ mb: 1 }}
-                                                disabled={!editarDocs}
-                                            >
-                                                Baixar
-                                            </Button>
-                                            <Button
-                                                variant="outlined"
-                                                color="error"
-                                                onClick={() => handleDelete(doc.name)}
-                                                fullWidth
-                                                disabled={!editarDocs}
-                                            >
-                                                Deletar
-                                            </Button>
+                                            </>
+                                        )}
+                                    </Box>
+                                    {file && (
+                                        <Box mt={2}>
+                                            <Typography variant="body2">{file}</Typography>
                                         </Box>
-                                    )
-                                ) : (
-                                    <Button
-                                        variant="contained"
-                                        onClick={() => handleUpload(doc.name)}
-                                        fullWidth
-                                        disabled={!editarDocs}
-                                    >
-                                        Enviar Documento{doc.name === 'documentoRT' ? 's' : ''}
-                                    </Button>
-                                )}
-                            </Box>
-                        </Grid>
-                    );
-                })}
-            </Grid>
+                                    )}
+                                </Box>
+                            </Grid>
+                        );
+                    })}
+                </Grid>
+            </>
         </Box>
     );
-};
+}

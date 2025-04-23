@@ -6,6 +6,20 @@ import { Box, Grid, Button, Switch, Divider, Typography, FormControlLabel } from
 import { uploadArquivo, deletarArquivo, downloadArquivo } from 'src/actions/societario';
 
 const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
+  // Função para obter o nome amigável do documento
+  const getDocumentName = (name) => {
+    switch (name) {
+      case 'documentoRT':
+        return 'Documento de Classe';
+      case 'rgAnexo':
+        return 'RG do Representante';
+      case 'iptuAnexo':
+        return 'IPTU do Imóvel';
+      default:
+        return 'Documento';
+    }
+  };
+
   const handleUpload = async (name) => {
     try {
       const fileInput = document.createElement('input');
@@ -20,19 +34,19 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
             if (response.status === 200) {
               const updatedData = response.data; // A resposta é o objeto atualizado
               setFormData((prev) => ({ ...prev, ...updatedData }));
-              toast.success(`${name} enviado com sucesso!`);
+              toast.success(`${getDocumentName(name)} enviado com sucesso!`);
             } else {
               throw new Error('Erro ao enviar arquivo.');
             }
           } catch (error) {
             console.error('Erro ao enviar arquivo:', error);
-            toast.error(`Erro ao enviar ${name}.`);
+            toast.error(`Erro ao enviar ${getDocumentName(name)}.`);
           }
         }
       };
       fileInput.click();
     } catch (error) {
-      toast.error(`Erro ao iniciar o envio de ${name}.`);
+      toast.error(`Erro ao iniciar o envio de ${getDocumentName(name)}.`);
     }
   };
 
@@ -54,12 +68,12 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
         link.click();
         link.remove();
         window.URL.revokeObjectURL(downloadUrl);
-        toast.success(`${name} baixado com sucesso.`);
+        toast.success(`${getDocumentName(name)} baixado com sucesso.`);
       } else {
         throw new Error('Erro ao baixar arquivo.');
       }
     } catch (error) {
-      toast.error(`Erro ao baixar ${name}.`);
+      toast.error(`Erro ao baixar ${getDocumentName(name)}.`);
     }
   };
 
@@ -70,12 +84,12 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
       if (response.status === 200) {
         const updatedData = response.data; // A resposta é o objeto atualizado
         setFormData((prev) => ({ ...prev, ...updatedData }));
-        toast.success(`${name} deletado com sucesso.`);
+        toast.success(`${getDocumentName(name)} deletado com sucesso.`);
       } else {
         throw new Error('Erro ao deletar arquivo.');
       }
     } catch (error) {
-      toast.error(`Erro ao deletar ${name}.`);
+      toast.error(`Erro ao deletar ${getDocumentName(name)}.`);
     }
   };
 
@@ -84,9 +98,9 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
   };
 
   const documents = [
-    { label: 'RG', name: 'rgAnexo' },
-    { label: 'IPTU', name: 'iptuAnexo' },
-    { label: 'Documento RT', name: 'documentoRT', toggle: 'possuiRT' },
+    { label: 'RG do Representante', name: 'rgAnexo' },
+    { label: 'IPTU do Imóvel', name: 'iptuAnexo' },
+    { label: 'Documento de Classe (Responsável Técnico)', name: 'documentoRT', toggle: 'possuiRT' },
   ];
 
   return (

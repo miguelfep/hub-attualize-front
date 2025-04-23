@@ -6,13 +6,11 @@ import { DashboardContent } from 'src/layouts/dashboard';
 
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import  AlteracaoEditForm  from 'src/sections/societario/alteracao/alteracao-edit-form';
+import AlteracaoEditForm from 'src/sections/societario/alteracao/alteracao-edit-form';
 
 // ----------------------------------------------------------------------
 
 export default function AlteracaoEditView({ alteracaoData }) {
-
-  console.log('alteracap data ', alteracaoData);
 
   return (
     <DashboardContent>
@@ -21,7 +19,7 @@ export default function AlteracaoEditView({ alteracaoData }) {
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Alteração', href: paths.dashboard.alteracao.root },
-          { name: alteracaoData?.razaoSocial || 'Claudio' },
+          { name: alteracaoData?.razaoSocial || '' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />

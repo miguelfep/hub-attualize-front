@@ -1,57 +1,33 @@
 import { Controller, useFormContext } from "react-hook-form";
 
-import { Grid, Switch, Tooltip, TextField, IconButton, FormControlLabel } from "@mui/material";
+import { Box, Grid, Switch, Tooltip, Divider, TextField, IconButton, Typography, FormControlLabel } from "@mui/material";
 
 import { Iconify } from "src/components/iconify";
 
-export default function AlteracaoCnaeForm( {atividadeAlteracao}) {
+export default function AlteracaoCnaeForm({ atividadeAlteracao, atividadeCliente }) {
     const { control } = useFormContext();
 
     return (
-        <Grid container spacing={3} sx={{ mt: { xs: 2, md: 2 } }}>
+        <>
+            <Box sx={{ mb: 2 }}>
+                <Typography variant="h5" sx={{ mt: 4 }} gutterBottom>
+                    Atividade Comercial
+                </Typography>
+            </Box>
+            <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                    Abaixo, você verá suas atividades comerciais. Caso deseje adicionar uma nova, habilite a opção, <strong>Desejo adicionar Novas Atividades</strong> e descrever a sua nova atividade.
+                </Typography>
+            </Box>
             <Grid item xs={12} md={12}>
                 <Controller
-                    name="atividadePrimariaEnabled"
+                    name="novasAtividadesEnabled"
                     control={control}
                     defaultValue={false}
                     render={({ field: switchField }) => (
                         <>
                             <Controller
-                                name="atividadePrimaria"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        label="Atividade Primária"
-                                        disabled={!switchField.value}
-                                    />
-                                )}
-                            />
-                            {/* <FormControlLabel
-                                sx={{ mb: 1 }}
-                                control={
-                                    <Switch
-                                        checked={switchField.value}
-                                        onChange={(e) => switchField.onChange(e.target.checked)}
-                                    />
-                                }
-                                label="Editar Atividade Principal"
-                            /> */}
-                        </>
-                    )}
-                />
-            </Grid>
-
-            <Grid item xs={12} md={12}>
-                <Controller
-                    name="atividadeSecundariaEnabled"
-                    control={control}
-                    defaultValue={false}
-                    render={({ field: switchField }) => (
-                        <>
-                            <Controller
-                                name="atividadeSecundaria"
+                                name="novasAtividades"
                                 control={control}
                                 render={({ field }) => (
                                     <TextField
@@ -61,7 +37,7 @@ export default function AlteracaoCnaeForm( {atividadeAlteracao}) {
                                         rows={5}
                                         label={
                                             <span style={{ display: 'flex', alignItems: 'center' }}>
-                                                Atividade Secundária
+                                                Novas Atividades
                                                 <Tooltip title="Descreva as novas atividade que deseja adicionar ao seu negócio. Caso saiba o CNAE, adicione o código e sua descrição.">
                                                     <IconButton size="small" sx={{ ml: 1 }}>
                                                         <Iconify width={16} icon="eva:question-mark-circle-outline" />
@@ -81,12 +57,13 @@ export default function AlteracaoCnaeForm( {atividadeAlteracao}) {
                                         onChange={(e) => switchField.onChange(e.target.checked)}
                                     />
                                 }
-                                label="Editar Atividade Secundária"
+                                label="Desejo adicionar Novas Atividades"
                             />
                         </>
                     )}
                 />
             </Grid>
-        </Grid>
+            <Divider sx={{ mb: 3 }} />
+        </>
     );
 }

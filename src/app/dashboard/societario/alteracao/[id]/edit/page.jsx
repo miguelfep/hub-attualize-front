@@ -1,5 +1,5 @@
 import { CONFIG } from 'src/config-global';
-import { getAlteracaoById } from 'src/actions/mockalteracoes';
+import { getAlteracaoById } from 'src/actions/societario';
 
 import AlteracaoEditView from 'src/sections/societario/alteracao/alteracao-edit-view';
 

@@ -6,20 +6,20 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import Box from '@mui/material/Box';
-import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
+import { Box, Chip, Stack, Button, Typography } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { today } from 'src/utils/format-time';
 
-import { updateAlteracao } from 'src/actions/mockalteracoes';
+import { updateAlteracao } from 'src/actions/societario';
 
 import { Form, schemaHelper } from 'src/components/hook-form';
 
-import AlteracaoIniciadoForm from './alteracao-iniciado-form';
+import AlteracaoValidacaoForm from 'src/sections/societario/alteracao/alteracao-validacao-form';
+
+import AlteracaoKickoffForm from './alteracao-kickoff-form';
+import AlteracaoEmAlteracaoForm from './alteracao-em-alteracao';
 
 // Definir o esquema de validação usando Zod
 const AlteracaoSchema = zod.object({
@@ -57,7 +57,7 @@ const statusDisplayMap = {
   Iniciado: 'Iniciado',
   em_validacao: 'Em Validação',
   kickoff: 'Kickoff',
-  em_alteracao: 'Em Alterção',
+  em_alteracao: 'Em Alteração',
   finalizado: 'Finalizado',
 };
 // ----------------------------------------------------------------------
@@ -92,7 +92,6 @@ export default function AlteracaoEditForm({ alteracaoData }) {
         setValue('statusAlteracao', nextStatus);
         toast.success('Status avançado com sucesso!');
       } catch (error) {
-        console.error('Erro ao avançar o status:', error);
         toast.error('Erro ao avançar o status');
       } finally {
         loading.onFalse();
@@ -109,7 +108,6 @@ export default function AlteracaoEditForm({ alteracaoData }) {
         setValue('statusAlteracao', previousStatus);
         toast.success('Status retornado com sucesso!');
       } catch (error) {
-        console.error(error);
         toast.error('Erro ao retornar o status');
       } finally {
         loading.onFalse();
@@ -118,62 +116,56 @@ export default function AlteracaoEditForm({ alteracaoData }) {
   };
 
   const renderStatusComponent = () => {
-    if (statusAlteracao === 'iniciado') {
-      return <AlteracaoIniciadoForm alteracaoData={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
+    switch (statusAlteracao) {
+      case 'iniciado':
+        return <Typography textAlign='center'>Formulário de alteração já foi enviado ao cliente. Aguarde a devolução </Typography>;
+      case 'em_validacao':
+        return <AlteracaoValidacaoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
+      case 'kickoff':
+        return <AlteracaoKickoffForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
+      case 'em_alteracao':
+        return <AlteracaoEmAlteracaoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
+      case 'finalizado':
+        return <Typography textAlign='center'>Alteração finalizada com sucesso. Para visualizá-la, volte ao lista de alterações</Typography>;
+      default:
+        return null;
     }
+  };
 
+  const shouldShowAdvanceButton = ['Iniciado', 'kickoff', 'em_validacao'].includes(statusAlteracao);
 
-    // const renderStatusComponent = () => {
-    //   switch (statusAlteracao) {
-    //     case 'iniciado':
-    //       return <AlteracaoIniciadoForm alteracaoData={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
-    //       // return <AberturaValidacaoForm alteracaoData={alteracaoData} setValue={setValue} />;
-    //     // case 'onboarding':
-    //       // console.log('onboarding');
-    //       // break
-    //   //       return <div>Usuário gerado, clique em avançar</div>;  
-    //   //     default:
-    //   //       return <AberturaConstituicaoForm alteracaoData={alteracaoData} />;
-    //     }
-    //   };
+  return (
+    <Form methods={methods}>
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Chip
+          label={`Status: ${statusDisplayMap[statusAlteracao] || 'Iniciado'}`}
+          color="success"
+          sx={{ fontSize: '1rem', fontWeight: 'bold' }}
+        />
+      </Box>
+      <>{renderStatusComponent()}</>
 
-    const shouldShowAdvanceButton = ['Iniciado', 'kickoff', 'em_validacao'].includes(statusAlteracao);
-
-
-
-    return (
-      <Form methods={methods}>
-        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-          <Chip
-            label={`Status: ${statusDisplayMap[statusAlteracao] || ''}`}
-            color="success"
-            sx={{ fontSize: '1rem', fontWeight: 'bold' }}
-          />
-        </Box>
-        <>{renderStatusComponent()}</>
-
-        <Stack justifyContent="space-between" direction="row" spacing={2} sx={{ mt: 3 }}>
-          {shouldShowAdvanceButton && (
-            <Button
-              variant="outlined"
-              disabled={!reverseStatusMap[statusAlteracao]}
-              onClick={handleGoBackStatus}
-              loading={loading.value}
-            >
-              Voltar
-            </Button>
-          )}
-          {shouldShowAdvanceButton && (
-            <Button
-              variant="contained"
-              onClick={() => handleAdvanceStatus(statusMap[statusAlteracao])}
-              loading={loading.value}
-            >
-              Avançar
-            </Button>
-          )}
-        </Stack>
-      </Form>
-    );
-  }
+      <Stack justifyContent="space-between" direction="row" spacing={2} sx={{ mt: 3 }}>
+        {shouldShowAdvanceButton && (
+          <Button
+            variant="outlined"
+            disabled={!reverseStatusMap[statusAlteracao]}
+            onClick={handleGoBackStatus}
+            loading={loading.value}
+          >
+            Voltar
+          </Button>
+        )}
+        {shouldShowAdvanceButton && (
+          <Button
+            variant="contained"
+            onClick={() => handleAdvanceStatus(statusMap[statusAlteracao])}
+            loading={loading.value}
+          >
+            Avançar
+          </Button>
+        )}
+      </Stack>
+    </Form>
+  );
 }

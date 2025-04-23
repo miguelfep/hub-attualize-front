@@ -19,7 +19,7 @@ const statuses = [
   { label: 'Aguardando deferimento', value: 5 },
   { label: 'Processo deferido', value: 6 },
   { label: 'Início de licenças e alvarás', value: 7 },
-  { label: 'Abertura concluída', value: 8 },
+  { label: 'Alteração concluída', value: 8 },
 ];
 
 // Estilizando o círculo com maior destaque
@@ -49,8 +49,8 @@ const StepLine = styled('div')(({ theme, completed }) => ({
   transition: 'background-color 0.3s ease',
 }));
 
-const ComponenteEmConstituicao = ({ formData }) => {
-  const currentStatus = formData.statusAbertura;
+const ComponenteEmAlteracao = ({ formData }) => {
+  const currentStatus = formData.situacaoAlteracao;
 
   // Refs para rolar até o passo atual
   const stepsRef = useRef([]);
@@ -151,4 +151,4 @@ const ComponenteEmConstituicao = ({ formData }) => {
   );
 };
 
-export default ComponenteEmConstituicao;
+export default ComponenteEmAlteracao;

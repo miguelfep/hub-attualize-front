@@ -214,3 +214,78 @@ export async function deletarArquivoLicenca(id) {
     throw error;
   }
 }
+
+export async function getAlteracoesSocietario() {
+  return axios.get(`${baseUrl}societario/alteracoes`);
+}
+
+export async function createAlteracao(itemData, statusAlteracao = {}) {
+  const data = {
+    ...itemData,
+    statusAlteracao,
+  }
+  return axios.post(`${baseUrl}societario/alteracao`, data);
+}
+
+export async function getAlteracaoById(id) {
+  try {
+    const response = await axios.get(`${baseUrl}societario/alteracao/id/${id}`);
+    return response.data;
+  } catch (error) {
+    return error;
+  };
+}
+
+export async function updateAlteracao(id, itemData) {
+  return axios.put(`${baseUrl}societario/alteracao/atualizar/${id}`, itemData);
+}
+
+export const uploadArquivoAlteracao = async (aberturaId, documentType, file, socioIndex) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('clientId', aberturaId);
+  formData.append('documentType', documentType);
+  formData.append('socioIndex', socioIndex);
+
+  return axios.post(`${baseUrl}societario/upload/alteracao`, formData);
+};
+
+export async function downloadArquivoAlteracao(clientId, documentType, filename) {
+  try {
+    const response = await axios.get(
+      `${baseUrl}societario/download/alteracao/${clientId}/${documentType}/${filename}`,
+      {
+        responseType: 'blob',
+      }
+    );
+    return response;
+  } catch (error) {
+    return error;
+  }
+};
+
+export async function deletarArquivoAlteracao(clientId, documentType, socioCpf, config = {}) {
+  try {
+    const url = socioCpf
+      ? `${baseUrl}societario/delete/alteracao/${clientId}/${documentType}/${socioCpf}`
+      : `${baseUrl}societario/delete/alteracao/${clientId}/${documentType}`;
+    const response = await axios.delete(url, config);
+    return response;
+  } catch (error) {
+    console.error('Erro ao deletar arquivo de alteração:', error);
+    throw error;
+  }
+}
+
+export async function aprovarAlteracaoPorId(id, config = {}) {
+  try {
+    const response = await axios.put(
+      `${baseUrl}societario/alteracao/aprovar/${id}`,
+      config
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao aprovar alteração:", error);
+    throw error;
+  }
+}

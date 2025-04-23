@@ -6,38 +6,53 @@ import { Box, Grid, Switch, Select, MenuItem, TextField, Typography, FormControl
 
 export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
 
-    const { control } = useFormContext();
+    const { control, watch } = useFormContext();
+
+    // Garantir que infoGeralAlteracao seja um objeto válido
+    const safeInfoGeralAlteracao = infoGeralAlteracao || {};
+    // Garantir que socios seja um array válido
+    const socios = safeInfoGeralAlteracao.socios || [];
 
     const regimeTributarioOptions = [
-        { value: 'Simples Nacional', label: 'Simples Nacional' },
-        { value: 'Lucro Presumido', label: 'Lucro Presumido' },
-        { value: 'Lucro Real', label: 'Lucro Real' },
+        { value: 'simples', label: 'Simples Nacional' },
+        { value: 'presumido', label: 'Lucro Presumido' },
+        { value: 'real', label: 'Lucro Real' },
     ];
 
     const formaAtuacaoOptions = [
-        { value: 'Internet', label: 'Internet' },
-        { value: 'Fora do estabelecimento', label: 'Fora do estabelecimento' },
-        { value: 'Escritório administrativo', label: 'Escritório administrativo' },
-        { value: 'Local próprio', label: 'Local próprio' },
-        { value: 'Em estabelecimento de terceiros', label: 'Em estabelecimento de terceiros' },
-        { value: 'Casa do cliente', label: 'Casa do cliente' },
-        { value: 'Outros', label: 'Outros' },
+        { value: 'internet', label: 'Internet' },
+        { value: 'fora_estabelecimento', label: 'Fora do estabelecimento' },
+        { value: 'escritorio', label: 'Escritório administrativo' },
+        { value: 'local_proprio', label: 'Local próprio' },
+        { value: 'terceiro', label: 'Em estabelecimento de terceiros' },
+        { value: 'casa_cliente', label: 'Casa do cliente' },
+        { value: 'outros', label: 'Outros' },
     ]
-
 
     return (
         <>
+            <Box sx={{ mb: 2 }}>
+                <Typography variant="h5" gutterBottom>
+                    Informações Gerais
+                </Typography>
+            </Box>
             <Box>
+                <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Descreva de maneira objetiva as alterações que você deseja realizar em sua empresa
+                    </Typography>
+                </Box>
                 <Controller
-                    name="descricao"
+                    name="alteracoes"
                     control={control}
-                    render={({ field }) => (
+                    render={({ field, fieldState }) => (
                         <TextField
                             {...field}
-                            label="Descrição da Alteração"
-                            multiline rows={2}
-                            placeholder="Digite brevemente as alterações que deseja fazer"
+                            label="Novas Mudanças"
+                            multiline rows={4}
                             fullWidth
+                            error={!!fieldState.error}
+                            helperText={fieldState.error?.message}
                         />
                     )}
                 />
@@ -45,12 +60,12 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
             <Grid container spacing={3} sx={{ mt: { xs: 2, md: 2 } }}>
                 <Grid item xs={12} md={6}>
                     <Controller
-                        name="nomeEmpresarialEnabled"
+                        name="razaoSocialEnabled"
                         control={control}
                         render={({ field: switchField }) => (
                             <>
                                 <Controller
-                                    name="nomeEmpresarial"
+                                    name="razaoSocial"
                                     control={control}
                                     render={({ field }) => (
                                         <TextField
@@ -69,7 +84,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                                             onChange={(e) => switchField.onChange(e.target.checked)}
                                         />
                                     }
-                                    label="Editar Razão Social"
+                                    label="Desejo alterar minha Razão Social"
                                 />
                             </>
                         )}
@@ -101,7 +116,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                                             onChange={(e) => switchField.onChange(e.target.checked)}
                                         />
                                     }
-                                    label="Editar Nome Fantasia"
+                                    label="Desejo alterar meu Nome Fantasia"
                                 />
                             </>
                         )}
@@ -112,10 +127,12 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         name="cnpj"
                         control={control}
                         render={({ field }) => (
-                            <TextField
+                            <NumericFormat
                                 {...field}
-                                fullWidth
+                                format="99.999.999/9999-99"
                                 label="CNPJ"
+                                fullWidth
+                                customInput={TextField}
                                 disabled
                             />
                         )}
@@ -147,7 +164,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                                             onChange={(e) => switchField.onChange(e.target.checked)}
                                         />
                                     }
-                                    label="Editar Email"
+                                    label="Desejo alterar meu Email"
                                 />
                             </>
                         )}
@@ -155,12 +172,12 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                 </Grid>
                 <Grid item xs={12} md={4}>
                     <Controller
-                        name="telefoneComercialEnabled"
+                        name="whatsappEnabled"
                         control={control}
                         render={({ field: switchField }) => (
                             <>
                                 <Controller
-                                    name="telefoneComercial"
+                                    name="whatsapp"
                                     control={control}
                                     render={({ field }) => (
                                         <InputMask
@@ -187,7 +204,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                                             onChange={(e) => switchField.onChange(e.target.checked)}
                                         />
                                     }
-                                    label="Editar Telefone Comercial"
+                                    label="Desejo alterar meu Whatsapp"
                                 />
                             </>
                         )}
@@ -225,7 +242,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                                             onChange={(e) => switchField.onChange(e.target.checked)}
                                         />
                                     }
-                                    label="Editar Capital Social"
+                                    label="Desejo alterar meu Capital Social"
                                 />
                             </>
                         )}
@@ -265,96 +282,103 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                                             onChange={(e) => switchField.onChange(e.target.checked)}
                                         />
                                     }
-                                    label="Editar Regime Tributário"
+                                    label="Desejo alterar meu Regime Tributário"
                                 />
                             </>
                         )}
                     />
                 </Grid>
                 <Grid item xs={12} sm={6}>
+                    {/* Controller para formaAtuacao */}
+                    <Controller
+                        name="formaAtuacao"
+                        control={control}
+                        render={({ field }) => (
+                            <TextField
+                                {...field}
+                                select
+                                fullWidth
+                                label="Forma de Atuação"
+                                disabled={!watch('formaAtuacaoEnabled')}
+                            >
+                                {formaAtuacaoOptions.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        )}
+                    />
+
+                    {/* Controller para o Switch */}
                     <Controller
                         name="formaAtuacaoEnabled"
                         control={control}
-                        render={({ field: switchField }) => (
-                            <>
-                                <TextField
-                                    {...switchField}
-                                    name="formaAtuacao"
-                                    select
-                                    fullWidth
-                                    label="Forma de Atuação"
-                                    disabled={!switchField.value}
-                                >
-                                    {formaAtuacaoOptions.map((option) =>
-                                        <MenuItem key={option.value} value={option.value}>
-                                            {option.label}
-                                        </MenuItem>
-                                    )}
-                                </TextField>
-                                <FormControlLabel
-                                    sx={{ mb: 1 }}
-                                    control={
-                                        <Switch
-                                            checked={switchField.value}
-                                            onChange={(e) => switchField.onChange(e.target.checked)}
-                                        />
-                                    }
-                                    label="Editar Forma de Atuação"
-                                />
-                            </>
+                        render={({ field }) => (
+                            <FormControlLabel
+                                sx={{ mb: 1 }}
+                                control={
+                                    <Switch
+                                        checked={field.value}
+                                        onChange={(e) => field.onChange(e.target.checked)}
+                                    />
+                                }
+                                label="Desejo alterar minha Forma de Atuação"
+                            />
                         )}
                     />
                 </Grid>
                 <Grid item xs={12} sm={6}>
                     <Controller
-                        name="responsavelTecnicoEnabled"
+                        name="responsavelTecnico"
                         control={control}
-                        render={({ field: switchField }) => (
-                            <>
-                                <TextField
-                                    {...switchField}
-                                    name="responsavelTecnico"
-                                    select
-                                    fullWidth
-                                    label="Responsável Técnico"
-                                    disabled={!switchField.value}
-                                >
-                                    <MenuItem value="novoResponsavelTecnico"> 
-                                        <em>
-                                            Adicionar Novo Responsável Técnico
-                                        </em>
+                        render={({ field }) => (
+                            <TextField
+                                {...field}
+                                select
+                                fullWidth
+                                label="Responsável Técnico"
+                                disabled={!watch('responsavelTecnicoEnabled')}
+                            >
+                                <MenuItem value="novoResponsavelTecnico">
+                                    <em>Adicionar Novo Responsável Técnico</em>
+                                </MenuItem>
+
+                                {socios.map((socio, index) => (
+                                    <MenuItem key={index} value={socio.nome}>
+                                        {socio.nome}
                                     </MenuItem>
-
-                                    {
-                                        infoGeralAlteracao.socios.map((socio, index) => (
-                                            <MenuItem key={index} value={socio.nome}>
-                                                {socio.nome}
-                                            </MenuItem>
-                                        ))
-                                    }
-                                </TextField>
-
-                                {switchField.value === 'novoResponsavelTecnico' && (
-                                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                                        Anexe o comprovante de classe e o comprovante de residência do novo responsável nos campos indicados no fim do formulário.
-                                    </Typography>
-                                )}
-                                <FormControlLabel
-                                    sx={{ mb: 1 }}
-                                    control={
-                                        <Switch
-                                            checked={switchField.value}
-                                            onChange={(e) => switchField.onChange(e.target.checked)}
-                                        />
-                                    }
-                                    label="Editar Responsável Técnico"
-                                />
-                            </>
+                                ))}
+                            </TextField>
                         )}
                     />
 
+                    {/* Texto adicional se for novo */}
+                    {watch('responsavelTecnico') === 'novoResponsavelTecnico' && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                            Anexe o comprovante de classe no campo indicado ao final do formulário.
+                        </Typography>
+                    )}
+
+                    {/* SWITCH */}
+                    <Controller
+                        name="responsavelTecnicoEnabled"
+                        control={control}
+                        render={({ field }) => (
+                            <FormControlLabel
+                                sx={{ mb: 1 }}
+                                control={
+                                    <Switch
+                                        checked={field.value}
+                                        onChange={(e) => field.onChange(e.target.checked)}
+                                    />
+                                }
+                                label="Desejo alterar meu Responsável Técnico"
+                            />
+                        )}
+                    />
                 </Grid>
-            </Grid >
+            </Grid>
         </>
     );
 }

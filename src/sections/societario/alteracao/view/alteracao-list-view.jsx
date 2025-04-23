@@ -1,10 +1,9 @@
 'use client'
 
 import { useRouter } from "next/navigation";
-import { IconButton } from "yet-another-react-lightbox";
 import { useState, useEffect, useCallback } from "react";
 
-import { Box, Tab, Card, Tabs, Table, Modal, Button, Tooltip, TableBody, Typography } from "@mui/material";
+import { Box, Tab, Card, Tabs, Table, Button, Dialog, Tooltip, TableBody, IconButton } from "@mui/material";
 
 import { paths } from "src/routes/paths";
 
@@ -14,7 +13,7 @@ import { useSetState } from "src/hooks/use-set-state";
 import { varAlpha } from "src/theme/styles";
 import { getClientes } from "src/actions/clientes";
 import { DashboardContent } from "src/layouts/dashboard";
-import { getAlteracoes, createAlteracao, updateAlteracao } from "src/actions/mockalteracoes";
+import { createAlteracao, updateAlteracao, getAlteracoesSocietario } from "src/actions/societario";
 
 import { Label } from "src/components/label";
 import { toast } from 'src/components/snackbar';
@@ -22,19 +21,19 @@ import { Iconify } from "src/components/iconify";
 import { Scrollbar } from "src/components/scrollbar";
 import { ConfirmDialog } from "src/components/custom-dialog";
 import { CustomBreadcrumbs } from "src/components/custom-breadcrumbs";
-import {  useTable, emptyRows, rowInPage, TableNoData, getComparator, TableEmptyRows, TableHeadCustom, TableSelectedAction, TablePaginationCustom  } from "src/components/table";
+import { ClienteListDialog } from "src/components/alteracao/ClienteListDialog";
+import { useTable, emptyRows, rowInPage, TableNoData, getComparator, TableEmptyRows, TableHeadCustom, TableSelectedAction, TablePaginationCustom } from "src/components/table";
 
-import { AddressListDialog } from "src/sections/address";
-import { ClienteTableRow } from "src/sections/cliente/cliente-table-row";
 import { ClienteTableFiltersResult } from "src/sections/cliente/cliente-table-filters-result";
 
+import { AlteracaoTableRow } from "../alteracao-table-row";
 import { AlteracaoTableToolbar } from "../alteracao-table-toolbar";
-       
+
 
 const TABLE_HEAD = [
   { id: 'codigo', label: 'Código', width: 20 },
   { id: 'dadosPessoais', label: 'Dados Pessoais', width: 50 },
-  { id: 'razaoSocial', label: 'Razão Social', width: 130 },
+  { id: 'nomeEmpresarial', label: 'Razão Social', width: 130 },
   { id: 'status', label: 'Status', width: 80 },
   { id: '', width: 8 },
 ];
@@ -78,28 +77,24 @@ export default function AlteracaoListView() {
         const clientesData = await getClientes();
         setClientes(clientesData);
       } catch (error) {
-        console.error('Erro ao buscar clientes:', error);
+        toast.error('Erro ao buscar clientes');
       }
     };
     fetchClientes();
   }, []);
 
+  // Atualiza a tabela de alterações conforme o banco
   const fetchAlteracoes = useCallback(async () => {
     try {
-      // Popula a table com Clientes
-      const alteracoes = await getAlteracoes();
-      setTableData(alteracoes);
+      const alteracoes = await getAlteracoesSocietario();
+      setTableData([...alteracoes.data]);
     } catch (error) {
-      toast.error('Falha em carregar os clientes');
+      toast.error('Falha em carregar as alterações');
       setTableData([]);
     } finally {
       setLoading(false);
     }
   }, []);
-
-  useEffect(() => {
-    fetchAlteracoes();
-  }, [fetchAlteracoes]);
 
 
   const dataFiltered = applyFilter({
@@ -117,19 +112,23 @@ export default function AlteracaoListView() {
   const handleDeleteRow = useCallback(
     async (id) => {
       try {
-        updateAlteracao(id, { statusAlteracao: 'inativa' })
-        console.log('Inativando alteração');
-
-        toast.success('Alteração inativado!');
-        fetchAlteracoes();
+        await updateAlteracao(id, { status: false });
+        toast.success('Alteração inativada!');
+        await fetchAlteracoes();
       } catch (error) {
-        toast.error('Erro ao inativar alteração');
+        const msg = error?.response?.data?.message || 'Erro ao inativar alteração';
+        toast.error(msg);
       } finally {
         confirm.onFalse();
       }
     },
     [fetchAlteracoes, confirm]
   );
+
+
+  useEffect(() => {
+    fetchAlteracoes();
+  }, [fetchAlteracoes]);
 
   const handleActivateRow = useCallback(
     async (id) => {
@@ -146,15 +145,13 @@ export default function AlteracaoListView() {
 
   const handleDeleteRows = useCallback(async () => {
     try {
-      await Promise.all(table.selected.map((id) =>
-        updateAlteracao(id, { statusAlteracao: 'inativa' }))
-        .then(() =>
-          console.log('Inativando clientes')));
-
-      toast.success('Clientes inativados!');
+      await Promise.all(
+        table.selected.map((_id) => updateAlteracao(_id, { status: false }))
+      );
+      toast.success('Alterações inativadas!');
       fetchAlteracoes();
     } catch (error) {
-      toast.error('Erro ao inativar clientes');
+      toast.error('Erro ao inativar alterações');
     } finally {
       confirm.onFalse();
     }
@@ -166,7 +163,7 @@ export default function AlteracaoListView() {
     },
     [router]
   );
-  
+
   const handleFilterStatus = useCallback(
     (event, newValue) => {
       table.onResetPage();
@@ -178,7 +175,7 @@ export default function AlteracaoListView() {
     <>
       <DashboardContent>
         <CustomBreadcrumbs
-          heading="Alterações em Andamento"
+          heading="Lista de Alterações"
           links={[
             { name: 'Dashboard', href: paths.dashboard.root },
             { name: 'Alterações', href: paths.dashboard.alteracao.root },
@@ -251,7 +248,7 @@ export default function AlteracaoListView() {
               onSelectAllRows={(checked) =>
                 table.onSelectAllRows(
                   checked,
-                  dataFiltered.map((row) => row.id)
+                  dataFiltered.map((row) => row._id)
                 )
               }
               action={
@@ -275,7 +272,7 @@ export default function AlteracaoListView() {
                   onSelectAllRows={(checked) =>
                     table.onSelectAllRows(
                       checked,
-                      dataFiltered.map((row) => row.id)
+                      dataFiltered.map((row) => row._id)
                     )
                   }
                 />
@@ -287,7 +284,7 @@ export default function AlteracaoListView() {
                       table.page * table.rowsPerPage + table.rowsPerPage
                     )
                     .map((row) => (
-                      <ClienteTableRow
+                      <AlteracaoTableRow
                         key={row._id}
                         row={row}
                         selected={table.selected.includes(row._id)}
@@ -321,32 +318,28 @@ export default function AlteracaoListView() {
           />
         </Card>
       </DashboardContent>
-      <Modal open={openModal} onClose={handleCloseModal}>
-        <Box sx={{ ...modalStyle }}>
-          <Typography variant="h6" component="h2">
-            Criar Nova Alteração
-          </Typography>
-          <AddressListDialog
+      <Dialog open={openModal} onClose={handleCloseModal} fullWidth maxWidth="xs">
+        <Box sx={{ p: 3 }}>
+          <ClienteListDialog
             list={clientes}
-            open={to.onTrue}
-            onClose={to.onFalse}
+            onClose={handleCloseModal}
             selected={(cliente) => clientes.find((c) => c._id === cliente._id)}
-            onSelect={(cliente) => setSelectedClient((cliente))}
+            onSelect={(cliente) => setSelectedClient(cliente)}
+            selectedClient={selectedClient}
             action={
               <Button
                 size="medium"
                 color="primary"
                 startIcon={<Iconify icon="mingcute:add-line" />}
-                sx={{ alignSelf: 'flex-end'
-                 }}
+                sx={{ alignSelf: 'flex-end' }}
                 onClick={async () => {
                   if (!selectedClient) {
                     toast.error('Selecione um Cliente');
                   } else {
                     try {
-                      await createAlteracao(selectedClient, 'iniciado');
+                      await createAlteracao(selectedClient, { statusAlteracao: 'iniciado' });
                       setSelectedClient(null);
-                      setOpenModal(false);
+                      handleCloseModal();
                       toast.success('Formulário enviado com sucesso!');
                       await fetchAlteracoes();
                     } catch (error) {
@@ -359,9 +352,8 @@ export default function AlteracaoListView() {
               </Button>
             }
           />
-
         </Box>
-      </Modal>
+      </Dialog>
       <ConfirmDialog
         open={confirm.value}
         onClose={confirm.onFalse}
@@ -392,7 +384,6 @@ export default function AlteracaoListView() {
 function applyFilter({ inputData, comparator, filters }) {
   const { nome, status } = filters;
 
-  // Verifica se inputData é um array, caso contrário, inicializa como um array vazio
   if (!Array.isArray(inputData)) {
     inputData = [];
   }
@@ -410,15 +401,17 @@ function applyFilter({ inputData, comparator, filters }) {
   if (nome) {
     inputData = inputData.filter(
       (alteracao) =>
-        alteracao.nome?.toLowerCase().includes(nome.toLowerCase()) || 
-        alteracao.razaoSocial?.toLowerCase().includes(nome.toLowerCase()) 
+        alteracao.nome?.toLowerCase().includes(nome.toLowerCase()) ||
+        alteracao.codigo?.toString().includes(nome.toLowerCase()) ||
+        alteracao.email?.includes(nome.toLowerCase()) ||
+        alteracao.razaoSocial?.toLowerCase().includes(nome.toLowerCase())
     );
   }
-  
+
 
   if (status !== 'all') {
     inputData = inputData.filter((alteracao) => alteracao.statusAlteracao === status);
-  } 
+  }
 
   return inputData;
 }

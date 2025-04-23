@@ -99,5 +99,5 @@ export function fData(inputValue) {
 
 export function formatCpfCnpj(value) {
   if (!value) return '';
-  return value.replace(/\D/g, '');
+  return String(value).replace(/\D/g, '');
 }
