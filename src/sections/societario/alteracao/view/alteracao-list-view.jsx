@@ -63,7 +63,10 @@ export default function AlteracaoListView() {
   const [openModal, setOpenModal] = useState(false);
 
   const handleOpenModal = () => setOpenModal(true);
-  const handleCloseModal = () => setOpenModal(false);
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedClient(null);
+  }
 
   const [selectedClient, setSelectedClient] = useState(null);
 
