@@ -106,6 +106,42 @@ export function ClienteListDialog({
             ),
           }}
         />
+
+        {!selectedClient && (
+          <Stack sx={{
+            mt: 1,
+            p: 2,
+            border: '1px dotted',
+            alignItems: 'center',
+            borderRadius: 1,
+            cursor: 'pointer',
+            bgcolor: 'background.neutral',
+          }}
+          >
+            <Typography variant="subtitle2" sx={{ color: 'text.secondary', my: 1 }}>Selecione um cliente</Typography>
+          </Stack>
+        )}
+
+        {selectedClient && (
+          <Stack sx={{
+            mt: 1,
+            p: 2,
+            border: '1px solid',
+            borderRadius: 1,
+            cursor: 'pointer',
+            bgcolor: 'background.neutral',
+          }}
+            onClick={() => handleSelectAddress(selectedClient)}
+          >
+            <Typography variant="subtitle2" sx={{ color: 'black', mb: 1 }}>Cliente Selecionado</Typography>
+            <Typography sx={{ color: 'primary.main', typography: 'text.secondary' }}>{selectedClient.nome}</Typography>
+            <Typography sx={{ color: 'secondary', typography: 'text.secondary' }}>{selectedClient.razaoSocial}</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {selectedClient.cnpj}
+            </Typography>
+          </Stack>
+        )}
+
       </Stack>
 
       {notFound ? (
