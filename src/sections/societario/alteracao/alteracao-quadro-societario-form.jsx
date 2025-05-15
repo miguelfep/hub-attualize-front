@@ -112,52 +112,56 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
     }
   };
 
-  const handleDownload = async (index, documentType) => {
-    try {
-      const fileUrl = getValues(`socios.${index}.${documentType}`);
-      if (!fileUrl) {
-        toast.error(`Arquivo não disponível para download: ${getDocumentLabel(documentType, index)}.`);
-        return;
-      }
-
-      // Extrair e limpar o nome do arquivo
-      const filename = fileUrl.split('/').pop() || fileUrl;
-      const cleanFilename = encodeURIComponent(filename.replace(/\s+/g, '_')); // Substitui espaços por _ e codifica
-
-      const response = await downloadArquivoAlteracao(
-        alteracaoId,
-        documentType,
-        cleanFilename,
-        index
-      );
-
-      if (response?.data) {
-        // Determinar o tipo MIME com base na extensão
-        const extension = filename.split('.').pop().toLowerCase();
-        const mimeType =
-          extension === 'pdf'
-            ? 'application/pdf'
-            : extension.match(/png|jpg|jpeg|gif/)
-              ? `image/${extension}`
-              : 'application/octet-stream';
-
-        const blob = new Blob([response.data], { type: mimeType });
-        const downloadUrl = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = downloadUrl;
-        link.setAttribute('download', filename); // Usa o nome original para o download
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(downloadUrl);
-        toast.success(`${getDocumentLabel(documentType, index)} baixado com sucesso.`);
-      } else {
-        throw new Error('Resposta da API inválida.');
-      }
-    } catch (error) {
-      toast.error(`Erro ao baixar ${getDocumentLabel(documentType, index)}: ${error.message}`);
+const handleDownload = async (index, documentType) => {
+  try {
+    const fileUrl = getValues(`socios.${index}.${documentType}`);
+    if (!fileUrl || !fileUrl.includes('/')) {
+      toast.error(`URL inválida para o arquivo: ${getDocumentLabel(documentType, index)}.`);
+      return;
     }
-  };
+
+    const filename = fileUrl.split('/').pop() || `default_${documentType}.bin`;
+    if (!filename.includes('.')) {
+      toast.error(`Nome do arquivo inválido (sem extensão): ${getDocumentLabel(documentType, index)}.`);
+      return;
+    }
+    const cleanFilename = encodeURIComponent(filename.trim()); // Apenas codifica
+
+    const response = await downloadArquivoAlteracao(alteracaoId, documentType, cleanFilename);
+    if (!response || !response.data || response.status !== 200) {
+      throw new Error('Falha na resposta da API ou arquivo não encontrado.');
+    }
+
+    const mimeTypes = {
+      pdf: 'application/pdf',
+      png: 'image/png',
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+    };
+    const extension = filename.split('.').pop().toLowerCase();
+    const mimeType = mimeTypes[extension] || 'application/octet-stream';
+
+    const blob = new Blob([response.data], { type: mimeType });
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+    toast.success(`${getDocumentLabel(documentType, index)} baixado com sucesso.`);
+  } catch (error) {
+    const errorMessage = error.response?.status === 404
+      ? `Arquivo não encontrado no servidor: ${getDocumentLabel(documentType, index)}.`
+      : error.response
+        ? `Erro do servidor: ${error.response.status} - ${error.response.data?.message || error.message}`
+        : error.message.includes('Network Error')
+          ? 'Erro de rede: não foi possível conectar ao servidor.'
+          : `Erro ao baixar ${getDocumentLabel(documentType, index)}: ${error.message}`;
+    toast.error(errorMessage);
+  }
+};
 
   const handleDelete = async (index, documentType) => {
     try {
@@ -593,7 +597,9 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
                       </Box>
                       {value && typeof value === 'string' && (
                         <Box mt={2}>
-                          <Typography variant="body2" noWrap>{value}</Typography>
+                          <Typography variant="body2" noWrap>
+                            {value.split('/').pop()}
+                          </Typography>
                         </Box>
                       )}
                     </Box>
@@ -651,7 +657,9 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
                       </Box>
                       {value && typeof value === 'string' && (
                         <Box mt={2}>
-                          <Typography variant="body2" noWrap>{value}</Typography>
+                          <Typography variant="body2" noWrap>
+                            {value.split('/').pop()}
+                          </Typography>
                         </Box>
                       )}
                     </Box>
