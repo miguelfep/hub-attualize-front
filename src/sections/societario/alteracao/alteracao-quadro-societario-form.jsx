@@ -597,7 +597,9 @@ const handleDownload = async (index, documentType) => {
                       </Box>
                       {value && typeof value === 'string' && (
                         <Box mt={2}>
-                          <Typography variant="body2" noWrap>{value}</Typography>
+                          <Typography variant="body2" noWrap>
+                            {value.split('/').pop()}
+                          </Typography>
                         </Box>
                       )}
                     </Box>
@@ -655,7 +657,9 @@ const handleDownload = async (index, documentType) => {
                       </Box>
                       {value && typeof value === 'string' && (
                         <Box mt={2}>
-                          <Typography variant="body2" noWrap>{value}</Typography>
+                          <Typography variant="body2" noWrap>
+                            {value.split('/').pop()}
+                          </Typography>
                         </Box>
                       )}
                     </Box>
