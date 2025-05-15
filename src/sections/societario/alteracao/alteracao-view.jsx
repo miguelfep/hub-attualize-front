@@ -2,8 +2,8 @@
 
 import { z } from "zod";
 import { toast } from "sonner";
-import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FormProvider } from "react-hook-form";
 
@@ -58,7 +58,12 @@ const AlteracaoSchema = z.object({
       cnhAnexo: z.any(),
       rg: z.string().min(6, 'RG Inválido').max(12, 'RG Inválido'),
       estadoCivil: z.string().min(1, 'Estado Civil é obrigatório'),
-      porcentagem: z.number().min(1, 'Porcentagem é obrigatório'),
+      porcentagem: z.union([z.string(), z.number()]).transform((value) => {
+        if (typeof value === 'string') {
+          return parseFloat(value);
+        }
+        return value;
+      }),
       administrador: z.boolean().optional(),
       regimeBens: z.string().optional(),
       endereco: z.string().min(1, 'Endereço é obrigatório'),
@@ -71,6 +76,7 @@ const AlteracaoSchema = z.object({
 
 export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
   const [isValidating, setIsValidating] = useState(false);
+  const router = useRouter();
 
   const methods = useForm({
     defaultValues: {
@@ -274,6 +280,7 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
               const data = prepareData(rawData);
               handleApproval(data);
               setIsValidating(true);
+              router.refresh();
             })}
           />
         </form>
