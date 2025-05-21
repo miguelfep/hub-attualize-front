@@ -19,6 +19,7 @@ import { Form, schemaHelper } from 'src/components/hook-form';
 import AlteracaoValidacaoForm from 'src/sections/societario/alteracao/alteracao-validacao-form';
 
 import AlteracaoKickoffForm from './alteracao-kickoff-form';
+import AlteracaoIniciadoForm from './alteracao-iniciado-form';
 import AlteracaoEmAlteracaoForm from './alteracao-em-alteracao';
 
 // Definir o esquema de validação usando Zod
@@ -118,7 +119,7 @@ export default function AlteracaoEditForm({ alteracaoData }) {
   const renderStatusComponent = () => {
     switch (statusAlteracao) {
       case 'iniciado':
-        return <Typography textAlign='center'>Formulário de alteração já foi enviado ao cliente. Aguarde a devolução </Typography>;
+        return <AlteracaoIniciadoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'em_validacao':
         return <AlteracaoValidacaoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'kickoff':

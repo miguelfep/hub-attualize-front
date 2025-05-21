@@ -28,6 +28,7 @@ export function AlteracaoTableRow({
   onSelectRow,
   onDeleteRow,
   onActivateRow,
+  onSendMessageRow,
 }) {
   const confirm = useBoolean();
 
@@ -118,6 +119,15 @@ export function AlteracaoTableRow({
           >
             <Iconify icon="solar:pen-bold" />
             Editar
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              onSendMessageRow();
+              popover.onClose();
+            }}
+          >
+            <Iconify icon="mdi:whatsapp" />
+            Enviar Link
           </MenuItem>
         </MenuList>
       </CustomPopover>

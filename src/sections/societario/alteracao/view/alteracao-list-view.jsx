@@ -1,5 +1,6 @@
 'use client'
 
+import nProgress from "nprogress";
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useCallback } from "react";
 
@@ -13,7 +14,7 @@ import { useSetState } from "src/hooks/use-set-state";
 import { varAlpha } from "src/theme/styles";
 import { getClientes } from "src/actions/clientes";
 import { DashboardContent } from "src/layouts/dashboard";
-import { createAlteracao, updateAlteracao, getAlteracoesSocietario } from "src/actions/societario";
+import { createAlteracao, updateAlteracao, sendMessageLink, getAlteracoesSocietario } from "src/actions/societario";
 
 import { Label } from "src/components/label";
 import { toast } from 'src/components/snackbar';
@@ -162,9 +163,21 @@ export default function AlteracaoListView() {
 
   const handleEditRow = useCallback(
     (id) => {
+      nProgress.start()
       router.push(paths.dashboard.alteracao.edit(id));
+      nProgress.done()
     },
     [router]
+  );
+
+  const handleSendMessageRow = useCallback(async (id) => {
+    try {
+      await sendMessageLink(id);
+      toast.success('Link enviado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao enviar mensagem');
+    }
+  }, []
   );
 
   const handleFilterStatus = useCallback(
@@ -295,6 +308,7 @@ export default function AlteracaoListView() {
                         onDeleteRow={() => handleDeleteRow(row._id)}
                         onActivateRow={() => handleActivateRow(row._id)}
                         onEditRow={() => handleEditRow(row._id)}
+                        onSendMessageRow={() => handleSendMessageRow(row._id)}
                         onUpdate={fetchAlteracoes}
                       />
                     ))}
