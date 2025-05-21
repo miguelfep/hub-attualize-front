@@ -48,7 +48,7 @@ const AlteracaoSchema = z.object({
   numero: z.string().optional(),
   numeroEnabled: z.boolean(),
   complemento: z.string().optional(),
-  novasAtividades: z.string().max(300, 'Limite de 300 caracteres atingido').optional(),
+  novasAtividades: z.string().max(1500, 'Limite de 1500 caracteres atingido').optional(),
   novasAtividadesEnabled: z.boolean(),
   socios: z.array(
     z.object({
