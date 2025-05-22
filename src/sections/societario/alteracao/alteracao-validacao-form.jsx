@@ -160,6 +160,29 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
         { value: 'outros', label: 'Outros' },
     ]
 
+    const etniaOptions = [
+        { value: "branca", label: "Branca" },
+        { value: "preta", label: "Preta" },
+        { value: "parda", label: "Parda" },
+        { value: "amarela", label: "Amarela" },
+        { value: "indigena", label: "Indigena" },
+        { value: "prefiroNaoInformar", label: "Prefiro não informar" },
+    ];
+
+    const grauEscolaridadeOptions = [
+        { value: "semInstrucao", label: "Sem Instrução" },
+        { value: "fundamentalIncompleto", label: "Ensino Fundamental Incompleto" },
+        { value: "fundamentalCompleto", label: "Ensino Fundamental Completo" },
+        { value: "medioIncompleto", label: "Ensino Médio Incompleto" },
+        { value: "medioCompleto", label: "Ensino Médio Completo" },
+        { value: "superiorIncompleto", label: "Ensino Superior Incompleto" },
+        { value: "superiorCompleto", label: "Ensino Superior Completo" },
+        { value: "posGraduacao", label: "Pós-graduação" },
+        { value: "mestrado", label: "Mestrado" },
+        { value: "doutorado", label: "Doutorado" },
+        { value: "prefiroNaoInformar", label: "Prefiro não informar" },
+  ];
+
     const { control, handleSubmit, reset, getValues, setValue, watch } = useForm({
         defaultValues: {
             id: currentAlteracao?._id || '',
@@ -192,6 +215,8 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                 naturalidade: socio?.naturalidade || '',
                 porcentagem: Number(socio?.porcentagem) || 0,
                 regimeBens: socio?.regimeBens || '',
+                etnia: socio?.etnia || '',
+                grau_escolaridade: socio?.grau_escolaridade || '',
                 endereco: socio?.endereco || '',
                 profissao: socio?.profissao || '',
                 administrador: socio?.administrador || false,
@@ -635,6 +660,48 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                 fullWidth
                                                 variant="outlined"
                                             />
+                                        )}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Controller
+                                        name={`socios[${index}].etnia`}
+                                        control={control}
+                                        render={({ field }) => (
+                                            <TextField
+                                                select
+                                                {...field}
+                                                label="Raça/Cor"
+                                                fullWidth
+                                                variant="outlined"
+                                            >
+                                                {etniaOptions.map((option) => (
+                                                    <MenuItem key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        )}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <Controller
+                                        name={`socios[${index}].grau_escolaridade`}
+                                        control={control}
+                                        render={({ field }) => (
+                                            <TextField
+                                                select
+                                                {...field}
+                                                label="Grau de Escolaridade"
+                                                fullWidth
+                                                variant="outlined"
+                                            >
+                                                {grauEscolaridadeOptions.map((option) => (
+                                                    <MenuItem key={option.value} value={option.value}>
+                                                        {option.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
                                         )}
                                     />
                                 </Grid>
