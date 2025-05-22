@@ -3,7 +3,7 @@
 import { toast } from 'sonner';
 import InputMask from 'react-input-mask';
 import { NumericFormat } from 'react-number-format';
-import { control, Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext } from 'react-hook-form';
 
 import {
   Card,
@@ -18,7 +18,7 @@ import {
 import { updateAbertura, enviarLinkAbertura } from 'src/actions/societario';
 
 export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvanceStatus }) {
-  const { register, handleSubmit, getValues } = useFormContext({});
+  const { control, register, handleSubmit, getValues } = useFormContext({});
 
   // Função para lidar com o envio do formulário
   const onSave = async (data) => {
