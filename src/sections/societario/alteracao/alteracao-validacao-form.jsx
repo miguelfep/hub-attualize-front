@@ -233,6 +233,8 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                     naturalidade: '',
                     porcentagem: 0,
                     regimeBens: '',
+                    etnia: '',
+                    grau_escolaridade: '',
                     endereco: '',
                     profissao: '',
                     administrador: false,
