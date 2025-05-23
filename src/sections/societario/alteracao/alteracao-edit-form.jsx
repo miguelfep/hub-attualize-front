@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { Box, Chip, Stack, Button, Typography } from '@mui/material';
+import { Box, Chip, Stack, Button } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -19,7 +19,9 @@ import { Form, schemaHelper } from 'src/components/hook-form';
 import AlteracaoValidacaoForm from 'src/sections/societario/alteracao/alteracao-validacao-form';
 
 import AlteracaoKickoffForm from './alteracao-kickoff-form';
+import AlteracaoIniciadoForm from './alteracao-iniciado-form';
 import AlteracaoEmAlteracaoForm from './alteracao-em-alteracao';
+import AlteracaoFinalizadoForm from './alteracao-finalizado-form';
 
 // Definir o esquema de validação usando Zod
 const AlteracaoSchema = zod.object({
@@ -118,7 +120,7 @@ export default function AlteracaoEditForm({ alteracaoData }) {
   const renderStatusComponent = () => {
     switch (statusAlteracao) {
       case 'iniciado':
-        return <Typography textAlign='center'>Formulário de alteração já foi enviado ao cliente. Aguarde a devolução </Typography>;
+        return <AlteracaoIniciadoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'em_validacao':
         return <AlteracaoValidacaoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'kickoff':
@@ -126,7 +128,7 @@ export default function AlteracaoEditForm({ alteracaoData }) {
       case 'em_alteracao':
         return <AlteracaoEmAlteracaoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'finalizado':
-        return <Typography textAlign='center'>Alteração finalizada com sucesso. Para visualizá-la, volte ao lista de alterações</Typography>;
+        return <AlteracaoFinalizadoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       default:
         return null;
     }

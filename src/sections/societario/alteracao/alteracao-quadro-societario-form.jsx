@@ -43,6 +43,29 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
     { value: "Uniao Estavel", label: "União Estável" },
   ];
 
+  const etniaOptions = [
+    { value: "branca", label: "Branca" },
+    { value: "preta", label: "Preta" },
+    { value: "parda", label: "Parda" },
+    { value: "amarela", label: "Amarela" },
+    { value: "indigena", label: "Indigena" },
+    { value: "prefiroNaoInformar", label: "Prefiro não informar" },
+  ];
+
+  const grauEscolaridadeOptions = [
+    { value: "semInstrucao", label: "Sem Instrução" },
+    { value: "fundamentalIncompleto", label: "Ensino Fundamental Incompleto" },
+    { value: "fundamentalCompleto", label: "Ensino Fundamental Completo" },
+    { value: "medioIncompleto", label: "Ensino Médio Incompleto" },
+    { value: "medioCompleto", label: "Ensino Médio Completo" },
+    { value: "superiorIncompleto", label: "Ensino Superior Incompleto" },
+    { value: "superiorCompleto", label: "Ensino Superior Completo" },
+    { value: "posGraduacao", label: "Pós-graduação" },
+    { value: "mestrado", label: "Mestrado" },
+    { value: "doutorado", label: "Doutorado" },
+    { value: "prefiroNaoInformar", label: "Prefiro não informar" },
+  ];
+
   const getDocumentLabel = (type, index) => {
     const labels = {
       cnhAnexo: `CNH do Sócio ${index + 1}`,
@@ -197,6 +220,8 @@ const handleDownload = async (index, documentType) => {
         estadoCivil: "",
         administrador: false,
         regimeBens: "",
+        etnia: "",
+        grau_escolaridade: "",
         cnhAnexo: "",
         comprovanteEnderecoAnexo: "",
         socioEnabled: false,
@@ -488,6 +513,74 @@ const handleDownload = async (index, documentType) => {
                 />
               </Grid>
             )}
+
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name={`socios.${index}.etnia`}
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormControl fullWidth>
+                    <InputLabel id={`etnia-select-label-${index}`}>
+                      Raça/Cor
+                    </InputLabel>
+                    <Select
+                      {...field}
+                      labelId={`etnia-select-label-${index}`}
+                      label="Raça/Cor"
+                      fullWidth
+                      disabled={!watch(`socios.${index}.socioEnabled`)}
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                    >
+                      <MenuItem value="">
+                        <em>Selecione uma opção</em>
+                      </MenuItem>
+                      {etniaOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <Controller
+                name={`socios.${index}.grau_escolaridade`}
+                control={control}
+                render={({ field, fieldState }) => (
+                  <FormControl fullWidth>
+                    <InputLabel id={`grau-escolaridade-select-label-${index}`}>
+                      Grau de Escolaridade
+                    </InputLabel>
+                    <Select
+                      {...field}
+                      labelId={`grau-escolaridade-select-label-${index}`}
+                      label="Grau de Escolaridade"
+                      fullWidth
+                      disabled={!watch(`socios.${index}.socioEnabled`)}
+                      value={field.value || ""}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      error={!!fieldState.error}
+                      helperText={fieldState.error?.message}
+                    >
+                      <MenuItem value="">
+                        <em>Selecione uma opção</em>
+                      </MenuItem>
+                      {grauEscolaridadeOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+            </Grid>
 
             <Grid item xs={12} sm={6}>
               <Controller

@@ -236,6 +236,16 @@ export async function getAlteracaoById(id) {
   };
 }
 
+export async function sendMessageLink(id) {
+  try {
+    const response = await axios.post(`${baseUrl}societario/alteracao/link/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(error)
+    return error;
+  };
+}
+
 export async function updateAlteracao(id, itemData) {
   return axios.put(`${baseUrl}societario/alteracao/atualizar/${id}`, itemData);
 }

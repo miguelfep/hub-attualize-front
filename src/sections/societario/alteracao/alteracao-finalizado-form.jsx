@@ -14,7 +14,7 @@ import { updateAlteracao } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
 
-export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvanceStatus }) {
+export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanceStatus }) {
     const loading = useBoolean();
 
     const regimeBensOptions = [
@@ -67,7 +67,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
         { value: "mestrado", label: "Mestrado" },
         { value: "doutorado", label: "Doutorado" },
         { value: "prefiroNaoInformar", label: "Prefiro não informar" },
-    ];
+  ];
 
     const { control, handleSubmit, reset, getValues, watch } = useForm({
         defaultValues: {
@@ -105,7 +105,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                     porcentagem: Number(socio?.porcentagem) || 0,
                     regimeBens: socio?.regimeBens || '',
                     etnia: socio?.etnia || '',
-                    grau_escolaridade: socio?.etnia || '',
+                    grau_escolaridade: socio?.grau_escolaridade || '',
                     endereco: socio?.endereco || '',
                     profissao: socio?.profissao || '',
                     administrador: socio?.administrador || false,
@@ -162,16 +162,8 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
     const handleSave = async () => {
         loading.onTrue();
         try {
-            const selectedValue = getValues("situacaoAlteracao");
-            const dataToSave = {
-                ...getValues(),
-                statusAlteracao: selectedValue === 8 ? "finalizado" : 'em_alteracao',
-            };
-            await updateAlteracao(currentAlteracao._id, dataToSave);
+            await updateAlteracao(currentAlteracao._id, getValues());
             toast.success("Dados salvos com sucesso!");
-            if (selectedValue === 8 && handleAdvanceStatus) {
-                handleAdvanceStatus('finalizado');
-            }
         } catch (error) {
             toast.error("Erro ao salvar os dados");
         } finally {
@@ -759,7 +751,6 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
             )}
 
             {activeTab === 1 && (
-                <>
                     <Grid container spacing={2} mt={2}>
                         <Grid item xs={12}>
                             <Controller
@@ -792,13 +783,12 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                             />
                         </Grid>
                     </Grid>
-                    <Stack direction="row" spacing={2} sx={{ mt: 3, mb: 3 }} justifyContent="center">
-                        <Button variant="contained" onClick={handleSave} disabled={loading.value}>
-                            Salvar
-                        </Button>
-                    </Stack>
-                </>
             )}
+            <Stack direction="row" spacing={2} sx={{ mt: 3, mb: 3 }} justifyContent="center">
+                <Button variant="contained" onClick={handleSave} disabled={loading.value}>
+                    Salvar
+                </Button>
+            </Stack>
         </Card>
     );
 }
