@@ -52,12 +52,12 @@ const AlteracaoSchema = z.object({
   novasAtividadesEnabled: z.boolean(),
   socios: z.array(
     z.object({
-      nome: z.string().min(1, 'Nome é obrigatório').optional(),
-      cpf: z.string().min(11, 'CPF Inválido').max(14, 'CPF Inválido').optional(),
-      cnh: z.string().min(9, 'CNH Inválida').optional(),
+      nome: z.string().optional(),
+      cpf: z.string().optional(),
+      cnh: z.string().optional(),
       cnhAnexo: z.any().optional(),
-      rg: z.string().min(6, 'RG Inválido').max(12, 'RG Inválido').optional(),
-      estadoCivil: z.string().min(1, 'Estado Civil é obrigatório').optional(),
+      rg: z.string().optional(),
+      estadoCivil: z.string().optional(),
       porcentagem: z.union([z.string(), z.number()]).transform((value) => {
         if (typeof value === 'string') {
           return parseFloat(value);
