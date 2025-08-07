@@ -1,17 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+
 import Grid from '@mui/material/Unstable_Grid2';
 
-import { DashboardContent } from 'src/layouts/dashboard';
-import { getUser } from 'src/auth/context/jwt';
-import { SeoIllustration } from 'src/assets/illustrations';
 import { buscarDadosDashboard } from 'src/actions/lead';
+import { DashboardContent } from 'src/layouts/dashboard';
+import { SeoIllustration } from 'src/assets/illustrations';
+
+import { getUser } from 'src/auth/context/jwt';
 
 import { AppWelcome } from '../app-welcome';
 import { AppFeatured } from '../app-featured';
-import { AppWidgetSummary } from '../app-widget-summary';
 import { AppNewInvoice } from '../app-new-invoice';
+import { AppWidgetSummary } from '../app-widget-summary';
 import { EcommerceCurrentBalance } from '../../e-commerce/ecommerce-current-balance';
 
 export default function DashboardAdminView() {
@@ -40,7 +42,12 @@ export default function DashboardAdminView() {
   });
 
   useEffect(() => {
-    buscarDadosDashboard().then(setDashboardData);
+    buscarDadosDashboard().then((newData) => {
+      setDashboardData((prevState) => ({
+        ...prevState,
+        ...newData,
+      }));
+    });
   }, []);
 
   return (
@@ -91,7 +98,7 @@ export default function DashboardAdminView() {
           />
         </Grid>
 
-      
+
         <Grid xs={12}>
           <AppNewInvoice
             title="Leads"

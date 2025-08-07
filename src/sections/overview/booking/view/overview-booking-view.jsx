@@ -171,11 +171,11 @@ export function OverviewBookingView() {
             fetchLicencas={fetchLicencas}
             tableData={filteredLicencas}
             headLabel={[
-              { id: 'cliente', label: 'Cliente' },
-              { id: 'nome', label: 'Licença' },
-              { id: 'dataInicio', label: 'Início' },
-              { id: 'dataVencimento', label: 'Vencimento' },
-              { id: 'status', label: 'Status' },
+              { id: 'cliente', label: 'Cliente', width: '35%' },
+              { id: 'nome', label: 'Licença' , width: '25%'},
+              { id: 'dataInicio', label: 'Início' , width: '15%'},
+              { id: 'dataVencimento', label: 'Vencimento' , width: '15%'},
+              { id: 'status', label: 'Status', width: '10%' },
               { id: '' },
             ]}
           />

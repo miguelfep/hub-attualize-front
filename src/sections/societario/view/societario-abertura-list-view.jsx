@@ -64,6 +64,7 @@ const TABLE_HEAD = [
 export const ABERTURA_STATUS_OPTIONS = [
   { value: 'all', label: 'Todos' },
   { value: 'Iniciado', label: 'Iniciado' },
+  { value: 'em_validacao', label: 'Validação' },
   { value: 'kickoff', label: 'Kickoff' },
   { value: 'onboarding', label: 'Onboarding' },
   { value: 'em_constituicao', label: 'Em Constituição' },
