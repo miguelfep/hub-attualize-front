@@ -31,6 +31,8 @@ export function ContratoTableToolbar({ filters, onResetPage, tableData }) {
         'cliente.cnpj',
         'cliente.razaoSocial',
         'tipoContrato',
+        'dataInicioContrato',        
+        'dataFimContrato',
         'status',
         'metodoCobranca',
         'valorMensalidade',
