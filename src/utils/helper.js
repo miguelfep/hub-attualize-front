@@ -123,3 +123,19 @@ export const merge = (target, ...sources) => {
 
   return merge(target, ...sources);
 };
+
+export function getMonthName(monthIndex) {
+    const meses = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    return meses[monthIndex];
+  }
+
+export function toTitleCase(name) {
+  return name
+    .toLowerCase()
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}

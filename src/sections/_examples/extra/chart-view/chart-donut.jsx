@@ -7,7 +7,7 @@ import { Chart, useChart, ChartLegends } from 'src/components/chart';
 export function ChartDonut({ chart }) {
   const theme = useTheme();
 
-  const chartColors = chart.colors ?? [
+  const chartColors = [
     hexAlpha(theme.palette.primary.dark, 0.8),
     theme.palette.warning.main,
     theme.palette.info.dark,
