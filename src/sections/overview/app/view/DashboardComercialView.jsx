@@ -1,11 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+
 import Grid from '@mui/material/Unstable_Grid2';
+
+import { buscarDadosDashboard } from 'src/actions/lead';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { SeoIllustration } from 'src/assets/illustrations';
+
 import { getUser } from 'src/auth/context/jwt';
-import { buscarDadosDashboard } from 'src/actions/lead';
 
 import { AppWelcome } from '../app-welcome';
 import { AppNewInvoice } from '../app-new-invoice';
