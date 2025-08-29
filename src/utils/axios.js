@@ -98,5 +98,9 @@ export const endpoints = {
     create: 'https://api.attualizecontabil.com.br/api/marketing/criar/lead',
     update: 'https://api.attualizecontabil.com.br/api/marketing/atualizar/lead',
     dashboard: 'https://api.attualizecontabil.com.br/api/marketing/dashboard-data',
+    financeiro: {
+      pagar: 'https://api.attualizecontabil.com.br/api/marketing/dashboard-contas-a-pagar',
+      receber: 'https://api.attualizecontabil.com.br/api/marketing/dashboard-contas-a-receber',
+    }
   },
 };

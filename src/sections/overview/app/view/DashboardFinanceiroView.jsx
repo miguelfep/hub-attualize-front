@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 
-import { DashboardContent } from 'src/layouts/dashboard';
-import { getUser } from 'src/auth/context/jwt';
 import { buscarDadosDashboard } from 'src/actions/lead';
+import { DashboardContent } from 'src/layouts/dashboard';
+
+import { getUser } from 'src/auth/context/jwt';
 
 import { AppWidgetSummary } from '../app-widget-summary';
 import { EcommerceCurrentBalance } from '../../e-commerce/ecommerce-current-balance';

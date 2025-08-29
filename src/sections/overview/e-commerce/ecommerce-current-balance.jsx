@@ -3,6 +3,8 @@ import Card from '@mui/material/Card';
 
 import { fCurrency } from 'src/utils/format-number';
 
+import { AnimateCountUp, formatToCurrency } from 'src/components/animate';
+
 // ----------------------------------------------------------------------
 
 export function EcommerceCurrentBalance({
@@ -27,12 +29,13 @@ export function EcommerceCurrentBalance({
   return (
     <Card sx={{ p: 3, ...sx }} {...other}>
       <Box sx={{ mb: 1, typography: 'subtitle2' }}>{title}</Box>
-
-      <Box sx={{ gap: 2, display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ typography: 'h3' }}>{fCurrency(currentBalance)}</Box>
-
+        <AnimateCountUp
+          to={currentBalance}
+          component={Box}
+          formatter={formatToCurrency}
+          sx={{ typography: 'h3', mb: 0.5 }}
+        />
         {row(texto, orderTotal)}
-      </Box>
     </Card>
   );
 }

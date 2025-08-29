@@ -6,10 +6,11 @@ import { fNumber, fPercent } from 'src/utils/format-number';
 
 import { Iconify } from 'src/components/iconify';
 import { Chart, useChart } from 'src/components/chart';
+import { AnimateCountUp, formatToInteger, formatToCurrency } from 'src/components/animate';
 
 // ----------------------------------------------------------------------
 
-export function AppWidgetSummary({ title, percent, total, chart, sx, ...other }) {
+export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency = false, ...other }) {
   const theme = useTheme();
 
   const chartColors = chart.colors ?? [theme.palette.primary.main];
@@ -43,7 +44,7 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, ...other })
         {fPercent(percent)}
       </Box>
       <Box component="span" sx={{ typography: 'body2', color: 'text.secondary' }}>
-        mes anterior
+        mês anterior
       </Box>
     </Box>
   );
@@ -60,7 +61,12 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, ...other })
     >
       <Box sx={{ flexGrow: 1 }}>
         <Box sx={{ typography: 'subtitle2' }}>{title}</Box>
-        <Box sx={{ mt: 1.5, mb: 1, typography: 'h3' }}>{fNumber(total)}</Box>
+        <AnimateCountUp
+          to={total}
+          component={Box}
+          formatter={isCurrency ? formatToCurrency : formatToInteger}
+          sx={{ mt: 1.5, typography: 'h3' }}
+        />
         {renderTrending}
       </Box>
 

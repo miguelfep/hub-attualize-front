@@ -101,3 +101,12 @@ export function formatCpfCnpj(value) {
   if (!value) return '';
   return String(value).replace(/\D/g, '');
 }
+
+// ----------------------------------------------------------------
+
+  export function formatLargePercent(value) {
+    if (Math.abs(value) > 1000) {
+      return `${(value / 1000).toFixed(1)}K`;
+    }
+    return fPercent(value);
+  }

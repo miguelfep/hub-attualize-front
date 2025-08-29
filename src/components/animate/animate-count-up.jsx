@@ -3,6 +3,19 @@ import { m, animate, useInView, useTransform, useMotionValue } from 'framer-moti
 
 import Typography from '@mui/material/Typography';
 
+export const formatToCurrency = (value) =>
+  new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  }).format(value);
+
+  export const formatToInteger = (value) =>
+  new Intl.NumberFormat('pt-BR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(Math.round(value));
+
+
 // ----------------------------------------------------------------------
 
 export function AnimateCountUp({
@@ -15,21 +28,24 @@ export function AnimateCountUp({
   once = true,
   amount = 0.5,
   component = 'p',
+  formatter,
   ...other
 }) {
   const ref = useRef(null);
 
-  const inView = useInView(ref, { once, amount });
+  const inView = useInView(ref, { once: true, amount: 0.5 });
 
   const count = useMotionValue(from);
 
-  const rounded = useTransform(count, (latest) => latest.toFixed(toFixed));
+  const formatted = useTransform(count, (latest) =>
+    formatter ? formatter(latest) : Math.round(latest)
+  );
 
   useEffect(() => {
     if (inView) {
-      animate(count, to, { duration });
+      animate(count, to, { duration: 2});
     }
-  }, [count, duration, inView, to]);
+  }, [count, inView, to]);
 
   return (
     <Typography
@@ -42,7 +58,7 @@ export function AnimateCountUp({
       }}
       {...other}
     >
-      <m.span ref={ref}>{rounded}</m.span>
+      <m.span ref={ref}>{formatted}</m.span>
       {unit}
     </Typography>
   );

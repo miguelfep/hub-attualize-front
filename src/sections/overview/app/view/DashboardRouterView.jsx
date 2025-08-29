@@ -1,9 +1,10 @@
 'use client';
 
 import { getUser } from 'src/auth/context/jwt';
+
 import DashboardAdminView from './DashboardAdminView';
-import DashboardFinanceiroView from './DashboardFinanceiroView';
 import DashboardComercialView from './DashboardComercialView';
+import DashboardFinanceiroView from './DashboardFinanceiroView';
 
 export function DashboardRouterView() {
   const user = getUser();  
