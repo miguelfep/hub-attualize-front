@@ -1,134 +1,265 @@
-import ReactPlayer from 'react-player';
-import React, { useState } from 'react';
+import ReactPlayer from 'react-player/lazy';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
-import { Box, Stack, Button, Typography } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import {
+  Box,
+  Fade,
+  Stack,
+  Button,
+  Container,
+  Typography,
+  useMediaQuery,
+  CircularProgress,
+} from '@mui/material';
 
 import { CONFIG } from 'src/config-global';
 
 import { FormWizardAbrirEmpresa } from './FormWizardAbrirEmpresaEstetica';
 
 export function BannerEstetica() {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [open, setOpen] = useState(false);
+  const [isVideoLoading, setVideoLoading] = useState(true);
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const videoRef = useRef(null);
 
-  const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleOpen = useCallback(() => setOpen(true), []);
+  const handleClose = useCallback(() => setOpen(false), []);
 
-  const handleTrocarContador = async () => {
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsIntersecting(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (videoRef.current) {
+      observer.observe(videoRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, []);
+
+  const handleTrocarContador = () => {
     try {
-      const whatsappUrl = `https://wa.me/5541996982267?text=Olá,%20e%20tenho%20interesse%20em%20trocar%20minha%20contabilidade!`;
-      window.location.href = whatsappUrl;
+      const message = encodeURIComponent('Olá, tenho interesse em trocar minha contabilidade!');
+      const whatsappUrl = `https://wa.me/5541996982267?text=${message}`;
+      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
-      console.error('Erro ao enviar os dados:', error);
+      console.error('Erro ao abrir o WhatsApp:', error);
     }
   };
 
   return (
     <Box
+      component="section"
+      aria-label="Banner de contabilidade para clínicas de estética"
       sx={{
-        height: { md: 560, xs: 'auto' },
-        py: { xs: 5, md: 0 },
-        overflow: 'hidden',
+        width: '100%',
+        height: { md: '85vh' },
+        minHeight: '600px',
+        py: { xs: 6, md: 10 },
+        px: { xs: 2, md: 4 },
         position: 'relative',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        backgroundImage: `url(${CONFIG.site.basePath}/assets/background/overlay.svg), url(${CONFIG.site.basePath}/assets/images/about/banner-6.png)`,
+        backgroundImage: {
+          xs: `linear-gradient(to bottom, ${alpha('#000000', 0.7)}, ${alpha('#000000', 0.6)}), url(${CONFIG.site.basePath}/assets/images/about/banner-6-mobile.jpg)`,
+          md: `linear-gradient(to right, ${alpha('#000000', 0.7)}, ${alpha('#000000', 0.6)}), url(${CONFIG.site.basePath}/assets/images/about/banner-6.png)`
+        },
         display: 'flex',
-        flexDirection: { xs: 'column', md: 'row' },
         alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: { xs: 4, md: 0 },
+        overflow: 'hidden',
       }}
     >
-      {/* Texto e botões */}
-      <Box
-        sx={{
-          textAlign: 'left',
-          ml: { md: 10, xs: 2 },
-          maxWidth: 600,
-        }}
-      >
-        <Typography
-          variant="h2"
-          component="h1"
-          gutterBottom
+      <Container maxWidth="lg">
+        <Box
           sx={{
-            color: 'white',
-            fontSize: { xs: '2rem', md: '3rem' },
-            lineHeight: { xs: 1.2, md: 1.5 },
+            display: 'grid',
+            gridTemplateColumns: { md: '1.2fr 1fr', xs: '1fr' },
+            gap: { xs: 4, md: 6 },
+            alignItems: 'center',
           }}
         >
-          Contabilidade para Clínicas de Estética
-        </Typography>
-        <Typography
-          variant="h6"
-          gutterBottom
-          sx={{
-            color: 'white',
-            fontSize: { xs: '1rem', md: '1.25rem' },
-            lineHeight: 1.5,
-          }}
-        >
-          Especialistas em contabilidade digital para o setor de beleza e bem-estar em todo o
-          Brasil.
-        </Typography>
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{
-            mt: 3,
-            flexWrap: 'wrap',
-            justifyContent: { xs: 'center', md: 'flex-start' },
-            gap: 2,
-          }}
-        >
-          <Button
-            variant="contained"
-            color="primary"
-            size="large"
-            onClick={handleOpen}
+          <Stack
+            spacing={3}
             sx={{
-              px: 4,
-              fontSize: { xs: '0.875rem', md: '1rem' },
+              textAlign: { xs: 'center', md: 'left' },
+              alignItems: { xs: 'center', md: 'flex-start' },
             }}
           >
-            Abrir Minha Empresa
-          </Button>
-          <Button
-            variant="outlined"
-            color="primary"
-            size="large"
-            onClick={handleTrocarContador}
-            sx={{
-              px: 4,
-              fontSize: { xs: '0.875rem', md: '1rem' },
-            }}
-          >
-            Trocar de Contador
-          </Button>
-        </Stack>
-      </Box>
+            <Box
+              component="span"
+              sx={{
+                display: 'inline-block',
+                py: 1,
+                px: 2,
+                mb: 1,
+                borderRadius: '20px',
+                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                color: 'primary.main',
+                fontWeight: 'fontWeightMedium',
+                fontSize: { xs: '0.8rem', md: '0.9rem' },
+              }}
+            >
+              Sucesso e Beleza
+            </Box>
 
-      {/* Vídeo responsivo */}
-      <Box
-        sx={{
-          width: { xs: '90%', md: '50%' },
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          borderRadius: 2,
-          overflow: 'hidden',
-          mr: { xs: 0, md: 4 },
-          height: { xs: 200, md: 450 }, // Altura ajustada para mobile e desktop
-        }}
-      >
-        <ReactPlayer
-          url="https://www.youtube.com/embed/nyUmR7EPPFM?si=HdhhcAFD5G5z7-1F"
-          width="100%"
-          height="100%"
-          controls
-          style={{ borderRadius: '10px' }}
-        />
-      </Box>
+            <Typography
+              variant="h2"
+              component="h1"
+              sx={{
+                color: 'common.white',
+                fontWeight: 'bold',
+                textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+                fontSize: {
+                  xs: '2rem',
+                  sm: '2.5rem',
+                  md: '3rem'
+                },
+                lineHeight: 1.2,
+              }}
+            >
+              Contabilidade para Clínicas de{' '}
+              <Box
+                component="span"
+                sx={{
+                  background: `linear-gradient(to top, ${alpha(theme.palette.primary.main, 0.4)} 50%, transparent 50%)`,
+                  padding: '0 2px',
+                  }}
+              >
+                Estética
+              </Box>
+            </Typography>
+
+            <Typography
+              variant="h6"
+              component="p"
+              sx={{
+                color: 'grey.300',
+                maxWidth: 520,
+                fontSize: {
+                  xs: '1rem',
+                  md: '1.1rem'
+                },
+              }}
+            >
+              Foque no que você faz de melhor: cuidar da beleza e bem-estar. Nós cuidamos do resto!
+            </Typography>
+
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={2}
+              sx={{
+                pt: 2,
+                width: { xs: '100%', sm: 'auto' },
+              }}
+            >
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                onClick={handleOpen}
+                aria-label="Abrir minha empresa de estética"
+                sx={{
+                  py: 1.5,
+                  px: 3,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-3px)',
+                    boxShadow: `0 6px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                  },
+                }}
+              >
+                Abrir Minha Empresa
+              </Button>
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="large"
+                onClick={handleTrocarContador}
+                aria-label="Trocar de contador"
+                sx={{
+                  py: 1.5,
+                  px: 3,
+                  color: 'common.white',
+                  borderColor: 'common.white',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'translateY(-3px)',
+                    borderColor: 'primary.main',
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    color: 'primary.main',
+                  },
+                }}
+              >
+                Trocar de Contador
+              </Button>
+            </Stack>
+          </Stack>
+
+          <Box
+            ref={videoRef}
+            sx={{
+              position: 'relative',
+              width: '100%',
+              borderRadius: 3,
+              overflow: 'hidden',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.5)',
+              aspectRatio: '16/9',
+              transition: 'transform 0.3s ease-in-out',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              '&:hover': {
+                transform: 'scale(1.03)',
+              },
+            }}
+          >
+            {isVideoLoading && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  zIndex: 1,
+                }}
+              >
+                <CircularProgress color="primary" />
+              </Box>
+            )}
+
+            <Fade in={!isVideoLoading} timeout={800}>
+              <Box sx={{ height: '100%', opacity: isVideoLoading ? 0 : 1 }}>
+                {isIntersecting && (
+                  <ReactPlayer
+                    url="https://www.youtube.com/watch?v=6XxCtzt1uBE&t"
+                    width="100%"
+                    height="100%"
+                    controls
+                    playing={!isMobile}
+                    onReady={() => setVideoLoading(false)}
+                    onError={() => setVideoLoading(false)}
+                    style={{
+                      opacity: isVideoLoading ? 0 : 1,
+                      transition: 'opacity 0.5s ease-in',
+                    }}
+                  />
+                )}
+              </Box>
+            </Fade>
+          </Box>
+        </Box>
+      </Container>
 
       <FormWizardAbrirEmpresa open={open} onClose={handleClose} />
     </Box>

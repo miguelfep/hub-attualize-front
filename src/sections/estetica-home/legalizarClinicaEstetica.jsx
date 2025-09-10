@@ -1,40 +1,68 @@
+import { toast } from 'sonner';
 import React, { useState } from 'react';
+import InputMask from 'react-input-mask';
+import { m, AnimatePresence } from 'framer-motion';
+import { useForm, Controller } from 'react-hook-form';
 
+import { alpha, styled, useTheme } from '@mui/material/styles';
 import {
   Box,
   Step,
   Grid,
+  Chip,
   Paper,
   Stack,
+  Alert,
   Button,
   Stepper,
-  StepLabel,
   Container,
   TextField,
+  StepLabel,
+  Accordion,
+  AlertTitle,
   Typography,
-  StepContent,
+  StepConnector,
+  AccordionSummary,
+  AccordionDetails,
+  stepConnectorClasses,
 } from '@mui/material';
 
-import { MotionViewport } from 'src/components/animate';
+import { criarLead } from 'src/actions/lead';
+
+import { Iconify } from 'src/components/iconify';
+import { varFade, MotionViewport } from 'src/components/animate';
 
 const steps = [
   {
     label: 'Registro na Junta Comercial',
     description: (
       <>
-        <Typography variant="body1" paragraph>
-          O registro na Junta Comercial é o primeiro passo para formalizar sua clínica. Esse
-          processo cria a base legal para operar sua empresa, permitindo que você obtenha outros
-          documentos essenciais.
+        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+          Este é o ponto de partida oficial, a certidão de nascimento da sua empresa. É o que
+          cria a base legal para sua clínica operar e te permite avançar para os próximos passos com
+          segurança.
         </Typography>
-        <Typography variant="body1">
-          Certifique-se de ter os seguintes documentos:
-          <ul>
-            <li>Contrato social da empresa</li>
-            <li>Documentos dos sócios (RG, CPF, comprovante de residência)</li>
-            <li>Requerimento de Empresário, se aplicável</li>
-          </ul>
-        </Typography>
+
+        <Paper variant="outlined" sx={{ p: 2.5, mt: 3, borderRadius: 2, bgcolor: 'background.neutral' }}>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+            <Iconify icon="solar:clipboard-check-bold-duotone" width={32} color="primary.main" />
+            <Typography variant="subtitle1">Documentos Essenciais</Typography>
+          </Stack>
+          <Stack spacing={1.5} sx={{ pl: 0.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:checkmark-circle-2-fill" width={20} color="primary.main" />
+              <Typography variant="body2">Contrato social da empresa</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:checkmark-circle-2-fill" width={20} color="primary.main" />
+              <Typography variant="body2">Documentos dos sócios (RG, CPF, etc.)</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:checkmark-circle-2-fill" width={20} color="primary.main" />
+              <Typography variant="body2">Requerimento de Empresário (se aplicável)</Typography>
+            </Stack>
+          </Stack>
+        </Paper>
       </>
     ),
   },
@@ -42,35 +70,61 @@ const steps = [
     label: 'Tipos de Empresa para Clínicas de Estética',
     description: (
       <>
-        <Typography variant="body1" paragraph>
-          Escolher o tipo de empresa certo é fundamental para definir o regime tributário, as
-          responsabilidades e as obrigações fiscais. Aqui estão os principais tipos de empresa que
-          podem se enquadrar para clínicas de estética:
+        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+          Essa escolha define o futuro tributário e legal do seu negócio. Pense nela como a
+          escolha da fundação de uma casa. Analise cada opção para ver qual se encaixa no seu
+          momento e visão.
         </Typography>
-        <Typography variant="body1">
-          <ul>
-            <li>
-              <strong>MEI (Microempreendedor Individual):</strong> Ideal para profissionais
-              autônomos que atendem sozinhos e faturam até R$ 81.000 por ano.
-            </li>
-            <li>
-              <strong>ME (Microempresa):</strong> Para clínicas com faturamento anual de até R$
-              360.000 e que possuam até 9 funcionários.
-            </li>
-            <li>
-              <strong>EPP (Empresa de Pequeno Porte):</strong> Indicada para clínicas com
-              faturamento entre R$ 360.000 e R$ 4.800.000 por ano.
-            </li>
-            <li>
-              <strong>Sociedade Limitada:</strong> Para clínicas que possuem dois ou mais sócios,
-              com divisão clara de responsabilidades e capital.
-            </li>
-          </ul>
-        </Typography>
-        <Typography variant="body1">
-          Cada tipo de empresa possui vantagens e desvantagens. Um contador pode ajudá-lo a escolher
-          a melhor opção para o seu negócio.
-        </Typography>
+
+        <Box sx={{ my: 3 }}>
+          <Accordion sx={{ bgcolor: 'transparent', boxShadow: 'none', '&:before': { display: 'none' }, borderTop: 1, borderColor: 'divider' }}>
+            <AccordionSummary expandIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Iconify icon="solar:user-circle-bold-duotone" width={24} color="text.secondary" />
+                <Typography variant="subtitle1">MEI</Typography>
+                <Chip label="Para autônomos" size="small" color="primary" variant="soft" />
+              </Stack>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Ideal para quem está começando sozinho e tem um faturamento anual de até R$ 81.000. É a
+                forma mais simples de formalização, com impostos reduzidos em guia única (DAS).
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion sx={{ bgcolor: 'transparent', boxShadow: 'none', '&:before': { display: 'none' }, borderTop: 1, borderColor: 'divider' }}>
+            <AccordionSummary expandIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Iconify icon="solar:buildings-2-bold-duotone" width={24} color="text.secondary" />
+                <Typography variant="subtitle1">Microempresa (ME)</Typography>
+                <Chip label="Negócio em crescimento" size="small" color="info" variant="soft" />
+              </Stack>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Para clínicas com faturamento anual de até R$ 360.000. Permite contratar mais
+                funcionários e oferece mais opções de regimes tributários, como o Simples Nacional.
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+
+          <Accordion sx={{ bgcolor: 'transparent', boxShadow: 'none', '&:before': { display: 'none' }, borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
+            <AccordionSummary expandIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}>
+              <Stack direction="row" spacing={2} alignItems="center">
+                <Iconify icon="solar:users-group-rounded-bold-duotone" width={24} color="text.secondary" />
+                <Typography variant="subtitle1">Sociedade Limitada (LTDA)</Typography>
+                <Chip label="Para sócios" size="small" color="warning" variant="soft" />
+              </Stack>
+            </AccordionSummary>
+            <AccordionDetails>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Perfeito para clínicas com dois ou mais sócios. O patrimônio pessoal de cada um é
+                protegido, e as responsabilidades são divididas de acordo com o capital investido.
+              </Typography>
+            </AccordionDetails>
+          </Accordion>
+        </Box>
       </>
     ),
   },
@@ -78,15 +132,15 @@ const steps = [
     label: 'Obtenção do CNPJ',
     description: (
       <>
-        <Typography variant="body1" paragraph>
-          Com o CNPJ, sua clínica será reconhecida como pessoa jurídica pela Receita Federal. Esse
-          documento é necessário para emitir notas fiscais, abrir contas bancárias empresariais e
-          cumprir obrigações tributárias.
+        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+          O CNPJ é <b>CPF</b> de sua empresa. Com ele, sua clínica existe oficialmente para o mercado,
+          podendo emitir notas, abrir conta bancária e muito mais.
         </Typography>
-        <Typography variant="body1">
-          Realize o cadastro no site da Receita Federal e tenha em mãos o número do protocolo gerado
-          na Junta Comercial.
-        </Typography>
+        <Alert severity="info" icon={<Iconify icon="solar:document-add-bold-duotone" />} sx={{ mt: 3 }}>
+          <AlertTitle>Ação Necessária</AlertTitle>
+          O cadastro é feito no site da Receita Federal. Tenha em mãos o protocolo gerado
+          na Junta Comercial para agilizar o processo.
+        </Alert>
       </>
     ),
   },
@@ -94,14 +148,15 @@ const steps = [
     label: 'Alvará de Funcionamento',
     description: (
       <>
-        <Typography variant="body1" paragraph>
-          O alvará de funcionamento é emitido pela Prefeitura e certifica que sua clínica atende às
-          exigências locais para operar no endereço escolhido.
+        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+          Esta é a autorização da sua cidade para que a clínica possa abrir as portas no
+          endereço escolhido. É a garantia de que seu espaço físico é seguro e regularizado.
         </Typography>
-        <Typography variant="body1">
-          Durante o processo, será necessária uma inspeção do local para garantir a conformidade com
-          as normas de segurança e acessibilidade.
-        </Typography>
+        <Alert severity="info" icon={<Iconify icon="solar:map-point-wave-bold-duotone" />} sx={{ mt: 3 }}>
+          <AlertTitle>Fique Atento</AlertTitle>
+          Uma inspeção da prefeitura pode ser necessária para verificar a conformidade do local com as
+          normas de segurança e acessibilidade.
+        </Alert>
       </>
     ),
   },
@@ -109,18 +164,27 @@ const steps = [
     label: 'Licença da Vigilância Sanitária',
     description: (
       <>
-        <Typography variant="body1" paragraph>
-          Essa licença é indispensável para clínicas de estética, garantindo que os padrões de
-          higiene e segurança sejam seguidos.
+        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+          Para uma clínica de estética, este é um dos passos mais críticos. Ele assegura aos seus
+          clientes que todos os procedimentos seguem padrões rigorosos de higiene e segurança.
         </Typography>
-        <Typography variant="body1">
-          Prepare:
-          <ul>
-            <li>Manual de boas práticas</li>
-            <li>Certificados de manutenção de equipamentos</li>
-            <li>Registro de esterilização</li>
-          </ul>
-        </Typography>
+        <Alert severity="warning" icon={<Iconify icon="solar:shield-warning-bold-duotone" />} sx={{ mt: 3 }}>
+          <AlertTitle>Passo Obrigatório e Essencial</AlertTitle>
+          <Stack spacing={1} sx={{ mt: 1 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:arrow-right-fill" width={16} />
+              <Typography variant="body2">Prepare seu Manual de Boas Práticas.</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:arrow-right-fill" width={16} />
+              <Typography variant="body2">Tenha os certificados de manutenção de equipamentos.</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:arrow-right-fill" width={16} />
+              <Typography variant="body2">Mantenha o registro de esterilização sempre atualizado.</Typography>
+            </Stack>
+          </Stack>
+        </Alert>
       </>
     ),
   },
@@ -128,188 +192,336 @@ const steps = [
     label: 'Regularize Obrigações Fiscais',
     description: (
       <>
-        <Typography variant="body1" paragraph>
-          Garanta que sua clínica esteja em conformidade com todas as obrigações fiscais e
-          tributárias, como o pagamento do ISS (Imposto Sobre Serviços) e declarações ao governo.
+        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+          Com a clínica aberta, a organização fiscal contínua é vital. Manter tudo em dia evita multas e
+          garante a saúde financeira e a sustentabilidade do seu negócio a longo prazo.
         </Typography>
-        <Typography variant="body1">
-          Um contador especializado pode ajudar a manter sua clínica regularizada e evitar multas.
-        </Typography>
+        <Alert severity="success" icon={<Iconify icon="solar:banknote-2-bold-duotone" />} sx={{ mt: 3 }}>
+          <AlertTitle>Dica de Ouro</AlertTitle>
+          Um contador especializado no ramo da estética é seu maior aliado aqui. Ele te ajuda a
+          manter tudo regularizado para que sua única preocupação seja encantar seus clientes.
+        </Alert>
       </>
     ),
   },
   {
     label: 'Quer Ajuda da Attualize?',
     description: (
-      <Typography variant="body1" paragraph>
-        Preencha as informações abaixo para que possamos ajudá-lo a regularizar sua clínica de
-        estética. Entraremos em contato rapidamente para oferecer o suporte necessário.
-      </Typography>
+        <Paper
+          sx={{
+            p: 3,
+            borderLeft: 4,
+            borderColor: 'primary.main',
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+          }}
+        >
+          <Stack direction="row" spacing={2} alignItems="center">
+            <Iconify icon="solar:chat-round-like-bold-duotone" width={40} color="primary.main" />
+            <Box>
+              <Typography variant="h6" sx={{ color: 'primary.darker' }}>Você chegou ao final!</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Sabemos que é muita informação. Que tal deixar a burocracia com a gente e focar no
+                seu sonho? Preencha abaixo e vamos conversar.
+              </Typography>
+            </Box>
+          </Stack>
+        </Paper>
     ),
     isFormStep: true,
   },
 ];
 
+const ColorlibConnector = styled(StepConnector)(({ theme }) => ({
+  [`&.${stepConnectorClasses.alternativeLabel}`]: {
+    top: 22,
+  },
+  [`&.${stepConnectorClasses.active}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      borderColor: theme.palette.primary.main,
+    },
+  },
+  [`&.${stepConnectorClasses.completed}`]: {
+    [`& .${stepConnectorClasses.line}`]: {
+      borderColor: theme.palette.primary.main,
+    },
+  },
+  [`& .${stepConnectorClasses.line}`]: {
+    borderColor: theme.palette.divider,
+    borderLeftWidth: 2,
+    minHeight: 24,
+    marginLeft: '11px'
+  },
+}));
+
+const ColorlibStepIconRoot = styled('div')(({ theme, ownerState }) => ({
+  backgroundColor: theme.palette.background.default,
+  zIndex: 1,
+  color: ownerState.active ? theme.palette.primary.main : theme.palette.text.disabled,
+  width: 24,
+  height: 24,
+  display: 'flex',
+  borderRadius: '50%',
+  justifyContent: 'center',
+  alignItems: 'center',
+  border: `2px solid ${ownerState.active ? theme.palette.primary.main : theme.palette.divider}`,
+  ...(ownerState.completed && {
+    borderColor: theme.palette.primary.main,
+    color: theme.palette.primary.main,
+  }),
+}));
+
+function ColorlibStepIcon(props) {
+  const { active, completed, className, icon } = props;
+
+  const icons = {
+    1: <Iconify icon="solar:file-text-line-duotone" width={16} />,
+    2: <Iconify icon="solar:buildings-line-duotone" width={16} />,
+    3: <Iconify icon="solar:document-add-line-duotone" width={16} />,
+    4: <Iconify icon="solar:map-point-line-duotone" width={16} />,
+    5: <Iconify icon="solar:shield-check-line-duotone" width={16} />,
+    6: <Iconify icon="solar:card-2-line-duotone" width={16} />,
+    7: <Iconify icon="solar:chat-round-like-line-duotone" width={16} />,
+  };
+
+  return (
+    <ColorlibStepIconRoot ownerState={{ completed, active }} className={className}>
+      {completed ? <Iconify icon="eva:checkmark-fill" width={16} /> : icons[String(icon)]}
+    </ColorlibStepIconRoot>
+  );
+}
+
 export function LegalizarClinicaEsteticaStepper() {
+  const theme = useTheme();
+
   const [activeStep, setActiveStep] = useState(0);
-  const [formData, setFormData] = useState({ nome: '', email: '', telefone: '' });
-  const [errors, setErrors] = useState({});
+
+  const { handleSubmit, control, formState: { errors } } = useForm( {
+    defaultValues: {
+      nome: '',
+      email: '',
+      telefone: '',
+      origem: 'paginaEstetica',
+    },
+  });
 
   const handleNext = () => {
-    if (steps[activeStep].isFormStep && !validateForm()) return;
-
-    setActiveStep((prevActiveStep) => prevActiveStep + 1);
+    if (steps[activeStep].isFormStep) return;
+    setActiveStep((prev) => (prev < steps.length - 1 ? prev + 1 : prev));
   };
+  const handleBack = () => setActiveStep((prev) => (prev > 0 ? prev - 1 : prev));
+  const handleStep = (step) => () => setActiveStep(step);
+  const handleReset = () => setActiveStep(0);
 
-  const handleBack = () => setActiveStep((prevActiveStep) => prevActiveStep - 1);
 
-  const handleReset = () => {
-    setActiveStep(0);
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!formData.nome) newErrors.nome = 'Nome é obrigatório';
-    if (!formData.email) newErrors.email = 'Email é obrigatório';
-    if (!formData.telefone) newErrors.telefone = 'Telefone é obrigatório';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleSubmit = async () => {
+  const onSubmit = async (data) => {
     try {
-      // await axios.post('/api/enviar-dados', formData);
-      const whatsappUrl = `https://wa.me/5541996982267?text=Olá,%20meu%20nome%20é%20${encodeURIComponent(
-        formData.nome
-      )},%20e%20tenho%20interesse%20em%20regularizar%20minha%20clínica%20de%20estética!`;
-      window.location.href = whatsappUrl;
+      const res = await criarLead(data);
+
+      if (res.status === 201) {
+        handleReset();
+      }
     } catch (error) {
       console.error('Erro ao enviar os dados:', error);
+      toast.error('Erro ao enviar os dados');
     }
   };
 
   return (
-    <Container
-      component={MotionViewport}
-      sx={{
-        py: { xs: 8, md: 12 },
-        textAlign: 'center',
-      }}
-    >
-      {/* Título Centralizado */}
-      <Typography
-        variant="h3"
-        component="h2"
-        gutterBottom
-        sx={{
-          mb: 4,
-        }}
-      >
-        Como Legalizar uma Clínica de Estética?
-      </Typography>
+    <Box sx={{ bgcolor: 'background.neutral' }}>
+      <Container component={MotionViewport} sx={{ py: { xs: 10, md: 15 } }}>
+        <Stack spacing={4} sx={{ textAlign: 'center', mb: { xs: 8, md: 10 } }}>
+          <m.div variants={varFade().inUp}>
+            <Typography variant="h3" component="h2">
+              Como Legalizar uma Clínica de Estética?
+            </Typography>
+          </m.div>
+          <m.div variants={varFade().inUp}>
+            <Typography sx={{ color: 'text.secondary' }}>
+              Conheça os principais passos para legalizar sua clínica e operar com segurança e
+              tranquilidade, transmitindo confiança para seus clientes e parceiros.
+            </Typography>
+          </m.div>
+        </Stack>
 
-      {/* Texto de introdução */}
-      <Grid container spacing={4} alignItems="center">
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="body1" paragraph>
-            Abrir uma clínica de estética é um sonho para muitos empreendedores, mas garantir que o
-            negócio opere legalmente é fundamental. A legalização não só assegura que sua clínica
-            esteja em conformidade com as leis, mas também transmite confiança para seus clientes e
-            parceiros.
-          </Typography>
-          <Typography variant="body1">
-            Conheça os principais passos para legalizar sua clínica e operar com segurança e
-            tranquilidade.
-          </Typography>
-        </Box>
-      </Grid>
+        <Grid container spacing={{ xs: 3, md: 6 }}>
+          <Grid item xs={12} md={4}>
+            <m.div variants={varFade().inLeft}>
+              <Stepper
+                activeStep={activeStep}
+                orientation="vertical"
+                connector={<ColorlibConnector />}
+              >
+                {steps.map((step, index) => (
+                  <Step key={step.label}>
+                    <StepLabel
+                      StepIconComponent={ColorlibStepIcon}
+                      onClick={handleStep(index)}
+                      sx={{
+                        cursor: 'pointer',
+                        py: 1,
+                        '& .MuiStepLabel-label': {
+                          transition: 'color 0.2s ease'
+                        },
+                        '&:hover .MuiStepLabel-label': {
+                          color: 'primary.main'
+                        }
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{
+                          fontWeight: activeStep === index ? 'fontWeightBold' : 'fontWeightRegular',
+                          color: activeStep === index ? 'primary.main' : 'text.primary',
+                        }}
+                      >
+                        {step.label}
+                      </Typography>
+                    </StepLabel>
+                  </Step>
+                ))}
+              </Stepper>
+            </m.div>
+          </Grid>
 
-      {/* Stepper */}
-      <Box sx={{ maxWidth: 800, mx: 'auto', textAlign: 'left' }}>
-        <Stepper activeStep={activeStep} orientation="vertical">
-          {steps.map((step, index) => (
-            <Step key={step.label}>
-              <StepLabel>
-                <Typography variant="h6">{step.label}</Typography>
-              </StepLabel>
-              <StepContent>
-                <Box sx={{ mb: 2 }}>{step.description}</Box>
-                {step.isFormStep && (
-                  <Stack spacing={2} sx={{ mb: 2 }}>
-                    <TextField
-                      label="Nome"
-                      name="nome"
-                      value={formData.nome}
-                      onChange={handleChange}
-                      error={!!errors.nome}
-                      helperText={errors.nome}
-                      fullWidth
-                    />
-                    <TextField
-                      label="Email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      error={!!errors.email}
-                      helperText={errors.email}
-                      fullWidth
-                    />
-                    <TextField
-                      label="Telefone"
-                      name="telefone"
-                      value={formData.telefone}
-                      onChange={handleChange}
-                      error={!!errors.telefone}
-                      helperText={errors.telefone}
-                      fullWidth
-                    />
+          <Grid item xs={12} md={8}>
+            <Paper
+              elevation={3}
+              sx={{
+                p: { xs: 3, md: 5 },
+                borderRadius: 2,
+                minHeight: 400,
+                display: 'flex',
+                flexDirection: 'column',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <AnimatePresence mode="wait">
+                <m.div
+                  key={activeStep}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: '100%' }}
+                >
+                  <Box sx={{ flexGrow: 1 }}>
+                    <Typography variant="h5" sx={{ mb: 3, color: 'primary.main' }}>
+                      {steps[activeStep].label}
+                    </Typography>
+                    {steps[activeStep].description}
+                    {steps[activeStep].isFormStep && (
+                      <Stack spacing={2} sx={{ mt: 3 }}>
+                        <Controller
+                          name="nome"
+                          control={control}
+                          rules={{
+                            required: 'Nome é obrigatório!',
+                            minLength: {
+                              value: 5,
+                              message: 'Nome deve ter pelo menos 5 caracteres!',
+                            },
+                          }}
+                          render={({ field, fieldState: { error } }) => (
+                            <TextField
+                              {...field}
+                              label="Nome"
+                              error={!!error}
+                              helperText={error?.message}
+                              fullWidth
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="email"
+                          control={control}
+                          rules={{
+                            required: 'O e-mail é obrigatório',
+                            pattern: {
+                              value: /^\S+@\S+\.\S+$/,
+                              message: 'Insira um endereço de e-mail válido!',
+                            },
+                          }}
+                          render={({ field, fieldState: { error } }) => (
+                            <TextField
+                              {...field}
+                              label="Email"
+                              type="email"
+                              fullWidth
+                              error={!!error}
+                              helperText={error?.message}
+                            />
+                          )}
+                        />
+                        <Controller
+                          name="telefone"
+                          control={control}
+                          rules={{
+                            required: 'O telefone é obrigatório',
+                            pattern: {
+                              value: /\(\d{2}\)\s\d\s\d{4}-\d{4}/,
+                              message: 'Insira um número de telefone válido',
+                            },
+                          }}
+                          render={({ field, fieldState: { error } }) => (
+                            <InputMask
+                              mask="(99) 9 9999-9999"
+                              value={field.value || ''}
+                              onChange={field.onChange}
+                              onBlur={field.onBlur}
+                            >
+                              {(inputProps) => (
+                                <TextField
+                                  {...inputProps}
+                                  label="Telefone"
+                                  fullWidth
+                                  error={!!error}
+                                  helperText={error?.message}
+                                />
+                              )}
+                            </InputMask>
+                          )}
+                        />
+                      </Stack>
+                    )}
+                  </Box>
+
+                  <Stack direction="row" spacing={2} sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
                     <Button
-                      variant="contained"
-                      color="primary"
-                      onClick={handleSubmit}
-                      sx={{ mt: 2 }}
+                      variant="outlined"
+                      color="inherit"
+                      disabled={activeStep === 0}
+                      onClick={handleBack}
+                      startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
                     >
-                      Ajuda do especialista
-                    </Button>
-                  </Stack>
-                )}
-                {!step.isFormStep && (
-                  <Box>
-                    <Button
-                      variant="contained"
-                      onClick={handleNext}
-                      sx={{ mr: 1 }}
-                      disabled={index === steps.length - 1}
-                    >
-                      {index === steps.length - 1 ? 'Finalizar' : 'Próximo'}
-                    </Button>
-                    <Button disabled={index === 0} onClick={handleBack}>
                       Voltar
                     </Button>
-                  </Box>
-                )}
-              </StepContent>
-            </Step>
-          ))}
-        </Stepper>
-
-        {/* Mensagem Final */}
-        {activeStep === steps.length && (
-          <Paper square elevation={3} sx={{ p: 3, mt: 2 }}>
-            <Typography variant="h6">
-              Parabéns! Sua clínica está pronta para operar legalmente.
-            </Typography>
-            <Button onClick={handleReset} sx={{ mt: 2 }}>
-              Recomeçar
-            </Button>
-          </Paper>
-        )}
-      </Box>
-    </Container>
+                    <Box sx={{ flexGrow: 1 }} />
+                    {steps[activeStep].isFormStep ? (
+                       <Button
+                         variant="contained"
+                         color="primary"
+                         onClick={handleSubmit(onSubmit)}
+                         size="large"
+                         endIcon={<Iconify icon="eva:message-circle-fill" />}
+                       >
+                         Falar com especialista
+                       </Button>
+                    ) : (
+                      <Button
+                        variant="contained"
+                        onClick={handleNext}
+                        endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
+                      >
+                        Próximo
+                      </Button>
+                    )}
+                  </Stack>
+                </m.div>
+              </AnimatePresence>
+            </Paper>
+          </Grid>
+        </Grid>
+      </Container>
+    </Box>
   );
 }
