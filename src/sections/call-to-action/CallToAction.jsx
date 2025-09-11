@@ -57,71 +57,75 @@ export function CallToAction({ pageSource }) {
           Falar com um especialista
         </Button>
 
-        {/* Modal para coletar os dados do cliente */}
-        <Modal open={open} onClose={handleClose}>
+        <Modal open={open} onClose={handleClose} aria-labelledby="contact-modal-title">
           <Box
             sx={{
               position: 'absolute',
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: '80%',
-              maxWidth: 800,
+              width: { xs: '95vw', sm: '90vw', md: '70vw' },
+              maxWidth: 900,
               bgcolor: 'background.paper',
               boxShadow: 24,
-              p: 3,
               borderRadius: 2,
+              overflow: 'hidden',
             }}
           >
-            <IconButton onClick={handleClose} sx={{ position: 'absolute', top: 8, right: 8 }}>
-              <Icon icon="mdi:close" width={24} height={24} />
+            <IconButton onClick={handleClose} sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
+              <Icon icon="mdi:close" width={24} height={24} color="black" style={{ cursor: 'pointer' }}/>
             </IconButton>
 
-            <Typography variant="h5" gutterBottom sx={{ mb: 4, textAlign: 'center' }}>
-              Solicite o contato de um especialista
-            </Typography>
-
-            <Grid container spacing={4}>
-              {/* Formulário */}
+            <Grid container>
               <Grid item xs={12} md={6}>
-                <Stack spacing={2}>
-                  <TextField
-                    label="Nome"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    fullWidth
-                  />
-                  <TextField
-                    label="E-mail"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    fullWidth
-                  />
-                  <TextField
-                    label="Telefone"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    type="tel"
-                    fullWidth
-                  />
-                  <Button variant="contained" color="primary" onClick={handleSubmit}>
-                    Enviar
-                  </Button>
-                </Stack>
+                <Box sx={{ p: { xs: 3, sm: 4 } }}>
+                  <Typography id="contact-modal-title" variant="h5" sx={{ mb: 1 }}>
+                    Solicite o contato
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Preencha seus dados e um de nossos especialistas entrará em contato em breve.
+                  </Typography>
+
+                  <Stack component="form" spacing={2.5} onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                    <TextField
+                      label="Nome"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      fullWidth
+                      required
+                    />
+                    <TextField
+                      label="E-mail"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      type="email"
+                      fullWidth
+                      required
+                    />
+                    <TextField
+                      label="Telefone"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      type="tel"
+                      fullWidth
+                      required
+                    />
+                    <Button type="submit" variant="contained" color="primary" size="large" sx={{ mt: 1, py: 1.5 }}>
+                      Enviar Solicitação
+                    </Button>
+                  </Stack>
+                </Box>
               </Grid>
 
-              {/* Foto do time */}
-              <Grid item xs={12} md={6}>
+              <Grid item md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
                 <Box
                   component="img"
-                  src="https://attualizecontabil.com.br/wp-content/uploads/2024/10/ESPECIALIZADO.png" // Altere para a imagem correta do time
+                  src="https://attualizecontabil.com.br/wp-content/uploads/2024/09/foto-e-mail.jpg"
                   alt="Nosso Time"
                   sx={{
                     width: '100%',
-                    height: 'auto',
-                    borderRadius: 2,
-                    boxShadow: 3,
+                    height: '100%',
+                    objectFit: 'cover',
                   }}
                 />
               </Grid>

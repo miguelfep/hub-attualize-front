@@ -5,8 +5,14 @@ import Stack from '@mui/material/Stack';
 import { BackToTop } from 'src/components/animate/back-to-top';
 import { ScrollProgress, useScrollProgress } from 'src/components/animate/scroll-progress';
 
+import { FaqSection } from './FaqSection';
 import { BannerEstetica } from './bannerEstetica';
-import { ImpostosClinicaEstetica } from './ImpostosClinicaEstetica';
+import { DescubraImposto } from './DescubraImposto';
+import { LeiSalaoParceiro } from './LeiSalaoParceiro';
+import { InformacoesEssenciais } from './ImpostosClinicaEstetica';
+import { ServicosEspecializados } from './ServicosEspecializados';
+import { NaturezaTributacaoTabs } from './NaturezaTributacaoTabs';
+import { ChecklistRegularizacao } from './ChecklistRegularizacao';
 import { LegalizarClinicaEsteticaStepper } from './legalizarClinicaEstetica';
 import { ImportanciaContabilidadeEstetica } from './ImportanciaContabilidadeEstetica';
 
@@ -30,9 +36,21 @@ export function HomeEstetica() {
 
         <ImportanciaContabilidadeEstetica />
 
+        <InformacoesEssenciais />
+
         <LegalizarClinicaEsteticaStepper />
 
-        <ImpostosClinicaEstetica />
+        <ServicosEspecializados />
+
+        <NaturezaTributacaoTabs />
+
+        <LeiSalaoParceiro />
+
+        <ChecklistRegularizacao />
+
+        <DescubraImposto />
+
+        <FaqSection />
       </Stack>
     </>
   );
