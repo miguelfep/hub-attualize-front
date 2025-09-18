@@ -1,193 +1,221 @@
 import { useMemo } from 'react';
 import useSWR, { mutate } from 'swr';
+import { chatApi } from 'src/services/chatApi';
+import { useMockedUser } from 'src/auth/hooks';
 
-import { keyBy } from 'src/utils/helper';
-import axios, { fetcher, endpoints } from 'src/utils/axios';
-
-// ----------------------------------------------------------------------
-
-const enableServer = false;
-
-const CHART_ENDPOINT = endpoints.chat;
-
-const swrOptions = {
-  revalidateIfStale: enableServer,
-  revalidateOnFocus: enableServer,
-  revalidateOnReconnect: enableServer,
+// Função auxiliar para garantir que os dados sejam um array
+const ensureArray = (data) => {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  if (data.data && Array.isArray(data.data)) return data.data;
+  if (data.chats && Array.isArray(data.chats)) return data.chats;
+  if (data.results && Array.isArray(data.results)) return data.results;
+  return [];
 };
 
 // ----------------------------------------------------------------------
 
-export function useGetContacts() {
-  const url = [CHART_ENDPOINT, { params: { endpoint: 'contacts' } }];
+// Hook para buscar chats (combinando usuário e setor)
+export function useGetChats() {
+  const { user } = useMockedUser();
+  
+  // Buscar chats do usuário e do setor
+  const userChatsKey = user?.id ? `user-chats-${user.id}` : null;
+  const sectorChatsKey = user?.sector ? `sector-chats-${user.sector}` : null;
 
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
-
-  const memoizedValue = useMemo(
-    () => ({
-      contacts: data?.contacts || [],
-      contactsLoading: isLoading,
-      contactsError: error,
-      contactsValidating: isValidating,
-      contactsEmpty: !isLoading && !data?.contacts.length,
-    }),
-    [data?.contacts, error, isLoading, isValidating]
+  const { data: userChatsData, isLoading: userChatsLoading, error: userChatsError } = useSWR(
+    userChatsKey,
+    () => chatApi.getUserChats(user.id)
   );
 
-  return memoizedValue;
-}
-
-// ----------------------------------------------------------------------
-
-export function useGetConversations() {
-  const url = [CHART_ENDPOINT, { params: { endpoint: 'conversations' } }];
-
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
+  const { data: sectorChatsData, isLoading: sectorChatsLoading, error: sectorChatsError } = useSWR(
+    sectorChatsKey,
+    () => chatApi.getSectorChats(user.sector)
+  );
 
   const memoizedValue = useMemo(() => {
-    const byId = data?.conversations.length ? keyBy(data.conversations, 'id') : {};
-    const allIds = Object.keys(byId);
+    // Garantir que os dados sejam arrays
+    const userChats = ensureArray(userChatsData);
+    const sectorChats = ensureArray(sectorChatsData);
+    
+    // Combinar chats do usuário e setor, removendo duplicatas
+    const allChats = [...userChats, ...sectorChats];
+    const uniqueChats = allChats.filter((chat, index, self) => 
+      index === self.findIndex(c => c._id === chat._id)
+    );
+
+    // Converter para formato esperado pelo tema
+    const conversations = uniqueChats.map(chat => ({
+      id: chat._id,
+      instanceType: chat.instanceType,
+      status: chat.status,
+      participants: [
+        {
+          id: chat.whatsappNumber,
+          name: chat.clienteName,
+          avatarUrl: null,
+          address: chat.whatsappNumber,
+          phoneNumber: chat.whatsappNumber,
+          lastActivity: chat.lastMessageAt,
+          status: chat.status === 'em_atendimento' ? 'online' : 'offline',
+        }
+      ],
+      type: 'ONE_TO_ONE',
+      unreadCount: 0,
+      messages: [],
+    }));
+
+    const byId = {};
+    conversations.forEach(conv => {
+      byId[conv.id] = conv;
+    });
 
     return {
-      conversations: { byId, allIds },
-      conversationsLoading: isLoading,
-      conversationsError: error,
-      conversationsValidating: isValidating,
-      conversationsEmpty: !isLoading && !allIds.length,
+      conversations: { byId, allIds: Object.keys(byId) },
+      conversationsLoading: userChatsLoading || sectorChatsLoading,
+      conversationsError: userChatsError || sectorChatsError,
+      conversationsEmpty: !userChatsLoading && !sectorChatsLoading && uniqueChats.length === 0,
     };
-  }, [data?.conversations, error, isLoading, isValidating]);
+  }, [userChatsData, sectorChatsData, userChatsLoading, sectorChatsLoading, userChatsError, sectorChatsError]);
 
   return memoizedValue;
 }
 
-// ----------------------------------------------------------------------
+// Hook para buscar mensagens de um chat específico
+export function useGetChatMessages(chatId) {
+  const { user } = useMockedUser();
+  
+  const { data, isLoading, error } = useSWR(
+    chatId ? `chat-messages-${chatId}` : null,
+    () => chatApi.getChatMessages(chatId)
+  );
 
+  const memoizedValue = useMemo(() => {
+    // Garantir que as mensagens sejam um array
+    const messages = ensureArray(data);
+    
+    // Converter mensagens para formato esperado pelo tema
+    const formattedMessages = messages.map(message => ({
+      id: message._id,
+      body: message.content || message.body || 'Mensagem sem conteúdo',
+      contentType: message.type || 'text',
+      attachments: message.mediaUrl ? [{ 
+        name: message.fileName || 'file',
+        size: 0,
+        type: message.mimeType || 'application/octet-stream',
+        path: message.mediaUrl,
+        preview: message.mediaUrl,
+        createdAt: message.timestamp,
+      }] : [],
+      createdAt: new Date(message.timestamp || message.createdAt || new Date()),
+      senderId: message.fromMe ? `${user?.id}` : message.remoteJid || message.senderId,
+    }));
+
+    return {
+      messages: formattedMessages,
+      messagesLoading: isLoading,
+      messagesError: error,
+    };
+  }, [data, isLoading, error, user?.id]);
+
+  return memoizedValue;
+}
+
+// Hook para buscar conversação específica
 export function useGetConversation(conversationId) {
-  const url = conversationId
-    ? [CHART_ENDPOINT, { params: { conversationId, endpoint: 'conversation' } }]
-    : '';
-
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
-
-  const memoizedValue = useMemo(
-    () => ({
-      conversation: data?.conversation,
-      conversationLoading: isLoading,
-      conversationError: error,
-      conversationValidating: isValidating,
-    }),
-    [data?.conversation, error, isLoading, isValidating]
+  const { messages, messagesLoading, messagesError } = useGetChatMessages(conversationId);
+  
+  const { data: chatData, isLoading: chatLoading, error: chatError } = useSWR(
+    conversationId ? `chat-${conversationId}` : null,
+    async () => {
+      // Buscar dados do chat específico
+      const operacionalChats = await chatApi.getChatsByInstance('operacional');
+      const financeiroChats = await chatApi.getChatsByInstance('financeiro-comercial');
+      const allChats = [...ensureArray(operacionalChats), ...ensureArray(financeiroChats)];
+      return allChats.find(chat => chat._id === conversationId);
+    }
   );
+
+  const memoizedValue = useMemo(() => {
+    if (!chatData) {
+      return {
+        conversation: null,
+        conversationLoading: chatLoading || messagesLoading,
+        conversationError: chatError || messagesError,
+      };
+    }
+
+    const conversation = {
+      id: chatData._id,
+      instanceType: chatData.instanceType,
+      status: chatData.status,
+      participants: [
+        {
+          id: chatData.whatsappNumber,
+          name: chatData.clienteName,
+          avatarUrl: null,
+          address: chatData.whatsappNumber,
+          phoneNumber: chatData.whatsappNumber,
+          status: chatData.status === 'em_atendimento' ? 'online' : 'offline',
+        }
+      ],
+      type: 'ONE_TO_ONE',
+      unreadCount: 0,
+      messages,
+    };
+
+    return {
+      conversation,
+      conversationLoading: chatLoading || messagesLoading,
+      conversationError: chatError || messagesError,
+    };
+  }, [chatData, messages, chatLoading, messagesLoading, chatError, messagesError]);
 
   return memoizedValue;
 }
 
-// ----------------------------------------------------------------------
-
+// Função para enviar mensagem
 export async function sendMessage(conversationId, messageData) {
-  const conversationsUrl = [CHART_ENDPOINT, { params: { endpoint: 'conversations' } }];
+  const { user } = useMockedUser();
+  
+  try {
+    await chatApi.sendMessage(conversationId, {
+      content: messageData.body,
+      userId: user.id,
+    });
 
-  const conversationUrl = [
-    CHART_ENDPOINT,
-    { params: { conversationId, endpoint: 'conversation' } },
-  ];
-
-  /**
-   * Work on server
-   */
-  if (enableServer) {
-    const data = { conversationId, messageData };
-    await axios.put(CHART_ENDPOINT, data);
+    // Atualizar cache das mensagens
+    mutate(`chat-messages-${conversationId}`);
+    
+    // Atualizar cache das conversações
+    mutate((key) => typeof key === 'string' && key.includes('chats'));
+    
+  } catch (error) {
+    console.error('Erro ao enviar mensagem:', error);
+    throw error;
   }
-
-  /**
-   * Work in local
-   */
-  mutate(
-    conversationUrl,
-    (currentData) => {
-      const currentConversation = currentData.conversation;
-
-      const conversation = {
-        ...currentConversation,
-        messages: [...currentConversation.messages, messageData],
-      };
-
-      return { ...currentData, conversation };
-    },
-    false
-  );
-
-  mutate(
-    conversationsUrl,
-    (currentData) => {
-      const currentConversations = currentData.conversations;
-
-      const conversations = currentConversations.map((conversation) =>
-        conversation.id === conversationId
-          ? { ...conversation, messages: [...conversation.messages, messageData] }
-          : conversation
-      );
-
-      return { ...currentData, conversations };
-    },
-    false
-  );
 }
 
-// ----------------------------------------------------------------------
-
-export async function createConversation(conversationData) {
-  const url = [CHART_ENDPOINT, { params: { endpoint: 'conversations' } }];
-
-  /**
-   * Work on server
-   */
-  const data = { conversationData };
-  const res = await axios.post(CHART_ENDPOINT, data);
-
-  /**
-   * Work in local
-   */
-  mutate(
-    url,
-    (currentData) => {
-      const currentConversations = currentData.conversations;
-
-      const conversations = [...currentConversations, conversationData];
-
-      return { ...currentData, conversations };
-    },
-    false
-  );
-
-  return res.data;
+// Manter compatibilidade com funções existentes
+export function useGetContacts() {
+  return {
+    contacts: [],
+    contactsLoading: false,
+    contactsError: null,
+    contactsValidating: false,
+    contactsEmpty: true,
+  };
 }
 
-// ----------------------------------------------------------------------
+export function useGetConversations() {
+  return useGetChats();
+}
 
-export async function clickConversation(conversationId) {
-  /**
-   * Work on server
-   */
-  if (enableServer) {
-    await axios.get(CHART_ENDPOINT, { params: { conversationId, endpoint: 'mark-as-seen' } });
-  }
+export async function createConversation() {
+  // Implementar se necessário
+  throw new Error('createConversation não implementado para WhatsApp');
+}
 
-  /**
-   * Work in local
-   */
-  mutate(
-    [CHART_ENDPOINT, { params: { endpoint: 'conversations' } }],
-    (currentData) => {
-      const currentConversations = currentData.conversations;
-
-      const conversations = currentConversations.map((conversation) =>
-        conversation.id === conversationId ? { ...conversation, unreadCount: 0 } : conversation
-      );
-
-      return { ...currentData, conversations };
-    },
-    false
-  );
+export async function clickConversation() {
+  // Implementar se necessário (marcar como lido)
 }

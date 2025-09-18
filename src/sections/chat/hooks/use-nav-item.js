@@ -1,13 +1,13 @@
 // ----------------------------------------------------------------------
 
 export function useNavItem({ currentUserId, conversation }) {
-  const { messages, participants } = conversation;
+  const { messages = [], participants = [] } = conversation || {};
 
   const participantsInConversation = participants.filter(
     (participant) => participant.id !== currentUserId
   );
 
-  const lastMessage = messages[messages.length - 1];
+  const lastMessage = messages && messages.length > 0 ? messages[messages.length - 1] : null;
 
   const group = participantsInConversation.length > 1;
 
@@ -25,6 +25,8 @@ export function useNavItem({ currentUserId, conversation }) {
     const message = lastMessage.contentType === 'image' ? 'Sent a photo' : lastMessage.body;
 
     displayText = `${sender}${message}`;
+  } else {
+    displayText = 'Nenhuma mensagem ainda';
   }
 
   return {
@@ -32,7 +34,7 @@ export function useNavItem({ currentUserId, conversation }) {
     displayName,
     displayText,
     participants: participantsInConversation,
-    lastActivity: lastMessage.createdAt,
+    lastActivity: lastMessage?.createdAt || new Date().toISOString(),
     hasOnlineInGroup,
   };
 }

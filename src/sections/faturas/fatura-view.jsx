@@ -24,7 +24,7 @@ const FaturaViewPage = ({ faturaData }) => {
   const handleDownloadBoleto = async (codigoSolicitacao) => {
     try {
       const response = await axios.get(
-        `https://api.attualizecontabil.com.br/api/contratos/cobrancas/faturas/${codigoSolicitacao}/pdf`
+        `http://localhost:9443/api/contratos/cobrancas/faturas/${codigoSolicitacao}/pdf`
       );
       const { pdf } = response.data;
       const link = document.createElement('a');

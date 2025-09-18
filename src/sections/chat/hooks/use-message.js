@@ -6,7 +6,10 @@ export function useMessage({ message, participants, currentUserId }) {
   const senderDetails =
     message.senderId === currentUserId
       ? { type: 'me' }
-      : { avatarUrl: sender?.avatarUrl, firstName: sender?.name.split(' ')[0] };
+      : { 
+          avatarUrl: sender?.avatarUrl, 
+          firstName: sender?.name ? sender.name.split(' ')[0] : 'Usuário'
+        };
 
   const me = senderDetails.type === 'me';
 

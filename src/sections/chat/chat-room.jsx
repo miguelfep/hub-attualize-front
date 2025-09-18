@@ -22,7 +22,11 @@ export function ChatRoom({ collapseNav, participants, messages, loading }) {
 
   const group = participants.length > 1;
 
-  const attachments = messages.map((msg) => msg.attachments).flat(1) || [];
+  // Extrair attachments de forma mais segura
+  const attachments = (messages || [])
+    .map((msg) => msg.attachments || [])
+    .flat(1)
+    .filter(attachment => attachment && attachment.name); // Filtrar attachments válidos
 
   const renderContent = loading ? (
     <ChatRoomSkeleton />

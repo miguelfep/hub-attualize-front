@@ -12,35 +12,45 @@ import { CollapseButton } from './styles';
 
 // ----------------------------------------------------------------------
 
-export function ChatRoomAttachments({ attachments }) {
+export function ChatRoomAttachments({ attachments = [] }) {
   const collapse = useBoolean(true);
 
   const totalAttachments = attachments.length;
 
-  const renderList = attachments.map((attachment, index) => (
-    <Stack key={attachment.name + index} spacing={1.5} direction="row" alignItems="center">
-      <FileThumbnail
-        imageView
-        file={attachment.preview}
-        onDownload={() => console.info('DOWNLOAD')}
-        slotProps={{ icon: { width: 24, height: 24 } }}
-        sx={{ width: 40, height: 40, bgcolor: 'background.neutral' }}
-      />
+  const renderList = attachments.map((attachment, index) => {
+    // Verificar se o attachment existe e tem as propriedades necessárias
+    if (!attachment || !attachment.name) {
+      return null;
+    }
 
-      <ListItemText
-        primary={attachment.name}
-        secondary={fDateTime(attachment.createdAt)}
-        primaryTypographyProps={{ noWrap: true, typography: 'body2' }}
-        secondaryTypographyProps={{
-          mt: 0.25,
-          noWrap: true,
-          component: 'span',
-          typography: 'caption',
-          color: 'text.disabled',
-        }}
-      />
-    </Stack>
-  ));
+    // Usar diferentes propriedades para o arquivo, com fallbacks
+    const fileSource = attachment.preview || attachment.path || attachment.url || attachment;
+
+    return (
+      <Stack key={attachment.name + index} spacing={1.5} direction="row" alignItems="center">
+        <FileThumbnail
+          imageView
+          file={fileSource}
+          onDownload={() => console.info('DOWNLOAD')}
+          slotProps={{ icon: { width: 24, height: 24 } }}
+          sx={{ width: 40, height: 40, bgcolor: 'background.neutral' }}
+        />
+
+        <ListItemText
+          primary={attachment.name}
+          secondary={fDateTime(attachment.createdAt || attachment.timestamp || new Date())}
+          primaryTypographyProps={{ noWrap: true, typography: 'body2' }}
+          secondaryTypographyProps={{
+            mt: 0.25,
+            noWrap: true,
+            component: 'span',
+            typography: 'caption',
+            color: 'text.disabled',
+          }}
+        />
+      </Stack>
+    );
+  }).filter(Boolean); // Remove itens null
 
   return (
     <>

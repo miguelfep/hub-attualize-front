@@ -22,6 +22,7 @@ import { ChatNavItem } from './chat-nav-item';
 import { ChatNavAccount } from './chat-nav-account';
 import { ChatNavItemSkeleton } from './chat-skeleton';
 import { ChatNavSearchResults } from './chat-nav-search-results';
+import { InstanceFilter } from 'src/components/chat/instance-filter';
 
 // ----------------------------------------------------------------------
 
@@ -31,7 +32,17 @@ const NAV_COLLAPSE_WIDTH = 96;
 
 // ----------------------------------------------------------------------
 
-export function ChatNav({ loading, contacts, conversations, collapseNav, selectedConversationId }) {
+export function ChatNav({ 
+  loading, 
+  contacts, 
+  conversations, 
+  collapseNav, 
+  selectedConversationId,
+  instanceFilter = 'all',
+  onInstanceFilterChange,
+  showStats = false,
+  stats
+}) {
   const theme = useTheme();
 
   const router = useRouter();
@@ -49,158 +60,163 @@ export function ChatNav({ loading, contacts, conversations, collapseNav, selecte
 
   const [searchContacts, setSearchContacts] = useState({ query: '', results: [] });
 
-  useEffect(() => {
-    if (!mdUp) {
-      onCloseDesktop();
+  const handleSearchContacts = useCallback((inputValue) => {
+    setSearchContacts((prev) => ({
+      ...prev,
+      query: inputValue,
+    }));
+
+    if (inputValue) {
+      const results = contacts.filter((contact) =>
+        contact.name.toLowerCase().includes(inputValue.toLowerCase())
+      );
+
+      setSearchContacts((prev) => ({
+        ...prev,
+        results,
+      }));
     }
-  }, [onCloseDesktop, mdUp]);
+  }, [contacts]);
+
+  const handleSelectContact = useCallback((contact) => {
+    setSearchContacts({ query: '', results: [] });
+    router.push(`${paths.dashboard.chat}?id=${contact.id}`);
+  }, [router]);
 
   const handleToggleNav = useCallback(() => {
     if (mdUp) {
       onCollapseDesktop();
     } else {
-      onCloseMobile();
+      onOpenMobile();
     }
-  }, [mdUp, onCloseMobile, onCollapseDesktop]);
+  }, [mdUp, onCollapseDesktop, onOpenMobile]);
 
-  const handleClickCompose = useCallback(() => {
-    if (!mdUp) {
-      onCloseMobile();
-    }
-    router.push(paths.dashboard.chat);
-  }, [mdUp, onCloseMobile, router]);
-
-  const handleSearchContacts = useCallback(
-    (inputValue) => {
-      setSearchContacts((prevState) => ({ ...prevState, query: inputValue }));
-
-      if (inputValue) {
-        const results = contacts.filter((contact) =>
-          contact.name.toLowerCase().includes(inputValue)
-        );
-
-        setSearchContacts((prevState) => ({ ...prevState, results }));
-      }
-    },
-    [contacts]
+  const renderToggleBtn = (
+    <ToggleButton
+      size="small"
+      value="chat"
+      selected={!collapseDesktop}
+      onChange={handleToggleNav}
+      sx={{
+        p: 0.5,
+        top: 24,
+        left: 24,
+        zIndex: 9,
+        position: 'absolute',
+        bgcolor: 'background.paper',
+        '&:hover': {
+          bgcolor: 'background.neutral',
+        },
+        ...(collapseDesktop && {
+          left: 12,
+        }),
+      }}
+    >
+      <Iconify
+        width={16}
+        icon={collapseDesktop ? 'eva:arrow-ios-forward-fill' : 'eva:arrow-ios-back-fill'}
+      />
+    </ToggleButton>
   );
 
-  const handleClickAwaySearch = useCallback(() => {
-    setSearchContacts({ query: '', results: [] });
-  }, []);
-
-  const handleClickResult = useCallback(
-    (result) => {
-      handleClickAwaySearch();
-
-      router.push(`${paths.dashboard.chat}?id=${result.id}`);
-    },
-    [handleClickAwaySearch, router]
+  const renderSkeleton = (
+    <Stack spacing={2} sx={{ p: 3 }}>
+      {[...Array(4)].map((_, index) => (
+        <ChatNavItemSkeleton key={index} />
+      ))}
+    </Stack>
   );
-
-  const renderLoading = <ChatNavItemSkeleton />;
 
   const renderList = (
-    <nav>
-      <Box component="ul">
-        {conversations.allIds.map((conversationId) => (
-          <ChatNavItem
-            key={conversationId}
-            collapse={collapseDesktop}
-            conversation={conversations.byId[conversationId]}
-            selected={conversationId === selectedConversationId}
-            onCloseMobile={onCloseMobile}
-          />
-        ))}
-      </Box>
-    </nav>
-  );
-
-  const renderListResults = (
-    <ChatNavSearchResults
-      query={searchContacts.query}
-      results={searchContacts.results}
-      onClickResult={handleClickResult}
-    />
-  );
-
-  const renderSearchInput = (
-    <ClickAwayListener onClickAway={handleClickAwaySearch}>
-      <TextField
-        fullWidth
-        value={searchContacts.query}
-        onChange={(event) => handleSearchContacts(event.target.value)}
-        placeholder="Search contacts..."
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
-            </InputAdornment>
-          ),
-        }}
-        sx={{ mt: 2.5 }}
-      />
-    </ClickAwayListener>
+    <Stack sx={{ flex: '1 1 auto', minHeight: 0 }}>
+      {loading ? (
+        renderSkeleton
+      ) : (
+        <Scrollbar>
+          <Stack sx={{ p: 2 }}>
+            {conversations.allIds.map((conversationId) => (
+              <ChatNavItem
+                key={conversationId}
+                collapse={collapseDesktop}
+                conversation={conversations.byId[conversationId]}
+                selected={selectedConversationId === conversationId}
+                onCloseMobile={onCloseMobile}
+              />
+            ))}
+          </Stack>
+        </Scrollbar>
+      )}
+    </Stack>
   );
 
   const renderContent = (
-    <>
-      <Stack direction="row" alignItems="center" justifyContent="center" sx={{ p: 2.5, pb: 0 }}>
-        {!collapseDesktop && (
-          <>
-            <ChatNavAccount />
-            <Box sx={{ flexGrow: 1 }} />
-          </>
-        )}
+    <Stack sx={{ height: 1 }}>
+      {/* Filtro de instância */}
+      <InstanceFilter
+        selectedInstance={instanceFilter}
+        onInstanceChange={onInstanceFilterChange}
+        showStats={showStats}
+        stats={stats ? {
+          operacional: stats.operacional?.total || 0,
+          financeiroComercial: stats.financeiroComercial?.total || 0,
+        } : undefined}
+      />
 
-        <IconButton onClick={handleToggleNav}>
-          <Iconify
-            icon={collapseDesktop ? 'eva:arrow-ios-forward-fill' : 'eva:arrow-ios-back-fill'}
+      {/* Search */}
+      <Box sx={{ p: 2.5 }}>
+        <TextField
+          fullWidth
+          value={searchContacts.query}
+          onChange={(event) => handleSearchContacts(event.target.value)}
+          placeholder="Buscar conversas..."
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+              </InputAdornment>
+            ),
+          }}
+        />
+      </Box>
+
+      {/* Search Results */}
+      {searchContacts.query && (
+        <ClickAwayListener onClickAway={() => setSearchContacts({ query: '', results: [] })}>
+          <ChatNavSearchResults
+            query={searchContacts.query}
+            results={searchContacts.results}
+            onSelectContact={handleSelectContact}
           />
-        </IconButton>
-
-        {!collapseDesktop && (
-          <IconButton onClick={handleClickCompose}>
-            <Iconify width={24} icon="solar:user-plus-bold" />
-          </IconButton>
-        )}
-      </Stack>
-
-      <Box sx={{ p: 2.5, pt: 0 }}>{!collapseDesktop && renderSearchInput}</Box>
-
-      {loading ? (
-        renderLoading
-      ) : (
-        <Scrollbar sx={{ pb: 1 }}>
-          {searchContacts.query && !!conversations.allIds.length ? renderListResults : renderList}
-        </Scrollbar>
+        </ClickAwayListener>
       )}
-    </>
+
+      {/* Conversations List */}
+      {!searchContacts.query && renderList}
+
+      {/* Account */}
+      <ChatNavAccount />
+    </Stack>
   );
 
   return (
     <>
-      <ToggleButton onClick={onOpenMobile} sx={{ display: { md: 'none' } }}>
-        <Iconify width={16} icon="solar:users-group-rounded-bold" />
-      </ToggleButton>
-
       <Stack
         sx={{
-          minHeight: 0,
-          flex: '1 1 auto',
           width: NAV_WIDTH,
-          display: { xs: 'none', md: 'flex' },
-          borderRight: `solid 1px ${theme.vars.palette.divider}`,
+          height: 1,
           transition: theme.transitions.create(['width'], {
             duration: theme.transitions.duration.shorter,
           }),
           ...(collapseDesktop && { width: NAV_COLLAPSE_WIDTH }),
         }}
       >
-        {renderContent}
+        {renderToggleBtn}
+
+        {!collapseDesktop && renderContent}
       </Stack>
 
       <Drawer
+        anchor="left"
         open={openMobile}
         onClose={onCloseMobile}
         slotProps={{ backdrop: { invisible: true } }}
