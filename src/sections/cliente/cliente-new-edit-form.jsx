@@ -15,10 +15,12 @@ import {
   Tabs,
   Stack,
   Button,
+  Switch,
   MenuItem,
   TextField,
   Typography,
   CircularProgress,
+  FormControlLabel,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -102,7 +104,9 @@ export const NewUClienteSchema = zod.object({
     .array(zod.enum(['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'simei', 'autonomo']))
     .optional(),
   dadosFiscal: zod.string().optional(),
+  possuiExtrato: zod.boolean().optional(),
   dadosContabil: zod.string().optional(),
+  possuiFuncionario: zod.boolean().optional(),
   dadosDepartamentoPessoal: zod.string().optional(),
   status: zod.boolean().optional(),
   tipoContato: zod.enum(['cliente', 'lead']).optional(),
@@ -159,7 +163,9 @@ export function ClienteNewEditForm({ currentCliente }) {
       atividades_secundarias: currentCliente?.atividades_secundarias || [],
       clienteVip: currentCliente?.clienteVip || false,
       dadosFiscal: currentCliente?.dadosFiscal || '',
+      possuiExtrato: currentCliente?.possuiExtrato || false,
       dadosContabil: currentCliente?.dadosContabil || '',
+      possuiFuncionario: currentCliente?.possuiFuncionario || false,
       dadosDepartamentoPessoal: currentCliente?.dadosDepartamentoPessoal || '',
       planoEmpresa: currentCliente?.planoEmpresa || '',
       status: currentCliente?.status || true,
@@ -632,6 +638,18 @@ export function ClienteNewEditForm({ currentCliente }) {
             <Card sx={{ p: 3 }}>
               <Grid container spacing={2}>
                 <Grid xs={12}>
+                  <Controller
+                    name="possuiExtrato"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={<Switch {...field} checked={field.value} />}
+                        label="Possui Extrato ?"
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid xs={12}>
                   <Field.Editor name="dadosContabil" label="Dados Contábeis" fullWidth />
                 </Grid>
               </Grid>
@@ -642,6 +660,18 @@ export function ClienteNewEditForm({ currentCliente }) {
           <Grid xs={12}>
             <Card sx={{ p: 3 }}>
               <Grid container spacing={2}>
+                <Grid xs={12}>
+                  <Controller
+                    name="possuiFuncionario"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={<Switch {...field} checked={field.value} />}
+                        label="Possui Funcionário ?"
+                      />
+                    )}
+                  />
+                </Grid>
                 <Grid xs={12}>
                   <Field.Editor
                     name="dadosDepartamentoPessoal"
