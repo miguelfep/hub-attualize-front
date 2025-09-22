@@ -6,6 +6,7 @@ import { CONFIG } from 'src/config-global';
 
 const axiosInstance = axios.create({ baseURL: CONFIG.site.serverUrl });
 // const axiosInstance = axios.create({ baseURL: process.env.NEXT_PUBLIC_HOST_API });
+const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -27,16 +28,17 @@ export const fetcher = async (args) => {
     console.error('Failed to fetch:', error);
     throw error;
   }
+
 };
 
 // ----------------------------------------------------------------------
 
 export const endpoints = {
-  chat: '/api/chat',
-  kanban: 'https://api.attualizecontabil.com.br/api/comercial/board',
+  chat: `${baseUrl  }/chat`,  // Removido /api duplicado
+  kanban: `${baseUrl  }/comercial/board`,
   calendar: '/api/calendar',
   auth: {
-    signIn: 'https://api.attualizecontabil.com.br/api/users/authenticate',
+    signIn:  `${baseUrl  }/api/users/authenticate`,
     signUp: '/api/auth/sign-up',
   },
   mail: {
@@ -56,51 +58,64 @@ export const endpoints = {
     search: '/api/product/search',
   },
   clientes: {
-    list: 'https://api.attualizecontabil.com.br/api/clientes',
-    leads: 'https://api.attualizecontabil.com.br/api/clientes/leads/all',
-    create: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/create',
-    update: 'https://api.attualizecontabil.com.br/api/clientes',
+    list: `${baseUrl  }/api/clientes`,
+    leads: `${baseUrl  }/api/clientes/leads/all`,
+    create: `${baseUrl  }/api/financeiro/invoice/create`,
+    update: `${baseUrl  }/api/clientes`,
   },
   invoices: {
-    list: 'https://api.attualizecontabil.com.br/api/financeiro/invoices',
-    create: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/create',
-    update: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/update',
-    delete: 'https://api.attualizecontabil.com.br/api/financeiro/invoice/',
-    checkout: 'https://api.attualizecontabil.com.br/api/checkout/orcamento',
+    list: `${baseUrl  }/api/financeiro/invoices`,
+    create: `${baseUrl  }/api/financeiro/invoice/create`,
+    update: `${baseUrl  }/api/financeiro/invoice/update`,
+        delete: `${baseUrl  }/api/financeiro/invoice/`,
+    checkout: `${baseUrl  }/api/checkout/orcamento`,
   },
   contasPagar: {
-    criar: 'https://api.attualizecontabil.com.br/api/financeiro/contas-pagar',
-    mes: 'https://api.attualizecontabil.com.br/api/financeiro/contas-a-pagar/periodo',
-    get: 'https://api.attualizecontabil.com.br/api/financeiro/contas-pagar',
-    update: 'https://api.attualizecontabil.com.br/api/financeiro/contas-pagar',
-    delete: 'https://api.attualizecontabil.com.br/api/financeiro/contas-pagar',
-    registrar: 'https://api.attualizecontabil.com.br/api/financeiro/contas-pagar',
-    agendamentoInter: 'https://api.attualizecontabil.com.br/api/financeiro/contas-pagar',
-    dashboard: 'https://api.attualizecontabil.com.br/api/financeiro/infos/dashboard',
+    criar: `${baseUrl  }/api/financeiro/contas-pagar`,
+    mes: `${baseUrl  }/api/financeiro/contas-a-pagar/periodo`,
+    get: `${baseUrl  }/api/financeiro/contas-pagar`,
+    update: `${baseUrl  }/api/financeiro/contas-pagar`,
+    delete: `${baseUrl  }/api/financeiro/contas-pagar`,
+    registrar: `${baseUrl  }/api/financeiro/contas-pagar`,
+    agendamentoInter: `${baseUrl  }/api/financeiro/contas-pagar`,
+    dashboard: `${baseUrl  }/api/financeiro/infos/dashboard`,
   },
   contratos: {
-    list: 'https://api.attualizecontabil.com.br/api/contratos/all',
-    new: 'https://api.attualizecontabil.com.br/api/contratos/criar',
-    get: 'https://api.attualizecontabil.com.br/api/contratos/id',
-    update: 'https://api.attualizecontabil.com.br/api/contratos',
-    delete: 'https://api.attualizecontabil.com.br/api/contratos/delete',
-    faturasMesAno: 'https://api.attualizecontabil.com.br/api/contratos/cobrancas/faturas/mesano',
-    faturasDatas: 'https://api.attualizecontabil.com.br/api/contratos/cobrancas/faturas/datas',
-    cliente: 'https://api.attualizecontabil.com.br/api/contratos/cliente/id',
-    criarCobranca: 'https://api.attualizecontabil.com.br/api/contratos/cobrancas/criar',
-    deleteCobranca: 'https://api.attualizecontabil.com.br/api/contratos/cobrancas/delete',
-    gerarBoleto: 'https://api.attualizecontabil.com.br/api/contratos/cobrancas/boleto',
-    fatura: 'https://api.attualizecontabil.com.br/api/contratos/cobrancas/fatura',
-    enviarMensagem: 'https://api.attualizecontabil.com.br/api/contratos/cobrancas/mensagem',
-    subscription: 'https://api.attualizecontabil.com.br/api/contratos/subscription',
+    list: `${baseUrl  }/api/contratos/all`,
+    new: `${baseUrl  }/api/contratos/criar`,
+    get: `${baseUrl  }/api/contratos/id`,
+    update: `${baseUrl  }/api/contratos`,
+    delete: `${baseUrl  }/api/contratos/delete`,
+    faturasMesAno: `${baseUrl  }/api/contratos/cobrancas/faturas/mesano`,
+    faturasDatas: `${baseUrl  }/api/contratos/cobrancas/faturas/datas`,
+    cliente: `${baseUrl  }/api/contratos/cliente/id`,
+    criarCobranca: `${baseUrl  }/api/contratos/cobrancas/criar`,
+    deleteCobranca: `${baseUrl  }/api/contratos/cobrancas/delete`,
+    gerarBoleto: `${baseUrl  }/api/contratos/cobrancas/boleto`,
+    fatura: `${baseUrl  }/api/contratos/cobrancas/fatura`,
+    enviarMensagem: `${baseUrl  }/api/contratos/cobrancas/mensagem`,
+    subscription: `${baseUrl  }/api/contratos/subscription`,
   },
   marketing: {
-    create: 'https://api.attualizecontabil.com.br/api/marketing/criar/lead',
-    update: 'https://api.attualizecontabil.com.br/api/marketing/atualizar/lead',
-    dashboard: 'https://api.attualizecontabil.com.br/api/marketing/dashboard-data',
+    create: `${baseUrl  }/api/marketing/criar/lead`,
+    update: `${baseUrl  }/api/marketing/atualizar/lead`,
+    dashboard: `${baseUrl  }/api/marketing/dashboard-data`,
     financeiro: {
-      pagar: 'https://api.attualizecontabil.com.br/api/marketing/dashboard-contas-a-pagar',
-      receber: 'https://api.attualizecontabil.com.br/api/marketing/dashboard-contas-a-receber',
+      pagar: `${baseUrl  }/api/marketing/dashboard-contas-a-pagar`,
+      receber: `${baseUrl  }/api/marketing/dashboard-contas-a-receber`,
     }
+  },
+  contacts: {
+    chat: {
+      conversations: `${baseUrl  }/api/chat/conversations`,
+      messages: `${baseUrl  }/api/chat/messages`,
+      markAsSeen: `${baseUrl  }/api/chat/mark-as-seen`,
+    },
+    list: `${baseUrl  }/api/contacts`,
+    create: `${baseUrl  }/api/contacts`,
+    update: `${baseUrl  }/api/contacts`,
+    delete: `${baseUrl  }/api/contacts`,
+    conversation: `${baseUrl  }/api/contacts`,
+    message: `${baseUrl  }/api/contacts`,
   },
 };

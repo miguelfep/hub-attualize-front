@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 import Typography from '@mui/material/Typography';
 
-import { paths } from 'src/routes/paths';
 import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { CONFIG } from 'src/config-global';
@@ -31,7 +30,7 @@ export function ChatView() {
 
   const { user } = useMockedUser();
 
-  const { contacts } = useGetContacts();
+  const { contacts = [] } = useGetContacts(); // Adicionar valor padrão
 
   const searchParams = useSearchParams();
 
@@ -49,15 +48,7 @@ export function ChatView() {
 
   const conversationsNav = useCollapseNav();
 
-  const participants = conversation
-    ? conversation.participants.filter((participant) => participant.id !== `${user?.id}`)
-    : [];
-
-  useEffect(() => {
-    if (conversationError || !selectedConversationId) {
-      router.push(paths.dashboard.chat);
-    }
-  }, [conversationError, router, selectedConversationId]);
+  const participants = conversation?.participants || [];
 
   const handleAddRecipients = useCallback((selected) => {
     setRecipients(selected);
@@ -126,10 +117,9 @@ export function ChatView() {
           ),
           details: selectedConversationId && (
             <ChatRoom
-              collapseNav={roomNav}
+              conversation={conversation}
               participants={participants}
               loading={conversationLoading}
-              messages={conversation?.messages ?? []}
             />
           ),
         }}

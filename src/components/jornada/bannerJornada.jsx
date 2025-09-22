@@ -1,7 +1,8 @@
 'use client';
 
-import { Box, Grid, Container, Typography, Button } from '@mui/material';
 import Image from 'next/image';
+
+import { Box, Grid, Button, Container, Typography } from '@mui/material';
 
 export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize, logoDefina }) {
   const scrollToSection = (id) => {

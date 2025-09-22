@@ -4,13 +4,12 @@ import Stack from '@mui/material/Stack';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
 
-import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { uuidv4 } from 'src/utils/uuidv4';
 import { fSub, today } from 'src/utils/format-time';
 
-import { sendMessage, createConversation } from 'src/actions/chat';
+import { sendMessage } from 'src/actions/chat';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -55,19 +54,9 @@ export function ChatMessageInput({
       contentType: 'text',
       createdAt: fSub({ minutes: 1 }),
       senderId: myContact.id,
+      userId: user?.id, // Adicionar userId para os novos endpoints
     }),
-    [message, myContact.id]
-  );
-
-  const conversationData = useMemo(
-    () => ({
-      id: uuidv4(),
-      messages: [messageData],
-      participants: [...recipients, myContact],
-      type: recipients.length > 1 ? 'GROUP' : 'ONE_TO_ONE',
-      unreadCount: 0,
-    }),
-    [messageData, myContact, recipients]
+    [message, myContact.id, user?.id]
   );
 
   const handleAttach = useCallback(() => {
@@ -84,24 +73,16 @@ export function ChatMessageInput({
     async (event) => {
       try {
         if (event.key === 'Enter') {
-          if (message) {
-            if (selectedConversationId) {
-              await sendMessage(selectedConversationId, messageData);
-            } else {
-              const res = await createConversation(conversationData);
-
-              router.push(`${paths.dashboard.chat}?id=${res.conversation.id}`);
-
-              onAddRecipients([]);
-            }
+          if (message && selectedConversationId) {
+            await sendMessage(selectedConversationId, messageData);
+            setMessage('');
           }
-          setMessage('');
         }
       } catch (error) {
         console.error(error);
       }
     },
-    [conversationData, message, messageData, onAddRecipients, router, selectedConversationId]
+    [message, messageData, selectedConversationId]
   );
 
   return (

@@ -40,7 +40,7 @@ export function CobrancaExistente({ invoice }) {
   const handleDownload = async (codigoSolicitacao) => {
     try {
       const response = await axios.get(
-        `https://api.attualizecontabil.com.br/api/contratos/cobrancas/faturas/${codigoSolicitacao}/pdf`
+        `${process.env.NEXT_PUBLIC_API_URL  }/contratos/cobrancas/faturas/${codigoSolicitacao}/pdf`
       );
 
       const { pdf } = response.data;

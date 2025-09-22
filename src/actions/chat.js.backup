@@ -1,0 +1,300 @@
+import { useMemo } from 'react';
+import useSWR, { mutate } from 'swr';
+
+import { keyBy } from 'src/utils/helper';
+import axios, { fetcher, endpoints } from 'src/utils/axios';
+
+// ----------------------------------------------------------------------
+
+const CHAT_ENDPOINT = endpoints.contacts.list; // Usando o endpoint de contatos
+const CONVERSATIONS_ENDPOINT = `${endpoints.contacts.list}/conversations`;
+
+const swrOptions = {
+  revalidateIfStale: true,
+  revalidateOnFocus: true,
+  revalidateOnReconnect: true,
+};
+
+// ----------------------------------------------------------------------
+
+export function useGetContacts() {
+  const url = CHAT_ENDPOINT;
+
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
+
+  const memoizedValue = useMemo(
+    () => ({
+      contacts: data?.data || [],
+      contactsLoading: isLoading,
+      contactsError: error,
+      contactsValidating: isValidating,
+      contactsEmpty: !isLoading && !data?.data?.length,
+    }),
+    [data?.data, error, isLoading, isValidating]
+  );
+
+  return memoizedValue;
+}
+
+// ----------------------------------------------------------------------
+
+export function useGetConversations() {
+  const url = CONVERSATIONS_ENDPOINT;
+
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
+
+  const memoizedValue = useMemo(() => {
+    const conversations = data?.data || [];
+    const byId = conversations.length ? keyBy(conversations, 'id') : {};
+    const allIds = Object.keys(byId);
+
+    return {
+      conversations: { byId, allIds },
+      conversationsLoading: isLoading,
+      conversationsError: error,
+      conversationsValidating: isValidating,
+      conversationsEmpty: !isLoading && !allIds.length,
+    };
+  }, [data?.data, error, isLoading, isValidating]);
+
+  return memoizedValue;
+}
+
+// ----------------------------------------------------------------------
+
+export function useGetConversation(conversationId) {
+  const url = conversationId ? `${CONVERSATIONS_ENDPOINT}/${conversationId}` : '';
+
+  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
+
+  const memoizedValue = useMemo(
+    () => ({
+      conversation: data?.data,
+      conversationLoading: isLoading,
+      conversationError: error,
+      conversationValidating: isValidating,
+    }),
+    [data?.data, error, isLoading, isValidating]
+  );
+
+  return memoizedValue;
+}
+
+// ----------------------------------------------------------------------
+
+export async function sendMessage(conversationId, messageData) {
+  try {
+    // Enviar mensagem para a API
+    const response = await axios.post(`${CONVERSATIONS_ENDPOINT}/${conversationId}/messages`, {
+      content: messageData.body,
+      contentType: messageData.contentType || 'text',
+      attachments: messageData.attachments || []
+    });
+
+    // Atualizar cache local
+    const conversationUrl = `${CONVERSATIONS_ENDPOINT}/${conversationId}`;
+    const conversationsUrl = CONVERSATIONS_ENDPOINT;
+
+    mutate(
+      conversationUrl,
+      (currentData) => {
+        if (!currentData?.data) return currentData;
+        
+        const currentConversation = currentData.data;
+        const newMessage = {
+          ...messageData,
+          id: response.data.data._id,
+          createdAt: new Date().toISOString()
+        };
+
+        return {
+          ...currentData,
+          data: {
+            ...currentConversation,
+            messages: [...(currentConversation.messages || []), newMessage],
+          }
+        };
+      },
+      false
+    );
+
+    mutate(
+      conversationsUrl,
+      (currentData) => {
+        if (!currentData?.data) return currentData;
+        
+        const conversations = currentData.data.map((conversation) =>
+          conversation.id === conversationId
+            ? { 
+                ...conversation, 
+                lastMessage: messageData,
+                updatedAt: new Date().toISOString()
+              }
+            : conversation
+        );
+
+        return { ...currentData, data: conversations };
+      },
+      false
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao enviar mensagem:', error);
+    throw error;
+  }
+}
+
+// ----------------------------------------------------------------------
+
+export async function createConversation(conversationData) {
+  try {
+    // Criar conversa na API
+    const response = await axios.post(CONVERSATIONS_ENDPOINT, {
+      participants: conversationData.participants,
+      type: conversationData.type,
+      contactId: conversationData.contactId
+    });
+
+    // Atualizar cache local
+    const url = CONVERSATIONS_ENDPOINT;
+    
+    mutate(
+      url,
+      (currentData) => {
+        const currentConversations = currentData?.data || [];
+        const newConversation = {
+          ...conversationData,
+          id: response.data.data._id,
+          createdAt: new Date().toISOString(),
+          messages: conversationData.messages || []
+        };
+
+        return { 
+          ...currentData, 
+          data: [...currentConversations, newConversation] 
+        };
+      },
+      false
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao criar conversa:', error);
+    throw error;
+  }
+}
+
+// ----------------------------------------------------------------------
+
+export async function clickConversation(conversationId) {
+  try {
+    // Marcar como lida na API
+    await axios.put(`${CONVERSATIONS_ENDPOINT}/${conversationId}/mark-as-seen`);
+
+    // Atualizar cache local
+    const url = CONVERSATIONS_ENDPOINT;
+    
+    mutate(
+      url,
+      (currentData) => {
+        if (!currentData?.data) return currentData;
+        
+        const conversations = currentData.data.map((conversation) =>
+          conversation.id === conversationId 
+            ? { ...conversation, unreadCount: 0 } 
+            : conversation
+        );
+
+        return { ...currentData, data: conversations };
+      },
+      false
+    );
+  } catch (error) {
+    console.error('Erro ao marcar conversa como lida:', error);
+    throw error;
+  }
+}
+
+// ----------------------------------------------------------------------
+
+export async function getConversationMessages(conversationId, page = 1, limit = 50) {
+  try {
+    const response = await axios.get(`${CONVERSATIONS_ENDPOINT}/${conversationId}/messages`, {
+      params: { page, limit }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao buscar mensagens:', error);
+    throw error;
+  }
+}
+
+// ----------------------------------------------------------------------
+
+export async function deleteMessage(conversationId, messageId) {
+  try {
+    const response = await axios.delete(`${CONVERSATIONS_ENDPOINT}/${conversationId}/messages/${messageId}`);
+    
+    // Atualizar cache local
+    const conversationUrl = `${CONVERSATIONS_ENDPOINT}/${conversationId}`;
+    
+    mutate(
+      conversationUrl,
+      (currentData) => {
+        if (!currentData?.data) return currentData;
+        
+        const currentConversation = currentData.data;
+        const updatedMessages = currentConversation.messages.filter(
+          message => message.id !== messageId
+        );
+
+        return {
+          ...currentData,
+          data: {
+            ...currentConversation,
+            messages: updatedMessages
+          }
+        };
+      },
+      false
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao deletar mensagem:', error);
+    throw error;
+  }
+}
+
+// ----------------------------------------------------------------------
+
+export async function transferChat(chatId, targetUserId, targetSector) {
+  try {
+    const response = await axios.post(`${CONVERSATIONS_ENDPOINT}/${chatId}/transfer`, {
+      targetUserId,
+      targetSector
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao transferir chat:', error);
+    throw error;
+  }
+}
+
+// ----------------------------------------------------------------------
+
+export async function closeChat(chatId, userId) {
+  try {
+    const response = await axios.post(`${CONVERSATIONS_ENDPOINT}/${chatId}/close`, {
+      userId
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Erro ao fechar chat:', error);
+    throw error;
+  }
+}

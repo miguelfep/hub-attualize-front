@@ -113,6 +113,8 @@ export const paths = {
     root: ROOTS.DASHBOARD,
     mail: `${ROOTS.DASHBOARD}/mail`,
     chat: `${ROOTS.DASHBOARD}/chat`,
+    chatDashboard: `${ROOTS.DASHBOARD}/chat-dashboard`,
+    queue: `${ROOTS.DASHBOARD}/queue`,
     blank: `${ROOTS.DASHBOARD}/blank`,
     kanban: `${ROOTS.DASHBOARD}/kanban`,
     calendar: `${ROOTS.DASHBOARD}/calendar`,
@@ -231,6 +233,12 @@ export const paths = {
     relatorios: {
       comercial: `${ROOTS.DASHBOARD}/relatorios/comercial`,
       financeiro: `${ROOTS.DASHBOARD}/relatorios/financeiro`,
+    },
+    contacts: {
+    chatIntegrated: `${ROOTS.DASHBOARD}/chat-integrated`,
+      root: `${ROOTS.DASHBOARD}/contacts`,
+      new: `${ROOTS.DASHBOARD}/contacts/new`,
+      edit: (id) => `${ROOTS.DASHBOARD}/contacts/${id}/edit`,
     },
   },
 };
