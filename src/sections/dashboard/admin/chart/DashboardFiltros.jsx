@@ -30,17 +30,19 @@ export default function DashboardFiltros({ onFilterChange = () => {} }) {
     <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
       <Box
         sx={{
-          my: 4,
-          p: 4,
-          borderRadius: 7,
-          boxShadow: 3,
+          my: 2,
+          p: 2.5,
+          borderRadius: 2,
+          backgroundColor: theme.palette.background.paper,
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
         }}
       >
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
-          spacing={3}
+          spacing={{ xs: 2, sm: 3 }}
           alignItems="center"
-          justifyContent="center"
+          justifyContent={{ xs: 'stretch', sm: 'flex-start' }}
         >
           <DatePicker
             label="Data de Início"
@@ -50,39 +52,37 @@ export default function DashboardFiltros({ onFilterChange = () => {} }) {
             slotProps={{
               textField: {
                 size: 'medium',
+                fullWidth: { xs: true, sm: false },
                 sx: {
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: theme.palette.background.default,
+                    borderRadius: 1.5,
+                    fontSize: '0.95rem',
                     '&:hover fieldset': {
-                      borderColor: theme.palette.primary.dark,
+                      borderColor: theme.palette.primary.main,
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.dark,
+                      borderColor: theme.palette.primary.main,
                       borderWidth: 2,
                     },
                   },
                   '& .MuiInputLabel-root': {
-                    color: theme.palette.text.secondary,
+                    fontSize: '0.9rem',
                     fontWeight: 500,
                     '&.Mui-focused': {
-                      color: theme.palette.primary.dark,
+                      color: theme.palette.primary.main,
                     },
                   },
-                },
-                InputProps: {
-                  startAdornment: (
-                    <IconButton edge="start" size="small" sx={{ mr: 1 }}>
-                      <Icon icon="mdi:calendar" />
-                    </IconButton>
-                  ),
+                  '& .MuiInputBase-input': {
+                    fontSize: '0.95rem',
+                    padding: '12px 14px',
+                  },
                 },
               },
               popper: {
                 sx: {
                   '& .MuiPickersDay-root': {
                     '&.Mui-selected': {
-                      backgroundColor: theme.palette.primary.dark,
+                      backgroundColor: theme.palette.primary.main,
                     },
                     '&:hover': {
                       backgroundColor: theme.palette.primary.light,
@@ -91,16 +91,20 @@ export default function DashboardFiltros({ onFilterChange = () => {} }) {
                 },
               },
             }}
-            sx={{ minWidth: 200 }}
+            sx={{ 
+              minWidth: { xs: '100%', sm: 180 },
+              width: { xs: '100%', sm: 'auto' }
+            }}
           />
 
           <Box
             sx={{
-              width: 2,
-              height: 40,
+              width: { xs: '100%', sm: 1 },
+              height: { xs: 1, sm: 24 },
               backgroundColor: theme.palette.divider,
-              mx: 1,
-              display: { xs: 'none', sm: 'block' },
+              mx: { xs: 0, sm: 1 },
+              my: { xs: 1, sm: 0 },
+              display: 'block',
             }}
           />
 
@@ -112,39 +116,37 @@ export default function DashboardFiltros({ onFilterChange = () => {} }) {
             slotProps={{
               textField: {
                 size: 'medium',
+                fullWidth: { xs: true, sm: false },
                 sx: {
                   '& .MuiOutlinedInput-root': {
-                    borderRadius: 2,
-                    backgroundColor: theme.palette.background.default,
+                    borderRadius: 1.5,
+                    fontSize: '0.95rem',
                     '&:hover fieldset': {
-                      borderColor: theme.palette.primary.dark,
+                      borderColor: theme.palette.primary.main,
                     },
                     '&.Mui-focused fieldset': {
-                      borderColor: theme.palette.primary.dark,
+                      borderColor: theme.palette.primary.main,
                       borderWidth: 2,
                     },
                   },
                   '& .MuiInputLabel-root': {
-                    color: theme.palette.text.secondary,
+                    fontSize: '0.9rem',
                     fontWeight: 500,
                     '&.Mui-focused': {
-                      color: theme.palette.primary.dark,
+                      color: theme.palette.primary.main,
                     },
                   },
-                },
-                InputProps: {
-                  startAdornment: (
-                    <IconButton edge="start" size="small" sx={{ mr: 1 }}>
-                      <Icon icon="mdi:calendar" />
-                    </IconButton>
-                  ),
+                  '& .MuiInputBase-input': {
+                    fontSize: '0.95rem',
+                    padding: '12px 14px',
+                  },
                 },
               },
               popper: {
                 sx: {
                   '& .MuiPickersDay-root': {
                     '&.Mui-selected': {
-                      backgroundColor: theme.palette.primary.dark,
+                      backgroundColor: theme.palette.primary.main,
                     },
                     '&:hover': {
                       backgroundColor: theme.palette.primary.light,
@@ -153,7 +155,10 @@ export default function DashboardFiltros({ onFilterChange = () => {} }) {
                 },
               },
             }}
-            sx={{ minWidth: 200 }}
+            sx={{ 
+              minWidth: { xs: '100%', sm: 180 },
+              width: { xs: '100%', sm: 'auto' }
+            }}
           />
         </Stack>
       </Box>

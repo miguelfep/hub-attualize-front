@@ -27,24 +27,15 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency 
     ...chart.options,
   });
 
-  const renderTrending = (
+  const renderPeriodInfo = (
     <Box sx={{ gap: 0.5, display: 'flex', alignItems: 'center' }}>
       <Iconify
-        width={24}
-        icon={
-          percent < 0
-            ? 'solar:double-alt-arrow-down-bold-duotone'
-            : 'solar:double-alt-arrow-up-bold-duotone'
-        }
-        sx={{ flexShrink: 0, color: 'success.main', ...(percent < 0 && { color: 'error.main' }) }}
+        width={20}
+        icon="solar:calendar-bold-duotone"
+        sx={{ flexShrink: 0, color: 'primary.main' }}
       />
-
-      <Box component="span" sx={{ typography: 'subtitle2' }}>
-        {percent > 0 && '+'}
-        {fPercent(percent)}
-      </Box>
       <Box component="span" sx={{ typography: 'body2', color: 'text.secondary' }}>
-        mês anterior
+        Período selecionado
       </Box>
     </Box>
   );
@@ -67,7 +58,9 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency 
           formatter={isCurrency ? formatToCurrency : formatToInteger}
           sx={{ mt: 1.5, typography: 'h3' }}
         />
-        {renderTrending}
+        <Box sx={{ mt: 1 }}>
+          {renderPeriodInfo}
+        </Box>
       </Box>
 
       <Chart

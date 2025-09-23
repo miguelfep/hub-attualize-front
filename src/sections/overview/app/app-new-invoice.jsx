@@ -22,6 +22,7 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TableHeadCustom } from 'src/components/table';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
+import { fDate } from 'src/utils/format-time';
 
 // ----------------------------------------------------------------------
 
@@ -94,6 +95,7 @@ function RowItem({ row }) {
     <>
       <TableRow>
         <TableCell>{row.nome}</TableCell>
+        <TableCell>{fDate(row.createdAt, 'DD/MM/YYYY')}</TableCell>
         <TableCell>{row.segment}</TableCell>
         <TableCell>{row.origem}</TableCell>
         <TableCell>

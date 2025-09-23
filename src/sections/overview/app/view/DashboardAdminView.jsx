@@ -210,6 +210,11 @@ export default function DashboardAdminView() {
               </Typography>
           </SimplePaper>
         </Grid>
+        <Grid container xs={12} justifyContent="center" spacing={3}>
+        <Grid item>
+          <DashboardFiltros onFilterChange={handleFilterChange} />
+        </Grid>
+      </Grid>
 
         <Grid xs={12} md={3}>
           <AppWidgetSummary
@@ -275,11 +280,7 @@ export default function DashboardAdminView() {
           data={selectedDateData}
         />
 
-      <Grid container xs={12} justifyContent="center" spacing={3}>
-        <Grid item>
-          <DashboardFiltros onFilterChange={handleFilterChange} />
-        </Grid>
-      </Grid>
+     
 
         <Grid xs={12} md={4}>
           <VisaoGeralBarras
@@ -316,6 +317,7 @@ export default function DashboardAdminView() {
             tableData={dashboardData.leads}
             headLabel={[
               { id: 'nome', label: 'Nome' },
+              { id: 'Data de criação', label: 'Data de criação' },
               { id: 'segment', label: 'Segmento' },
               { id: 'local', label: 'Local' },
               { id: 'status', label: 'Contato' },

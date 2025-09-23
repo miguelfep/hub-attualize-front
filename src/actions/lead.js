@@ -14,8 +14,10 @@ export async function atualizarLead(id, leadData) {
   return res.data;
 }
 
-export async function buscarDadosDashboard() {
-  const res = await axios.get(`${endpoints.marketing.dashboard}`);
+export async function buscarDadosDashboard( params = {}) {
+  const res = await axios.get(`${endpoints.marketing.dashboard}`, {
+    params
+  });
   return res.data;
 }
 
