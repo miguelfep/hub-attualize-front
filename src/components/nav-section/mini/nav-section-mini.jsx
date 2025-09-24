@@ -1,6 +1,8 @@
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 
+import { getUser } from 'src/auth/context/jwt';
+
 import { NavList } from './nav-list';
 import { NavUl, NavLi } from '../styles';
 import { navSectionClasses } from '../classes';
@@ -23,6 +25,13 @@ export function NavSectionMini({
     ...overridesVars,
   };
 
+  const user = getUser();
+
+  const nova = {
+    ...slotProps, // Mescla todos os valores de slotProps
+    currentRole: user?.role, // Adiciona ou sobrescreve o currentRole
+  };
+
   return (
     <Stack component="nav" className={navSectionClasses.mini.root} sx={{ ...cssVars, ...sx }}>
       <NavUl sx={{ flex: '1 1 auto', gap: 'var(--nav-item-gap)' }}>
@@ -32,7 +41,7 @@ export function NavSectionMini({
             render={render}
             cssVars={cssVars}
             items={group.items}
-            slotProps={slotProps}
+            slotProps={nova}
             enabledRootRedirect={enabledRootRedirect}
           />
         ))}
