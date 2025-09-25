@@ -11,14 +11,14 @@ const informacoesData = [
     label: 'Lei do Salão Parceiro',
     icon: 'mdi:handshake-outline',
     content: {
-      title: 'Lei do Salão Parceiro',
+      title: 'Lei do Salão Parceiro para Clínicas de Estética',
       description:
-        'Entenda como funciona a Lei do Salão Parceiro, quem pode aderir e quais os cuidados para evitar riscos trabalhistas e fiscais.',
+        'Entenda como funciona a Lei do Salão Parceiro para clínicas de estética, quem pode aderir e quais os cuidados para evitar riscos trabalhistas e fiscais.',
       items: [
         'Quem pode aderir à lei',
         'Regras para repasse de valores',
         'Modelo de contrato necessário',
-        'Responsabilidades do parceiro x salão',
+        'Responsabilidades do parceiro x sua clínica',
         'Riscos comuns e como evitá-los',
       ],
     },
@@ -36,6 +36,7 @@ const informacoesData = [
         'Impacto do Fator R',
         'Lucro Presumido em casos específicos',
         'Alíquotas de ISS variam por município',
+        'Equiparação hospitalar'
       ],
     },
   },
@@ -67,7 +68,7 @@ const informacoesData = [
         'Sociedade Limitada Unipessoal (SLU)',
         'LTDA com sócios',
         'Diferenças de responsabilidade',
-        'Flexibilidade societária e percepção no mercado',
+        'Acordos de sócios para segurança societária',
       ],
     },
   },

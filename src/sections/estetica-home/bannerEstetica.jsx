@@ -150,7 +150,7 @@ export function BannerEstetica() {
                 },
               }}
             >
-              Foque no que você faz de melhor: cuidar da beleza e bem-estar. Nós cuidamos do resto!
+              Chega de burocracia! Você cuida dos seus clientes, nós cuidamos da parte contábil e fiscal da sua clínica!
             </Typography>
 
             <Stack
@@ -177,7 +177,7 @@ export function BannerEstetica() {
                   },
                 }}
               >
-                Abrir Minha Empresa
+                Abrir Minha Clínica
               </Button>
               <Button
                 variant="outlined"
@@ -199,7 +199,7 @@ export function BannerEstetica() {
                   },
                 }}
               >
-                Trocar de Contador
+                Migrar para Attualize
               </Button>
             </Stack>
           </Stack>

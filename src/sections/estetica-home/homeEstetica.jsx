@@ -7,8 +7,8 @@ import { ScrollProgress, useScrollProgress } from 'src/components/animate/scroll
 
 import { FaqSection } from './FaqSection';
 import { BannerEstetica } from './bannerEstetica';
-import { DescubraImposto } from './DescubraImposto';
 import { LeiSalaoParceiro } from './LeiSalaoParceiro';
+import { RegularizationRoadmap } from './RoadmapRegularizacao';
 import { InformacoesEssenciais } from './ImpostosClinicaEstetica';
 import { ServicosEspecializados } from './ServicosEspecializados';
 import { NaturezaTributacaoTabs } from './NaturezaTributacaoTabs';
@@ -36,8 +36,6 @@ export function HomeEstetica() {
 
         <ImportanciaContabilidadeEstetica />
 
-        <InformacoesEssenciais />
-
         <LegalizarClinicaEsteticaStepper />
 
         <ServicosEspecializados />
@@ -48,7 +46,11 @@ export function HomeEstetica() {
 
         <ChecklistRegularizacao />
 
-        <DescubraImposto />
+        <RegularizationRoadmap />
+
+        {/* <DescubraImposto /> */}
+
+        <InformacoesEssenciais />
 
         <FaqSection />
       </Stack>
