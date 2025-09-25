@@ -11,19 +11,19 @@ const SERVICOS = [
     icon: 'solar:document-add-bold-duotone',
     title: 'Abertura e Legalização',
     description:
-      'Cuidamos de todo o processo de abertura do seu CNPJ, alvarás e licenças sanitárias, garantindo que sua clínica nasça 100% regularizada e sem dores de cabeça.',
+      'Cuidamos de cada detalhe da abertura da sua clínica: CNPJ, alvarás e licenças sanitárias. Assim, você começa já no caminho certo, sem dores de cabeça.'
   },
   {
     icon: 'solar:notebook-bookmark-bold-duotone',
     title: 'Contratos de Parceria',
     description:
-      'Disponibilizamos um modelo de contrato para seus profissionais conforme a Lei Salão-Parceiro, oferecendo segurança jurídica e otimização de impostos.',
+      'Apoiamos para a escolha do melhor tipo de contratação, seja CLT, parcerias ou sublocação, garantindo segurança jurídica, organização e economia tributária para sua clínica.'
   },
   {
     icon: 'solar:target-bold-duotone',
     title: 'Planejamento Tributário',
     description:
-      'Analisamos sua operação para encontrar o regime tributário mais vantajoso, garantindo que você pague o mínimo de impostos possível dentro da lei.',
+      'Encontramos o regime mais vantajoso para que você pague menos impostos e tenha mais lucro, sempre dentro da lei.',
   },
 ];
 
@@ -61,6 +61,7 @@ export function ServicosEspecializados() {
               <Paper
                 variant="outlined"
                 sx={{
+                  height: '100%',
                   p: 5,
                   textAlign: 'center',
                   borderColor: 'divider',

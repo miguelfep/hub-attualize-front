@@ -86,7 +86,7 @@ export function CallToAction({ pageSource }) {
                     Preencha seus dados e um de nossos especialistas entrará em contato em breve.
                   </Typography>
 
-                  <Stack component="form" spacing={2.5} onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                  <Stack component="form" spacing={2.5}  onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
                     <TextField
                       label="Nome"
                       value={name}
@@ -120,11 +120,12 @@ export function CallToAction({ pageSource }) {
               <Grid item md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
                 <Box
                   component="img"
-                  src="https://attualizecontabil.com.br/wp-content/uploads/2024/09/foto-e-mail.jpg"
+                  src="/assets/images/estetica/operacao-att.webp"
                   alt="Nosso Time"
                   sx={{
                     width: '100%',
-                    height: '100%',
+                    height: 'auto',
+                    maxHeight: { xs: 300, sm: 400, md: 450 },
                     objectFit: 'cover',
                   }}
                 />

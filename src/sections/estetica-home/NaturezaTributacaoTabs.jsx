@@ -1,8 +1,12 @@
+import { m } from 'framer-motion';
 import React, { useState } from 'react';
 
-import { Box, Tab, Tabs, Stack, Paper, Button, Container, Typography  } from '@mui/material';
+import { Box, Tab, Tabs, Stack, Paper, alpha, Button, Container, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
+import { varFade } from 'src/components/animate';
+
+import { TabelaRegimesTributarios } from './TabelaRegimesTributarios';
 
 function TabPanel({ children, value, index, ...other }) {
   return (
@@ -66,10 +70,9 @@ export function NaturezaTributacaoTabs() {
                   Empresário Individual (EI)
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                  O Empresário Individual é a forma mais simples de formalizar um negócio. Neste modelo,
-                  não há separação entre os bens pessoais e os da empresa, o que significa que o patrimônio
-                  do empresário responde pelas dívidas do negócio. É uma opção interessante para negócios
-                  de menor risco e para profissionais que estão iniciando suas atividades.
+                  O <b>Empresário Individual</b> é a forma mais simples de formalizar um negócio. Nesse modelo, não há separação entre bens pessoais e da empresa.
+                  Isso significa que, em caso de dívidas, o patrimônio pessoal do empresário pode ser usado para pagar.
+                  Indicado para negócios de <b>baixo risco</b> e para profissionais que estão iniciando suas atividades.
                 </Typography>
               </Box>
 
@@ -78,29 +81,20 @@ export function NaturezaTributacaoTabs() {
                   Sociedade Limitada Unipessoal (SLU)
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-                  A SLU foi introduzida no ordenamento jurídico brasileiro em 2019 e permite que uma única
-                  pessoa constitua uma sociedade limitada. A grande vantagem é a separação entre o patrimônio
-                  pessoal e o patrimônio da empresa, limitando a responsabilidade do sócio ao capital social
-                  investido.
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                  Essa forma jurídica combina a simplicidade do EI com a proteção patrimonial da LTDA,
-                  sendo excelente para profissionais que desejam maior segurança jurídica.
+                  A <b>SLU</b>, criada em 2019, permite que uma única pessoa abra uma sociedade limitada.
+                  Sua grande vantagem é a <b>proteção patrimonial</b>: os bens pessoais do sócio ficam separados dos da empresa.
+                  É uma opção que combina a simplicidade do EI com a segurança da LTDA, sendo ideal para profissionais que buscam <b>mais proteção jurídica.</b>
                 </Typography>
               </Box>
 
               <Box>
                 <Typography variant="h4" sx={{ color: 'text.primary', mb: 2 }}>
-                  LTDA com Sócios
+                  Sociedade Limitada (LTDA) com Sócios
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-                  A sociedade limitada tradicional com dois ou mais sócios permite a divisão de capital
-                  e responsabilidades. Cada sócio responde apenas pelo valor de sua quota, mas todos
-                  respondem solidariamente pela integralização do capital social.
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                  Este modelo é ideal quando há mais de um investidor ou quando se planeja expandir
-                  o negócio com a entrada de novos sócios no futuro.
+                  A <b>LTDA tradicional</b> é formada por dois ou mais sócios.
+                  Cada um responde apenas pelo valor de sua quota, mas todos são solidários pela integralização do capital social.
+                  Esse modelo é recomendado para quem tem <b>sócios investidores</b> ou já pensa em <b>expandir a clínica</b> no futuro com novos parceiros.
                 </Typography>
               </Box>
 
@@ -108,26 +102,43 @@ export function NaturezaTributacaoTabs() {
                 <Typography variant="h4" sx={{ color: 'text.primary', mb: 2 }}>
                   Diferenças de Responsabilidade
                 </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-                  A principal diferença entre as naturezas jurídicas está no nível de responsabilidade
-                  do proprietário perante as obrigações da empresa. Enquanto no EI há responsabilidade
-                  ilimitada, na SLU e LTDA a responsabilidade é limitada ao capital social.
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
+                  • <strong>EI</strong>: responsabilidade ilimitada → o empresário responde com seu patrimônio pessoal.
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                  Essa distinção é crucial para a proteção do patrimônio pessoal em caso de passivos
-                  trabalhistas, tributários ou contratuais.
+                  • <strong>SLU e LTDA</strong>: responsabilidade limitada ao capital social investido → protege o patrimônio pessoal do sócio.
                 </Typography>
-              </Box>
-
+                <br />
+                <Typography variant="body1"  sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                  <i>Essa distinção é crucial para garantir segurança em casos de dívidas trabalhistas, tributárias ou contratuais</i>.
+                </Typography>
+            </Box>
               <Box>
                 <Typography variant="h4" sx={{ color: 'text.primary', mb: 2 }}>
                   Flexibilidade Societária e Percepção no Mercado
                 </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
+                  A natureza jurídica escolhida também afeta a imagem da sua clínica.
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
+                  • Clínicas no formato <strong>LTDA</strong> transmitem mais credibilidade para clientes, fornecedores e instituições financeiras.
+                </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                  A escolha da natureza jurídica também impacta na percepção do mercado. Empresas LTDA
-                  geralmente transmitem maior seriedade e estrutura para clientes e fornecedores. Além
-                  disso, a LTDA oferece mais flexibilidade para entrada e saída de sócios, sucessão
-                  empresarial e planos de expansão.
+                  • Além disso, a LTDA oferece mais <strong>flexibilidade</strong> para entrada ou saída de sócios, sucessão empresarial e expansão.
+                </Typography>
+              </Box>
+              <Box>
+                <Typography variant="h4" sx={{ color: 'text.primary', mb: 2 }}>
+                  Resumo Prático:
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
+                  • <strong>EI</strong>: simples, mas de maior risco pessoal
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
+                  • <strong>SLU</strong>: simples e com proteção patrimonial
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                  • <strong>LTDA</strong>: ideal para quem tem sócios ou quer crescer com segurança
                 </Typography>
               </Box>
             </Stack>
@@ -137,17 +148,14 @@ export function NaturezaTributacaoTabs() {
             <Stack spacing={4}>
               <Box>
                 <Typography variant="h4" sx={{ color: 'text.primary', mb: 2 }}>
-                  MEI: Limitações e Quando Faz Sentido
+                  MEI: quando faz sentido?
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-                  O Microempreendedor Individual (MEI) é ideal para profissionais que faturam até
-                  R$ 81 mil por ano e não pretendem expandir significativamente. As principais limitações
-                  incluem a restrição de ter apenas um funcionário e o teto de faturamento relativamente baixo.
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                  Faz sentido optar pelo MEI quando se está iniciando no mercado, com baixo risco
-                  operacional e expectativa de faturamento moderado. A simplicidade burocrática e
-                  os custos reduzidos são suas principais vantagens.
+                  O MEI é indicado para profissionais que SE ENQUADRAM nas atividades permitidas e estão começando,
+                  com faturamento anual de até R$ 81 mil, ou seja, com um faturamento em média de R$6.750 por mês.
+                  É uma opção simples, com baixa burocracia e custos reduzidos.
+                  <br /> <br />
+                  Limitações: só permite <b>1 funcionário</b> e não é adequado para quem tem profissionais parceiros ou pretende expandir.
                 </Typography>
               </Box>
 
@@ -156,28 +164,63 @@ export function NaturezaTributacaoTabs() {
                   Simples Nacional: Anexos III e V
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-                  Clínicas de estética geralmente se enquadram no Anexo III (comércio) ou Anexo V (serviços)
-                  do Simples Nacional. A definição do anexo correto depende da preponderância das atividades
-                  desenvolvidas.
+                  A maioria das clínicas se enquadra no Simples Nacional, mas é importante entender em qual anexo:
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
+                  • <strong>Anexo III (alíquotas iniciais em 6%)</strong>: para empresas de serviços que atingem o Fator R (folha ≥ 28% do faturamento).
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
+                  • <strong>Anexo V (alíquotas iniciais em 15,5%)</strong>: para empresas de serviços que atingem o Fator R
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
+                  O correto enquadramento entre Anexo III e V pode gerar grande diferença de impostos. Impacto gigantesco utilizando o Fator R
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                  O Anexo III tem alíquotas que variam de 6% a 33% e se aplica quando há venda predominante
-                  de produtos. Já o Anexo V, com alíquotas entre 15,5% e 30,5%, é para prestadores de serviços
-                  em geral.
+                  O Fator R compara a folha de pagamento (incluindo pró-labore) com o faturamento bruto dos últimos 12 meses.
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, my: 1 }}>
+                  • <strong>Se {'>='} 28% </strong> - enquadramento no <b>Anexo III</b> para empresas de serviços que atingem o Fator R
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                  • <strong>Se {'<'} 28% </strong> → enquadramento no Anexo V (alíquotas iniciais mais altas).
                 </Typography>
               </Box>
 
               <Box>
                 <Typography variant="h4" sx={{ color: 'text.primary', mb: 2 }}>
-                  Impacto do Fator R
+                  Lucro Presumido: quando avaliar
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
+                  O Lucro Presumido pode ser mais vantajoso para clínicas que:
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
+                  • Faturam acima do limite do Simples Nacional (R$ 4,8 milhões/ano)
                 </Typography>
                 <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-                  O Fator R é um cálculo que determina se a empresa se enquadra no Anexo III ou V do Simples
-                  Nacional. Ele compara a folha de pagamento (incluindo pró-labore) com o faturamento bruto
-                  dos últimos 12 meses. Se a relação for igual ou superior a 28%, a empresa pode optar pelo
-                  Anexo III, que geralmente tem alíquotas menores para empresas de serviços.
+                  • Tem <b>margens altas de lucro</b> e folha de pagamento baixo.
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, my: 1 }}>
+                  • Estejam em cidades com ISS fixo ou com aliquotas mínimas
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                  Nesse regime, a tributação é feita sobre uma <b>presunção de lucro (32% da receita)</b>, e não sobre o lucro real ou o faturamento bruto.
+                  É fundamental comparar a carga fiscal com o Simples antes de decidir.
                 </Typography>
               </Box>
+
+              <Box>
+                <Typography variant="h4" sx={{ color: 'text.primary', mb: 2 }}>
+                  ISS: variação por município
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
+                  O <b>ISS (Imposto Sobre Serviços)</b> é municipal, e as alíquotas variam de <b>2% a 5%</b> dependendo da cidade onde a clínica está localizada.
+                </Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                  Usar a alíquota incorreta pode gerar <b>multas e autuações fiscais</b>. Sempre confira a lei do município.
+                </Typography>
+              </Box>
+
+              <TabelaRegimesTributarios />
 
               <Box>
                 <Typography variant="h4" sx={{ color: 'text.primary', mb: 2 }}>
@@ -213,21 +256,45 @@ export function NaturezaTributacaoTabs() {
         </Paper>
 
         <Box sx={{ textAlign: 'center', pt: 6 }}>
-          <Button
-            variant="contained"
-            size="large"
-            endIcon={<Iconify icon="mdi:calculator" />}
-            sx={{
-              borderRadius: 2,
-              py: 1.5,
-              px: 4,
-              fontWeight: 600,
-              fontSize: '1.1rem'
-            }}
+          <m.div
+            variants={varFade().inUp}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
           >
-            Simular Melhor Opção para Meu Negócio
-          </Button>
+            <Button
+              variant="contained"
+              size="large"
+              endIcon={<Iconify icon="mdi:calculator" />}
+              sx={(theme) => ({
+                border: 'none',
+                borderRadius: 2,
+                py: 1.5,
+                px: 4,
+                fontWeight: 600,
+                fontSize: { xs: 16, sm: 18 },
+                color: 'primary.contrastText',
+                backgroundColor: 'primary.main',
+                boxShadow: `0px 4px 12px -2px ${alpha(theme.palette.primary.dark, 0.4)}`,
+                transition: theme.transitions.create(['transform', 'box-shadow', 'background-color'], {
+                  duration: theme.transitions.duration.short,
+                }),
+
+                '&:hover': {
+                  transform: 'translateY(-2px)',
+                  backgroundColor: 'primary.dark',
+                  boxShadow: `
+                    0px 6px 20px -1px ${alpha(theme.palette.primary.dark, 0.5)},
+                    0px 0px 15px -2px ${alpha(theme.palette.primary.main, 0.6)}
+                  `,
+                },
+              })}
+            >
+              Simular Melhor Opção para Meu Negócio
+            </Button>
+          </m.div>
         </Box>
+
+
       </Container>
     </Box>
   );

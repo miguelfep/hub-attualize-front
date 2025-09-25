@@ -16,17 +16,17 @@ export function ImportanciaContabilidadeEstetica() {
     {
       icon: 'solar:chart-line-duotone',
       title: 'Organização Fiscal',
-      description: 'Estruture suas finanças e evite surpresas com o fisco.',
+      description: 'Tenha suas finanças em ordem e evite problemas com o fisco.',
     },
     {
       icon: 'solar:shield-check-line-duotone',
       title: 'Otimização de Custos',
-      description: 'Identificamos oportunidades para aumentar sua margem de lucro.',
+      description: 'Descubra oportunidades para aumentar sua margem de lucro.',
     },
     {
       icon: 'solar:notebook-line-duotone',
       title: 'Decisões Inteligentes',
-      description: 'Tenha relatórios claros para guiar o crescimento do seu negócio.',
+      description: 'Relatórios claros e práticos para apoiar o crescimento da sua clínica.',
     },
   ];
 
@@ -42,19 +42,7 @@ export function ImportanciaContabilidadeEstetica() {
             component="h2"
             sx={{ textAlign: 'center', mb: { xs: 8, md: 10 } }}
           >
-            A Contabilidade que Entende a{' '}
-            <Box
-              component="span"
-              sx={{
-                color: 'primary.main',
-                textDecoration: 'underline',
-                textDecorationColor: alpha(theme.palette.primary.main, 0.4),
-                textUnderlineOffset: 8,
-              }}
-            >
-              Beleza
-            </Box>{' '}
-            do seu Negócio
+            Sua clínica de estética livre de burocracia e dos sustos fiscais
           </Typography>
         </m.div>
 
@@ -81,13 +69,13 @@ export function ImportanciaContabilidadeEstetica() {
               >
                 <Box
                   component="img"
-                  src="/assets/images/estetica/animacao-site.png"
+                  src="/assets/images/estetica/estetica.webp"
                   alt="Contabilidade para Estética"
                   sx={{
-                    width: '100%',
-                    maxWidth: 480,
+                    width: '80%',
+                    maxWidth: 500,
                     height: 'auto',
-                    objectFit: 'contain',
+                    objectFit: 'cover',
                   }}
                 />
               </Box>

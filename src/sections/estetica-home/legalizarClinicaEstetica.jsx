@@ -33,12 +33,43 @@ import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
 
 const steps = [
+    {
+    label: 'Viabilidade do Endereço',
+    description: (
+      <>
+        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+          Este é o ponto de partida oficial, é aqui que você descobre se seu negócio poderá existir naquele endereço.
+        </Typography>
+
+        <Paper variant="outlined" sx={{ p: 2.5, mt: 3, borderRadius: 2, bgcolor: 'background.neutral' }}>
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+            <Iconify icon="solar:checklist-bold" width={20} color="primary.main" />
+            <Typography variant="subtitle1">Dados Necessários</Typography>
+          </Stack>
+          <Stack spacing={1.5} sx={{ pl: 0.5 }}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:checkmark-circle-2-fill" width={20} color="primary.main" />
+              <Typography variant="body2">Carnê do IPTU do endereço</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:checkmark-circle-2-fill" width={20} color="primary.main" />
+              <Typography variant="body2">Metragem do imóvel</Typography>
+            </Stack>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Iconify icon="eva:checkmark-circle-2-fill" width={20} color="primary.main" />
+              <Typography variant="body2">Atividades que serão exercidas</Typography>
+            </Stack>
+          </Stack>
+        </Paper>
+      </>
+    ),
+  },
   {
     label: 'Registro na Junta Comercial',
     description: (
       <>
         <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
-          Este é o ponto de partida oficial, a certidão de nascimento da sua empresa. É o que
+          Este é a certidão de nascimento da sua empresa. É o que
           cria a base legal para sua clínica operar e te permite avançar para os próximos passos com
           segurança.
         </Typography>
@@ -129,17 +160,16 @@ const steps = [
     ),
   },
   {
-    label: 'Obtenção do CNPJ',
+    label: 'CNPJ: a identidade de sua clínica',
     description: (
       <>
         <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
-          O CNPJ é <b>CPF</b> de sua empresa. Com ele, sua clínica existe oficialmente para o mercado,
-          podendo emitir notas, abrir conta bancária e muito mais.
+          O CNPJ é <b>documento</b> que transforma sua clínica de estética em uma empresa formal.
+          Com ele, você poderá <b>emitir notas fiscais</b>, <b>firmar contratos</b>, <b>abrir conta PJ</b> e muito mais.
         </Typography>
         <Alert severity="info" icon={<Iconify icon="solar:document-add-bold-duotone" />} sx={{ mt: 3 }}>
           <AlertTitle>Ação Necessária</AlertTitle>
-          O cadastro é feito no site da Receita Federal. Tenha em mãos o protocolo gerado
-          na Junta Comercial para agilizar o processo.
+            O cadastro é feito diretamente na Receita Federal. Vinculado ao protocolo da Junta Comercial.
         </Alert>
       </>
     ),
@@ -149,13 +179,13 @@ const steps = [
     description: (
       <>
         <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
-          Esta é a autorização da sua cidade para que a clínica possa abrir as portas no
-          endereço escolhido. É a garantia de que seu espaço físico é seguro e regularizado.
-        </Typography>
+          Sem o alvará, sua clínica não pode atuar legalmente. Esse documento assegura que o espaço
+          físico atende às exigências da lei e transmite <b>credibilidade aos seus clientes.</b></Typography>
         <Alert severity="info" icon={<Iconify icon="solar:map-point-wave-bold-duotone" />} sx={{ mt: 3 }}>
           <AlertTitle>Fique Atento</AlertTitle>
-          Uma inspeção da prefeitura pode ser necessária para verificar a conformidade do local com as
-          normas de segurança e acessibilidade.
+            A vistoria dos órgãos como vigilância será necessária! Por isso, garanta que sua clínica
+            esteja preparada em relação a todos os protocolos sanitários como <b>saída de emergência,
+            acessibilidade etc</b>
         </Alert>
       </>
     ),
@@ -164,24 +194,24 @@ const steps = [
     label: 'Licença da Vigilância Sanitária',
     description: (
       <>
-        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
-          Para uma clínica de estética, este é um dos passos mais críticos. Ele assegura aos seus
-          clientes que todos os procedimentos seguem padrões rigorosos de higiene e segurança.
+        <Typography variant="subtitle1" paragraph sx={{ color: 'text.secondary' }}>
+          Para clínicas de estética, este é um dos passos mais importantes. A licença garante aos clientes que
+          sua clínica <b>segue padrões rígidos de segurança</b>, transmitindo confiança desde o primeiro atendimento.
         </Typography>
         <Alert severity="warning" icon={<Iconify icon="solar:shield-warning-bold-duotone" />} sx={{ mt: 3 }}>
           <AlertTitle>Passo Obrigatório e Essencial</AlertTitle>
           <Stack spacing={1} sx={{ mt: 1 }}>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Iconify icon="eva:arrow-right-fill" width={16} />
-              <Typography variant="body2">Prepare seu Manual de Boas Práticas.</Typography>
+              <Iconify icon="pepicons-pop:checkmark-filled" width={16} />
+              <Typography variant="body2">Prepare seu <b>Manual de Boas Práticas</b>.</Typography>
             </Stack>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Iconify icon="eva:arrow-right-fill" width={16} />
-              <Typography variant="body2">Tenha os certificados de manutenção de equipamentos.</Typography>
+              <Iconify icon="pepicons-pop:checkmark-filled" width={16} />
+              <Typography variant="body2">Mantenha os <b>certificados de manutenção dos equipamentos</b> sempre em dia.</Typography>
             </Stack>
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <Iconify icon="eva:arrow-right-fill" width={16} />
-              <Typography variant="body2">Mantenha o registro de esterilização sempre atualizado.</Typography>
+              <Iconify icon="pepicons-pop:checkmark-filled" width={16} />
+              <Typography variant="body2">Aualize regularmente o <b>registro de esterilização</b>.</Typography>
             </Stack>
           </Stack>
         </Alert>
@@ -189,23 +219,23 @@ const steps = [
     ),
   },
   {
-    label: 'Regularize Obrigações Fiscais',
+    label: 'Deixe em dia suas Obrigações Fiscais',
     description: (
       <>
         <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
-          Com a clínica aberta, a organização fiscal contínua é vital. Manter tudo em dia evita multas e
-          garante a saúde financeira e a sustentabilidade do seu negócio a longo prazo.
+          Não deixar as obrigações fiscais em dia pode gerar multas, bloqueios e até dificuldades para manter sua clínica ativa.
+          Organizar essa parte é essencial para manter a <b>tranquilidade e a confiança dos seus clientes</b>.
         </Typography>
         <Alert severity="success" icon={<Iconify icon="solar:banknote-2-bold-duotone" />} sx={{ mt: 3 }}>
           <AlertTitle>Dica de Ouro</AlertTitle>
-          Um contador especializado no ramo da estética é seu maior aliado aqui. Ele te ajuda a
-          manter tudo regularizado para que sua única preocupação seja encantar seus clientes.
+            Ter uma contabilidade especializada em estética significa não se preocupar com prazos fiscais.
+            Ela também mantém tudo regularizado para que sua energia esteja onde deve estar: <b>cuidando dos seus clientes</b>
         </Alert>
       </>
     ),
   },
   {
-    label: 'Quer Ajuda da Attualize?',
+    label: 'Vamos simplificar sua contabilidade?',
     description: (
         <Paper
           sx={{
@@ -219,9 +249,11 @@ const steps = [
             <Iconify icon="solar:chat-round-like-bold-duotone" width={40} color="primary.main" />
             <Box>
               <Typography variant="h6" sx={{ color: 'primary.darker' }}>Você chegou ao final!</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Sabemos que é muita informação. Que tal deixar a burocracia com a gente e focar no
-                seu sonho? Preencha abaixo e vamos conversar.
+              <Typography variant="body2" sx={{ color: 'text.secondary' , mt: 1 }}>
+                <i>Abrir e manter uma clínica de estética pode ser mais fácil do que você imagina.</i>
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+                Preencha seus dados e descubra como pagar menos impostos, ter mais segurança e crescer com tranquilidade.
               </Typography>
             </Box>
           </Stack>
@@ -274,13 +306,14 @@ function ColorlibStepIcon(props) {
   const { active, completed, className, icon } = props;
 
   const icons = {
-    1: <Iconify icon="solar:file-text-line-duotone" width={16} />,
-    2: <Iconify icon="solar:buildings-line-duotone" width={16} />,
-    3: <Iconify icon="solar:document-add-line-duotone" width={16} />,
-    4: <Iconify icon="solar:map-point-line-duotone" width={16} />,
-    5: <Iconify icon="solar:shield-check-line-duotone" width={16} />,
-    6: <Iconify icon="solar:card-2-line-duotone" width={16} />,
-    7: <Iconify icon="solar:chat-round-like-line-duotone" width={16} />,
+    1: <Iconify icon="streamline-flex:street-road-solid" width={16} />,
+    2: <Iconify icon="solar:file-text-line-duotone" width={16} />,
+    3: <Iconify icon="solar:buildings-line-duotone" width={16} />,
+    4: <Iconify icon="solar:document-add-line-duotone" width={16} />,
+    5: <Iconify icon="solar:map-point-line-duotone" width={16} />,
+    6: <Iconify icon="solar:shield-check-line-duotone" width={16} />,
+    7: <Iconify icon="solar:card-2-line-duotone" width={16} />,
+    8: <Iconify icon="solar:chat-round-like-line-duotone" width={16} />,
   };
 
   return (
