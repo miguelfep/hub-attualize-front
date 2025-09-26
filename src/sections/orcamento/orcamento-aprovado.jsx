@@ -78,6 +78,7 @@ export function OrcamentoAprovado({
   const [errors, setErrors] = useState({});
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepNotFound, setCepNotFound] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
     nome: invoice?.cliente.nome || '',
     email: invoice?.cliente.email || '',
@@ -138,6 +139,7 @@ export function OrcamentoAprovado({
   };
 
   const handleFinalize = async () => {
+    setIsCreating(true);
     const validationResult = formDataSchema.safeParse(formData);
     if (!validationResult.success) {
       const newErrors = {};
@@ -145,6 +147,7 @@ export function OrcamentoAprovado({
         newErrors[error.path[0]] = error.message;
       });
       setErrors(newErrors);
+      setIsCreating(false);
       return;
     }
 
@@ -166,6 +169,8 @@ export function OrcamentoAprovado({
       toast.success('Pagamento processado com sucesso!');
     } catch (error) {
       toast.error('Erro ao processar pagamento');
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -202,7 +207,7 @@ export function OrcamentoAprovado({
           </Box>
         </Grid>
         <Grid xs={12} md={4}>
-          <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} loading={loading} />
+          <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} />
         </Grid>
       </Grid>
     </Container>
@@ -363,7 +368,7 @@ function PaymentMethods({ method, handleChangeMethod }) {
   );
 }
 
-function PaymentSummary({ invoice, handleFinalize, loading }) {
+function PaymentSummary({ invoice, handleFinalize, isCreating }) {
   return (
     <Box
       sx={{
@@ -423,9 +428,9 @@ function PaymentSummary({ invoice, handleFinalize, loading }) {
           variant="contained"
           sx={{ mt: 5, mb: 3 }}
           onClick={handleFinalize}
-          disabled={loading}
+          disabled={isCreating}
         >
-          {loading ? <CircularProgress size={24} /> : 'Finalizar pedido'}
+          {isCreating ? <CircularProgress size={24} /> : 'Finalizar pedido'}
         </Button>
       </Stack>
       <Stack alignItems="center" spacing={1}>
