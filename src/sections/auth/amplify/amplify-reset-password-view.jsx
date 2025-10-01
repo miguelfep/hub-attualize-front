@@ -18,15 +18,15 @@ import { PasswordIcon } from 'src/assets/icons';
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 
-import { resetPassword } from 'src/auth/context/amplify';
+import { resetPassword } from 'src/auth/context/jwt/action';
 
 // ----------------------------------------------------------------------
 
 export const ResetPasswordSchema = zod.object({
   email: zod
     .string()
-    .min(1, { message: 'Email is required!' })
-    .email({ message: 'Email must be a valid email address!' }),
+    .min(1, { message: 'Email é obrigatório!' })
+    .email({ message: 'Email deve ser um endereço válido!' }),
 });
 
 // ----------------------------------------------------------------------
@@ -50,14 +50,19 @@ export function AmplifyResetPasswordView() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await resetPassword({ username: data.email });
-
-      const searchParams = new URLSearchParams({ email: data.email }).toString();
-
-      const href = `${paths.auth.amplify.updatePassword}?${searchParams}`;
-      router.push(href);
+      const response = await resetPassword({ email: data.email });
+      
+      // Mostrar mensagem de sucesso
+      alert('Email de recuperação enviado com sucesso! Verifique sua caixa de entrada.');
+      
+      // Redirecionar para login
+      router.push(paths.auth.jwt.signIn);
     } catch (error) {
-      console.error(error);
+      console.error('Erro ao enviar email de recuperação:', error);
+      
+      // Mostrar mensagem de erro
+      const errorMessage = error?.response?.data?.message || error?.message || 'Erro ao enviar email de recuperação. Tente novamente.';
+      alert(errorMessage);
     }
   });
 
@@ -66,10 +71,10 @@ export function AmplifyResetPasswordView() {
       <PasswordIcon sx={{ mx: 'auto' }} />
 
       <Stack spacing={1} sx={{ mt: 3, mb: 5, textAlign: 'center', whiteSpace: 'pre-line' }}>
-        <Typography variant="h5">Forgot your password?</Typography>
+        <Typography variant="h5">Esqueceu sua senha?</Typography>
 
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          {`Please enter the email address associated with your account and we'll email you a link to reset your password.`}
+          Digite o endereço de email associado à sua conta e enviaremos um link para redefinir sua senha.
         </Typography>
       </Stack>
     </>
@@ -80,8 +85,8 @@ export function AmplifyResetPasswordView() {
       <Field.Text
         autoFocus
         name="email"
-        label="Email address"
-        placeholder="example@gmail.com"
+        label="Endereço de email"
+        placeholder="exemplo@gmail.com"
         InputLabelProps={{ shrink: true }}
       />
 
@@ -91,20 +96,20 @@ export function AmplifyResetPasswordView() {
         type="submit"
         variant="contained"
         loading={isSubmitting}
-        loadingIndicator="Send request..."
+        loadingIndicator="Enviando..."
       >
-        Send request
+        Enviar solicitação
       </LoadingButton>
 
       <Link
         component={RouterLink}
-        href={paths.auth.amplify.signIn}
+        href={paths.auth.jwt.signIn}
         color="inherit"
         variant="subtitle2"
         sx={{ gap: 0.5, alignSelf: 'center', alignItems: 'center', display: 'inline-flex' }}
       >
         <Iconify width={16} icon="eva:arrow-ios-back-fill" />
-        Return to sign in
+        Voltar para login
       </Link>
     </Stack>
   );

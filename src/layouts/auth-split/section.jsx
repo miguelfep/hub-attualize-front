@@ -12,9 +12,9 @@ export function Section({
   method,
   layoutQuery,
   methods,
-  title = 'Hub TT',
+  title = 'Hub Attualize',
   imgUrl = `${CONFIG.site.basePath}/assets/illustrations/illustration-dashboard.webp`,
-  subtitle = 'O Sistema integrador da Attualize.',
+  subtitle = 'O  Painel do Cliente da Attualize.',
   ...other
 }) {
   const theme = useTheme();

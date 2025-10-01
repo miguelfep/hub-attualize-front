@@ -49,6 +49,7 @@ export const navData = [
       { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
 
       { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
+     
       {
         title: 'Comercial',
         path: paths.dashboard.invoice.root,
@@ -110,6 +111,20 @@ export const navData = [
             title: 'Licenças',
             roles: ['admin', 'operacional', 'comercial'],
             path: paths.dashboard.aberturas.licenca,
+          },
+        ],
+      },
+      {
+        title: 'Usuários',
+        path: paths.dashboard.usuarios.root,
+        icon: ICONS.user,
+        roles: ['admin'],
+        children: [
+          {
+            title: 'Usuários Clientes',
+            path: paths.dashboard.usuarios.root,
+            icon: ICONS.user,
+            roles: ['admin'],
           },
         ],
       },

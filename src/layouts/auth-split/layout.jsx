@@ -44,7 +44,7 @@ export function AuthSplitLayout({ sx, section, children }) {
           slots={{
             topArea: (
               <Alert severity="info" sx={{ display: 'none', borderRadius: 0 }}>
-                This is an info Alert.
+                Este em um alerta.
               </Alert>
             ),
           }}
@@ -90,7 +90,7 @@ export function AuthSplitLayout({ sx, section, children }) {
             {
               label: 'Auth0',
               path: paths.auth.auth0.signIn,
-              icon: `${CONFIG.site.basePath}/assets/icons/platforms/ic-auth0.svg`,
+              icon: `${CONFIG.site.basePath}/assets/icons/platforms/ic-amplify.svg`,
             },
             {
               label: 'Supabase',

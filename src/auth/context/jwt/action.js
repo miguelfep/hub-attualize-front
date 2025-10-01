@@ -4,8 +4,8 @@ import Cookies from 'js-cookie';
 
 import axios, { endpoints } from 'src/utils/axios'; // Certifique-se de ter a biblioteca js-cookie instalada
 
-import { STORAGE_KEY } from './constant';
 import { setUser, setSession } from './utils';
+import { USER_DATA, STORAGE_KEY } from './constant';
 
 /** **************************************
  * Sign in
@@ -62,12 +62,42 @@ export const signUp = async ({ email, password, firstName, lastName }) => {
 };
 
 /** **************************************
+ * Reset Password
+ *************************************** */
+export const resetPassword = async ({ email }) => {
+  try {
+    const params = { email };
+    const res = await axios.post(endpoints.auth.resetPassword, params);
+    return res.data;
+  } catch (error) {
+    console.error('Error during password reset:', error);
+    throw error;
+  }
+};
+
+/** **************************************
+ * Update Password
+ *************************************** */
+export const updatePassword = async ({ userId, token, password }) => {
+  try {
+    const params = { userId, token, password };
+    const res = await axios.post(endpoints.auth.updatePassword, params);
+    return res.data;
+  } catch (error) {
+    console.error('Error during password update:', error);
+    throw error;
+  }
+};
+
+/** **************************************
  * Sign out
  *************************************** */
 export const signOut = async () => {
   try {
-    Cookies.remove('accessToken');
-    await setSession(null, null);
+    Cookies.remove(STORAGE_KEY);
+    Cookies.remove(USER_DATA);
+    await setSession(null);
+    await setUser(null);
   } catch (error) {
     console.error('Error during sign out:', error);
     throw error;

@@ -1,11 +1,10 @@
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
-import { Icon } from '@iconify/react';
 import { useState, useEffect } from 'react';
 
+import { Box, Stack, useTheme } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { Box, Stack, useTheme, IconButton } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 
 export default function DashboardFiltros({ onFilterChange = () => {} }) {

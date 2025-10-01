@@ -2,8 +2,10 @@ import axios, { endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
+const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
 export async function getServiceItens() {
-  const res = await axios.get('https://api.attualizecontabil.com.br/api/financeiro/services/itens');
+  const res = await axios.get(`${baseUrl}financeiro/services/itens`);
   return res.data;
 }
 
