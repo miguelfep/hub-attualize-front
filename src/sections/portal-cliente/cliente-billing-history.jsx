@@ -119,9 +119,19 @@ export function ClienteBillingHistory({ anoSelecionado, filtroStatus }) {
 
       {cobrancas.length > 0 ? (
         <>
-          <Stack spacing={1.5} sx={{ px: 3, pt: 3 }}>
+          <Stack spacing={1.5} sx={{ px: { xs: 2, sm: 3 }, pt: 3 }}>
             {cobrancasExibidas.map((cobranca) => (
-              <Stack key={cobranca._id} direction="row" alignItems="center" spacing={2}>
+              <Stack 
+                key={cobranca._id} 
+                direction={{ xs: 'column', sm: 'row' }} 
+                alignItems={{ xs: 'flex-start', sm: 'center' }} 
+                spacing={{ xs: 1, sm: 2 }}
+                sx={{ 
+                  p: { xs: 2, sm: 0 },
+                  borderRadius: { xs: 1, sm: 0 },
+                  bgcolor: { xs: 'background.neutral', sm: 'transparent' }
+                }}
+              >
                 <ListItemText
                   primary={cobranca.contrato?.titulo || 'Cobrança'}
                   secondary={formatDate(cobranca.dataVencimento)}
@@ -132,18 +142,32 @@ export function ClienteBillingHistory({ anoSelecionado, filtroStatus }) {
                     typography: 'caption',
                     color: 'text.disabled',
                   }}
+                  sx={{ flex: 1 }}
                 />
 
-                <Typography variant="body2" sx={{ textAlign: 'right', mr: 2, fontWeight: 'bold' }}>
-                  {formatToCurrency(cobranca.valor)}
-                </Typography>
+                <Stack 
+                  direction={{ xs: 'row', sm: 'column' }} 
+                  alignItems={{ xs: 'center', sm: 'flex-end' }} 
+                  spacing={{ xs: 2, sm: 1 }}
+                  sx={{ minWidth: { xs: 'auto', sm: 120 } }}
+                >
+                  <Typography 
+                    variant="body2" 
+                    sx={{ 
+                      fontWeight: 'bold',
+                      fontSize: { xs: '0.875rem', sm: '0.875rem' }
+                    }}
+                  >
+                    {formatToCurrency(cobranca.valor)}
+                  </Typography>
 
-                <Chip
-                  label={getStatusLabel(cobranca.status)}
-                  color={getStatusColor(cobranca.status)}
-                  size="small"
-                  sx={{ minWidth: 80 }}
-                />
+                  <Chip
+                    label={getStatusLabel(cobranca.status)}
+                    color={getStatusColor(cobranca.status)}
+                    size="small"
+                    sx={{ minWidth: 80 }}
+                  />
+                </Stack>
               </Stack>
             ))}
 

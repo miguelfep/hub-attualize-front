@@ -147,11 +147,18 @@ export default function PortalClienteProfileView() {
 
   return (
     <>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
-        <Typography variant="h4">Meu Perfil</Typography>
+      <Stack 
+        direction="row" 
+        alignItems="center" 
+        justifyContent="space-between" 
+        sx={{ mb: { xs: 3, sm: 5 } }}
+      >
+        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+          Meu Perfil
+        </Typography>
       </Stack>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         <Grid item xs={12} md={4}>
           <Card>
             <CardContent>
@@ -159,13 +166,13 @@ export default function PortalClienteProfileView() {
                 <Avatar
                   src={user?.imgprofile}
                   sx={{
-                    width: 120,
-                    height: 120,
+                    width: { xs: 80, sm: 120 },
+                    height: { xs: 80, sm: 120 },
                     bgcolor: 'primary.main',
                   }}
                 >
                   {!user?.imgprofile && (
-                    <Iconify icon="solar:user-bold-duotone" width={60} />
+                    <Iconify icon="solar:user-bold-duotone" width={{ xs: 40, sm: 60 }} />
                   )}
                 </Avatar>
                 <Stack alignItems="center" spacing={1}>

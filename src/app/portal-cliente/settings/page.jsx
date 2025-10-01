@@ -277,11 +277,18 @@ export default function PortalClienteSettingsView() {
 
   return (
     <>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
-        <Typography variant="h4">Configurações</Typography>
+      <Stack 
+        direction="row" 
+        alignItems="center" 
+        justifyContent="space-between" 
+        sx={{ mb: { xs: 3, sm: 5 } }}
+      >
+        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
+          Configurações
+        </Typography>
       </Stack>
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         <Grid item xs={12} md={6}>
           <Card>
             <CardHeader title="Informações da Conta" />
