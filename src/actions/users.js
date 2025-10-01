@@ -1,6 +1,6 @@
 import axios from 'src/utils/axios';
 
-const baseUrl = 'https://api.attualizecontabil.com.br/api/';
+const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 export async function getUsersCliente() {
   return axios.get(`${baseUrl}users/cliente`);
