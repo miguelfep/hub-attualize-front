@@ -33,7 +33,6 @@ export const fetcher = async (args) => {
 
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-console.log("BASE URL +++++++", baseUrl);
 
 export const endpoints = {
   chat: '/api/chat',  

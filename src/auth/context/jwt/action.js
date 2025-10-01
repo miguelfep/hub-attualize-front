@@ -81,7 +81,7 @@ export const resetPassword = async ({ email }) => {
 export const updatePassword = async ({ userId, token, password }) => {
   try {
     const params = { userId, token, password };
-    const res = await axios.post(endpoints.auth.updatePassword, params);
+    const res = await axios.post(endpoints.auth.resetPassword, params);
     return res.data;
   } catch (error) {
     console.error('Error during password update:', error);
