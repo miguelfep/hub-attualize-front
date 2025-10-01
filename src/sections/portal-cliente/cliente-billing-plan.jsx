@@ -80,8 +80,12 @@ export function ClienteBillingPlan() {
             </Avatar>
           </Stack>
 
-          <Stack direction="row" spacing={4}>
-            <Stack spacing={1}>
+          <Stack 
+            direction={{ xs: 'column', sm: 'row' }} 
+            spacing={{ xs: 3, sm: 4 }}
+            sx={{ flexWrap: 'wrap' }}
+          >
+            <Stack spacing={1} sx={{ minWidth: { xs: '100%', sm: 120 } }}>
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>
                 Regime Tributário
               </Typography>
@@ -90,7 +94,7 @@ export function ClienteBillingPlan() {
               </Typography>
             </Stack>
             
-            <Stack spacing={1}>
+            <Stack spacing={1} sx={{ minWidth: { xs: '100%', sm: 120 } }}>
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>
                 Código
               </Typography>
@@ -99,11 +103,20 @@ export function ClienteBillingPlan() {
               </Typography>
             </Stack>
 
-            <Stack spacing={1}>
+            <Stack spacing={1} sx={{ minWidth: { xs: '100%', sm: 120 } }}>
               <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase' }}>
                 CNPJ
               </Typography>
-              <Typography variant="body1" sx={{ color: 'white', fontWeight: 'medium', fontFamily: 'monospace' }}>
+              <Typography 
+                variant="body1" 
+                sx={{ 
+                  color: 'white', 
+                  fontWeight: 'medium', 
+                  fontFamily: 'monospace',
+                  fontSize: { xs: '0.875rem', sm: '1rem' },
+                  wordBreak: 'break-all'
+                }}
+              >
                 {clienteData?.cnpj || 'N/A'}
               </Typography>
             </Stack>

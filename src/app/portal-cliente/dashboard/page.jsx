@@ -101,13 +101,13 @@ export default function PortalClienteDashboardView() {
         {/* Seção de Banners */}
       <BannersSection banners={banners} />
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
        
         <Grid item xs={12}>
           <Card>
             <CardHeader title="Informações da Empresa" />
             <CardContent>
-              <Grid container spacing={3}>
+              <Grid container spacing={{ xs: 2, sm: 3 }}>
                 <Grid item xs={12}>
                   <Stack spacing={1}>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
@@ -10,9 +10,10 @@ import Avatar from '@mui/material/Avatar';
 import Toolbar from '@mui/material/Toolbar';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
+import IconButton from '@mui/material/IconButton';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
+import Drawer, { drawerClasses } from '@mui/material/Drawer';
 
 import { paths } from 'src/routes/paths';
 import { usePathname } from 'src/routes/hooks';
@@ -20,13 +21,17 @@ import { RouterLink } from 'src/routes/components';
 
 import { Logo } from 'src/components/logo';
 import { Iconify } from 'src/components/iconify';
+import { Scrollbar } from 'src/components/scrollbar';
 import { useSettingsContext } from 'src/components/settings';
 import { NavSectionVertical } from 'src/components/nav-section/vertical';
 import { EmpresaSelectorPortal } from 'src/components/empresa-selector/empresa-selector-portal';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import { navData } from './config-navigation';
+import { ClienteNavMobile } from './nav-mobile';
+import { ClienteMenuButton } from './menu-button';
 
 // ----------------------------------------------------------------------
 
@@ -38,6 +43,8 @@ export function ClienteLayout({ children }) {
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
+  
+  const mobileNavOpen = useBoolean();
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -52,21 +59,50 @@ export function ClienteLayout({ children }) {
     handleClose();
   };
 
+  // Fechar menu mobile quando a rota mudar
+  useEffect(() => {
+    if (mobileNavOpen.value) {
+      mobileNavOpen.onFalse();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
+
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', width: 280 }}>
+      {/* Mobile Navigation Drawer */}
+      <ClienteNavMobile
+        data={navData}
+        open={mobileNavOpen.value}
+        onClose={mobileNavOpen.onFalse}
+        user={user}
+      />
+
+      {/* Desktop Sidebar */}
+      <Box 
+        sx={{ 
+          display: { xs: 'none', lg: 'flex' },
+          flexDirection: 'column', 
+          width: 280,
+          bgcolor: 'background.paper',
+          borderRight: 1,
+          borderColor: 'divider',
+        }}
+      >
         <Box sx={{ pl: 3.5, pt: 2.5, pb: 1 }}>
           <Logo />
         </Box>
-        <NavSectionVertical
-          data={navData}
-          slotProps={{
-            currentRole: user?.role || 'cliente',
-          }}
-          sx={{ px: 2 }}
-        />
+        <Scrollbar>
+          <NavSectionVertical
+            data={navData}
+            slotProps={{
+              currentRole: user?.role || 'cliente',
+            }}
+            sx={{ px: 2 }}
+          />
+        </Scrollbar>
       </Box>
 
+      {/* Main Content Area */}
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
         <AppBar
           position="static"
@@ -78,38 +114,88 @@ export function ClienteLayout({ children }) {
           }}
         >
           <Toolbar>
-            <Typography variant="h6" sx={{ flexGrow: 1, color: 'text.primary' }}>
+            {/* Mobile Menu Button */}
+            <ClienteMenuButton
+              onClick={mobileNavOpen.onTrue}
+              sx={{ 
+                display: { xs: 'block', lg: 'none' },
+                color: 'text.primary',
+                '&:hover': {
+                  bgcolor: 'action.hover'
+                }
+              }}
+            />
+
+            <Typography 
+              variant="h6" 
+              sx={{ 
+                flexGrow: 1, 
+                color: 'text.primary',
+                display: { xs: 'none', sm: 'block' },
+                fontSize: { xs: '1rem', sm: '1.25rem' }
+              }}
+            >
               Portal do Cliente
             </Typography>
             
-            <Stack direction="row" alignItems="center" spacing={2}>
-              <EmpresaSelectorPortal 
-                userId={user?.id || user?._id || user?.userId} 
-                compact
-                onEmpresaChange={() => {
-                  // Recarregar a página para atualizar os dados com a nova empresa
-                  window.location.reload();
-                }}
-              />
+            <Stack 
+              direction="row" 
+              alignItems="center" 
+              spacing={{ xs: 0.5, sm: 1, md: 2 }}
+              sx={{ flexShrink: 0 }}
+            >
+              {/* Select de Empresa - Responsivo */}
+              <Box sx={{ 
+                display: { xs: 'none', sm: 'block' },
+                minWidth: { sm: 120, md: 160 }
+              }}>
+                <EmpresaSelectorPortal 
+                  userId={user?.id || user?._id || user?.userId} 
+                  compact
+                  onEmpresaChange={() => {
+                    // Recarregar a página para atualizar os dados com a nova empresa
+                    window.location.reload();
+                  }}
+                />
+              </Box>
               
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              {/* Nome do usuário - Responsivo */}
+              <Typography 
+                variant="body2" 
+                sx={{ 
+                  color: 'text.secondary',
+                  display: { xs: 'none', lg: 'block' },
+                  fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                  maxWidth: { xs: 100, sm: 150 },
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap'
+                }}
+              >
                 Bem-vindo, {user?.name}
               </Typography>
               
+              {/* Avatar do usuário */}
               <IconButton
                 onClick={handleClick}
                 size="small"
-                sx={{ ml: 2 }}
+                sx={{ 
+                  ml: { xs: 0.5, sm: 1 },
+                  p: { xs: 0.5, sm: 1 }
+                }}
                 aria-controls={open ? 'account-menu' : undefined}
                 aria-haspopup="true"
                 aria-expanded={open ? 'true' : undefined}
               >
                 <Avatar
                   src={user?.imgprofile}
-                  sx={{ width: 32, height: 32 }}
+                  sx={{ 
+                    width: { xs: 28, sm: 32 }, 
+                    height: { xs: 28, sm: 32 }
+                  }}
                 >
                   {!user?.imgprofile && (
-                    <Iconify icon="solar:user-bold-duotone" width={20} />
+                    <Iconify icon="solar:user-bold-duotone" width={{ xs: 16, sm: 20 }} />
                   )}
                 </Avatar>
               </IconButton>
@@ -129,6 +215,7 @@ export function ClienteLayout({ children }) {
               overflow: 'visible',
               filter: 'drop-shadow(0px 2px 8px rgba(0,0,0,0.32))',
               mt: 1.5,
+              minWidth: { xs: 200, sm: 220 },
               '& .MuiAvatar-root': {
                 width: 32,
                 height: 32,
@@ -140,6 +227,22 @@ export function ClienteLayout({ children }) {
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
+          {/* Informações do usuário no mobile */}
+          <Box sx={{ 
+            display: { xs: 'block', sm: 'none' },
+            px: 2, 
+            py: 1.5,
+            borderBottom: 1,
+            borderColor: 'divider'
+          }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mb: 0.5 }}>
+              Bem-vindo
+            </Typography>
+            <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
+              {user?.name}
+            </Typography>
+          </Box>
+          
           <MenuItem component={RouterLink} href={paths.cliente.profile}>
             <Avatar src={user?.imgprofile}>
               {!user?.imgprofile && (
@@ -163,7 +266,7 @@ export function ClienteLayout({ children }) {
           component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
+            p: { xs: 2, sm: 3 },
             backgroundColor: theme.palette.background.default,
           }}
         >
