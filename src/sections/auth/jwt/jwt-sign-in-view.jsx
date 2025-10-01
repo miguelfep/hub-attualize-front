@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
+import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
@@ -22,6 +23,7 @@ import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { getUser } from 'src/auth/context/jwt/utils';
 import { signInWithPassword } from 'src/auth/context/jwt';
 
 // ----------------------------------------------------------------------
@@ -42,7 +44,7 @@ export const SignInSchema = zod.object({
 export function JwtSignInView() {
   const router = useRouter();
 
-  const { checkUserSession } = useAuthContext();
+  const { checkUserSession, user } = useAuthContext();
 
   const [errorMsg, setErrorMsg] = useState('');
 
@@ -68,7 +70,19 @@ export function JwtSignInView() {
       await signInWithPassword({ email: data.email, password: data.password });
       await checkUserSession?.();
 
-      router.refresh();
+      // Aguarda um pouco para garantir que o user foi atualizado
+      setTimeout(() => {
+        const currentUser = getUser();
+        
+        // Determina o userType baseado no role se não estiver definido
+        const userType = currentUser?.userType ?? (currentUser?.role === 'cliente' ? 'cliente' : 'interno');
+        
+        if (userType === 'cliente') {
+          router.replace(paths.cliente.dashboard);
+        } else {
+          router.replace(paths.dashboard.root);
+        }
+      }, 100);
     } catch (error) {
       console.error(error);
       setErrorMsg(error instanceof Error ? error.message : error?.message || 'Erro desconhecido');
@@ -103,7 +117,7 @@ export function JwtSignInView() {
       <Stack spacing={1.5}>
         <Link
           component={RouterLink}
-          href="#"
+          href={paths.auth.jwt.resetPassword}
           variant="body2"
           color="inherit"
           sx={{ alignSelf: 'flex-end' }}

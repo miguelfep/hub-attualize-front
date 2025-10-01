@@ -1,28 +1,28 @@
 import axios from 'src/utils/axios';
 
-const baseUrl = 'https://api.attualizecontabil.com.br/api/';
+const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 // ----------------------------------------------------------------------
 
 export async function getAberturasSocietario() {
-  return axios.get('https://api.attualizecontabil.com.br/api/societario/aberturas');
-}
+  return axios.get( `${baseUrl}societario/aberturas`);
+} 
 
 // ----------------------------------------------------------------------
 
 export async function getAberturaById(id) {
-  return axios.get(`https://api.attualizecontabil.com.br/api/societario/abertura/id/${id}`);
+  return axios.get(`${baseUrl}societario/abertura/id/${id}`);
 }
 
 // ----------------------------------------------------------------------
 
 export async function createAbertura(itemData) {
-  return axios.post('https://api.attualizecontabil.com.br/api/societario/abertura', itemData);
+  return axios.post( `${baseUrl}societario/abertura`, itemData);
 }
 
 // ----------------------------------------------------------------------
 
 export async function updateAbertura(id, itemData) {
-  return axios.put(`https://api.attualizecontabil.com.br/api/societario/abertura/atualizar/${id}`, itemData);
+  return axios.put(`${baseUrl}societario/abertura/atualizar/${id}`, itemData);
 }
 
 // Função para fazer upload de arquivos

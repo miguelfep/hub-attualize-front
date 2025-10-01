@@ -32,7 +32,7 @@ export function NavSectionVertical({
 
   const nova = {
     ...slotProps, // Mescla todos os valores de slotProps
-    currentRole: user.role, // Adiciona ou sobrescreve o currentRole
+    currentRole: user?.role || 'cliente', // Adiciona ou sobrescreve o currentRole
   };
 
   return (

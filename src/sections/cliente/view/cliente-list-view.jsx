@@ -81,7 +81,7 @@ export function ClienteListView() {
       const clientes = await getClientes();
       setTableData(clientes);
     } catch (error) {
-      toast.error('Failed to fetch clients');
+      toast.error('Falha ao carregar clientes');
     } finally {
       setLoading(false);
     }

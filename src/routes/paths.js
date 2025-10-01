@@ -12,6 +12,7 @@ const ROOTS = {
   AUTH: '/auth',
   AUTH_DEMO: '/auth-demo',
   DASHBOARD: '/dashboard',
+  CLIENTE: '/portal-cliente',
 };
 
 // ----------------------------------------------------------------------
@@ -41,11 +42,6 @@ export const paths = {
     details: (id) => `/product/${id}`,
     demo: { details: `/product/${MOCK_ID}` },
   },
-  cliente: {
-    root: `${ROOTS.DASHBOARD}/cliente/list`,
-    new: `${ROOTS.DASHBOARD}/cliente/new`,
-    edit: (id) => `${ROOTS.DASHBOARD}/cliente/${id}/edit`,
-  },
   invoice: {
     root: `${ROOTS.DASHBOARD}/invoice`,
     new: `${ROOTS.DASHBOARD}/invoice/new`,
@@ -74,6 +70,9 @@ export const paths = {
     jwt: {
       signIn: `${ROOTS.AUTH}/jwt/sign-in`,
       signUp: `${ROOTS.AUTH}/jwt/sign-up`,
+      resetPassword: `${ROOTS.AUTH}/jwt/reset-password`,
+      updatePassword: `${ROOTS.AUTH}/jwt/update-password`,
+      updatePasswordWithToken: (userId) => `/reset-password/${userId}`,
     },
     firebase: {
       signIn: `${ROOTS.AUTH}/firebase/sign-in`,
@@ -118,6 +117,11 @@ export const paths = {
     calendar: `${ROOTS.DASHBOARD}/calendar`,
     fileManager: `${ROOTS.DASHBOARD}/file-manager`,
     permission: `${ROOTS.DASHBOARD}/permission`,
+    cliente: {
+      root: `${ROOTS.DASHBOARD}/cliente/list`,
+      new: `${ROOTS.DASHBOARD}/cliente/new`,
+      edit: (id) => `${ROOTS.DASHBOARD}/cliente/${id}/edit`,
+    },
     general: {
       app: `${ROOTS.DASHBOARD}/app`,
       ecommerce: `${ROOTS.DASHBOARD}/ecommerce`,
@@ -138,6 +142,11 @@ export const paths = {
       demo: {
         edit: `${ROOTS.DASHBOARD}/user/${MOCK_ID}/edit`,
       },
+    },
+    usuarios: {
+      root: `${ROOTS.DASHBOARD}/usuarios`,
+      new: `${ROOTS.DASHBOARD}/usuarios/new`,
+      edit: (id) => `${ROOTS.DASHBOARD}/usuarios/${id}/edit`,
     },
     contratos: {
       root: `${ROOTS.DASHBOARD}/financeiro/contratos`,
@@ -175,11 +184,6 @@ export const paths = {
         details: `${ROOTS.DASHBOARD}/product/${MOCK_ID}`,
         edit: `${ROOTS.DASHBOARD}/product/${MOCK_ID}/edit`,
       },
-    },
-    cliente: {
-      root: `${ROOTS.DASHBOARD}/cliente/list`,
-      new: `${ROOTS.DASHBOARD}/cliente/new`,
-      edit: (id) => `${ROOTS.DASHBOARD}/cliente/${id}/edit`,
     },
     invoice: {
       root: `${ROOTS.DASHBOARD}/invoice`,
@@ -232,5 +236,28 @@ export const paths = {
       comercial: `${ROOTS.DASHBOARD}/relatorios/comercial`,
       financeiro: `${ROOTS.DASHBOARD}/relatorios/financeiro`,
     },
+  },
+  // CLIENTE AREA
+  cliente: {
+    root: ROOTS.CLIENTE,
+    dashboard: `${ROOTS.CLIENTE}/dashboard`,
+    empresa: `${ROOTS.CLIENTE}/empresa`,
+    financeiro: {
+      root: `${ROOTS.CLIENTE}/financeiro`,
+      contas: `${ROOTS.CLIENTE}/financeiro/contas`,
+      relatorios: `${ROOTS.CLIENTE}/financeiro/relatorios`,
+    },
+    societario: {
+      root: `${ROOTS.CLIENTE}/societario`,
+      documentos: `${ROOTS.CLIENTE}/societario/documentos`,
+    },
+    contratos: {
+      root: `${ROOTS.CLIENTE}/contratos`,
+      list: `${ROOTS.CLIENTE}/contratos/list`,
+      details: (id) => `${ROOTS.CLIENTE}/contratos/${id}`,
+    },
+    licencas: `${ROOTS.CLIENTE}/licencas`,
+    profile: `${ROOTS.CLIENTE}/profile`,
+    settings: `${ROOTS.CLIENTE}/settings`,
   },
 };

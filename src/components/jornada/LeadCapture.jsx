@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import { Box, Button, TextField, Container, Typography, CircularProgress } from '@mui/material';
 
 export function LeadCapture() {
@@ -22,7 +23,7 @@ export function LeadCapture() {
     setLoading(true);
 
     try {
-      const response = await fetch('https://api.attualizecontabil.com.br/api/marketing/criar/lead/defina', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}marketing/criar/lead/defina`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

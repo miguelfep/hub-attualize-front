@@ -10,6 +10,7 @@ import { CONFIG } from 'src/config-global';
 import { SplashScreen } from 'src/components/loading-screen';
 
 import { useAuthContext } from '../hooks';
+import { getUser } from '../context/jwt/utils';
 
 // ----------------------------------------------------------------------
 
@@ -20,7 +21,7 @@ export function AuthGuard({ children }) {
 
   const searchParams = useSearchParams();
 
-  const { authenticated, loading } = useAuthContext();
+  const { authenticated, loading, user } = useAuthContext();
 
   const [isChecking, setIsChecking] = useState(true);
 
@@ -50,9 +51,21 @@ export function AuthGuard({ children }) {
         supabase: paths.auth.supabase.signIn,
       }[method];
 
-      const href = `${signInPath}?${createQueryString('returnTo', pathname)}`;
+      // Não inclui returnTo se a página for do dashboard (para evitar redirecionamento incorreto de clientes)
+      const href = pathname.startsWith('/dashboard') 
+        ? signInPath 
+        : `${signInPath}?${createQueryString('returnTo', pathname)}`;
 
       router.replace(href);
+      return;
+    }
+
+    // Verifica se usuário cliente está tentando acessar área administrativa
+    const currentUser = getUser();
+    const userType = currentUser?.userType ?? (currentUser?.role === 'cliente' ? 'cliente' : 'interno');
+    
+    if (userType === 'cliente' && pathname.startsWith('/dashboard')) {
+      router.replace(paths.cliente.dashboard);
       return;
     }
 
