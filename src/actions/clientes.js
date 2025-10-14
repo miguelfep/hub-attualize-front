@@ -47,3 +47,8 @@ export async function criarCliente(clienteDta) {
 
   return response;
 }
+
+export async function historicoCliente(id) {
+  const res = await axios.get(`${endpoints.clientes.historico}/${id}`);
+  return res.data;
+}
