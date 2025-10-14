@@ -65,6 +65,7 @@ export const endpoints = {
     leads: `${baseUrl}clientes/leads/all`,
     create: `${baseUrl}financeiro/invoice/create`,
     update: `${baseUrl}clientes`,
+    historico: `${baseUrl}clientes/historico`,
   },
   invoices: {
     list: `${baseUrl}financeiro/invoices`,

@@ -34,6 +34,7 @@ import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 
 import SociosForm from './cliete-socios-form';
+import { HistoricoComercialCliente } from './historico-comecial-cliente';
 
 export const TRIBUTACAO_OPTIONS = [
   { value: 'anexo1', label: 'Anexo I' },
@@ -284,6 +285,7 @@ export function ClienteNewEditForm({ currentCliente }) {
         <Tab label="Dados Fiscais" />
         <Tab label="Dados Contábeis" />
         <Tab label="Departamento Pessoal" />
+        <Tab label="Histórico Comercial" />
       </Tabs>
       <Grid container spacing={3} mt={2}>
         {tabIndex === 0 && (
@@ -681,6 +683,11 @@ export function ClienteNewEditForm({ currentCliente }) {
                 </Grid>
               </Grid>
             </Card>
+          </Grid>
+        )}
+        {tabIndex === 5 && (
+          <Grid xs={12}>
+            <HistoricoComercialCliente cliente={currentCliente} />
           </Grid>
         )}
       </Grid>
