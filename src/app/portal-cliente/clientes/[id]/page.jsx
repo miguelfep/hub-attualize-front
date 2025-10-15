@@ -1,21 +1,23 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
-import { Box, Typography, Button, TextField, MenuItem, Stack, Card, CardContent, InputAdornment } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
+import { Box, Card, Stack, Button, MenuItem, TextField, Typography, CardContent, InputAdornment } from '@mui/material';
+
+import { useRouter } from 'src/routes/hooks';
+
+import { useEmpresa } from 'src/hooks/use-empresa';
+import { useSettings } from 'src/hooks/useSettings';
+
+import { buscarCep } from 'src/actions/cep';
+import { portalGetCliente, portalUpdateCliente } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useEmpresa } from 'src/hooks/use-empresa';
-import { useRouter } from 'src/routes/hooks';
-
-import { useSettings } from 'src/hooks/useSettings';
-import { portalGetCliente, portalUpdateCliente } from 'src/actions/portal';
-import { buscarCep } from 'src/actions/cep';
 
 const onlyDigits = (v) => (v || '').replace(/\D/g, '');
 const formatCEP = (v) => {
@@ -91,7 +93,7 @@ export default function PortalClienteEditPage({ params }) {
     if (clienteProprietarioId) {
       load();
     }
-  }, [clienteProprietarioId, id]);
+  }, [clienteProprietarioId, id, router]);
 
   // Se a empresa ativa mudar após o carregamento do cliente, redireciona para a lista
   useEffect(() => {
@@ -109,7 +111,7 @@ export default function PortalClienteEditPage({ params }) {
       <Box>
         <Typography variant="h6">Funcionalidade não disponível</Typography>
         <Typography variant="body2" color="text.secondary">
-          Peça ao administrador para ativar "Cadastro de Clientes" nas configurações.
+          Peça ao administrador para ativar Cadastro de Clientes nas configurações.
         </Typography>
       </Box>
     );

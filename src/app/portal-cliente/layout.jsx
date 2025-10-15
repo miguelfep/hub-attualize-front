@@ -4,13 +4,13 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { ClienteLayout } from 'src/layouts/cliente';
+import { SettingsProvider } from 'src/contexts/SettingsContext';
 
 import { SplashScreen } from 'src/components/loading-screen';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { getUser } from 'src/auth/context/jwt/utils';
 import { RoleBasedGuard } from 'src/auth/guard/role-based-guard';
-import { SettingsProvider } from 'src/contexts/SettingsContext';
 
 // ----------------------------------------------------------------------
 

@@ -1,19 +1,23 @@
 'use client';
 
 import React from 'react';
+
 import Grid from '@mui/material/Unstable_Grid2';
-import { Box, Typography, Button, Stack, Card, CardContent, TextField, MenuItem, Chip } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
+import { Card, Chip, Stack, Button, MenuItem, TextField, Typography, CardContent } from '@mui/material';
 
-import { toast } from 'src/components/snackbar';
-import { SimplePaper } from 'src/components/paper/SimplePaper';
-import { Iconify } from 'src/components/iconify';
-import { fCurrency } from 'src/utils/format-number';
-
-import { useAuthContext } from 'src/auth/hooks';
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
-import { portalGetOrcamento, portalUpdateOrcamento, portalUpdateOrcamentoStatus, portalDownloadOrcamentoPDF } from 'src/actions/portal';
+
+import { fCurrency } from 'src/utils/format-number';
+
+import { portalGetOrcamento, portalUpdateOrcamento, portalDownloadOrcamentoPDF, portalUpdateOrcamentoStatus } from 'src/actions/portal';
+
+import { toast } from 'src/components/snackbar';
+import { Iconify } from 'src/components/iconify';
+import { SimplePaper } from 'src/components/paper/SimplePaper';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 export default function OrcamentoDetalhesPage({ params }) {
   const { id } = params;

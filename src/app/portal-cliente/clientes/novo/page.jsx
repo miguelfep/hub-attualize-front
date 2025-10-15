@@ -3,18 +3,19 @@
 import { useState } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
-import { Box, Typography, Button, TextField, MenuItem, Stack, Card, CardContent, InputAdornment } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
+import { Box, Card, Stack, Button, MenuItem, TextField, Typography, CardContent, InputAdornment } from '@mui/material';
+
+import { useEmpresa } from 'src/hooks/use-empresa';
+import { useSettings } from 'src/hooks/useSettings';
+
+import { buscarCep } from 'src/actions/cep';
+import { portalCreateCliente } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useEmpresa } from 'src/hooks/use-empresa';
-
-import { useSettings } from 'src/hooks/useSettings';
-import { portalCreateCliente } from 'src/actions/portal';
-import { buscarCep } from 'src/actions/cep';
 
 const onlyDigits = (v) => (v || '').replace(/\D/g, '');
 const formatCEP = (v) => {
@@ -80,9 +81,7 @@ export default function PortalClienteNovoPage() {
     return (
       <Box>
         <Typography variant="h6">Funcionalidade não disponível</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Peça ao administrador para ativar "Cadastro de Clientes" nas configurações.
-        </Typography>
+        <Typography variant="body2" color="text.secondary">Peça ao administrador para ativar Cadastro de Clientes nas configurações.</Typography>
       </Box>
     );
   }

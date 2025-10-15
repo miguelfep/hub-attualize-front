@@ -1,26 +1,29 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState } from 'react';
+import { mutate as mutateGlobal } from 'swr';
 
+import { DataGrid } from '@mui/x-data-grid';
 import Grid from '@mui/material/Unstable_Grid2';
-import { Box, Typography, Button, TextField, MenuItem, Stack, IconButton, Card, CardContent, InputAdornment, Chip, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Divider } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { DataGrid } from '@mui/x-data-grid';
+import { Box, Card, Chip, Stack, Button, Dialog, MenuItem, TextField, Typography, IconButton, CardContent, DialogTitle, DialogContent, DialogActions, InputAdornment, DialogContentText } from '@mui/material';
 
-import { Iconify } from 'src/components/iconify';
-import { mutate as mutateGlobal } from 'swr';
+import { paths } from 'src/routes/paths';
+
+import { useEmpresa } from 'src/hooks/use-empresa';
+import { useSettings } from 'src/hooks/useSettings';
+
 import { endpoints } from 'src/utils/axios';
+
+import { usePortalClientes, portalDeleteCliente, portalUpdateCliente } from 'src/actions/portal';
+
+import { toast } from 'src/components/snackbar';
+import { Iconify } from 'src/components/iconify';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
-import { paths } from 'src/routes/paths';
-import { toast } from 'src/components/snackbar';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useEmpresa } from 'src/hooks/use-empresa';
-
-import { useSettings } from 'src/hooks/useSettings';
-import { usePortalClientes, portalDeleteCliente, portalUpdateCliente } from 'src/actions/portal';
 
 export default function PortalClientesPage() {
   const { user } = useAuthContext();
@@ -50,9 +53,7 @@ export default function PortalClientesPage() {
     return (
       <Box>
         <Typography variant="h6">Funcionalidade não disponível</Typography>
-        <Typography variant="body2" color="text.secondary">
-          Peça ao administrador para ativar "Cadastro de Clientes" nas configurações.
-        </Typography>
+        <Typography variant="body2" color="text.secondary">Peça ao administrador para ativar Cadastro de Clientes nas configurações.</Typography>
       </Box>
     );
   }

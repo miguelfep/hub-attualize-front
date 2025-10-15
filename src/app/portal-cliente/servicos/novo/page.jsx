@@ -1,20 +1,23 @@
 'use client';
 
 import React from 'react';
+
 import Grid from '@mui/material/Unstable_Grid2';
-import { Box, Typography, Button, Stack, Card, CardContent, TextField, MenuItem } from '@mui/material';
 import LoadingButton from '@mui/lab/LoadingButton';
+import { Card, Stack, Button, MenuItem, TextField, Typography, CardContent } from '@mui/material';
+
+import { useEmpresa } from 'src/hooks/use-empresa';
+import { useSettings } from 'src/hooks/useSettings';
+
+import { fCurrency } from 'src/utils/format-number';
+
+import { getClienteById } from 'src/actions/clientes';
+import { portalCreateServico } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
-import { Iconify } from 'src/components/iconify';
-import { fCurrency } from 'src/utils/format-number';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useEmpresa } from 'src/hooks/use-empresa';
-import { useSettings } from 'src/hooks/useSettings';
-import { portalCreateServico } from 'src/actions/portal';
-import { getClienteById } from 'src/actions/clientes';
 
 export default function NovoServicoPage() {
   const { user } = useAuthContext();
@@ -73,8 +76,8 @@ export default function NovoServicoPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.nome) return toast.error('Informe o nome do serviço');
-    if (!form.valor || Number(form.valor) <= 0) return toast.error('Informe um valor válido');
+    if (!form.nome) { toast.error('Informe o nome do serviço'); return false; }
+    if (!form.valor || Number(form.valor) <= 0) { toast.error('Informe um valor válido'); return false; }
     try {
       setSaving(true);
       const payload = {
@@ -94,8 +97,10 @@ export default function NovoServicoPage() {
       await portalCreateServico(payload);
       toast.success('Serviço criado');
       window.location.href = '../servicos';
+      return true;
     } catch (err) {
       toast.error('Erro ao criar serviço');
+      return false;
     } finally {
       setSaving(false);
     }

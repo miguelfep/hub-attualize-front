@@ -1,21 +1,22 @@
+import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
+import Select from '@mui/material/Select';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
-import Select from '@mui/material/Select';
-import FormControl from '@mui/material/FormControl';
 import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
 import CircularProgress from '@mui/material/CircularProgress';
-import Tooltip from '@mui/material/Tooltip';
-
-import { Iconify } from 'src/components/iconify';
-import { toast } from 'sonner';
 
 import axios from 'src/utils/axios';
+
 import { useSettingsContext } from 'src/contexts/SettingsContext';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -50,7 +51,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
     } finally {
       setLoadingEmpresas(false);
     }
-  }, [userId]);
+  }, [userId, updateSettings]);
 
   useEffect(() => {
     if (userId) {

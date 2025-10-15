@@ -2,13 +2,13 @@
 
 import { useMemo, useState } from 'react';
 
-import Grid from '@mui/material/Unstable_Grid2';
 import { LoadingButton } from '@mui/lab';
-import { Box, Switch, Typography, FormControlLabel, Divider, TextField } from '@mui/material';
-
-import { toast } from 'src/components/snackbar';
+import Grid from '@mui/material/Unstable_Grid2';
+import { Box, Switch, TextField, Typography, FormControlLabel } from '@mui/material';
 
 import { useGetSettings, updateSettings } from 'src/actions/settings';
+
+import { toast } from 'src/components/snackbar';
 
 export function ClientePortalSettings({ clienteId }) {
   const { settings, settingsLoading, refetchSettings } = useGetSettings(clienteId);
@@ -48,7 +48,7 @@ export function ClientePortalSettings({ clienteId }) {
   };
 
   const handleConfigChange = (key) => (event) => {
-    const value = event.target.value;
+    const {value} = event.target;
     setLocalState((prev) => ({
       ...prev,
       configuracoes: { ...prev.configuracoes, [key]: value === '' ? '' : Number(value) },

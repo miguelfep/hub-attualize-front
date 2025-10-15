@@ -28,13 +28,13 @@ import { useRouter } from 'src/routes/hooks';
 
 import { buscarCep } from 'src/actions/cep';
 import { criarCliente, updateCliente, getClienteById } from 'src/actions/clientes';
-import { ClientePortalSettings } from './cliente-portal-settings';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 
 import SociosForm from './cliete-socios-form';
+import { ClientePortalSettings } from './cliente-portal-settings';
 import { HistoricoComercialCliente } from './historico-comecial-cliente';
 
 export const TRIBUTACAO_OPTIONS = [

@@ -1,5 +1,7 @@
 import { paths } from 'src/routes/paths';
+
 import { useSettings } from 'src/hooks/useSettings';
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------

@@ -1,21 +1,24 @@
 'use client';
 
 import React from 'react';
+
 import Grid from '@mui/material/Unstable_Grid2';
-import { Box, Typography, Button, Stack, Card, CardContent, TextField, MenuItem, Chip } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
+import { Box, Card, Chip, Stack, Button, MenuItem, TextField, Typography, CardContent } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+
+import { useEmpresa } from 'src/hooks/use-empresa';
+import { useSettings } from 'src/hooks/useSettings';
+
+import { usePortalOrcamentos, usePortalOrcamentosStats } from 'src/actions/portal';
 
 import { Iconify } from 'src/components/iconify';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
-import { paths } from 'src/routes/paths';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useEmpresa } from 'src/hooks/use-empresa';
-
-import { useSettings } from 'src/hooks/useSettings';
-import { usePortalOrcamentos, usePortalOrcamentosStats } from 'src/actions/portal';
 
 export default function PortalOrcamentosPage() {
   const { user } = useAuthContext();
@@ -35,7 +38,7 @@ export default function PortalOrcamentosPage() {
   if (!podeCriarOrcamentos) return (
     <Box>
       <Typography variant="h6">Funcionalidade não disponível</Typography>
-      <Typography variant="body2" color="text.secondary">Peça ao administrador para ativar "Vendas/Orçamentos" nas configurações.</Typography>
+      <Typography variant="body2" color="text.secondary">Peça ao administrador para ativar &quot;Vendas/Orçamentos&quot; nas configurações.</Typography>
     </Box>
   );
 

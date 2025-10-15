@@ -23,6 +23,7 @@ import axios from 'src/utils/axios';
 
 import { getBannersForUser } from 'src/data/banners';
 import { downloadLicenca } from 'src/actions/societario';
+import { useSettingsContext } from 'src/contexts/SettingsContext';
 
 import { Iconify } from 'src/components/iconify';
 import { formatToCurrency } from 'src/components/animate';
@@ -30,7 +31,6 @@ import { SimplePaper } from 'src/components/paper/SimplePaper';
 import { BannersSection } from 'src/components/banner/banners-section';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { useSettingsContext } from 'src/contexts/SettingsContext';
 
 // ----------------------------------------------------------------------
 
@@ -78,7 +78,7 @@ export default function PortalClienteDashboardView() {
       try {
         setLoading(true);
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dashboard/${  user.userId}`);
-        const data = response.data.data;
+        const {data} = response.data;
         setDashboardData(data);
         if (data?.settings) {
           updateSettings(data.settings);
@@ -97,7 +97,7 @@ export default function PortalClienteDashboardView() {
       const userBanners = getBannersForUser(user);
       setBanners(userBanners);
     }
-  }, [user, user?.userId]);
+  }, [user, user?.userId, updateSettings]);
 
 
 
