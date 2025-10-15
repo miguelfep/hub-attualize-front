@@ -28,6 +28,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { buscarCep } from 'src/actions/cep';
 import { criarCliente, updateCliente, getClienteById } from 'src/actions/clientes';
+import { ClientePortalSettings } from './cliente-portal-settings';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
@@ -246,8 +247,8 @@ export function ClienteNewEditForm({ currentCliente }) {
     try {
       // Chame a API para atualizar os dados da Receita aqui
 
-      // const newCLiente = await updateCliente(currentCliente._id);
-      // reset(newCLiente);
+       const newCLiente = await updateCliente(currentCliente._id);
+       reset(newCLiente);
 
       toast.success('Dados da Receita atualizados com sucesso!');
     } catch (error) {
@@ -286,6 +287,7 @@ export function ClienteNewEditForm({ currentCliente }) {
         <Tab label="Dados Contábeis" />
         <Tab label="Departamento Pessoal" />
         <Tab label="Histórico Comercial" />
+        <Tab label="Configurações do Portal" />
       </Tabs>
       <Grid container spacing={3} mt={2}>
         {tabIndex === 0 && (
@@ -690,6 +692,13 @@ export function ClienteNewEditForm({ currentCliente }) {
             <HistoricoComercialCliente cliente={currentCliente} />
           </Grid>
         )}
+      {tabIndex === 6 && (
+        <Grid xs={12}>
+          <Card sx={{ p: 3 }}>
+            <ClientePortalSettings clienteId={currentCliente?._id} />
+          </Card>
+        </Grid>
+      )}
       </Grid>
       <Stack alignItems="flex-end" sx={{ mt: 3 }}>
         <LoadingButton type="submit" variant="contained" loading={isSubmitting}>

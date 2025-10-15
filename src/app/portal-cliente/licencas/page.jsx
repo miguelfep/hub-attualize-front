@@ -66,7 +66,7 @@ export default function PortalClienteLicencasView() {
     if (user?.userId) {
       fetchLicencas();
     }
-  }, [pagination, filtroStatus, user?.userId]);
+  }, [ filtroStatus, user?.userId]);
 
   const handlePageChange = (event, newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));

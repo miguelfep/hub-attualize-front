@@ -242,6 +242,9 @@ export const paths = {
     root: ROOTS.CLIENTE,
     dashboard: `${ROOTS.CLIENTE}/dashboard`,
     empresa: `${ROOTS.CLIENTE}/empresa`,
+    clientes: `${ROOTS.CLIENTE}/clientes`,
+    servicos: `${ROOTS.CLIENTE}/servicos`,
+    orcamentos: `${ROOTS.CLIENTE}/orcamentos`,
     financeiro: {
       root: `${ROOTS.CLIENTE}/financeiro`,
       contas: `${ROOTS.CLIENTE}/financeiro/contas`,

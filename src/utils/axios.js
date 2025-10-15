@@ -109,4 +109,39 @@ export const endpoints = {
       receber: `${baseUrl}marketing/dashboard-contas-a-receber`,
     }
   },
+  // Settings (Admin)
+  settings: {
+    base: `${baseUrl}settings`,
+    byClienteId: (clienteId) => `${baseUrl}settings/${clienteId}`,
+    check: (clienteId, funcionalidade) => `${baseUrl}settings/${clienteId}/check/${funcionalidade}`,
+  },
+  // Portal do Cliente
+  portal: {
+    base: `${baseUrl}portal`,
+    clientes: {
+      list: (clienteProprietarioId) => `${baseUrl}portal/clientes/${clienteProprietarioId}`,
+      get: (clienteProprietarioId, id) => `${baseUrl}portal/clientes/${clienteProprietarioId}/${id}`,
+      create: (clienteProprietarioId) => `${baseUrl}portal/clientes/${clienteProprietarioId}`,
+      update: (clienteProprietarioId, id) => `${baseUrl}portal/clientes/${clienteProprietarioId}/${id}`,
+      delete: (clienteProprietarioId, id) => `${baseUrl}portal/clientes/${clienteProprietarioId}/${id}`,
+    },
+    servicos: {
+      list: (clienteProprietarioId) => `${baseUrl}portal/servicos/${clienteProprietarioId}`,
+      categorias: (clienteProprietarioId) => `${baseUrl}portal/servicos/${clienteProprietarioId}/categorias`,
+      get: (clienteProprietarioId, id) => `${baseUrl}portal/servicos/${clienteProprietarioId}/${id}`,
+      create: `${baseUrl}portal/servicos`,
+      update: (id) => `${baseUrl}portal/servicos/${id}`,
+      delete: (id) => `${baseUrl}portal/servicos/${id}`,
+    },
+    orcamentos: {
+      list: (clienteProprietarioId) => `${baseUrl}portal/orcamentos/${clienteProprietarioId}`,
+      stats: (clienteProprietarioId) => `${baseUrl}portal/orcamentos/${clienteProprietarioId}/estatisticas`,
+      get: (clienteProprietarioId, id) => `${baseUrl}portal/orcamentos/${clienteProprietarioId}/${id}`,
+      create: `${baseUrl}portal/orcamentos`,
+      update: (id) => `${baseUrl}portal/orcamentos/${id}`,
+      updateStatus: (id) => `${baseUrl}portal/orcamentos/${id}/status`,
+      delete: (id) => `${baseUrl}portal/orcamentos/${id}`,
+      pdf: (id) => `${baseUrl}portal/orcamentos/${id}/pdf`,
+    },
+  },
 };

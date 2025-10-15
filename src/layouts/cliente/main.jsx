@@ -29,7 +29,7 @@ import { EmpresaSelectorPortal } from 'src/components/empresa-selector/empresa-s
 import { useAuthContext } from 'src/auth/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { navData } from './config-navigation';
+import { usePortalNavData } from './config-navigation';
 import { ClienteNavMobile } from './nav-mobile';
 import { ClienteMenuButton } from './menu-button';
 
@@ -71,7 +71,7 @@ export function ClienteLayout({ children }) {
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
       {/* Mobile Navigation Drawer */}
       <ClienteNavMobile
-        data={navData}
+        data={usePortalNavData()}
         open={mobileNavOpen.value}
         onClose={mobileNavOpen.onFalse}
         user={user}
@@ -93,7 +93,7 @@ export function ClienteLayout({ children }) {
         </Box>
         <Scrollbar>
           <NavSectionVertical
-            data={navData}
+            data={usePortalNavData()}
             slotProps={{
               currentRole: user?.role || 'cliente',
             }}

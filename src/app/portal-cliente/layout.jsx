@@ -10,6 +10,7 @@ import { SplashScreen } from 'src/components/loading-screen';
 import { useAuthContext } from 'src/auth/hooks';
 import { getUser } from 'src/auth/context/jwt/utils';
 import { RoleBasedGuard } from 'src/auth/guard/role-based-guard';
+import { SettingsProvider } from 'src/contexts/SettingsContext';
 
 // ----------------------------------------------------------------------
 
@@ -42,7 +43,9 @@ export default function Layout({ children }) {
       acceptRoles={['cliente']}
       hasContent
     >
-      <ClienteLayout>{children}</ClienteLayout>
+      <SettingsProvider>
+        <ClienteLayout>{children}</ClienteLayout>
+      </SettingsProvider>
     </RoleBasedGuard>
   );
 }

@@ -15,6 +15,7 @@ import { Iconify } from 'src/components/iconify';
 import { toast } from 'sonner';
 
 import axios from 'src/utils/axios';
+import { useSettingsContext } from 'src/contexts/SettingsContext';
 
 // ----------------------------------------------------------------------
 
@@ -25,16 +26,21 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
   const [loading, setLoading] = useState(false);
   const [loadingEmpresas, setLoadingEmpresas] = useState(true);
 
+  const { updateSettings } = useSettingsContext();
+
   const fetchEmpresas = useCallback(async () => {
     try {
       setLoadingEmpresas(true);
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/empresas/${userId}`);
-            
+      
       if (response.data.success) {
-        const { empresas: empresasData, empresaAtiva: empresaAtivaData } = response.data.data;
+        const { empresas: empresasData, empresaAtiva: empresaAtivaData, settings } = response.data.data;
 
         setEmpresas(empresasData || []);
         setEmpresaAtiva(empresaAtivaData);
+        if (settings) {
+          updateSettings(settings);
+        }
       } else {
         console.log('API retornou success: false');
       }
@@ -64,11 +70,18 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
       });
 
       if (response.data.success) {
-        setEmpresaAtiva(novaEmpresaId);
+        const { empresaAtiva: novaAtiva, settings } = response.data.data || {};
+        setEmpresaAtiva(novaAtiva || novaEmpresaId);
         toast.success('Empresa alterada com sucesso!');
+        if (settings) {
+          updateSettings(settings);
+        }
         
-        if (onEmpresaChange) {
-          onEmpresaChange(response.data.data.empresaAtiva);
+        if (onEmpresaChange) onEmpresaChange(response.data.data.empresaAtiva);
+        // Redireciona para lista de clientes se o usuário estiver em telas sensíveis
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/portal-cliente/clientes/') && !currentPath.endsWith('/clientes')) {
+          window.location.href = '/portal-cliente/clientes';
         }
       }
     } catch (error) {
