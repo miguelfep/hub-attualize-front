@@ -6,10 +6,10 @@ export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const updateSettings = (newSettings) => {
+  const updateSettings = useCallback((newSettings) => {
     setSettings(newSettings);
     setLoading(false);
-  };
+  }, []);
 
   const isFuncionalidadeAtiva = useCallback(
     (funcionalidade) => settings?.funcionalidades?.[funcionalidade] || false,
@@ -18,7 +18,7 @@ export function SettingsProvider({ children }) {
 
   const value = useMemo(
     () => ({ settings, updateSettings, isFuncionalidadeAtiva, loading }),
-    [settings, loading, isFuncionalidadeAtiva]
+    [settings, loading, isFuncionalidadeAtiva, updateSettings]
   );
 
   return (
