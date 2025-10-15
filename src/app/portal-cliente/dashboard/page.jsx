@@ -23,6 +23,7 @@ import axios from 'src/utils/axios';
 
 import { getBannersForUser } from 'src/data/banners';
 import { downloadLicenca } from 'src/actions/societario';
+import { useSettingsContext } from 'src/contexts/SettingsContext';
 
 import { Iconify } from 'src/components/iconify';
 import { formatToCurrency } from 'src/components/animate';
@@ -35,6 +36,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 export default function PortalClienteDashboardView() {
   const { user } = useAuthContext();
+  const { updateSettings } = useSettingsContext();
 
 
   const [dashboardData, setDashboardData] = useState({
@@ -76,7 +78,11 @@ export default function PortalClienteDashboardView() {
       try {
         setLoading(true);
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dashboard/${  user.userId}`);
-        setDashboardData(response.data.data);
+        const {data} = response.data;
+        setDashboardData(data);
+        if (data?.settings) {
+          updateSettings(data.settings);
+        }
       } catch (error) {
         console.error('Erro ao carregar dados do dashboard:', error);
         toast.error('Erro ao carregar dados do dashboard');
@@ -91,7 +97,7 @@ export default function PortalClienteDashboardView() {
       const userBanners = getBannersForUser(user);
       setBanners(userBanners);
     }
-  }, [user, user?.userId]);
+  }, [user, user?.userId, updateSettings]);
 
 
 

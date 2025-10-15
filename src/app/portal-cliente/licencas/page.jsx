@@ -54,7 +54,7 @@ export default function PortalClienteLicencasView() {
 
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/licencas/${  user.userId}`, { params });
         setLicencas(response.data.data || []);
-        setPagination(response.data.pagination || pagination);
+        setPagination((prev) => response.data.pagination || prev);
       } catch (error) {
         console.error('Erro ao carregar licenças:', error);
         toast.error('Erro ao carregar licenças');
@@ -66,7 +66,7 @@ export default function PortalClienteLicencasView() {
     if (user?.userId) {
       fetchLicencas();
     }
-  }, [pagination, filtroStatus, user?.userId]);
+  }, [ filtroStatus, user?.userId, pagination.page, pagination.limit ]);
 
   const handlePageChange = (event, newPage) => {
     setPagination(prev => ({ ...prev, page: newPage }));

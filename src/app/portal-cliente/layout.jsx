@@ -4,6 +4,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { ClienteLayout } from 'src/layouts/cliente';
+import { SettingsProvider } from 'src/contexts/SettingsContext';
 
 import { SplashScreen } from 'src/components/loading-screen';
 
@@ -42,7 +43,9 @@ export default function Layout({ children }) {
       acceptRoles={['cliente']}
       hasContent
     >
-      <ClienteLayout>{children}</ClienteLayout>
+      <SettingsProvider>
+        <ClienteLayout>{children}</ClienteLayout>
+      </SettingsProvider>
     </RoleBasedGuard>
   );
 }

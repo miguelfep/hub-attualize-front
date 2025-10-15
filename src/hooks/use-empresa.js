@@ -22,9 +22,9 @@ export function useEmpresa(userId) {
       
       if (response.data.success) {
         const { empresas: empresasData, empresaAtiva: empresaAtivaData } = response.data.data;
-    
+
         setEmpresas(empresasData || []);
-        setEmpresaAtiva(empresaAtivaData);
+        setEmpresaAtiva(empresaAtivaData?._id || empresaAtivaData);
       } else {
         console.log('useEmpresa: API retornou success: false');
       }
@@ -46,7 +46,8 @@ export function useEmpresa(userId) {
       });
 
       if (response.data.success) {
-        setEmpresaAtiva(novaEmpresaId);
+        const novaAtiva = response.data?.data?.empresaAtiva;
+        setEmpresaAtiva(novaAtiva?._id || novaEmpresaId);
         toast.success('Empresa alterada com sucesso!');
       }
     } catch (error) {
