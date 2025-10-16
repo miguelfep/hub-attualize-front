@@ -5,7 +5,7 @@ import React from 'react';
 import Grid from '@mui/material/Unstable_Grid2';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box, Card, Chip, Stack, Button, MenuItem, TextField, Typography, CardContent } from '@mui/material';
+import { Box, Card, Chip, Stack, Button, MenuItem, TextField, Typography, CardContent, Skeleton } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -34,7 +34,32 @@ export default function PortalOrcamentosPage() {
   const { data: orcamentos, isLoading } = usePortalOrcamentos(clienteProprietarioId, filters);
   const { data: stats } = usePortalOrcamentosStats(clienteProprietarioId);
 
-  if (loadingEmpresas || !clienteProprietarioId) return <Typography>Carregando...</Typography>;
+  if (loadingEmpresas || !clienteProprietarioId) return (
+    <SimplePaper>
+      <Skeleton variant="text" width={180} height={32} sx={{ mb: 2 }} />
+      <Grid container spacing={2} sx={{ mb: 2 }}>
+        <Grid xs={6} sm={4} md={2}><Skeleton variant="rounded" height={80} /></Grid>
+        <Grid xs={6} sm={4} md={2}><Skeleton variant="rounded" height={80} /></Grid>
+        <Grid xs={6} sm={4} md={2}><Skeleton variant="rounded" height={80} /></Grid>
+        <Grid xs={6} sm={4} md={3}><Skeleton variant="rounded" height={80} /></Grid>
+        <Grid xs={6} sm={4} md={3}><Skeleton variant="rounded" height={80} /></Grid>
+      </Grid>
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Grid container spacing={2}>
+            <Grid xs={12} sm={4}><Skeleton variant="rounded" height={40} /></Grid>
+            <Grid xs={12} sm={4}><Skeleton variant="rounded" height={40} /></Grid>
+            <Grid xs={12} sm={4}><Skeleton variant="rounded" height={40} /></Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+      <Stack spacing={2}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} variant="rounded" height={76} />
+        ))}
+      </Stack>
+    </SimplePaper>
+  );
   if (!podeCriarOrcamentos) return (
     <Box>
       <Typography variant="h6">Funcionalidade não disponível</Typography>

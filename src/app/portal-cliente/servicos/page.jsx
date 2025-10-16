@@ -6,7 +6,7 @@ import { DataGrid } from '@mui/x-data-grid';
 import Grid from '@mui/material/Unstable_Grid2';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box, Card, Chip, Stack, Button, Dialog, MenuItem, TextField, Typography, IconButton, CardContent, DialogTitle, DialogContent, DialogActions, InputAdornment, DialogContentText } from '@mui/material';
+import { Box, Card, Chip, Stack, Button, Dialog, MenuItem, TextField, Typography, IconButton, CardContent, DialogTitle, DialogContent, DialogActions, InputAdornment, DialogContentText, Skeleton } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 
@@ -37,7 +37,21 @@ export default function PortalServicosPage() {
   const [confirmOpen, setConfirmOpen] = React.useState(false);
   const [toDelete, setToDelete] = React.useState(null);
 
-  if (loadingEmpresas || !clienteProprietarioId) return <Typography>Carregando...</Typography>;
+  if (loadingEmpresas || !clienteProprietarioId) return (
+    <SimplePaper>
+      <Skeleton variant="text" width={180} height={32} sx={{ mb: 2 }} />
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Grid container spacing={2}>
+            <Grid xs={12} sm={6} md={4}><Skeleton variant="rounded" height={40} /></Grid>
+            <Grid xs={12} sm={6} md={4}><Skeleton variant="rounded" height={40} /></Grid>
+            <Grid xs={12} sm={6} md={4}><Skeleton variant="rounded" height={40} /></Grid>
+          </Grid>
+        </CardContent>
+      </Card>
+      <Skeleton variant="rounded" height={520} />
+    </SimplePaper>
+  );
   if (!podeGerenciarServicos) return (
     <Box>
       <Typography variant="h6">Funcionalidade não disponível</Typography>

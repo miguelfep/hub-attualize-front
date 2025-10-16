@@ -53,7 +53,6 @@ export function JwtResetPasswordView() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       const response = await forgotPassword({ email: data.email });
-      console.log(response);
 
         if (response.status === 200) {
           toast.success(response.data.message);

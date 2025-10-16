@@ -54,7 +54,6 @@ const UploadArquivoAbertura = ({ handleDialogClose, name, clientId, onFileUpload
         const updatedData = {
           [documentFieldMapping[name]]: response.data[documentFieldMapping[name]],
         };
-        console.log(updatedData);
 
         handleDialogClose(); // Fecha o diálogo após upload
         onFileUploaded(name, updatedData); // Atualiza os dados no componente pai

@@ -11,7 +11,6 @@ export default async function Page({ params }) {
   const { id } = params;
 
   const currenteFature = await getFaturaPorId(id);
-  console.log('fatura', currenteFature);
 
   if (!currenteFature) {
     throw new Error('Fatura Não encontrada');

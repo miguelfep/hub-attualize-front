@@ -99,7 +99,6 @@ export function KanbanOrcamentosInput({ task }) {
   const handleSaveInvoice = handleSubmit(async (data) => {
     loadingSend.onTrue();
 
-    console.log(data);
 
     try {
       if (task.invoice) {

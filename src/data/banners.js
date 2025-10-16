@@ -50,7 +50,6 @@ export const sampleBanners = [
 
 // Função para obter banners baseados no perfil do usuário
 export const getBannersForUser = (user) => {
-  console.log(user);
   // Filtrar banners baseados no perfil do usuário
   let filteredBanners = [...sampleBanners];
 
