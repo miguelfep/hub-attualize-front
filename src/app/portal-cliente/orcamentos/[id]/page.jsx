@@ -33,20 +33,37 @@ export default function OrcamentoDetalhesPage({ params }) {
   const [status, setStatus] = React.useState('');
 
   React.useEffect(() => {
+    let cancelled = false;
     const load = async () => {
       if (!clienteProprietarioId) return;
-      try {
-        setLoading(true);
-        const data = await portalGetOrcamento(clienteProprietarioId, id);
-        setOrcamento(data);
-        setStatus(data?.status || 'pendente');
-      } catch (e) {
-        toast.error('Erro ao carregar orçamento');
-      } finally {
-        setLoading(false);
+      setLoading(true);
+      let loaded = false;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const data = await portalGetOrcamento(clienteProprietarioId, id);
+          if (cancelled) return;
+          setOrcamento(data);
+          setStatus(data?.status || 'pendente');
+          loaded = true;
+          break;
+        } catch (e) {
+          // Em criação, pode haver latência; evita erro ruidoso para 404 e tenta novamente
+          if (e?.response?.status === 404) {
+            await new Promise((r) => setTimeout(r, 600));
+          } else {
+            if (!cancelled) toast.error('Erro ao carregar orçamento');
+            break;
+          }
+        }
       }
+      if (!loaded && !cancelled) {
+        // Após tentativas, se ainda não carregou e não é 404 transitório
+        // Mantém mensagem padrão na tela
+      }
+      if (!cancelled) setLoading(false);
     };
     load();
+    return () => { cancelled = true; };
   }, [clienteProprietarioId, id]);
 
   if (loadingEmpresas || !clienteProprietarioId || loading) return <Typography>Carregando...</Typography>;

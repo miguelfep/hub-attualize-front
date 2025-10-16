@@ -84,7 +84,10 @@ export default function PortalClienteEditPage({ params }) {
         });
         setLoadedEmpresaId(clienteProprietarioId);
       } catch (error) {
-        toast.error('Erro ao carregar cliente');
+        // Evita mostrar erro ruidoso em mudança de empresa ou 404 temporário
+        if (error?.response?.status !== 404) {
+          toast.error('Erro ao carregar cliente');
+        }
         router.replace('../../clientes');
       } finally {
         setLoading(false);
