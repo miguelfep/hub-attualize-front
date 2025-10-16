@@ -9,10 +9,9 @@ export const metadata = { title: `Editar cliente | Dashboard - ${CONFIG.site.nam
 
 export default async function Page({ params }) {
   const { id } = params;
-  console.log('esta nesse');
 
   const currentCliente = await getClienteById(id);
-  console.log('clientea aqui: ', currentCliente);
+  
   return <ClienteEditView cliente={currentCliente} />;
 }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -39,6 +39,12 @@ export function ClientePortalSettings({ clienteId }) {
 
   // Atualiza local state quando settings carregar
   const syncLocal = () => setLocalState({ funcionalidades, configuracoes });
+
+  useEffect(() => {
+    if (settings) {
+      setLocalState({ funcionalidades, configuracoes });
+    }
+  }, [settings, funcionalidades, configuracoes]);
 
   const handleToggle = (key) => (event) => {
     setLocalState((prev) => ({

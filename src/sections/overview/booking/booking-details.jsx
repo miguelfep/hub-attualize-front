@@ -185,7 +185,6 @@ const onSort = useCallback(
 }
 
 function RowItem({ row, fetchLicencas, onOpenModal }) {
-  console.log('row ', row);
 
   const popover = usePopover();
   const statusMap = {

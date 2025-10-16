@@ -215,7 +215,6 @@ export function ContasPagarListView() {
               icon="solar:bill-list-bold-duotone"
               color={theme.vars.palette.info.main}
               onClick={() => {
-                console.log('Total clicado');
                 setFilters({ ...filters, status: 'all' });
               }}
             />
