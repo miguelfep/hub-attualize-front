@@ -33,20 +33,34 @@ export default function OrcamentoDetalhesPage({ params }) {
   const [status, setStatus] = React.useState('');
 
   React.useEffect(() => {
-    const load = async () => {
-      if (!clienteProprietarioId) return;
+    let cancelled = false;
+
+    const loadWithRetry = async (attempt = 0) => {
+      if (!clienteProprietarioId || cancelled) return;
       try {
-        setLoading(true);
         const data = await portalGetOrcamento(clienteProprietarioId, id);
+        if (cancelled) return;
         setOrcamento(data);
         setStatus(data?.status || 'pendente');
-      } catch (e) {
-        toast.error('Erro ao carregar orçamento');
-      } finally {
         setLoading(false);
+      } catch (e) {
+        if (e?.response?.status === 404 && attempt < 2) {
+          setTimeout(() => {
+            if (!cancelled) loadWithRetry(attempt + 1);
+          }, 600);
+        } else if (!cancelled) {
+          toast.error('Erro ao carregar orçamento');
+          setLoading(false);
+        }
       }
     };
-    load();
+
+    if (clienteProprietarioId) {
+      setLoading(true);
+      loadWithRetry();
+    }
+
+    return () => { cancelled = true; };
   }, [clienteProprietarioId, id]);
 
   if (loadingEmpresas || !clienteProprietarioId || loading) return <Typography>Carregando...</Typography>;
@@ -182,5 +196,6 @@ export default function OrcamentoDetalhesPage({ params }) {
     </SimplePaper>
   );
 }
+
 
 

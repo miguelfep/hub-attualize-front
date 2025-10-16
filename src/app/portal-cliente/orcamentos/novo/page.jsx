@@ -19,6 +19,8 @@ import { Iconify } from 'src/components/iconify';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 
 export default function NovoOrcamentoPage() {
   const { user } = useAuthContext();
@@ -26,6 +28,7 @@ export default function NovoOrcamentoPage() {
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
   const { podeCriarOrcamentos } = useSettings();
+  const router = useRouter();
 
   const [saving, setSaving] = React.useState(false);
   const [filtersCli, setFiltersCli] = React.useState({ status: 'true', search: '' });
@@ -128,7 +131,7 @@ export default function NovoOrcamentoPage() {
     if (!itens.length) { toast.error('Adicione ao menos um item'); return; }
     try {
       setSaving(true);
-      await portalCreateOrcamento({
+      const created = await portalCreateOrcamento({
         clienteProprietarioId,
         clienteDoClienteId: form.clienteDoClienteId,
         dataValidade: form.dataValidade,
@@ -138,7 +141,12 @@ export default function NovoOrcamentoPage() {
         condicoesPagamento: form.condicoesPagamento,
       });
       toast.success('Orçamento criado');
-      window.location.href = '../orcamentos';
+      const newId = created?._id || created?.data?._id;
+      if (newId) {
+        router.replace(`${paths.cliente.orcamentos}/${newId}`);
+      } else {
+        router.replace(paths.cliente.orcamentos);
+      }
     } catch (err) {
       toast.error('Erro ao criar orçamento');
     } finally {

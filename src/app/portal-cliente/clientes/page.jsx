@@ -58,6 +58,8 @@ export default function PortalClientesPage() {
     );
   }
 
+  const getRazaoSocial = (row) => row?.razaoSocial ?? row?.razaosocial ?? row?.razao_social ?? row?.RazaoSocial ?? '';
+
   const handleDelete = async (id) => {
     try {
       await portalDeleteCliente(clienteProprietarioId, id);
@@ -94,25 +96,68 @@ export default function PortalClientesPage() {
   };
 
   const columns = [
-    { field: 'nome', headerName: 'Nome', flex: 1 },
-    { field: 'razaoSocial', headerName: 'Razão Social', flex: 1, valueGetter: (params) => (params?.row?.razaoSocial ?? '') },
+    {
+      field: 'nome',
+      headerName: 'Nome',
+      flex: 1,
+      renderCell: (params) => (
+        <Button
+          href={`./${params.row._id}`}
+          size="small"
+          variant="text"
+          color="primary"
+          onClick={(e) => e.stopPropagation()}
+          sx={{ textTransform: 'none', pl: 0 }}
+        >
+          {params?.row?.nome || ''}
+        </Button>
+      ),
+    },
+    {
+      field: 'razaoSocial',
+      headerName: 'Razão Social',
+      flex: 1,
+      valueGetter: (params) => getRazaoSocial(params?.row),
+      renderCell: (params) => {
+        const text = getRazaoSocial(params?.row);
+        if (!text) return <span />;
+        return (
+          <Button
+            href={`./${params.row._id}`}
+            size="small"
+            variant="text"
+            color="primary"
+            onClick={(e) => e.stopPropagation()}
+            sx={{ textTransform: 'none', pl: 0 }}
+          >
+            {text}
+          </Button>
+        );
+      },
+    },
     { field: 'cpfCnpj', headerName: 'CPF/CNPJ', width: 180 },
     { field: 'email', headerName: 'Email', width: 220 },
     { field: 'telefone', headerName: 'Telefone', width: 160 },
     {
       field: 'actions',
       headerName: 'Ações',
-      width: 140,
+      width: 260,
       sortable: false,
       renderCell: (params) => (
         <Stack direction="row" spacing={1}>
-          <IconButton color="primary" href={`./${params.row._id}`}>
+          <IconButton color="primary" href={`./${params.row._id}`} onClick={(e) => e.stopPropagation()} aria-label="Editar cliente">
             <Iconify icon="solar:pen-bold" />
           </IconButton>
-          <IconButton color={isActive(params.row.status) ? 'warning' : 'success'} disabled={toggling.includes(params.row._id)} onClick={() => handleToggleStatus(params.row)}>
-            <Iconify icon={isActive(params.row.status) ? 'solar:forbidden-circle-bold' : 'solar:check-circle-bold'} />
-          </IconButton>
-          <IconButton color="error" onClick={() => { setToDelete(params.row._id); setConfirmOpen(true); }}>
+          <Button
+            size="small"
+            variant="outlined"
+            color={isActive(params.row.status) ? 'warning' : 'success'}
+            disabled={toggling.includes(params.row._id)}
+            onClick={(e) => { e.stopPropagation(); handleToggleStatus(params.row); }}
+          >
+            {isActive(params.row.status) ? 'Inativar' : 'Ativar'}
+          </Button>
+          <IconButton color="error" onClick={(e) => { e.stopPropagation(); setToDelete(params.row._id); setConfirmOpen(true); }} aria-label="Excluir cliente">
             <Iconify icon="solar:trash-bin-trash-bold" />
           </IconButton>
         </Stack>
@@ -195,21 +240,44 @@ export default function PortalClientesPage() {
             <Card key={c._id} variant="outlined">
               <CardContent>
                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" sx={{ mb: 1 }}>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{c.nome}</Typography>
-                  <Stack direction="row" spacing={1}>
-                    <IconButton color="primary" href={`./${c._id}`} size="small">
-                      <Iconify icon="solar:pen-bold" />
-                    </IconButton>
-                    <IconButton color={isActive(c.status) ? 'warning' : 'success'} size="small" disabled={toggling.includes(c._id)} onClick={() => handleToggleStatus(c)}>
-                      <Iconify icon={c.status ? 'solar:forbidden-circle-bold' : 'solar:check-circle-bold'} />
-                    </IconButton>
-                    <IconButton color="error" size="small" onClick={() => { setToDelete(c._id); setConfirmOpen(true); }}>
-                      <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                  </Stack>
+                  <Button
+                    href={`./${c._id}`}
+                    size="small"
+                    variant="text"
+                    color="primary"
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{ textTransform: 'none', p: 0, minWidth: 0, fontWeight: 600 }}
+                  >
+                    {c.nome}
+                  </Button>
+                <Stack direction="row" spacing={1}>
+                  <IconButton color="primary" href={`./${c._id}`} size="small" onClick={(e) => e.stopPropagation()} aria-label="Editar cliente">
+                    <Iconify icon="solar:pen-bold" />
+                  </IconButton>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color={isActive(c.status) ? 'warning' : 'success'}
+                    disabled={toggling.includes(c._id)}
+                    onClick={(e) => { e.stopPropagation(); handleToggleStatus(c); }}
+                  >
+                    {isActive(c.status) ? 'Inativar' : 'Ativar'}
+                  </Button>
+                  <IconButton color="error" size="small" onClick={(e) => { e.stopPropagation(); setToDelete(c._id); setConfirmOpen(true); }} aria-label="Excluir cliente">
+                    <Iconify icon="solar:trash-bin-trash-bold" />
+                  </IconButton>
                 </Stack>
-                {!!c.razaoSocial && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontStyle: 'italic' }}>{c.razaoSocial}</Typography>
+                </Stack>
+                {!!getRazaoSocial(c) && (
+                  <Button
+                    href={`./${c._id}`}
+                    size="small"
+                    variant="text"
+                    onClick={(e) => e.stopPropagation()}
+                    sx={{ textTransform: 'none', p: 0, minWidth: 0, mb: 0.5, color: 'text.secondary', fontStyle: 'italic', justifyContent: 'flex-start' }}
+                  >
+                    {getRazaoSocial(c)}
+                  </Button>
                 )}
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>{c.cpfCnpj}</Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>{c.email}</Typography>

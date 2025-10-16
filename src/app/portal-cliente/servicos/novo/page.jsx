@@ -18,6 +18,8 @@ import { toast } from 'src/components/snackbar';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 
 import { useAuthContext } from 'src/auth/hooks';
+import { useRouter } from 'src/routes/hooks';
+import { paths } from 'src/routes/paths';
 
 export default function NovoServicoPage() {
   const { user } = useAuthContext();
@@ -25,6 +27,7 @@ export default function NovoServicoPage() {
   const { empresaAtiva, empresaAtivaData, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
   const { podeGerenciarServicos, podeEmitirNFSe } = useSettings();
+  const router = useRouter();
 
   const [saving, setSaving] = React.useState(false);
   const [form, setForm] = React.useState({
@@ -96,7 +99,7 @@ export default function NovoServicoPage() {
       };
       await portalCreateServico(payload);
       toast.success('Serviço criado');
-      window.location.href = '../servicos';
+      router.replace(paths.cliente.servicos);
       return true;
     } catch (err) {
       toast.error('Erro ao criar serviço');
@@ -112,7 +115,7 @@ export default function NovoServicoPage() {
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
           <Typography variant="h6">Novo Serviço</Typography>
           <Stack direction="row" spacing={1}>
-            <Button href="../servicos" variant="text">Cancelar</Button>
+            <Button href={paths.cliente.servicos} variant="text">Cancelar</Button>
             <LoadingButton type="submit" variant="contained" loading={saving}>Salvar</LoadingButton>
           </Stack>
         </Stack>
