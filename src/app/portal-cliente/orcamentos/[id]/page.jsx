@@ -34,35 +34,32 @@ export default function OrcamentoDetalhesPage({ params }) {
 
   React.useEffect(() => {
     let cancelled = false;
-    const load = async () => {
-      if (!clienteProprietarioId) return;
-      setLoading(true);
-      let loaded = false;
-      for (let attempt = 0; attempt < 3; attempt += 1) {
-        try {
-          const data = await portalGetOrcamento(clienteProprietarioId, id);
-          if (cancelled) return;
-          setOrcamento(data);
-          setStatus(data?.status || 'pendente');
-          loaded = true;
-          break;
-        } catch (e) {
-          // Em criação, pode haver latência; evita erro ruidoso para 404 e tenta novamente
-          if (e?.response?.status === 404) {
-            await new Promise((r) => setTimeout(r, 600));
-          } else {
-            if (!cancelled) toast.error('Erro ao carregar orçamento');
-            break;
-          }
+
+    const loadWithRetry = async (attempt = 0) => {
+      if (!clienteProprietarioId || cancelled) return;
+      try {
+        const data = await portalGetOrcamento(clienteProprietarioId, id);
+        if (cancelled) return;
+        setOrcamento(data);
+        setStatus(data?.status || 'pendente');
+        setLoading(false);
+      } catch (e) {
+        if (e?.response?.status === 404 && attempt < 2) {
+          setTimeout(() => {
+            if (!cancelled) loadWithRetry(attempt + 1);
+          }, 600);
+        } else if (!cancelled) {
+          toast.error('Erro ao carregar orçamento');
+          setLoading(false);
         }
       }
-      if (!loaded && !cancelled) {
-        // Após tentativas, se ainda não carregou e não é 404 transitório
-        // Mantém mensagem padrão na tela
-      }
-      if (!cancelled) setLoading(false);
     };
-    load();
+
+    if (clienteProprietarioId) {
+      setLoading(true);
+      loadWithRetry();
+    }
+
     return () => { cancelled = true; };
   }, [clienteProprietarioId, id]);
 
@@ -199,5 +196,6 @@ export default function OrcamentoDetalhesPage({ params }) {
     </SimplePaper>
   );
 }
+
 
 
