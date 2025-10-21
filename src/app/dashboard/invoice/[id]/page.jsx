@@ -10,9 +10,11 @@ export const metadata = { title: `Detalhes da venda | Dashboard - ${CONFIG.site.
 export default async function Page({ params }) {
   const { id } = params;
 
-  const currentInvoice = await getInvoiceById(id);
+  const data = await getInvoiceById(id);
+  
+  const { invoice, nfses } = data;
 
-  return <InvoiceDetailsView invoice={currentInvoice} />;
+  return <InvoiceDetailsView invoice={invoice} nfses={nfses} />;
 }
 
 // ----------------------------------------------------------------------

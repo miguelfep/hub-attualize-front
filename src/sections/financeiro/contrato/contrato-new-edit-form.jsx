@@ -48,6 +48,8 @@ export const NewContratoSchema = zod.object({
   status: zod.enum(['ativo', 'inativo', 'pendente']),
   dataInicio: schemaHelper.date({ message: { required_error: 'Data de início é obrigatória!' } }),
   observacoes: zod.string().optional(),
+  emitirNotaFiscal: zod.boolean().default(false),
+  momentoEmissaoNota: zod.enum(['pagamento', 'manual']).optional(),
   items: zod
     .array(
       zod.object({
@@ -93,6 +95,8 @@ export function ContratoNewEditForm({ currentContrato }) {
       status: currentContrato?.status || 'ativo',
       dataInicio: currentContrato?.dataInicio || today(),
       observacoes: currentContrato?.observacoes || '',
+      emitirNotaFiscal: currentContrato?.emitirNotaFiscal ?? false,
+      momentoEmissaoNota: currentContrato?.momentoEmissaoNota || 'manual',
       items: currentContrato?.items || [
         {
           servico: '',
@@ -213,14 +217,16 @@ export function ContratoNewEditForm({ currentContrato }) {
           Salvar
         </LoadingButton>
 
-        <LoadingButton
-          size="large"
-          variant="contained"
-          loading={loadingSend.value && isSubmitting}
-          onClick={handleCreateAndSend}
-        >
-          {currentContrato ? 'Duplicar' : 'Criar'}
-        </LoadingButton>
+        {!currentContrato && (
+          <LoadingButton
+            size="large"
+            variant="contained"
+            loading={loadingSend.value && isSubmitting}
+            onClick={handleCreateAndSend}
+          >
+            Criar
+          </LoadingButton>
+        )}
       </Stack>
 
       {/* Diálogo de confirmação */}

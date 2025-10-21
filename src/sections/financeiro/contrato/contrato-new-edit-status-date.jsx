@@ -74,6 +74,25 @@ export function ContratoNewEditStatusDate() {
         <Field.Switch name="cobrancaContabil" label="Cobrança Contábil" />
         <Field.Switch name="possuiDecimoTerceiro" label="Possui Décimo Terceiro" />
       </Stack>
+
+      {/* Emissão de NF após toggles */}
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+        <Field.Switch name="emitirNotaFiscal" label="Emitir Nota Fiscal" />
+      </Stack>
+
+      {watch('emitirNotaFiscal') && (
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+          <Field.Select
+            fullWidth
+            name="momentoEmissaoNota"
+            label="Momento de Emissão"
+            InputLabelProps={{ shrink: true }}
+          >
+            <MenuItem value="manual">Manual</MenuItem>
+            <MenuItem value="pagamento">Após pagamento</MenuItem>
+          </Field.Select>
+        </Stack>
+      )}
     </Stack>
   );
 }

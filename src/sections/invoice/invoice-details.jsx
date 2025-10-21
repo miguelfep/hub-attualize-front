@@ -13,7 +13,7 @@ import TableRow from '@mui/material/TableRow';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
-import { TextField, CardContent } from '@mui/material';
+import { TextField, CardContent, Chip, Tooltip, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Switch } from '@mui/material';
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 
 import { fDate } from 'src/utils/format-time';
@@ -24,6 +24,8 @@ import { updateInvoice } from 'src/actions/invoices';
 import { Label } from 'src/components/label';
 import { Scrollbar } from 'src/components/scrollbar';
 
+import { criarNFSeInvoice, cancelarNFSeInvoice, getNfsesByInvoice } from 'src/actions/notafiscal';
+import { Iconify } from 'src/components/iconify';
 import { InvoiceToolbar } from './invoice-toolbar';
 
 const StyledTableRow = styled(TableRow)(({ theme }) => ({
@@ -56,10 +58,18 @@ const cobrancaStatusTexts = {
   RECEBIDO: 'Pago',
 };
 
-export function InvoiceDetails({ invoice }) {
+export function InvoiceDetails({ invoice, nfses }) {
   const [currentStatus, setCurrentStatus] = useState(invoice?.status);
   const [motivoPerda, setMotivoPerda] = useState(invoice?.motivoPerda || ''); // Estado para o motivo da perda
   const [isEditingMotivo, setIsEditingMotivo] = useState(false); // Controle para exibir o input de edição
+  const [generatingNf, setGeneratingNf] = useState(false);
+  const [nfseState, setNfseState] = useState(Array.isArray(nfses) && nfses.length ? nfses[0] : null);
+  const [nfseList, setNfseList] = useState(Array.isArray(nfses) ? nfses : []);
+  const hasNfEmitida = nfseList.some((n) => n.status === 'emitida');
+  const [cancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   // Função para alterar o status da fatura
   const handleChangeStatus = useCallback(
@@ -135,6 +145,176 @@ export function InvoiceDetails({ invoice }) {
           Informações
         </Typography>
         <Typography variant="body2">Forma de pagamento: Boleto ou PIX</Typography>
+        {currentStatus === 'pago' && !hasNfEmitida && (!nfseState || nfseState.status === 'cancelada') && (
+          <Box sx={{ mt: 2 }}>
+            <Button
+              variant="contained"
+              disabled={generatingNf}
+              onClick={async () => {
+                try {
+                  setGeneratingNf(true);
+                  const res = await criarNFSeInvoice({invoiceId: invoice._id});
+                  if (res.status === 200) {
+                    toast.success('Processando emissão da nota fiscal...');
+                    const placeholder = { status: 'emitindo', numeroNota: 'Processando...', serie: 'Processando...', codigoVerificacao: 'Processando...', linkNota: 'Processando...' };
+                    setNfseState(placeholder);
+                    setNfseList((list) => [placeholder, ...list]);
+                  } else {
+                    toast.error('Falha ao gerar nota fiscal');
+                  }
+                } catch (e) {
+                  toast.error('Falha ao gerar nota fiscal');
+                } finally {
+                  setGeneratingNf(false);
+                }
+              }}
+            >
+              {nfseState?.status === 'cancelada' ? 'Emitir nova NFSe' : 'Gerar Nota Fiscal'}
+            </Button>
+          </Box>
+        )}
+        {nfseList && nfseList.length > 0 && (
+          <Card sx={{ mt: 3, border: 1, borderColor: 'divider' }}>
+            <CardContent>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Iconify icon="solar:bill-list-bold" width={22} />
+                  <Typography variant="subtitle1">Nota Fiscal de Serviço (NFSe)</Typography>
+                </Stack>
+                <Chip size="small" label={`${nfseList.length} ${nfseList.length === 1 ? 'nota' : 'notas'}`} />
+              </Stack>
+              <Stack spacing={2}>
+                {nfseList.map((n, idx) => (
+                  <Card key={n._id || `nf-${idx}`} variant="outlined" sx={{ p: 2 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <Chip
+                          size="small"
+                          label={n.status}
+                          color={n.status === 'emitida' ? 'success' : n.status === 'emitindo' ? 'warning' : n.status === 'cancelada' ? 'error' : 'default'}
+                          variant={n.status === 'emitindo' ? 'soft' : 'filled'}
+                          icon={n.status === 'emitindo' ? <CircularProgress size={12} /> : undefined}
+                        />
+                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>{n.createdAt ? fDate(n.createdAt) : ''}</Typography>
+                      </Stack>
+                      <Stack direction="row" spacing={1}>
+                        {n.linkNota && n.linkNota !== 'Processando...' && (
+                          <Tooltip title="Abrir NFSe">
+                            <Button href={n.linkNota} target="_blank" rel="noopener noreferrer" variant="outlined" size="small" startIcon={<Iconify icon="solar:document-text-bold" />}>
+                              Ver Nota
+                            </Button>
+                          </Tooltip>
+                        )}
+                        {n.status === 'emitida' && (
+                          <Tooltip title="Cancelar NFSe">
+                            <Button
+                              color="error"
+                              variant="outlined"
+                              size="small"
+                              startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+                              onClick={() => { setNfseState(n); setCancelOpen(true); }}
+                            >
+                              Cancelar
+                            </Button>
+                          </Tooltip>
+                        )}
+                      </Stack>
+                    </Stack>
+
+                    <Stack spacing={1.5}>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                        <Stack direction="row" spacing={1} sx={{ minWidth: 200 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Número</Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{n.numeroNota || '-'}</Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={1} sx={{ minWidth: 160 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Série</Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{n.serie || '-'}</Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={1} sx={{ minWidth: 260 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Código Verificação</Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{n.codigoVerificacao || '-'}</Typography>
+                        </Stack>
+                      </Stack>
+
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                        <Stack direction="row" spacing={1} sx={{ minWidth: 220 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Valor Serviços</Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{fCurrency(n.valorServicos || 0)}</Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={1} sx={{ minWidth: 200 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Valor ISS</Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{fCurrency(n.valorIss || 0)}</Typography>
+                        </Stack>
+                        <Stack direction="row" spacing={1} sx={{ minWidth: 220 }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Valor Líquido</Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{fCurrency(n.valorLiquido || 0)}</Typography>
+                        </Stack>
+                      </Stack>
+
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                        <Stack direction="row" spacing={1}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Tomador</Typography>
+                          <Typography variant="body2">{n?.tomador?.nome} — {n?.tomador?.cpfCnpj}</Typography>
+                        </Stack>
+                      </Stack>
+                    </Stack>
+                  </Card>
+                ))}
+              </Stack>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Dialogo de Cancelamento de NFSe */}
+        <Dialog open={cancelOpen} onClose={() => setCancelOpen(false)} maxWidth="sm" fullWidth>
+          <DialogTitle>Cancelar NFSe</DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <FormControlLabel
+                control={<Switch checked={confirmCancel} onChange={(e) => setConfirmCancel(e.target.checked)} />}
+                label="Confirmo que desejo cancelar esta NFSe"
+              />
+              <TextField
+                fullWidth
+                label="Motivo do cancelamento"
+                value={cancelReason}
+                onChange={(e) => setCancelReason(e.target.value)}
+                helperText="Descreva brevemente o motivo"
+              />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setCancelOpen(false)}>Fechar</Button>
+            <Button
+              color="error"
+              variant="contained"
+              disabled={!confirmCancel || !cancelReason || cancelLoading}
+              onClick={async () => {
+                try {
+                  setCancelLoading(true);
+                  const res = await cancelarNFSeInvoice({ nfseId: nfseState?._id, motivo: cancelReason });
+                  if (res.status === 200) {
+                    toast.success('NFSe cancelada');
+                    setNfseState((s) => ({ ...s, status: 'cancelada' }));
+                    setNfseList((list) => list.map((n) => (n._id === nfseState?._id ? { ...n, status: 'cancelada' } : n)));
+                    setCancelOpen(false);
+                    setCancelReason('');
+                    setConfirmCancel(false);
+                  } else {
+                    toast.error('Falha ao cancelar NFSe');
+                  }
+                } catch (e) {
+                  toast.error('Falha ao cancelar NFSe');
+                } finally {
+                  setCancelLoading(false);
+                }
+              }}
+            >
+              {cancelLoading ? 'Cancelando...' : 'Cancelar NFSe'}
+            </Button>
+          </DialogActions>
+        </Dialog>
         {invoice.cobrancas && invoice.cobrancas.length > 0 && invoice.cobrancas[0].boleto && (
           <Box sx={{ mt: 2 }}>
             {(() => {
