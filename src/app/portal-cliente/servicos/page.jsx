@@ -1,26 +1,113 @@
 'use client';
 
-import React from 'react';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
+import { useState, useCallback } from 'react';
+import { m, LazyMotion, domAnimation } from 'framer-motion';
 
-import { DataGrid } from '@mui/x-data-grid';
-import Grid from '@mui/material/Unstable_Grid2';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box, Card, Chip, Stack, Button, Dialog, MenuItem, TextField, Typography, IconButton, CardContent, DialogTitle, DialogContent, DialogActions, InputAdornment, DialogContentText, Skeleton } from '@mui/material';
-
-import { paths } from 'src/routes/paths';
+import {
+  Box,
+  Card,
+  Chip,
+  Stack,
+  Table,
+  Button,
+  Dialog,
+  TableBody,
+  Typography,
+  IconButton,
+  CardContent,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TableContainer,
+  TablePagination,
+  DialogContentText,
+} from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
 
+import { fCurrency } from 'src/utils/format-number';
+import { applySortFilter } from 'src/utils/constants/table-utils';
+
 import { usePortalServicos, portalDeleteServico, portalUpdateServico } from 'src/actions/portal';
 
-import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
-import { SimplePaper } from 'src/components/paper/SimplePaper';
-import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import { useTable, getComparator } from 'src/components/table';
+import { ServicoTableRowSkeleton } from 'src/components/skeleton/ServicoTableRowSkeleton';
+import { PortalServicosPageSkeleton } from 'src/components/skeleton/PortalServicosPageSkeleton';
+
+import { ServicoTableRow } from 'src/sections/servicos/ServicoTableRow';
+import { TableHeadCustom } from 'src/sections/clientes/TableHeadCustom';
+import { ServicoTableToolbar } from 'src/sections/servicos/ServicoTableToolbar';
 
 import { useAuthContext } from 'src/auth/hooks';
+
+function ServicoMobileCard({ servico, onToggle, onDelete, onEdit, isToggling }) {
+  const isActive = (v) => v === true || v === 'true' || v === 1;
+
+  return (
+    <Card variant="outlined" sx={{ '&:hover': { boxShadow: (theme) => theme.customShadows.z16 } }}>
+      <CardContent sx={{ p: 2 }}>
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="flex-start"
+          sx={{ mb: 2 }}
+        >
+          <Box sx={{ maxWidth: 'calc(100% - 80px)' }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 700, mb: 0.5, wordBreak: 'break-word' }}
+            >
+              {servico.nome}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {servico.categoria}
+            </Typography>
+          </Box>
+          <Chip
+            size="small"
+            label={isActive(servico.status) ? 'Ativo' : 'Inativo'}
+            color={isActive(servico.status) ? 'success' : 'default'}
+            variant="soft"
+          />
+        </Stack>
+
+        <Stack spacing={1} sx={{ mb: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
+          <Typography variant="body2">
+            <strong>Valor:</strong> {fCurrency(servico.valor)}
+          </Typography>
+          <Typography variant="body2">
+            <strong>Unidade:</strong> {servico.unidade}
+          </Typography>
+        </Stack>
+
+        <Stack direction="row" spacing={1} justifyContent="flex-end">
+          <IconButton color="error" size="small" onClick={onDelete}>
+            <Iconify icon="solar:trash-bin-trash-bold" />
+          </IconButton>
+          <IconButton color="primary" onClick={onEdit} size="small">
+            <Iconify icon="solar:pen-bold" />
+          </IconButton>
+          <Button
+            size="small"
+            variant="contained"
+            color={isActive(servico.status) ? 'warning' : 'success'}
+            disabled={isToggling}
+            onClick={onToggle}
+            sx={{ minWidth: 80 }}
+          >
+            {isActive(servico.status) ? 'Inativar' : 'Ativar'}
+          </Button>
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function PortalServicosPage() {
   const { user } = useAuthContext();
@@ -28,154 +115,235 @@ export default function PortalServicosPage() {
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
   const { podeGerenciarServicos } = useSettings();
+  const router = useRouter();
+
+  const table = useTable({ defaultOrderBy: 'nome' });
+
+  const [filters, setFilters] = useState({ status: 'true', categoria: '', search: '' });
+  const { data: servicos, isLoading, mutate } = usePortalServicos(clienteProprietarioId, filters);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [toDelete, setToDelete] = useState(null);
+  const [toggling, setToggling] = useState([]);
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  const [filters, setFilters] = React.useState({ status: 'true', categoria: '', search: '' });
-  const { data: servicos, isLoading, mutate } = usePortalServicos(clienteProprietarioId, filters);
-  const [confirmOpen, setConfirmOpen] = React.useState(false);
-  const [toDelete, setToDelete] = React.useState(null);
-
-  if (loadingEmpresas || !clienteProprietarioId) return (
-    <SimplePaper>
-      <Skeleton variant="text" width={180} height={32} sx={{ mb: 2 }} />
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid xs={12} sm={6} md={4}><Skeleton variant="rounded" height={40} /></Grid>
-            <Grid xs={12} sm={6} md={4}><Skeleton variant="rounded" height={40} /></Grid>
-            <Grid xs={12} sm={6} md={4}><Skeleton variant="rounded" height={40} /></Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-      <Skeleton variant="rounded" height={520} />
-    </SimplePaper>
-  );
-  if (!podeGerenciarServicos) return (
-    <Box>
-      <Typography variant="h6">Funcionalidade não disponível</Typography>
-      <Typography variant="body2" color="text.secondary">Peça ao administrador para ativar &quot;Cadastro de Serviços&quot; nas configurações.</Typography>
-    </Box>
-  );
-
-  const isActive = (v) => v === true || v === 'true' || v === 1;
+  const handleDelete = async (id) => {
+    try {
+      const response = await portalDeleteServico(id, clienteProprietarioId);
+      if (response?.data?.success || response.message) {
+        toast.success('Serviço excluído com sucesso!');
+        mutate(
+          servicos.filter((s) => s._id !== id),
+          false
+        );
+      } else {
+        toast.error(response?.data?.message || 'Ocorreu um erro ao tentar excluir.');
+      }
+    } catch (error) {
+      console.error('Erro de rede ao excluir serviço:', error);
+      toast.error('Não foi possível conectar ao servidor para excluir o serviço.');
+    }
+  };
 
   const handleToggleStatus = async (row) => {
+    const isActive = (v) => v === true || v === 'true' || v === 1;
     const nextStatus = !isActive(row.status);
-    mutate((prev) => (Array.isArray(prev) ? prev.map((r) => (r._id === row._id ? { ...r, status: nextStatus } : r)) : prev), false);
+
+    mutate(
+      (prev) =>
+        Array.isArray(prev)
+          ? prev.map((r) => (r._id === row._id ? { ...r, status: nextStatus } : r))
+          : prev,
+      false
+    );
+
     try {
+      setToggling((list) => [...list, row._id]);
       await portalUpdateServico(row._id, { status: nextStatus });
+      toast.success(nextStatus ? 'Serviço ativado' : 'Serviço inativado');
     } catch (e) {
       toast.error('Erro ao alterar status');
       mutate();
     } finally {
+      setToggling((list) => list.filter((id) => id !== row._id));
       mutate();
     }
   };
 
-  const handleDelete = async (id) => {
-    try {
-      await portalDeleteServico(id);
-      toast.success('Serviço excluído');
-      mutate();
-    } catch (e) {
-      toast.error('Erro ao excluir serviço');
-    }
-  };
+  const handleFilters = useCallback(
+    (key, value) => {
+      table.onResetPage();
+      setFilters((prevState) => ({ ...prevState, [key]: value }));
+    },
+    [table]
+  );
 
-  const columns = [
-    { field: 'nome', headerName: 'Nome', flex: 1 },
-    { field: 'categoria', headerName: 'Categoria', width: 160 },
-    { field: 'valor', headerName: 'Valor', width: 140, valueGetter: (p) => (typeof p?.row?.valor === 'number' ? `R$ ${p.row.valor.toFixed(2)}` : '') },
-    { field: 'unidade', headerName: 'Unid.', width: 100 },
-    {
-      field: 'actions', headerName: 'Ações', width: 160, sortable: false, renderCell: (params) => (
-        <Stack direction="row" spacing={1}>
-          <IconButton color="primary" href={`./${params.row._id}`}>
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
-          <IconButton color={isActive(params.row.status) ? 'warning' : 'success'} onClick={() => handleToggleStatus(params.row)}>
-            <Iconify icon={isActive(params.row.status) ? 'solar:forbidden-circle-bold' : 'solar:check-circle-bold'} />
-          </IconButton>
-          <IconButton color="error" onClick={() => { setToDelete(params.row._id); setConfirmOpen(true); }}>
-            <Iconify icon="solar:trash-bin-trash-bold" />
-          </IconButton>
-        </Stack>
-      )
-    }
+  const dataFiltered = applySortFilter({
+    inputData: Array.isArray(servicos) ? servicos : [],
+    comparator: getComparator(table.order, table.orderBy),
+  });
+
+  const TABLE_HEAD = [
+    { id: 'nome', label: 'Nome' },
+    { id: 'categoria', label: 'Categoria', width: 160 },
+    { id: 'valor', label: 'Valor', width: 140 },
+    { id: 'unidade', label: 'Unid.', width: 100 },
+    { id: 'status', label: 'Status', width: 100 },
+    { id: '', label: '', align: 'right' },
   ];
 
+  if (loadingEmpresas || !clienteProprietarioId) {
+    return <PortalServicosPageSkeleton />;
+  }
+  if (!podeGerenciarServicos) {
+    return <Typography>Funcionalidade não disponível.</Typography>;
+  }
+
   return (
-    <SimplePaper>
-      <CustomBreadcrumbs
-        heading="Serviços"
-        links={[{ name: 'Portal' }, { name: 'Serviços', href: paths.cliente.servicos }]}
-        action={<Button href="./novo" variant="contained" startIcon={<Iconify icon="solar:add-circle-bold" />}>Novo Serviço</Button>}
-        sx={{ mb: 2 }}
-      />
+    <LazyMotion features={domAnimation}>
+      <m.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+      >
+        <Card sx={{ borderRadius: 3 }}>
+          <Box
+            sx={{
+              p: 3,
+              display: 'flex',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: `linear-gradient(135deg, ${alpha(
+                theme.palette.primary.main,
+                0.1
+              )}, ${alpha(theme.palette.secondary.main, 0.1)})`
+            }}
+          >
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                Meus Serviços
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+                Visualize, gerencie e cadastre seus serviços.
+              </Typography>
+            </Box>
+            <Button
+              href="./novo"
+              variant="contained"
+              color="primary"
+              startIcon={<Iconify icon="solar:add-circle-bold" />}
+            >
+              Novo Serviço
+            </Button>
+          </Box>
 
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid xs={12} sm={6} md={4}>
-              <TextField fullWidth label="Buscar" value={filters.search} onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))} InputProps={{ startAdornment: (<InputAdornment position="start"><Iconify icon="solar:magnifer-bold" /></InputAdornment>) }} />
-            </Grid>
-            <Grid xs={12} sm={6} md={4}>
-              <TextField fullWidth select label="Status" value={filters.status} onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))} SelectProps={{ displayEmpty: true, renderValue: (v) => (v === '' ? 'Todos' : v === 'true' ? 'Ativos' : 'Inativos') }} InputLabelProps={{ shrink: true }}>
-                <MenuItem value="">Todos</MenuItem>
-                <MenuItem value="true">Ativos</MenuItem>
-                <MenuItem value="false">Inativos</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid xs={12} sm={6} md={4}>
-              <TextField fullWidth label="Categoria" value={filters.categoria} onChange={(e) => setFilters((f) => ({ ...f, categoria: e.target.value }))} />
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+          <ServicoTableToolbar filters={filters} onFilters={handleFilters} />
 
-      {isMobile ? (
-        <Stack spacing={2}>
-          {(Array.isArray(servicos) ? servicos : []).map((s) => (
-            <Card key={s._id} variant="outlined">
-              <CardContent>
-                <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                  <Stack>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>{s.nome}</Typography>
-                    <Typography variant="body2" color="text.secondary">{s.categoria}</Typography>
-                  </Stack>
-                  <Stack direction="row" spacing={1}>
-                    <IconButton color="primary" href={`./${s._id}`} size="small"><Iconify icon="solar:pen-bold" /></IconButton>
-                    <IconButton color={isActive(s.status) ? 'warning' : 'success'} size="small" onClick={() => handleToggleStatus(s)}><Iconify icon={isActive(s.status) ? 'solar:forbidden-circle-bold' : 'solar:check-circle-bold'} /></IconButton>
-                    <IconButton color="error" size="small" onClick={() => { setToDelete(s._id); setConfirmOpen(true); }}><Iconify icon="solar:trash-bin-trash-bold" /></IconButton>
-                  </Stack>
-                </Stack>
-                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                  <Chip size="small" label={isActive(s.status) ? 'Ativo' : 'Inativo'} color={isActive(s.status) ? 'success' : 'default'} variant={isActive(s.status) ? 'soft' : 'outlined'} />
-                </Stack>
-              </CardContent>
-            </Card>
-          ))}
-        </Stack>
-      ) : (
-        <div style={{ height: 520, width: '100%' }}>
-          <DataGrid loading={isLoading} rows={Array.isArray(servicos) ? servicos : []} getRowId={(r) => r._id} columns={columns} disableRowSelectionOnClick pageSizeOptions={[10, 25, 50]} initialState={{ pagination: { paginationModel: { pageSize: 10 } } }} />
-        </div>
-      )}
+          <CardContent sx={{ p: { xs: 2, md: 0 } }}>
+            {isMobile ? (
+              <Stack spacing={2}>
+                {dataFiltered
+                  .slice(
+                    table.page * table.rowsPerPage,
+                    table.page * table.rowsPerPage + table.rowsPerPage
+                  )
+                  .map((row, index) => (
+                    <m.div
+                      key={row._id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                    >
+                      <ServicoMobileCard
+                        servico={row}
+                        onToggle={() => handleToggleStatus(row)}
+                        onDelete={() => {
+                          setToDelete(row._id);
+                          setConfirmOpen(true);
+                        }}
+                        onEdit={() => router.push(`./${row._id}`)}
+                        isToggling={toggling.includes(row._id)}
+                      />
+                    </m.div>
+                  ))}
+              </Stack>
+            ) : (
+              <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
+                <Table size={table.dense ? 'small' : 'medium'}>
+                  <TableHeadCustom
+                    order={table.order}
+                    orderBy={table.orderBy}
+                    headLabel={TABLE_HEAD}
+                    onSort={table.onSort}
+                  />
+                  <TableBody>
+                    {isLoading
+                      ? [...Array(table.rowsPerPage)].map((_, index) => (
+                          <ServicoTableRowSkeleton key={index} />
+                        ))
+                      : dataFiltered
+                          .slice(
+                            table.page * table.rowsPerPage,
+                            table.page * table.rowsPerPage + table.rowsPerPage
+                          )
+                          .map((row) => (
+                            <ServicoTableRow
+                              key={row._id}
+                              row={row}
+                              onEdit={() => router.push(`./${row._id}`)}
+                              onToggle={() => handleToggleStatus(row)}
+                              onDelete={() => {
+                                setToDelete(row._id);
+                                setConfirmOpen(true);
+                              }}
+                              isToggling={toggling.includes(row._id)}
+                            />
+                          ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            )}
+          </CardContent>
 
-      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)} fullScreen={isMobile}>
+          <TablePagination
+            rowsPerPageOptions={[5, 10, 25]}
+            component="div"
+            count={dataFiltered.length}
+            rowsPerPage={table.rowsPerPage}
+            page={table.page}
+            onPageChange={table.onChangePage}
+            onRowsPerPageChange={table.onChangeRowsPerPage}
+          />
+        </Card>
+      </m.div>
+
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
         <DialogTitle>Excluir serviço?</DialogTitle>
         <DialogContent>
-          <DialogContentText>Esta ação não poderá ser desfeita. Deseja realmente excluir?</DialogContentText>
+          <DialogContentText>
+            Esta ação não poderá ser desfeita. Deseja realmente excluir este serviço?
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
-          <Button color="error" variant="contained" onClick={async () => { if (toDelete) { await handleDelete(toDelete); } setConfirmOpen(false); setToDelete(null); }}>Excluir</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={async () => {
+              if (toDelete) {
+                await handleDelete(toDelete);
+              }
+              setConfirmOpen(false);
+              setToDelete(null);
+            }}
+          >
+            Excluir
+          </Button>
         </DialogActions>
       </Dialog>
-    </SimplePaper>
+    </LazyMotion>
   );
 }
-
-

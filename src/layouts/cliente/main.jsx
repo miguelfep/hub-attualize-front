@@ -38,7 +38,7 @@ import { usePortalNavData } from './config-navigation';
 export function ClienteLayout({ children }) {
   const theme = useTheme();
   const pathname = usePathname();
-  const { user, logout } = useAuthContext();
+  const { user, logout, empresa } = useAuthContext();
   const settings = useSettingsContext();
 
   const [anchorEl, setAnchorEl] = useState(null);

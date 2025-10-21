@@ -1,78 +1,51 @@
 'use client';
 
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useMemo, useState, useCallback } from 'react';
+import { m, LazyMotion, domAnimation, AnimatePresence } from 'framer-motion';
 
-import Grid from '@mui/material/Grid';
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Pagination from '@mui/material/Pagination';
 import CardContent from '@mui/material/CardContent';
+import { alpha, useTheme } from '@mui/material/styles';
 
-import axios from 'src/utils/axios';
+import { useLicencas } from 'src/hooks/use-licenca';
 
 import { downloadLicenca } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
-import { SimplePaper } from 'src/components/paper/SimplePaper';
+import { LicencaRowSkeleton } from 'src/components/skeleton/LicencaRowSkeleton';
+
+import { LicencaRow } from 'src/sections/societario/licenca/LicencaRow';
+import { LicencaAlertBanner } from 'src/sections/societario/licenca/LicencaAlertBanner';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-// ----------------------------------------------------------------------
-
 export default function PortalClienteLicencasView() {
   const { user } = useAuthContext();
+  const theme = useTheme();
 
-  const [licencas, setLicencas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filtroStatus, setFiltroStatus] = useState('TODOS');
-  const [pagination, setPagination] = useState({
-    page: 1,
-    limit: 10,
-    total: 0,
-    pages: 0,
-  });
+  const { licencas, loading, pagination, filtroStatus, handleFiltroChange, handlePageChange } =
+    useLicencas(user);
 
-  useEffect(() => {
-    const fetchLicencas = async () => {
-      try {
-        setLoading(true);
-        const params = {
-          page: pagination.page,
-          limit: pagination.limit,
-          sortBy: 'dataVencimento',
-          sortOrder: 'asc',
-          ...(filtroStatus && filtroStatus !== 'TODOS' && { status: filtroStatus }),
-        };
+  const [isAlertOpen, setIsAlertOpen] = useState(true);
 
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/licencas/${  user.userId}`, { params });
-        setLicencas(response.data.data || []);
-        setPagination((prev) => response.data.pagination || prev);
-      } catch (error) {
-        console.error('Erro ao carregar licenças:', error);
-        toast.error('Erro ao carregar licenças');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (user?.userId) {
-      fetchLicencas();
+  const pendingLicencas = useMemo(() => {
+    if (loading || licencas.length === 0) {
+      return { vencidas: 0, aExpirar: 0 };
     }
-  }, [ filtroStatus, user?.userId, pagination.page, pagination.limit ]);
+    const vencidas = licencas.filter((l) => l.status === 'vencida').length;
+    const aExpirar = licencas.filter((l) => l.status === 'a_expirar').length;
+    return { vencidas, aExpirar };
+  }, [licencas, loading]);
 
-  const handlePageChange = (event, newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
-  };
-
-  const handleDownload = async (licencaId, nome) => {
+  const handleDownload = useCallback(async (licencaId, nome) => {
     try {
       const response = await downloadLicenca(licencaId);
       const url = window.URL.createObjectURL(new Blob([response.data]));
@@ -88,207 +61,125 @@ export default function PortalClienteLicencasView() {
       console.error('Erro ao baixar a licença:', error);
       toast.error('Erro ao baixar a licença');
     }
-  };
+  }, []);
 
-  const getStatusColor = (status) => {
-    const statusColors = {
-      valida: 'success',
-      vencida: 'error',
-      dispensada: 'info',
-    };
-    return statusColors[status] || 'default';
-  };
+  const handleCloseAlert = useCallback(() => {
+    setIsAlertOpen(false);
+  }, []);
 
-  const getStatusLabel = (status) => {
-    const statusTexts = {
-      valida: 'Válida',
-      vencida: 'Vencida',
-      dispensada: 'Dispensada',
-    };
-    return statusTexts[status] || status;
-  };
-
-  const formatDate = (date) => new Date(date).toLocaleDateString('pt-BR');
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'valida':
-        return 'solar:shield-check-bold-duotone';
-      case 'vencida':
-        return 'solar:shield-cross-bold-duotone';
-      case 'dispensada':
-        return 'solar:shield-user-bold-duotone';
-      default:
-        return 'solar:shield-bold-duotone';
-    }
-  };
-
-  return (
-    <SimplePaper>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 5 }}>
-        <Typography variant="h4">Minhas Licenças</Typography>
-        <Stack direction="row" spacing={2}>
-          <TextField
-            select
-            size="small"
-            value={filtroStatus}
-            onChange={(e) => setFiltroStatus(e.target.value)}
-            placeholder="Filtrar por status"
-            sx={{ minWidth: 200 }}
-          >
-            <MenuItem value="TODOS">Todos os status</MenuItem>
-            <MenuItem value="valida">Válida</MenuItem>
-            <MenuItem value="vencida">Vencida</MenuItem>
-            <MenuItem value="dispensada">Dispensada</MenuItem>
-          </TextField>
+  const memoizedContent = useMemo(() => {
+    if (loading) {
+      return (
+        <Stack spacing={2}>
+          {[...Array(5)].map((_, index) => (
+            <LicencaRowSkeleton key={index} />
+          ))}
         </Stack>
-      </Stack>
-
-      {loading ? (
-        <Stack alignItems="center" spacing={2} sx={{ py: 4 }}>
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Carregando licenças...
+      );
+    }
+    if (licencas.length === 0) {
+      return (
+        <Stack alignItems="center" spacing={2} sx={{ py: 10, textAlign: 'center' }}>
+          <Iconify
+            icon="solar:file-remove-bold-duotone"
+            width={64}
+            sx={{ color: 'text.disabled' }}
+          />
+          <Typography variant="h6">Nenhuma licença encontrada</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Tente ajustar o filtro ou verifique novamente mais tarde.
           </Typography>
         </Stack>
-      ) : licencas.length > 0 ? (
-        <Stack spacing={3}>
-          <Grid container spacing={3}>
-            {licencas.map((licenca) => (
-              <Grid key={licenca._id} item xs={12} sm={6} md={4}>
-                <Card sx={{ 
-                  border: 1, 
-                  borderColor: 'divider',
-                  height: '100%',
-                  '&:hover': {
-                    boxShadow: 2,
-                    borderColor: 'primary.main',
-                  },
-                  transition: 'all 0.3s ease'
-                }}>
-                  <CardContent sx={{ p: 3, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                    <Stack spacing={3} sx={{ flexGrow: 1 }}>
-                      {/* Header da Licença */}
-                      <Stack direction="row" alignItems="center" spacing={2}>
-                        <Avatar
-                          sx={{
-                            bgcolor: `${getStatusColor(licenca.status)  }.main`,
-                            width: 48,
-                            height: 48,
-                          }}
-                        >
-                          <Iconify icon={getStatusIcon(licenca.status)} width={24} />
-                        </Avatar>
-                        <Stack sx={{ flexGrow: 1 }}>
-                          <Typography variant="h6" sx={{ color: 'text.primary' }}>
-                            {licenca.nome}
-                          </Typography>
-                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                            {licenca.cidade} - {licenca.estado}
-                          </Typography>
-                        </Stack>
-                        <Chip
-                          label={getStatusLabel(licenca.status)}
-                          color={getStatusColor(licenca.status)}
-                          size="small"
-                        />
-                      </Stack>
+      );
+    }
+    return (
+      <Stack spacing={2}>
+        {licencas.map((licenca, index) => (
+          <m.div
+            key={licenca._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: index * 0.1 }}
+          >
+            <LicencaRow licenca={licenca} onDownload={handleDownload} />
+          </m.div>
+        ))}
+      </Stack>
+    );
+  }, [loading, licencas, handleDownload]);
 
-                      <Divider />
-
-                      {/* Informações da Licença */}
-                      <Stack spacing={2}>
-                        <Stack direction="row" justifyContent="space-between">
-                          <Stack spacing={0.5}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', fontWeight: 'medium' }}>
-                              Início
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                              {formatDate(licenca.dataInicio)}
-                            </Typography>
-                          </Stack>
-                          <Stack spacing={0.5}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', fontWeight: 'medium' }}>
-                              Vencimento
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                              {formatDate(licenca.dataVencimento)}
-                            </Typography>
-                          </Stack>
-                        </Stack>
-                        
-                        {licenca.observacao && (
-                          <Stack spacing={0.5}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase', fontWeight: 'medium' }}>
-                              Observação
-                            </Typography>
-                            <Typography variant="body2" sx={{ color: 'text.secondary', fontStyle: 'italic' }}>
-                              {licenca.observacao}
-                            </Typography>
-                          </Stack>
-                        )}
-                      </Stack>
-
-                      {/* Botão de Download */}
-                      {licenca.arquivo && (
-                        <Stack spacing={2} sx={{ mt: 'auto' }}>
-                          <Button
-                            variant="contained"
-                            startIcon={<Iconify icon="solar:download-bold" />}
-                            onClick={() => handleDownload(licenca._id, licenca.nome)}
-                            fullWidth
-                            sx={{ 
-                              bgcolor: 'primary.main',
-                              color: 'white',
-                              fontWeight: 'bold',
-                              py: 1.5,
-                              borderRadius: 2,
-                              '&:hover': {
-                                bgcolor: 'primary.dark',
-                                transform: 'translateY(-2px)',
-                                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-                              },
-                              transition: 'all 0.3s ease'
-                            }}
-                          >
-                            Baixar Licença
-                          </Button>
-                        </Stack>
-                      )}
-                    </Stack>
-                  </CardContent>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
-
-          {/* Paginação */}
-          {pagination.pages > 1 && (
-            <Stack alignItems="center" sx={{ mt: 4 }}>
-              <Pagination
-                count={pagination.pages}
-                page={pagination.page}
-                onChange={handlePageChange}
-                color="primary"
-                size="large"
-              />
-            </Stack>
+  return (
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
+        {isAlertOpen &&
+          !loading &&
+          (pendingLicencas.vencidas > 0 || pendingLicencas.aExpirar > 0) && (
+            <LicencaAlertBanner
+              vencidasCount={pendingLicencas.vencidas}
+              aExpirarCount={pendingLicencas.aExpirar}
+              onClose={handleCloseAlert}
+            />
           )}
-        </Stack>
-      ) : (
-        <Card>
-          <CardContent>
-            <Stack alignItems="center" spacing={2} sx={{ py: 4 }}>
-              <Avatar sx={{ bgcolor: 'grey.100', width: 64, height: 64 }}>
-                <Iconify icon="solar:shield-check-bold-duotone" width={32} />
-              </Avatar>
-              <Typography variant="h6">Nenhuma licença encontrada</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Não há licenças para exibir no momento.
+      </AnimatePresence>
+
+      <m.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+      >
+        <Card sx={{ borderRadius: 3 }}>
+          <Box
+            sx={{
+              p: 4,
+              bgcolor: 'background.neutral',
+              borderRadius: '16px 16px 0 0',
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`,
+              display: 'flex',
+              flexWrap: 'wrap',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                Minhas Licenças
               </Typography>
-            </Stack>
-          </CardContent>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                Visualize e gerencie suas licenças em um só lugar.
+              </Typography>
+            </Box>
+            <TextField
+              select
+              size="small"
+              value={filtroStatus}
+              onChange={handleFiltroChange}
+              sx={{ minWidth: 220 }}
+            >
+              <MenuItem value="TODOS">Todos os status</MenuItem>
+              <MenuItem value="valida">Válida</MenuItem>
+              <MenuItem value="vencida">Vencida</MenuItem>
+              <MenuItem value="dispensada">Dispensada</MenuItem>
+              <MenuItem value="a_expirar">A Expirar</MenuItem>
+              <MenuItem value="em_processo">Em Processo</MenuItem>
+            </TextField>
+          </Box>
+          <CardContent sx={{ p: { xs: 2, md: 3 } }}>{memoizedContent}</CardContent>
+          {pagination.pages > 1 && !loading && (
+            <>
+              <Divider sx={{ borderStyle: 'dashed' }} />
+              <Stack alignItems="center" sx={{ p: 2 }}>
+                <Pagination
+                  count={pagination.pages}
+                  page={pagination.page}
+                  onChange={handlePageChange}
+                  color="primary"
+                />
+              </Stack>
+            </>
+          )}
         </Card>
-      )}
-    </SimplePaper>
+      </m.div>
+    </LazyMotion>
   );
 }

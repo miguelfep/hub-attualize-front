@@ -15,7 +15,6 @@ import Grid from '@mui/material/Grid';
 import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
@@ -28,6 +27,7 @@ import { formatCNPJ } from 'src/utils/formatter';
 
 import { Iconify } from 'src/components/iconify';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
+import { CustomDivider } from 'src/components/divider/CustomDivider';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -36,21 +36,6 @@ const MotionPaper = motion(Paper);
 const MotionBox = motion(Box);
 const MotionGrid = motion(Grid);
 
-const CustomDivider = () => {
-  const theme = useTheme();
-  return (
-    <Divider
-      sx={{
-        borderStyle: 'dashed',
-        borderColor: () => alpha(theme.palette.primary.main, 0.4),
-        background: `linear-gradient(90deg, transparent, ${alpha(
-          theme.palette.primary.main,
-          0.2
-        )}, transparent)`,
-      }}
-    />
-  );
-};
 
 // Componente de animação para feedback de cópia
 const CopyFeedbackIcon = ({ isCopied }) => (

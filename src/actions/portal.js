@@ -77,6 +77,13 @@ export async function portalDeleteServico(id) {
   return res.data;
 }
 
+export async function portalGetServico(clienteProprietarioId, id) {
+  const url = endpoints.portal.servicos.get(clienteProprietarioId, id);
+  const res = await axios.get(url);
+  
+  return res.data;
+}
+
 // Orçamentos
 export function usePortalOrcamentos(clienteProprietarioId, params) {
   const qs = buildQuery(params);

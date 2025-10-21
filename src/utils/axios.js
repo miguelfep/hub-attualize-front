@@ -31,7 +31,7 @@ export const fetcher = async (args) => {
 
 // ----------------------------------------------------------------------
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+export const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 
 export const endpoints = {
@@ -83,6 +83,14 @@ export const endpoints = {
     registrar: `${baseUrl}financeiro/contas-pagar`,
     agendamentoInter: `${baseUrl}financeiro/contas-pagar`,
     dashboard: `${baseUrl}financeiro/infos/dashboard`,
+  },
+  fiscal: {
+    atividades: {
+      list: `${baseUrl}fiscal/atividades`,
+      create: `${baseUrl}fiscal/atividades`,
+      update: `${baseUrl}fiscal/atividades`,
+      delete: `${baseUrl}fiscal/atividades`,
+    },
   },
   contratos: {
     list: `${baseUrl}contratos/all`,

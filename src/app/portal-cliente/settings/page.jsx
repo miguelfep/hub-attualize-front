@@ -1,59 +1,41 @@
 'use client';
 
-import { z as zod } from 'zod';
 import { toast } from 'sonner';
-import { useForm } from 'react-hook-form';
+import { z as zod } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm, FormProvider } from 'react-hook-form'; 
 import { useState, useEffect, useCallback } from 'react';
+import { m, LazyMotion, domAnimation } from 'framer-motion';
 
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
+import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
-import Alert from '@mui/material/Alert';
-import Table from '@mui/material/Table';
-import Paper from '@mui/material/Paper';
-import Button from '@mui/material/Button';
 import Switch from '@mui/material/Switch';
 import Dialog from '@mui/material/Dialog';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import Tooltip from '@mui/material/Tooltip';
-import TableRow from '@mui/material/TableRow';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
+import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import CardHeader from '@mui/material/CardHeader';
-import IconButton from '@mui/material/IconButton';
-import LoadingButton from '@mui/lab/LoadingButton';
-import CardContent from '@mui/material/CardContent';
 import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
+import CardContent from '@mui/material/CardContent';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
-import TableContainer from '@mui/material/TableContainer';
+import DialogContent from '@mui/material/DialogContent';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import axios from 'src/utils/axios';
 
-import { 
-  uploadCertificado, 
-  getCertificadoAtivo, 
-  downloadCertificado, 
-  desativarCertificado,
-  getCertificadosCliente,
-  formatarDataCertificado,
-  getCorStatusCertificado,
-  validarArquivoCertificado,
-  getIconeStatusCertificado
-} from 'src/actions/certificados';
+import { uploadCertificado, downloadCertificado, getCertificadoAtivo, desativarCertificado, getCertificadosCliente, validarArquivoCertificado } from 'src/actions/certificados';
 
 import { Iconify } from 'src/components/iconify';
-import { Form, Field } from 'src/components/hook-form';
+import { RHFTextField } from 'src/components/hook-form';
+
+import { CertificateList } from 'src/sections/configuracoes/CertificateList';
+import { UploadCertificate } from 'src/sections/configuracoes/UploadCertificate';
+import { ActiveCertificateCard } from 'src/sections/configuracoes/ActiveCertificadoCard';
 
 import { useAuthContext } from 'src/auth/hooks';
-
-// ----------------------------------------------------------------------
 
 const CertificateSchema = zod.object({
   password: zod.string().min(1, 'Senha do certificado é obrigatória'),
@@ -63,18 +45,73 @@ const CertificateSchema = zod.object({
   path: ['confirmPassword'],
 });
 
-// ----------------------------------------------------------------------
+
+const SectionHeader = ({ icon, title }) => (
+    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+      <Box sx={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) }}>
+        <Iconify icon={icon} width={24} color="primary.main" />
+      </Box>
+      <Typography variant="h6" sx={{ fontWeight: 700 }}>{title}</Typography>
+    </Stack>
+);
+
+const InfoItem = ({ label, children }) => (
+  <Box>
+    <Typography variant="caption" color="text.secondary" component="p">{label}</Typography>
+    <Typography variant="body2" sx={{ fontWeight: 500 }}>{children}</Typography>
+  </Box>
+);
+
+const NotificationSwitch = ({ checked, onChange, title, subheader }) => (
+    <FormControlLabel
+      control={<Switch checked={checked} onChange={onChange} />}
+      label={
+        <Box>
+          <Typography variant="body2" sx={{ fontWeight: 500 }}>{title}</Typography>
+          <Typography variant="caption" color="text.secondary">{subheader}</Typography>
+        </Box>
+      }
+      sx={{ m: 0, justifyContent: 'flex-start' }}
+    />
+);
+
+// O Modal agora é um sub-componente aqui para facilitar
+function CertificateUploadModal({ open, onClose, onSubmit, methods, fileName, isUploading }) {
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      <FormProvider {...methods}>
+        <form onSubmit={onSubmit}>
+          <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Iconify icon="solar:password-bold-duotone" />
+            Confirmar Senha do Certificado
+          </DialogTitle>
+          <DialogContent>
+            <Stack spacing={2} sx={{ pt: 1 }}>
+              <Typography variant="body2">
+                Você está enviando o arquivo <strong>{fileName}</strong>. Por favor, digite a senha (PIN) do seu certificado para prosseguir.
+              </Typography>
+              <RHFTextField name="password" label="Senha do Certificado" type="password" />
+              <RHFTextField name="confirmPassword" label="Confirme a Senha" type="password" />
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={onClose} color="inherit" variant="outlined">Cancelar</Button>
+            <Button type="submit" variant="contained" disabled={isUploading}>
+              {isUploading ? 'Enviando...' : 'Enviar Certificado'}
+            </Button>
+          </DialogActions>
+        </form>
+      </FormProvider>
+    </Dialog>
+  );
+}
 
 export default function PortalClienteSettingsView() {
   const { user, empresa } = useAuthContext();
+  const theme = useTheme();
 
-  const [notifications, setNotifications] = useState({
-    email: true,
-    whatsapp: true,
-    push: false,
-  });
-  
-  // Estados para certificado digital
+  // TODA a sua lógica de estados e handlers que você já tinha
+  const [notifications, setNotifications] = useState({ email: true, whatsapp: true, push: false });
   const [certificados, setCertificados] = useState([]);
   const [certificadoAtivo, setCertificadoAtivo] = useState(null);
   const [loadingCertificados, setLoadingCertificados] = useState(true);
@@ -82,65 +119,25 @@ export default function PortalClienteSettingsView() {
   const [certificateFile, setCertificateFile] = useState(null);
   const [uploadingCertificate, setUploadingCertificate] = useState(false);
 
-  // Formulário para certificado digital
   const certificateMethods = useForm({
     resolver: zodResolver(CertificateSchema),
-    defaultValues: {
-      password: '',
-      confirmPassword: '',
-    },
+    defaultValues: { password: '', confirmPassword: '' },
   });
 
-  const {
-    handleSubmit: handleCertificateSubmit,
-    formState: { isSubmitting: isCertificateSubmitting },
-  } = certificateMethods;
+  const { handleSubmit: handleCertificateSubmit } = certificateMethods;
 
   const fetchCertificados = useCallback(async () => {
-    // Verificar se a empresa está disponível
-    if (!empresa?.empresaAtiva) {
-      console.warn('Empresa não disponível para carregar certificados');
-      setLoadingCertificados(false);
-      return;
-    }
-
+    if (!empresa?.empresaAtiva) { setLoadingCertificados(false); return; }
     try {
       setLoadingCertificados(true);
-      console.log('Tentando carregar certificados para empresa:', empresa.empresaAtiva);
-      
-      const [certificadosResponse, ativoResponse] = await Promise.all([
-        getCertificadosCliente(empresa.empresaAtiva),
-        getCertificadoAtivo(empresa.empresaAtiva)
-      ]);
-      
-      console.log('Respostas recebidas:', { certificadosResponse, ativoResponse });
-      
-      // Tratar resposta da lista de certificados
-      if (certificadosResponse.data.success) {
-        setCertificados(certificadosResponse.data.data || []);
-      } else {
-        // Se não há certificados, é um estado normal, não mostrar erro
-        setCertificados([]);
-      }
-      
-      // Tratar resposta do certificado ativo
-      if (ativoResponse.data.success && ativoResponse.data.data) {
-        setCertificadoAtivo(ativoResponse.data.data);
-      } else {
-        // Se não há certificado ativo, é um estado normal, não mostrar erro
-        setCertificadoAtivo(null);
-      }
+      const [certificadosResponse, ativoResponse] = await Promise.all([ getCertificadosCliente(empresa.empresaAtiva), getCertificadoAtivo(empresa.empresaAtiva) ]);
+      if (certificadosResponse.data.success) setCertificados(certificadosResponse.data.data || []);
+      else setCertificados([]);
+      if (ativoResponse.data.success && ativoResponse.data.data) setCertificadoAtivo(ativoResponse.data.data);
+      else setCertificadoAtivo(null);
     } catch (error) {
       console.error('Erro ao carregar certificados:', error);
-      
-      // Verificar se é erro de "nenhum certificado encontrado" (estado normal)
-      if (error.response?.data?.message && 
-          error.response.data.message.includes('Nenhum certificado ativo encontrado para este cliente')) {
-        // Não mostrar toast para este caso, é um estado normal
-        setCertificados([]);
-        setCertificadoAtivo(null);
-      } else {
-        // Mostrar toast apenas para erros reais
+      if (!error.response?.data?.message?.includes('Nenhum certificado ativo encontrado para este cliente')) {
         toast.error('Erro ao carregar certificados');
       }
     } finally {
@@ -148,50 +145,31 @@ export default function PortalClienteSettingsView() {
     }
   }, [empresa?.empresaAtiva]);
 
-  // Carregar certificados ao montar o componente
   useEffect(() => {
     if (empresa?.empresaAtiva) {
-      // Adicionar um pequeno delay para garantir que tudo esteja carregado
-      const timer = setTimeout(() => {
-        fetchCertificados();
-      }, 1000);
-      
+      const timer = setTimeout(() => { fetchCertificados(); }, 1000);
       return () => clearTimeout(timer);
     }
     return undefined;
   }, [empresa?.empresaAtiva, fetchCertificados]);
 
- 
   const handleNotificationChange = async (type, value) => {
     try {
       setNotifications(prev => ({ ...prev, [type]: value }));
-
-      const url = `${process.env.NEXT_PUBLIC_API_URL}users/cliente/notifications`;
-      
-      await axios.put(url, {
-        [type]: value,
-      });
-
+      await axios.put(`${process.env.NEXT_PUBLIC_API_URL}users/cliente/notifications`, { [type]: value });
       toast.success('Configurações de notificação atualizadas!');
     } catch (error) {
       console.error('Erro ao atualizar notificações:', error);
       toast.error('Erro ao atualizar notificações');
-      // Reverte a mudança em caso de erro
       setNotifications(prev => ({ ...prev, [type]: !value }));
     }
   };
 
-  // Funções para certificado digital
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
       const validation = validarArquivoCertificado(file);
-      
-      if (!validation.isValid) {
-        toast.error(validation.error);
-        return;
-      }
-
+      if (!validation.isValid) { toast.error(validation.error); return; }
       setCertificateFile(file);
       setCertificateDialogOpen(true);
     }
@@ -200,36 +178,24 @@ export default function PortalClienteSettingsView() {
   const handleCertificateUpload = handleCertificateSubmit(async (data) => {
     try {
       setUploadingCertificate(true);
-      
-      const response = await uploadCertificado(
-        certificateFile, 
-        data.password, 
-        empresa.empresaAtiva
-      );
-      
+      const response = await uploadCertificado(certificateFile, data.password, empresa.empresaAtiva);
       if (response.data.success) {
         toast.success('Certificado digital enviado com sucesso!');
         setCertificateDialogOpen(false);
         setCertificateFile(null);
         certificateMethods.reset();
-        
-        // Recarregar lista de certificados
         await fetchCertificados();
-      } else if (response.data.message && response.data.message.includes('Senha do certificado inválida')) {
-        // Tratamento específico para senha incorreta
+      } else if (response.data.message?.includes('Senha do certificado inválida')) {
         toast.error('❌ Senha incorreta! Verifique a senha do certificado e tente novamente.');
       } else {
         toast.error(response.data.message || 'Erro ao enviar certificado');
       }
     } catch (error) {
       console.error('Erro ao enviar certificado:', error);
-      
-      // Verificar se é erro de senha inválida
-      if (error.response?.data?.message && error.response.data.message.includes('Senha do certificado inválida')) {
+      if (error.response?.data?.message?.includes('Senha do certificado inválida')) {
         toast.error('❌ Senha incorreta! Verifique a senha do certificado e tente novamente.');
       } else {
-        const errorMessage = error.response?.data?.message || 'Erro ao enviar certificado digital';
-        toast.error(errorMessage);
+        toast.error(error.response?.data?.message || 'Erro ao enviar certificado digital');
       }
     } finally {
       setUploadingCertificate(false);
@@ -239,7 +205,6 @@ export default function PortalClienteSettingsView() {
   const handleDesativarCertificado = async (certificadoId) => {
     try {
       const response = await desativarCertificado(certificadoId);
-      
       if (response.data.success) {
         toast.success('Certificado desativado com sucesso!');
         await fetchCertificados();
@@ -248,16 +213,13 @@ export default function PortalClienteSettingsView() {
       }
     } catch (error) {
       console.error('Erro ao desativar certificado:', error);
-      const errorMessage = error.response?.data?.message || 'Erro ao desativar certificado';
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || 'Erro ao desativar certificado');
     }
   };
 
   const handleDownloadCertificado = async (certificadoId, fileName) => {
     try {
       const response = await downloadCertificado(certificadoId);
-      
-      // Criar URL do blob e fazer download
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -266,373 +228,79 @@ export default function PortalClienteSettingsView() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      
       toast.success('Download iniciado com sucesso!');
     } catch (error) {
       console.error('Erro ao fazer download do certificado:', error);
       toast.error('Erro ao fazer download do certificado');
     }
   };
-
+  
+  const inativos = certificados.filter(c => c._id !== certificadoAtivo?._id);
 
   return (
     <>
-      <Stack 
-        direction="row" 
-        alignItems="center" 
-        justifyContent="space-between" 
-        sx={{ mb: { xs: 3, sm: 5 } }}
-      >
-        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-          Configurações
-        </Typography>
-      </Stack>
+      <LazyMotion features={domAnimation}>
+        <m.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+          <Card sx={{ borderRadius: 3 }}>
+            <Box sx={{ p: 4, bgcolor: 'background.neutral', borderRadius: '16px 16px 0 0', background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})` }}>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>Configurações</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>Gerencie suas preferências e segurança da conta.</Typography>
+            </Box>
 
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader title="Informações da Conta" />
-            <CardContent>
-              <Grid container spacing={3}>
-                <Grid item xs={12}>
-                  <Stack spacing={1}>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Tipo de Usuário
-                    </Typography>
-                    <Typography variant="body1">
-                      Cliente
-                    </Typography>
+            <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+              <Grid container spacing={5}>
+                <Grid item xs={12} md={6}>
+                  <SectionHeader icon="solar:user-circle-bold-duotone" title="Minha Conta" />
+                  <Stack spacing={2}>
+                    <InfoItem label="Tipo de Usuário">Cliente</InfoItem>
+                    <InfoItem label="Status da Conta"><Typography component="span" variant="inherit" color={user?.status ? 'success.main' : 'error.main'}>{user?.status ? 'Ativa' : 'Inativa'}</Typography></InfoItem>
+                    <InfoItem label="Data de Criação">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '-'}</InfoItem>
+                    <InfoItem label="Último Acesso">{user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString('pt-BR') : '-'}</InfoItem>
                   </Stack>
                 </Grid>
-                <Grid item xs={12}>
-                  <Stack spacing={1}>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Status da Conta
-                    </Typography>
-                    <Typography variant="body1" color={user?.status === true ? 'success.main' : 'error.main'}>
-                      {user?.status === true ? 'Ativa' : 'Inativa'}
-                    </Typography>
-                  </Stack>
-                </Grid>
-                <Grid item xs={12}>
-                  <Stack spacing={1}>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Data de Criação
-                    </Typography>
-                    <Typography variant="body1">
-                      {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '-'}
-                    </Typography>
-                  </Stack>
-                </Grid>
-                <Grid item xs={12}>
-                  <Stack spacing={1}>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Último Acesso
-                    </Typography>
-                    <Typography variant="body1">
-                      {user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString('pt-BR') : '-'}
-                    </Typography>
+
+                <Grid item xs={12} md={6}>
+                  <SectionHeader icon="solar:bell-bing-bold-duotone" title="Notificações" />
+                  <Stack spacing={2} divider={<Divider />}>
+                    <NotificationSwitch checked={notifications.email} onChange={(e) => handleNotificationChange('email', e.target.checked)} title="Notificações por Email" subheader="Receba avisos sobre faturas e documentos." />
+                    <NotificationSwitch checked={notifications.whatsapp} onChange={(e) => handleNotificationChange('whatsapp', e.target.checked)} title="Notificações por Whatsapp" subheader="Receba alertas importantes no seu celular." />
+                    <NotificationSwitch checked={notifications.push} onChange={(e) => handleNotificationChange('push', e.target.checked)} title="Notificações Push" subheader="Receba notificações no navegador." />
                   </Stack>
                 </Grid>
               </Grid>
-            </CardContent>
-          </Card>
-        </Grid>
 
-        <Grid item xs={12} md={6}>
-          <Card>
-            <CardHeader title="Notificações" />
-            <CardContent>
-              <Stack spacing={3}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notifications.email}
-                      onChange={(e) => handleNotificationChange('email', e.target.checked)}
-                    />
-                  }
-                  label={
-                    <Stack>
-                      <Typography variant="body2">Notificações por Email</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        Receber notificações sobre faturas, contratos e documentos
-                      </Typography>
-                    </Stack>
-                  }
-                />
-                <Divider />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notifications.whatsapp}
-                      onChange={(e) => handleNotificationChange('whatsapp', e.target.checked)}
-                    />
-                  }
-                  label={
-                    <Stack>
-                      <Typography variant="body2">Notificações por Whatsapp</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        Receber notificações importantes por Whatsapp
-                      </Typography>
-                    </Stack>
-                  }
-                />
-                <Divider />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={notifications.push}
-                      onChange={(e) => handleNotificationChange('push', e.target.checked)}
-                    />
-                  }
-                  label={
-                    <Stack>
-                      <Typography variant="body2">Notificações Push</Typography>
-                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        Receber notificações no navegador
-                      </Typography>
-                    </Stack>
-                  }
-                />
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
+              <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
 
-        <Grid item xs={12}>
-          <Card>
-            <CardHeader 
-              title="Certificados Digitais" 
-              action={
-                <Button
-                  variant="contained"
-                  startIcon={<Iconify icon="eva:cloud-upload-outline" />}
-                  onClick={() => {
-                    const input = document.getElementById('certificate-upload');
-                    input?.click();
-                  }}
-                >
-                  Novo Certificado
-                </Button>
-              }
-            />
-            <CardContent>
-              <input
-                type="file"
-                accept=".p12,.pfx,.cer,.crt"
-                onChange={handleFileSelect}
-                style={{ display: 'none' }}
-                id="certificate-upload"
-              />
-              
+              <SectionHeader icon="line-md:upload-loop" title="Certificado Digital" />
               {loadingCertificados ? (
-                <Stack spacing={2} alignItems="center" sx={{ py: 4 }}>
-                  <Iconify icon="eos-icons:loading" width={32} />
-                  <Typography variant="body2" color="text.secondary">
-                    Carregando certificados...
-                  </Typography>
-                </Stack>
-              ) : certificados.length === 0 ? (
-                <Stack spacing={3}>
-                  <Alert severity="info">
-                    <Typography variant="body2">
-                      <strong>Nenhum certificado digital configurado</strong>
-                    </Typography>
-                    <Typography variant="caption">
-                      Faça upload do seu certificado digital (.p12, .pfx, .cer ou .crt) para facilitar 
-                      a assinatura de documentos e acesso a serviços governamentais.
-                    </Typography>
-                  </Alert>
-                  
-                  <Box
-                    sx={{
-                      border: '2px dashed',
-                      borderColor: 'divider',
-                      borderRadius: 2,
-                      p: 4,
-                      textAlign: 'center',
-                      bgcolor: 'background.neutral',
-                    }}
-                  >
-                    <Stack spacing={2} alignItems="center">
-                      <Iconify icon="solar:shield-check-bold" width={48} sx={{ color: 'primary.main' }} />
-                      <Typography variant="h6">Enviar Certificado Digital</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Selecione um arquivo .p12, .pfx, .cer ou .crt válido (máx. 5MB)
-                      </Typography>
-                    </Stack>
-                  </Box>
+                <Stack spacing={2}>
+                  <Skeleton variant="rectangular" height={150} sx={{ borderRadius: 2 }} />
+                  <Skeleton variant="text" width="30%" sx={{ fontSize: '1rem' }} />
+                  <Skeleton variant="rectangular" height={60} sx={{ borderRadius: 2 }} />
                 </Stack>
               ) : (
-                <Stack spacing={3}>
-                  {certificadoAtivo && (
-                    <Alert severity="success">
-                      <Typography variant="body2">
-                        <strong>Certificado Ativo:</strong> {certificadoAtivo.fileName}
-                      </Typography>
-                      <Typography variant="caption">
-                        Válido até: {formatarDataCertificado(certificadoAtivo.validTo)}
-                      </Typography>
-                    </Alert>
+                <>
+                  {certificadoAtivo ? (
+                    <ActiveCertificateCard certificado={certificadoAtivo} onDesativar={handleDesativarCertificado} onDownload={handleDownloadCertificado} />
+                  ) : (
+                    <UploadCertificate onFileSelect={handleFileSelect} />
                   )}
-                  
-                  <TableContainer component={Paper} variant="outlined">
-                    <Table>
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Nome</TableCell>
-                          <TableCell>Número de Série</TableCell>
-                          <TableCell>Válido Até</TableCell>
-                          <TableCell>Status</TableCell>
-                          <TableCell>Upload</TableCell>
-                          <TableCell align="center">Ações</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {certificados.map((certificado) => (
-                          <TableRow key={certificado._id}>
-                            <TableCell>
-                              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                                {certificado.nome}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                                {certificado.serialNumber}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2">
-                                {formatarDataCertificado(certificado.validTo)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Chip
-                                label={certificado.status}
-                                color={getCorStatusCertificado(certificado.status)}
-                                size="small"
-                                startIcon={<Iconify icon={getIconeStatusCertificado(certificado.status)} />}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="caption" color="text.secondary">
-                                {formatarDataCertificado(certificado.uploadedAt)}
-                              </Typography>
-                            </TableCell>
-                            <TableCell align="center">
-                              <Stack direction="row" spacing={1} justifyContent="center">
-                                <Tooltip title="Baixar certificado">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleDownloadCertificado(certificado.id, certificado.nome)}
-                                    sx={{ color: 'primary.main' }}
-                                  >
-                                    <Iconify icon="solar:download-bold" />
-                                  </IconButton>
-                                </Tooltip>
-                                
-                                {certificado.status === 'ativo' && (
-                                  <Tooltip title="Desativar certificado">
-                                    <IconButton
-                                      size="small"
-                                      onClick={() => handleDesativarCertificado(certificado.id)}
-                                      sx={{ color: 'error.main' }}
-                                    >
-                                      <Iconify icon="eva:minus-circle-outline" />
-                                    </IconButton>
-                                  </Tooltip>
-                                )}
-                              </Stack>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                </Stack>
+                  <CertificateList certificados={inativos} onDownload={handleDownloadCertificado} />
+                </>
               )}
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+        </m.div>
+      </LazyMotion>
 
-      {/* Modal para senha do certificado */}
-      <Dialog
+      <CertificateUploadModal
         open={certificateDialogOpen}
         onClose={() => setCertificateDialogOpen(false)}
-        maxWidth="sm"
-        fullWidth
-      >
-        <DialogTitle>
-          <Stack direction="row" alignItems="center" spacing={1}>
-            <Iconify icon="solar:shield-check-bold" width={24} sx={{ color: 'primary.main' }} />
-            <Typography variant="h6">Configurar Certificado Digital</Typography>
-          </Stack>
-        </DialogTitle>
-        
-        <Form methods={certificateMethods} onSubmit={handleCertificateUpload}>
-          <DialogContent>
-            <Stack spacing={3}>
-              <Alert severity="info">
-                <Typography variant="body2">
-                  <strong>Arquivo selecionado:</strong> {certificateFile?.name}
-                </Typography>
-                <Typography variant="caption">
-                  Digite a senha do certificado digital para continuar. 
-                  {certificateFile?.name?.toLowerCase().includes('.cer') || certificateFile?.name?.toLowerCase().includes('.crt') 
-                    ? ' Nota: Certificados .cer/.crt podem não precisar de senha.' 
-                    : ''
-                  }
-                </Typography>
-              </Alert>
-              
-              <Alert severity="warning" sx={{ mt: 1 }}>
-                <Typography variant="body2">
-                  <strong>⚠️ Dica:</strong> Se a senha estiver incorreta, você receberá uma mensagem de erro específica. 
-                  Certifique-se de usar a senha correta do certificado digital.
-                </Typography>
-              </Alert>
-              
-              <Field.Text
-                name="password"
-                label="Senha do Certificado"
-                type="password"
-                fullWidth
-                placeholder="Digite a senha do certificado"
-              />
-              
-              <Field.Text
-                name="confirmPassword"
-                label="Confirmar Senha"
-                type="password"
-                fullWidth
-                placeholder="Confirme a senha do certificado"
-              />
-            </Stack>
-          </DialogContent>
-          
-          <DialogActions>
-            <Button
-              variant="outlined"
-              onClick={() => {
-                setCertificateDialogOpen(false);
-                setCertificateFile(null);
-                certificateMethods.reset();
-              }}
-            >
-              Cancelar
-            </Button>
-            <LoadingButton
-              type="submit"
-              variant="contained"
-              loading={isCertificateSubmitting || uploadingCertificate}
-              startIcon={<Iconify icon="eva:cloud-upload-outline" />}
-            >
-              {uploadingCertificate ? 'Enviando...' : 'Enviar Certificado'}
-            </LoadingButton>
-          </DialogActions>
-        </Form>
-      </Dialog>
+        onSubmit={handleCertificateUpload}
+        methods={certificateMethods}
+        fileName={certificateFile?.name}
+        isUploading={uploadingCertificate}
+      />
     </>
   );
 }

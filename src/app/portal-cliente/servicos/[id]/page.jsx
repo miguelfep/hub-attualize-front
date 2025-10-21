@@ -1,39 +1,43 @@
 'use client';
 
-import React from 'react';
+import { toast } from 'sonner';
+import { mutate as mutateGlobal } from 'swr';
+import { useParams, useRouter } from 'next/navigation';
 import { m, LazyMotion, domAnimation } from 'framer-motion';
+import React, { useState, useEffect, useCallback } from 'react';
 
-import Grid from '@mui/material/Unstable_Grid2';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
+import MenuItem from '@mui/material/MenuItem';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
+import CardContent from '@mui/material/CardContent';
 import { alpha, useTheme } from '@mui/material/styles';
-import {
-  Box,
-  Card,
-  Stack,
-  Button,
-  Divider,
-  MenuItem,
-  TextField,
-  Typography,
-  CardContent,
-  InputAdornment,
-} from '@mui/material';
+import InputAdornment from '@mui/material/InputAdornment';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
 
+import { endpoints } from 'src/utils/axios';
 import { fCurrency } from 'src/utils/format-number';
 
 import { getClienteById } from 'src/actions/clientes';
-import { portalCreateServico } from 'src/actions/portal';
+import { portalGetServico, portalUpdateServico } from 'src/actions/portal';
 
-import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+import { EditarServicoPageSkeleton } from 'src/components/skeleton/EditarServicoPageSkeleton';
 
 import { useAuthContext } from 'src/auth/hooks';
+
+
+const CustomDivider = () => <Divider sx={{ my: 4, borderStyle: 'dashed' }} />;
 
 const SectionHeader = ({ icon, title }) => (
   <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
@@ -56,17 +60,33 @@ const SectionHeader = ({ icon, title }) => (
   </Stack>
 );
 
-export default function NovoServicoPage() {
-  const theme = useTheme();
+const onlyDigits = (v) => (v || '').replace(/\D/g, '');
+
+const formatBRLInput = (v) => {
+  const d = onlyDigits(v);
+  const n = Number(d) / 100;
+  return { text: fCurrency(n), value: n };
+};
+
+// ----------------------------------------------------------------------
+// COMPONENTE PRINCIPAL
+// ----------------------------------------------------------------------
+
+export default function EditarServicoPage() {
   const { user } = useAuthContext();
   const userId = user?.id || user?._id || user?.userId;
-  const { empresaAtiva, empresaAtivaData, loadingEmpresas } = useEmpresa(userId);
+  const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
   const { podeGerenciarServicos, podeEmitirNFSe } = useSettings();
-  const router = useRouter();
 
-  const [saving, setSaving] = React.useState(false);
-  const [form, setForm] = React.useState({
+  const router = useRouter();
+  const params = useParams();
+  const { id: servicoId } = params;
+  const theme = useTheme();
+
+  const [saving, setSaving] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
+  const [form, setForm] = useState({
     nome: '',
     descricao: '',
     valor: 0,
@@ -77,16 +97,43 @@ export default function NovoServicoPage() {
     aliquotaISS: '',
     cnae: '',
   });
-  const onlyDigits = (v) => (v || '').replace(/\D/g, '');
-  const formatBRLInput = (v) => {
-    const d = onlyDigits(v);
-    const n = Number(d) / 100;
-    return { text: fCurrency(n), value: n };
-  };
-  const [cnaesEmpresa, setCnaesEmpresa] = React.useState([]);
-  const [loadingCnaes, setLoadingCnaes] = React.useState(false);
 
-  React.useEffect(() => {
+  const [cnaesEmpresa, setCnaesEmpresa] = useState([]);
+  const [loadingCnaes, setLoadingCnaes] = useState(false);
+
+  useEffect(() => {
+
+    const loadServicoData = async () => {
+      try {
+        setLoadingData(true);
+        const servicoData = await portalGetServico(clienteProprietarioId, servicoId);
+
+        const { value, text } = formatBRLInput(String(servicoData.valor * 100));
+
+        setForm({
+          nome: servicoData.nome || '',
+          descricao: servicoData.descricao || '',
+          valor: value,
+          valorText: text,
+          unidade: servicoData.unidade || 'UN',
+          categoria: servicoData.categoria || '',
+          codigoServico: servicoData.codigoServico || '',
+          aliquotaISS: servicoData.aliquotaISS || '',
+          cnae: servicoData.cnae || '',
+        });
+      } catch (error) {
+        toast.error('Erro ao carregar dados do serviço.');
+        console.error(error);
+      } finally {
+        setLoadingData(false);
+      }
+    };
+    if (servicoId && clienteProprietarioId) {
+      loadServicoData();
+    }
+  }, [servicoId, clienteProprietarioId]);
+
+  useEffect(() => {
     let ignore = false;
     const loadCnaes = async () => {
       if (!clienteProprietarioId) return;
@@ -119,19 +166,11 @@ export default function NovoServicoPage() {
     };
   }, [clienteProprietarioId]);
 
-  if (loadingEmpresas || !clienteProprietarioId) return <Typography>Carregando...</Typography>;
-  if (!podeGerenciarServicos) return <Typography>Funcionalidade não disponível</Typography>;
-
-  const handleSubmit = async (e) => {
+const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
-    if (!form.nome) {
-      toast.error('Informe o nome do serviço');
-      return false;
-    }
-    if (!form.valor || Number(form.valor) <= 0) {
-      toast.error('Informe um valor válido');
-      return false;
-    }
+    if (!form.nome) { toast.error('Informe o nome do serviço'); return; }
+    if (!form.valor || Number(form.valor) <= 0) { toast.error('Informe um valor válido'); return; }
+
     try {
       setSaving(true);
       const payload = {
@@ -141,26 +180,28 @@ export default function NovoServicoPage() {
         valor: Number(form.valor),
         unidade: form.unidade,
         categoria: form.categoria,
-        // NFSe (condicional)
-        ...(podeEmitirNFSe
-          ? {
-              codigoServico: form.codigoServico || undefined,
-              aliquotaISS: form.aliquotaISS ? Number(form.aliquotaISS) : undefined,
-              cnae: form.cnae || undefined,
-            }
-          : {}),
+        ...(podeEmitirNFSe ? {
+          codigoServico: form.codigoServico || undefined,
+          aliquotaISS: form.aliquotaISS ? Number(form.aliquotaISS) : undefined,
+          cnae: form.cnae || undefined,
+        } : {}),
       };
-      await portalCreateServico(payload);
-      toast.success('Serviço criado');
+      await portalUpdateServico(servicoId, payload);
+      toast.success('Serviço atualizado com sucesso!');
+      const baseKey = endpoints.portal.servicos.list(clienteProprietarioId);
+      mutateGlobal((key) => typeof key === 'string' && key.startsWith(baseKey), undefined, { revalidate: true });
+
+router.replace(paths.cliente.servicos);
       router.replace(paths.cliente.servicos);
-      return true;
     } catch (err) {
-      toast.error('Erro ao criar serviço');
-      return false;
+      toast.error('Erro ao atualizar serviço');
     } finally {
       setSaving(false);
     }
-  };
+  }, [form, podeEmitirNFSe, router, servicoId, clienteProprietarioId]);
+
+  if (loadingEmpresas || loadingData) return <EditarServicoPageSkeleton />;
+  if (!podeGerenciarServicos) return <Typography>Funcionalidade não disponível</Typography>;
 
   return (
     <LazyMotion features={domAnimation}>
@@ -175,7 +216,6 @@ export default function NovoServicoPage() {
               sx={{
                 p: 3,
                 display: 'flex',
-                flexDirection: { xs: 'column', md: 'row' },
                 alignItems: { md: 'center' },
                 justifyContent: 'space-between',
                 gap: 2,
@@ -184,10 +224,10 @@ export default function NovoServicoPage() {
             >
               <Box>
                 <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-                  Novo Serviço
+                  Editar Serviço
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                  Preencha os dados para cadastrar um novo serviço.
+                  Altere os dados e salve para aplicar as mudanças.
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1.5} alignItems="center">
@@ -195,7 +235,7 @@ export default function NovoServicoPage() {
                   Cancelar
                 </Button>
                 <LoadingButton type="submit" variant="contained" loading={saving}>
-                  Salvar Serviço
+                  Salvar Alterações
                 </LoadingButton>
               </Stack>
             </Box>
@@ -259,8 +299,7 @@ export default function NovoServicoPage() {
 
               {podeEmitirNFSe && (
                 <>
-                  <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
-
+                  <CustomDivider />
                   <SectionHeader
                     icon="solar:file-text-bold-duotone"
                     title="Informações Fiscais (NFSe)"
