@@ -9,6 +9,24 @@ import { Iconify } from 'src/components/iconify';
 export function usePortalNavData() {
   const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos } = useSettings();
 
+  const vendasChildren = [
+    podeCriarOrcamentos && {
+      title: 'Vendas',
+      path: paths.cliente.orcamentos,
+      icon: <Iconify icon="solar:money-bag-bold" />,
+    },
+    podeGerenciarClientes && {
+      title: 'Clientes',
+      path: paths.cliente.clientes,
+      icon: <Iconify icon="solar:users-group-two-rounded-bold-duotone" />,
+    },
+    podeGerenciarServicos && {
+      title: 'Serviços',
+      path: paths.cliente.servicos,
+      icon: <Iconify icon="eos-icons:service" />,
+    },
+  ].filter(Boolean); 
+
   const items = [
     {
       title: 'Dashboard',
@@ -20,30 +38,33 @@ export function usePortalNavData() {
       path: paths.cliente.empresa,
       icon: <Iconify icon="solar:buildings-2-bold-duotone" />,
     },
-    {
-      title: 'Financeiro',
-      path: paths.cliente.financeiro.root,
+    vendasChildren.length > 0 && {
+      title: 'Minhas Vendas',
+      path: '#',
       icon: <Iconify icon="solar:bill-list-bold-duotone" />,
-    },
-    podeGerenciarClientes && {
-      title: 'Clientes',
-      path: paths.cliente.clientes,
-      icon: <Iconify icon="solar:users-group-rounded-bold" />,
-    },
-    podeGerenciarServicos && {
-      title: 'Serviços',
-      path: paths.cliente.servicos,
-      icon: <Iconify icon="solar:case-round-bold" />,
-    },
-    podeCriarOrcamentos && {
-      title: 'Orçamentos',
-      path: paths.cliente.orcamentos,
-      icon: <Iconify icon="solar:wallet-money-bold-duotone" />,
+      children: vendasChildren,
     },
     {
-      title: 'Minhas Licenças',
-      path: paths.cliente.licencas,
-      icon: <Iconify icon="solar:shield-check-bold-duotone" />,
+      title: 'Meus Planos',
+      path: paths.cliente.financeiro.root,
+      icon: <Iconify icon="solar:money-bag-bold" />,
+    },
+    {
+      title: 'Meus Documentos',
+      path: '#',
+      icon: <Iconify icon="solar:documents-bold-duotone" />,
+      children: [
+        {
+          title: 'Licenças',
+          path: paths.cliente.licencas,
+          icon: <Iconify icon="solar:document-text-bold-duotone" />,
+        },
+        {
+          title: 'Societário',
+          path: paths.cliente.societario.documentos, 
+          icon: <Iconify icon="solar:folder-with-files-bold-duotone" />,
+        },
+      ],
     },
     {
       title: 'Configurações',
@@ -59,5 +80,3 @@ export function usePortalNavData() {
     },
   ];
 }
-
-

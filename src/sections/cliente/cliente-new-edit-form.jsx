@@ -32,6 +32,7 @@ import { criarCliente, updateCliente, getClienteById } from 'src/actions/cliente
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
+import FileUploadField from 'src/components/file-upload/FileUploadField';
 
 import SociosForm from './cliete-socios-form';
 import { ClientePortalSettings } from './cliente-portal-settings';
@@ -137,7 +138,24 @@ export const NewUClienteSchema = zod.object({
       })
     )
     .optional(),
-});
+  contratoSocialUrl: zod.string().optional(),
+  cartaoCnpjUrl: zod.string().optional(),
+  contratoSocialFile: zod.any().optional(),
+  cartaoCnpjFile: zod.any().optional(),
+  settings: zod.object({
+    funcionalidades: zod.object({
+      emissaoNFSe: zod.boolean().optional(),
+      cadastroClientes: zod.boolean().optional(),
+      cadastroServicos: zod.boolean().optional(),
+      vendas: zod.boolean().optional(),
+      agendamentos: zod.boolean().optional(),
+    }).optional(),
+    configuracoes: zod.object({
+      limiteClientes: zod.number().or(zod.string()).optional(),
+      limiteServicos: zod.number().or(zod.string()).optional(),
+      limiteOrcamentos: zod.number().or(zod.string()).optional(),
+    }).optional()
+  }).optional(),});
 
 // ----------------------------------------------------------------------
 
@@ -182,6 +200,24 @@ export function ClienteNewEditForm({ currentCliente }) {
       ],
       tributacao: currentCliente?.tributacao || [],
       socios: currentCliente?.socios || [],
+      contratoSocialUrl: currentCliente?.contratoSocialUrl || '',
+      cartaoCnpjUrl: currentCliente?.cartaoCnpjUrl || '',
+      contratoSocialFile: null,
+      cartaoCnpjFile: null,
+      settings: currentCliente?.settings || {
+        funcionalidades: {
+          emissaoNFSe: false,
+          cadastroClientes: false,
+          cadastroServicos: false,
+          vendas: false,
+          agendamentos: false,
+        },
+        configuracoes: {
+          limiteClientes: '',
+          limiteServicos: '',
+          limiteOrcamentos: '',
+        }
+      }
     }),
     [currentCliente]
   );
@@ -206,24 +242,40 @@ export function ClienteNewEditForm({ currentCliente }) {
     name: 'endereco',
   });
 
-  const onSubmit = handleSubmit(
+const onSubmit = handleSubmit(
     async (data) => {
       try {
-        let response;
-        if (currentCliente) {
-          response = await updateCliente(currentCliente._id, data);
 
-          // Atualize os valores do formulário garantindo que datas sejam `Date`
+        const formData = new FormData();
+        const textData = { ...data };
+        
+        delete textData.contratoSocialFile;
+        delete textData.cartaoCnpjFile;
+
+        formData.append('data', JSON.stringify(textData));
+
+        if (data.contratoSocialFile instanceof File) {
+          formData.append('contratoSocial', data.contratoSocialFile);
+        }
+        if (data.cartaoCnpjFile instanceof File) {
+          formData.append('cartaoCnpj', data.cartaoCnpjFile);
+        }
+
+        if (currentCliente) {
+          await updateCliente(currentCliente._id, formData);
+
           const updatedCliente = await getClienteById(currentCliente._id);
           reset({
             ...updatedCliente,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
             dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
+            contratoSocialFile: null, 
+            cartaoCnpjFile: null,
           });
 
           toast.success('Cliente Atualizado com sucesso!');
         } else {
-          response = await criarCliente(data);
+          await criarCliente(formData);
           toast.success('Cliente Criado com sucesso!');
           reset();
           router.push(paths.dashboard.cliente.root);
@@ -515,9 +567,30 @@ export function ClienteNewEditForm({ currentCliente }) {
                     ))}
                   </Field.Select>
                 </Grid>
+                {/* <Grid xs={12} sm={6}>
+                </Grid> */}
                 <Grid xs={12}>
                   <Field.Editor name="observacao" label="Observação" fullWidth />
                 </Grid>
+                <Grid container item spacing={2} xs={12} sx={{ mt: 1 }}>
+                <Grid item xs={12}>
+                  <Typography variant="h6" sx={{ mb: -1 }}>Documentos da Empresa</Typography>
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FileUploadField
+                    name="contratoSocialFile"
+                    label="Contrato Social"
+                    existingFileUrl={watch('contratoSocialUrl')}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <FileUploadField
+                    name="cartaoCnpjFile"
+                    label="Cartão CNPJ"
+                    existingFileUrl={watch('cartaoCnpjUrl')}
+                  />
+                </Grid>
+              </Grid>
                 <Grid xs={12} sm={6}>
                   <Controller
                     name="dataEntrada"
@@ -695,7 +768,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       {tabIndex === 6 && (
         <Grid xs={12}>
           <Card sx={{ p: 3 }}>
-            <ClientePortalSettings clienteId={currentCliente?._id} />
+            <ClientePortalSettings control={control} />
           </Card>
         </Grid>
       )}

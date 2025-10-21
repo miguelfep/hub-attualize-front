@@ -1,25 +1,30 @@
-import { useState, useCallback } from 'react';
+import { m } from 'framer-motion';
+import { useMemo, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
-import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Grid from '@mui/material/Unstable_Grid2';
+import Divider from '@mui/material/Divider';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { PlanCardSkeleton } from 'src/components/skeleton/PlanSkeleton';
 
 // ----------------------------------------------------------------------
 
+const MotionGrid = m(Grid);
+
 const PLAN_ICONS = {
-  start: 'solar:rocket-bold',
-  pleno: 'solar:users-group-rounded-bold',
-  premium: 'solar:crown-bold',
-  plus: 'solar:buildings-bold',
+  start: 'solar:rocket-bold-duotone',
+  pleno: 'solar:users-group-rounded-bold-duotone',
+  premium: 'solar:crown-bold-duotone',
+  plus: 'solar:cup-star-bold-duotone',
 };
 
 const PLAN_COLORS = {
@@ -29,153 +34,156 @@ const PLAN_COLORS = {
   plus: 'error',
 };
 
-export function PlansSection({ currentPlan, onPlanChange, planData }) {
-  const [loading, setLoading] = useState(false);
-
-  // Ordem dos planos (do menor para o maior)
-  const planOrder = ['start', 'pleno', 'premium', 'plus'];
-  
-  // Filtrar planos baseado no plano atual
-  const getAvailablePlans = () => {
-    console.log('🔍 PlansSection - currentPlan:', currentPlan);
-    console.log('🔍 PlansSection - planData:', planData);
-    
-    if (!currentPlan || !planData) {
-      console.log('⚠️ Sem currentPlan ou planData, retornando todos os planos');
-      return Object.values(planData || {});
-    }
-
-    const currentIndex = planOrder.indexOf(currentPlan.subscription);
-    console.log('🔍 Current index:', currentIndex, 'for subscription:', currentPlan.subscription);
-    
-    if (currentIndex === -1) {
-      console.log('⚠️ Plano não encontrado na ordem, retornando todos');
-      return Object.values(planData);
-    }
-
-    // Retornar apenas o plano atual e os planos superiores
-    const filteredPlans = planOrder
-      .slice(currentIndex)
-      .map(subscription => planData[subscription])
-      .filter(Boolean);
-    
-    console.log('✅ Planos filtrados:', filteredPlans.map(p => p.subscription));
-    return filteredPlans;
-  };
-
-  const availablePlans = getAvailablePlans();
-
-  const handleUpgradePlan = useCallback(async (planSubscription) => {
-    if (planSubscription === currentPlan?.subscription) return;
-
-    try {
-      setLoading(true);
-      // Aqui você faria a chamada para a API para alterar o plano
-      console.log('🔄 Alterando plano para:', planSubscription);
-      
-      // Simular chamada da API
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      if (onPlanChange) {
-        onPlanChange(planSubscription);
-      }
-      
-      // Aqui você mostraria uma mensagem de sucesso
-      console.log('✅ Plano alterado com sucesso!');
-    } catch (error) {
-      console.error('❌ Erro ao alterar plano:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPlan?.subscription, onPlanChange]);
-
-  const renderUpgradeOption = (plan) => (
-    <Grid xs={12} sm={6} md={3} key={plan.subscription}>
-      <Paper
-        variant="outlined"
-        sx={{
-          p: 2,
-          position: 'relative',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          transition: 'all 0.3s ease',
-          opacity: plan.subscription === currentPlan?.subscription ? 0.6 : 1,
-          '&:hover': {
-            transform: 'translateY(-2px)',
-            boxShadow: 2,
-          },
-        }}
-      >
-        {plan.subscription === currentPlan?.subscription && (
-          <Label
-            color="success"
-            startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
-            sx={{ position: 'absolute', top: 8, right: 8 }}
-          >
-            Atual
-          </Label>
-        )}
-
-        <Stack spacing={1.5} sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-          {/* Nome e Faturamento */}
-          <Stack spacing={1}>
-            <Typography variant="h6" sx={{ textTransform: 'capitalize', fontWeight: 'bold' }}>
-              {plan.name}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-              Faturamento: {plan.faturamento}
-            </Typography>
-          </Stack>
-
-          {/* Features */}
-          <Stack spacing={0.5} sx={{ flexGrow: 1 }}>
-            {plan.features.map((feature, index) => (
-              <Stack key={index} direction="row" alignItems="center" spacing={1}>
-                <Iconify 
-                  icon="eva:checkmark-circle-2-fill" 
-                  width={14} 
-                  sx={{ color: 'success.main' }}
-                />
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
-                  {feature}
-                </Typography>
-              </Stack>
-            ))}
-          </Stack>
-
-          {/* Botão de Upgrade - sempre na parte inferior */}
-          <Box sx={{ mt: 'auto', pt: 1 }}>
-            {plan.subscription !== currentPlan?.subscription ? (
-              <Button
-                variant="contained"
-                onClick={() => handleUpgradePlan(plan.subscription)}
-                disabled={loading}
-                startIcon={loading ? <Iconify icon="eos-icons:loading" /> : <Iconify icon="eva:arrow-upward-fill" />}
-                size="small"
-                fullWidth
-              >
-                {loading ? 'Alterando...' : 'Fazer Upgrade'}
-              </Button>
-            ) : (
-              <Box sx={{ height: 36 }} />
-            )}
-          </Box>
-        </Stack>
-      </Paper>
-    </Grid>
-  );
+function PlanCard({ plan, isCurrent, isUpgrading, onUpgrade }) {
+  const theme = useTheme();
+  const color = PLAN_COLORS[plan.subscription] || 'default';
 
   return (
-    <Card>
-      <CardHeader 
-        title="Planos Disponíveis" 
-        subheader="Escolha o plano que melhor atende às suas necessidades"
-      />
+    <Card
+      sx={{
+        p: 3,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        border: `2px solid`,
+        borderColor: isCurrent ? theme.palette[color].main : 'transparent',
+        opacity: isCurrent ? 1 : 0.8,
+        transition: theme.transitions.create(['transform', 'box-shadow', 'opacity', 'border-color']),
+        '&:hover': {
+          opacity: 1,
+          transform: 'translateY(-4px)',
+          boxShadow: `0 8px 16px 0 ${alpha(theme.palette.grey[500], 0.24)}`,
+          borderColor: theme.palette[color].main,
+        },
+      }}
+    >
+      {isCurrent && (
+        <Label color="success" startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />} sx={{ position: 'absolute', top: 16, right: 16 }}>
+          Plano Atual
+        </Label>
+      )}
+
+      <Box sx={{ width: 48, height: 48, mb: 2, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: `${color}.main`, bgcolor: alpha(theme.palette[color].main, 0.08) }}>
+        <Iconify icon={PLAN_ICONS[plan.subscription]} width={28} />
+      </Box>
+
+      <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{plan.name}</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Faturamento até {plan.faturamento}</Typography>
+      <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+
+      <Stack spacing={1.5} sx={{ flexGrow: 1, mb: 2.5 }}>
+        {plan.features.map((feature) => (
+          <Stack key={feature} direction="row" alignItems="center" spacing={1.5}>
+            <Iconify icon="eva:checkmark-circle-2-fill" width={16} sx={{ color: 'success.main' }} />
+            <Typography variant="body2">{feature}</Typography>
+          </Stack>
+        ))}
+      </Stack>
+
+      {!isCurrent ? (
+        <Button variant="contained" color={color} onClick={() => onUpgrade(plan.subscription)} disabled={isUpgrading} startIcon={isUpgrading ? <Iconify icon="eos-icons:loading" /> : null} size="large" fullWidth>
+          {isUpgrading ? 'Redirecionando...' : 'Fazer Upgrade'}
+        </Button>
+      ) : (
+        <Button variant="outlined" color="inherit" size="large" fullWidth disabled>Seu Plano Atual</Button>
+      )}
+    </Card>
+  );
+}
+
+export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
+  const theme = useTheme();
+  
+  const [isUpgrading, setIsUpgrading] = useState(false);
+  const planOrder = useMemo(() => ['start', 'pleno', 'premium', 'plus'], []);
+
+  const availablePlans = useMemo(() => {
+    if (!currentPlan || !planData) return [];
+    
+    const currentIndex = planOrder.indexOf(currentPlan.subscription);
+    
+    if (currentIndex === -1) return [];
+
+    return planOrder.slice(currentIndex).map((sub) => planData[sub]).filter(Boolean);
+  }, [currentPlan, planData, planOrder]);
+
+  // ALTERAÇÃO PRINCIPAL: A lógica da função foi atualizada
+  const handleUpgradePlan = useCallback((planSubscription) => {
+      // Garante que temos os dados necessários
+      if (!currentPlan || planSubscription === currentPlan.subscription) return;
+
+      setIsUpgrading(true);
+
+      const planoAtual = currentPlan.name;
+      const novoPlano = planData[planSubscription]?.name;
+
+      if (!novoPlano) {
+          console.error("Dados do novo plano não encontrados!");
+          setIsUpgrading(false);
+          return;
+      }
+
+      const textoMensagem = `Olá! Vim pelo Portal do Cliente e gostaria de migrar do meu plano "${planoAtual}" para o plano "${novoPlano}".`;
       
+      const whatsappUrl = `https://wa.me/5541996982267?text=${encodeURIComponent(textoMensagem)}`;
+      
+      window.open(whatsappUrl, '_blank');
+
+      setTimeout(() => {
+        setIsUpgrading(false);
+      }, 2500);
+    },
+    [currentPlan, planData]
+  );
+
+
+  const renderSkeletons = () => (
+    [...Array(4)].map((_, index) => (
+      <Grid item xs={12} sm={6} md={3} key={`skeleton-${index}`}>
+        <PlanCardSkeleton isCurrentPlan={index === 0} />
+      </Grid>
+    ))
+  );
+  
+  return (
+    <Card>
+      <CardHeader
+        title="Seu Plano e Upgrades"
+        titleTypographyProps={{ variant: "h4", fontWeight: 700, color: 'text.primary' }} 
+        subheader="Confira seu plano atual e as opções disponíveis para crescer"
+        sx={{
+          p: 4,
+          bgcolor: 'background.neutral',
+          borderRadius: '16px 16px 0 0',
+          background: `linear-gradient(135deg, ${alpha(
+            theme.palette.primary.main,
+            0.1
+          )}, ${alpha(theme.palette.secondary.main, 0.1)})`,
+        }}
+      />
       <CardContent>
         <Grid container spacing={3}>
-          {availablePlans.map(renderUpgradeOption)}
+          {loading
+            ? renderSkeletons()
+            : availablePlans.map((plan, index) => (
+                <MotionGrid
+                  item
+                  key={plan.subscription}
+                  xs={12}
+                  sm={6}
+                  md={3}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.1 }}
+                >
+                  <PlanCard
+                    plan={plan}
+                    isCurrent={plan.subscription === currentPlan?.subscription}
+                    isUpgrading={isUpgrading}
+                    onUpgrade={handleUpgradePlan}
+                  />
+                </MotionGrid>
+              ))}
         </Grid>
       </CardContent>
     </Card>
