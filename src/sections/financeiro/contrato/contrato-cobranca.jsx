@@ -125,6 +125,17 @@ export function ContratoCobrancas({ contratoId, contrato }) {
     }
   };
 
+  const podeEmitirNotaManual = Boolean(contrato?.emitirNotaFiscal) && (contrato?.momentoEmissaoNota === 'manual');
+  const handleGerarNotaFiscal = async (cobranca) => {
+    try {
+      // TODO: integrar com endpoint real quando disponível
+      await new Promise((r) => setTimeout(r, 800));
+      toast.success('Nota fiscal gerada para a cobrança');
+    } catch (error) {
+      toast.error('Erro ao gerar nota fiscal');
+    }
+  };
+
   // Função para abrir o popover de um item específico
   const handleOpenPopover = (event, index) => {
     setPopoverAnchor(event.currentTarget);
@@ -254,6 +265,17 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                             Cancelar Boleto
                           </MenuItem>
                         </>
+                      )}
+                      {podeEmitirNotaManual && (
+                        <MenuItem
+                          onClick={() => {
+                            handleGerarNotaFiscal(cobranca);
+                            handleClosePopover();
+                          }}
+                        >
+                          <Iconify icon="solar:bill-check-bold" />
+                          Gerar Nota Fiscal
+                        </MenuItem>
                       )}
                     </MenuList>
                   </CustomPopover>

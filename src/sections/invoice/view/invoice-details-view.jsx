@@ -10,7 +10,7 @@ import { InvoiceDetails } from '../invoice-details';
 
 // ----------------------------------------------------------------------
 
-export function InvoiceDetailsView({ invoice }) {
+export function InvoiceDetailsView({ invoice, nfses }) {
   return (
     <DashboardContent>
       <CustomBreadcrumbs
@@ -23,7 +23,7 @@ export function InvoiceDetailsView({ invoice }) {
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
-      <InvoiceDetails invoice={invoice} />
+      <InvoiceDetails invoice={invoice} nfses={nfses || invoice?.nfses || []} />
     </DashboardContent>
   );
 }
