@@ -13,7 +13,7 @@ import TableRow from '@mui/material/TableRow';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
-import { TextField, CardContent, Chip, Tooltip, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Switch } from '@mui/material';
+import { TextField, CardContent, Chip, Tooltip, CircularProgress, Dialog, DialogTitle, DialogContent, DialogActions, FormControlLabel, Switch, Alert } from '@mui/material';
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 
 import { fDate } from 'src/utils/format-time';
@@ -191,7 +191,7 @@ export function InvoiceDetails({ invoice, nfses }) {
                         <Chip
                           size="small"
                           label={n.status}
-                          color={n.status === 'emitida' ? 'success' : n.status === 'emitindo' ? 'warning' : n.status === 'cancelada' ? 'error' : 'default'}
+                          color={n.status === 'emitida' ? 'success' : n.status === 'emitindo' ? 'warning' : (n.status === 'cancelada' || n.status === 'negada') ? 'error' : 'default'}
                           variant={n.status === 'emitindo' ? 'soft' : 'filled'}
                           icon={n.status === 'emitindo' ? <CircularProgress size={12} /> : undefined}
                         />
@@ -258,6 +258,12 @@ export function InvoiceDetails({ invoice, nfses }) {
                           <Typography variant="body2">{n?.tomador?.nome} — {n?.tomador?.cpfCnpj}</Typography>
                         </Stack>
                       </Stack>
+
+                      {n.status === 'negada' && (
+                        <Alert severity="error" sx={{ mt: 1 }}>
+                          {n.eNotasErro || n.enotasErro || n.erro || n.mensagemErro || 'Nota negada pelo prestador. Verifique os dados e tente novamente.'}
+                        </Alert>
+                      )}
                     </Stack>
                   </Card>
                 ))}
