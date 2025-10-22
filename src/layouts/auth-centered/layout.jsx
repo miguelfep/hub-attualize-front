@@ -42,7 +42,7 @@ export function AuthCenteredLayout({ sx, children }) {
           slots={{
             topArea: (
               <Alert severity="info" sx={{ display: 'none', borderRadius: 0 }}>
-                This is an info Alert.
+                Isto e um alerta de informação.
               </Alert>
             ),
           }}

@@ -12,7 +12,7 @@ export function Section({
   method,
   layoutQuery,
   methods,
-  title = 'Hub Attualize',
+  title = 'Attualize HUB',
   imgUrl = `${CONFIG.site.basePath}/assets/illustrations/illustration-dashboard.webp`,
   subtitle = 'O  Painel do Cliente da Attualize.',
   ...other

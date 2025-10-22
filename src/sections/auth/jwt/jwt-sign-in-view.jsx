@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from '@mui/material/Link';
 import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
+import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -91,7 +92,10 @@ export function JwtSignInView() {
 
   const renderHead = (
     <Stack spacing={1.5} sx={{ mb: 5 }}>
-      <Typography variant="h5">Acessar sua conta</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 1 }}>
+        <Box component="img" src="/logo/hub-tt.png" alt="Hub TT" sx={{ height: 48 }} />
+      </Box>
+      <Typography variant="h5" textAlign="center">Acessar Attualize HUB</Typography>
 
       <Stack direction="row" spacing={0.5}>
         {/* <Typography variant="body2" sx={{ color: 'text.secondary' }}>

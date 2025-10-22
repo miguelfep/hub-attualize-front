@@ -6,7 +6,7 @@ import packageJson from '../package.json';
 
 export const CONFIG = {
   site: {
-    name: 'Hub Attualize',
+    name: 'Attualize HUB',
     serverUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? '',
     assetURL: process.env.NEXT_PUBLIC_ASSET_URL ?? '',
     basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? '',
