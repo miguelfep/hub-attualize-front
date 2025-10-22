@@ -15,7 +15,7 @@ export function SignInButton({ sx, ...other }) {
       sx={sx}
       {...other}
     >
-      Acessar HUB
+      Attualize HUB
     </Button>
   );
 }
