@@ -10,11 +10,6 @@ export function usePortalNavData() {
   const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos } = useSettings();
 
   const vendasChildren = [
-    podeCriarOrcamentos && {
-      title: 'Vendas',
-      path: paths.cliente.orcamentos,
-      icon: <Iconify icon="solar:money-bag-bold" />,
-    },
     podeGerenciarClientes && {
       title: 'Clientes',
       path: paths.cliente.clientes,
@@ -24,6 +19,11 @@ export function usePortalNavData() {
       title: 'Serviços',
       path: paths.cliente.servicos,
       icon: <Iconify icon="eos-icons:service" />,
+    },
+    podeCriarOrcamentos && {
+      title: 'Vendas',
+      path: paths.cliente.orcamentos,
+      icon: <Iconify icon="solar:money-bag-bold" />,
     },
   ].filter(Boolean); 
 
@@ -45,7 +45,7 @@ export function usePortalNavData() {
       children: vendasChildren,
     },
     {
-      title: 'Meus Planos',
+      title: 'Meu Plano',
       path: paths.cliente.financeiro.root,
       icon: <Iconify icon="solar:money-bag-bold" />,
     },

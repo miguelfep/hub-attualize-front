@@ -1,165 +1,93 @@
-import { useState } from 'react';
-
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import CardContent from '@mui/material/CardContent';
-import CardActions from '@mui/material/CardActions';
+import { alpha, styled } from '@mui/material/styles';
 
 import { Iconify } from 'src/components/iconify';
 
-// ----------------------------------------------------------------------
+const StyledOverlay = styled('div')(({ theme }) => ({
+  top: 0,
+  left: 0,
+  right: 0,
+  bottom: 0,
+  zIndex: 8,
+  position: 'absolute',
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'flex-end',
+  padding: theme.spacing(3),
+  color: theme.palette.common.white,
+  background: `linear-gradient(to top, ${alpha(theme.palette.grey[900], 0.8)} 0%, transparent 70%)`,
+}));
 
-export function BannerCard({ banner, onClose }) {
-  const [isVisible, setIsVisible] = useState(true);
-
-  const handleClose = () => {
-    setIsVisible(false);
-    if (onClose) {
-      onClose(banner.id);
-    }
-  };
-
-  const handleClick = () => {
-    if (banner.link) {
-      if (banner.link.startsWith('http')) {
-        window.open(banner.link, '_blank');
-      } else {
-        window.location.href = banner.link;
-      }
-    }
-  };
-
-  if (!isVisible) return null;
+export function BannerCard({ banner }) {
+  const { title, description, icon, color, buttonText, link, badge } = banner;
 
   return (
-    <Card
-      sx={{
-        position: 'relative',
-        overflow: 'hidden',
-        cursor: banner.link ? 'pointer' : 'default',
-        transition: 'all 0.3s ease',
-        '&:hover': banner.link ? {
-          transform: 'translateY(-2px)',
-          boxShadow: (theme) => theme.shadows[8],
-        } : {},
-      }}
-      onClick={handleClick}
-    >
-      {/* Botão de fechar */}
-      {banner.dismissible && (
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleClose();
-          }}
-          sx={{
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 1,
-            bgcolor: 'rgba(0, 0, 0, 0.5)',
-            color: 'white',
-            '&:hover': {
-              bgcolor: 'rgba(0, 0, 0, 0.7)',
-            },
-          }}
+    <Card sx={{ height: '100%', position: 'relative' }}>
+      <Iconify
+        icon={icon}
+        sx={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: 180,
+          color: alpha(color, 0.1),
+          zIndex: 1,
+        }}
+      />
+      
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: `linear-gradient(135deg, ${alpha(color, 0.4)} 0%, ${alpha(color, 0.1)} 100%)`,
+        }}
+      />
+      
+      <StyledOverlay>
+        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+          {title}
+        </Typography>
+        <Typography variant="body2" sx={{ mt: 1, mb: 2, opacity: 0.8 }}>
+          {description}
+        </Typography>
+        <Button
+          component="a"
+          href={link}
+          target="_blank"
+          rel="noopener"
+          variant="contained"
+          color="primary"
+          sx={{ alignSelf: 'flex-start' }}
         >
-          <Iconify icon="eva:close-fill" width={16} />
-        </IconButton>
-      )}
+          {buttonText}
+        </Button>
+      </StyledOverlay>
 
-      {/* Imagem de fundo ou cor de fundo */}
-      {banner.image ? (
-        <CardMedia
-          component="img"
-          height="200"
-          image={banner.image}
-          alt={banner.title}
-          sx={{
-            objectFit: 'cover',
-          }}
-        />
-      ) : (
+      {badge && (
         <Box
           sx={{
-            height: 200,
-            background: banner.gradient || `linear-gradient(135deg, ${banner.color || '#1976d2'} 0%, ${banner.colorSecondary || '#42a5f5'} 100%)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
+            position: 'absolute',
+            top: 16,
+            right: 16,
+            zIndex: 9,
+            py: 0.5,
+            px: 1,
+            borderRadius: 1,
+            typography: 'caption',
+            fontWeight: 'bold',
+            color: 'common.white',
+            bgcolor: color,
           }}
         >
-          {banner.icon && (
-            <Iconify
-              icon={banner.icon}
-              width={64}
-              sx={{ color: 'white', opacity: 0.3 }}
-            />
-          )}
+          {badge}
         </Box>
-      )}
-
-      <CardContent sx={{ p: 2 }}>
-        <Stack spacing={1}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
-            {banner.title}
-          </Typography>
-          
-          {banner.subtitle && (
-            <Typography variant="body2" color="text.secondary">
-              {banner.subtitle}
-            </Typography>
-          )}
-
-          {banner.description && (
-            <Typography variant="body2" color="text.secondary">
-              {banner.description}
-            </Typography>
-          )}
-
-          {banner.badge && (
-            <Box sx={{ mt: 1 }}>
-              <Typography
-                variant="caption"
-                sx={{
-                  px: 1,
-                  py: 0.5,
-                  bgcolor: banner.badgeColor || 'primary.main',
-                  color: 'white',
-                  borderRadius: 1,
-                  fontWeight: 'bold',
-                }}
-              >
-                {banner.badge}
-              </Typography>
-            </Box>
-          )}
-        </Stack>
-      </CardContent>
-
-      {banner.link && (
-        <CardActions sx={{ p: 2, pt: 0 }}>
-          <Button
-            size="small"
-            variant="contained"
-            endIcon={<Iconify icon="eva:arrow-forward-fill" width={16} />}
-            sx={{
-              bgcolor: banner.buttonColor || 'primary.main',
-              '&:hover': {
-                bgcolor: banner.buttonColor || 'primary.dark',
-              },
-            }}
-          >
-            {banner.buttonText || 'Saiba Mais'}
-          </Button>
-        </CardActions>
       )}
     </Card>
   );

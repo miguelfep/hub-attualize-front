@@ -9,6 +9,8 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import axios, { baseUrl } from 'src/utils/axios';
 
 import { Iconify } from 'src/components/iconify';
@@ -16,6 +18,8 @@ import { Iconify } from 'src/components/iconify';
 export function DocumentoCard({ documento }) {
   const theme = useTheme();
   const [isSharing, setIsSharing] = useState(false);
+  
+  const isMobile = useResponsive('down', 'sm', 'md');
 
   const hasFile = !!documento.fileUrl;
   const fullFileUrl = hasFile ? `${baseUrl}${documento.fileUrl}` : '#';
@@ -121,16 +125,18 @@ export function DocumentoCard({ documento }) {
             >
               {BotaoDownload}
             </a>
-            <Button
-              variant="outlined"  
-              color="primary"
-              onClick={handleShareClick}
-              disabled={!hasFile || !navigator.share || isSharing}
-              startIcon={<Iconify icon="solar:share-bold" />}
-              sx={{ flex: 1 }}
-            >
-              {isSharing ? 'Preparando...' : 'Compartilhar'}
-            </Button>
+            
+            {isMobile && navigator.share && (
+              <Button
+                variant="outlined"  
+                color="primary"
+                onClick={handleShareClick}
+                disabled={isSharing}
+                sx={{ flex: 1 }}
+              >
+                {isSharing ? 'Preparando...' : 'Compartilhar'}
+              </Button>
+            )}
           </Stack>
         )}
         {!hasFile && (

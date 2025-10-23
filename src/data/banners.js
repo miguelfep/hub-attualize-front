@@ -13,7 +13,7 @@ export const sampleBanners = [
     badgeColor: '#4caf50',
     buttonText: 'Solicitar Consultoria',
     buttonColor: '#1976d2',
-    link: '/portal-cliente/servicos/consultoria-tributaria',
+    link: 'https://wa.me/5541996982267?text=Ol%C3%A1!%20Vim%20pelo%20Portal%20do%20Cliente%20e%20tenho%20interesse%20na%20Consultoria%20Tribut%C3%A1ria!',
     dismissible: false,
   },
   {
@@ -28,7 +28,7 @@ export const sampleBanners = [
     badgeColor: '#f57c00',
     buttonText: 'Comprar Agora',
     buttonColor: '#f57c00',
-    link: '/portal-cliente/servicos/certificado-digital',
+    link: 'https://wa.me/5541996982267?text=Ol%C3%A1!%20Vim%20pelo%20Portal%20do%20Cliente%20e%20tenho%20interesse%20em%20adquirir%20o%20Certificado%20Digital%20E-CNPJ!',
     dismissible: false,
   },
   {
@@ -43,7 +43,7 @@ export const sampleBanners = [
     badgeColor: '#388e3c',
     buttonText: 'Acessar Relatórios',
     buttonColor: '#388e3c',
-    link: '/portal-cliente/relatorios',
+    link: 'https://wa.me/5541996982267?text=Ol%C3%A1!%20Vim%20pelo%20Portal%20do%20Cliente%20e%20tenho%20interesse%20no%20Relat%C3%B3rio%20Financeiro%20Avan%C3%A7ado',
     dismissible: false,
   },
 ];
