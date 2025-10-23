@@ -768,7 +768,7 @@ const onSubmit = handleSubmit(
       {tabIndex === 6 && (
         <Grid xs={12}>
           <Card sx={{ p: 3 }}>
-            <ClientePortalSettings control={control} />
+            <ClientePortalSettings clienteId={currentCliente?._id} control={control} />
           </Card>
         </Grid>
       )}
