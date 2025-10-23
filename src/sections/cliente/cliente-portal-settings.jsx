@@ -126,7 +126,7 @@ export function ClientePortalSettings({ clienteId }) {
   };
 
   const handleEnotasRootChange = (key) => (event) => {
-    const value = event.target.value;
+    const { value } = event.target;
     setLocalState((prev) => ({
       ...prev,
       eNotas: { ...prev.eNotas, [key]: value },
@@ -592,7 +592,7 @@ export function ClientePortalSettings({ clienteId }) {
                               <Chip
                                 size="small"
                                 color="success"
-                                label={`Vinculado ao eNotas`}
+                                label="Vinculado ao eNotas"
                               />
                             )}
                         </Stack>
