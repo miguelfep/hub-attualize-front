@@ -1,10 +1,24 @@
 'use client';
 
 import { useState } from 'react';
+import { useTheme } from '@emotion/react';
+import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Box, Card, Stack, Button, MenuItem, TextField, Typography, CardContent, InputAdornment } from '@mui/material';
+import {
+  Box,
+  Card,
+  Stack,
+  alpha,
+  Button,
+  Divider,
+  MenuItem,
+  TextField,
+  Typography,
+  CardContent,
+  InputAdornment,
+} from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
@@ -13,7 +27,8 @@ import { buscarCep } from 'src/actions/cep';
 import { portalCreateCliente } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
-import { SimplePaper } from 'src/components/paper/SimplePaper';
+import { Iconify } from 'src/components/iconify';
+import { PortalClientesPageSkeleton } from 'src/components/skeleton/PortalClientePageSkeleton';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -26,9 +41,13 @@ const formatCEP = (v) => {
 const formatPhone = (v) => {
   const d = onlyDigits(v).slice(0, 11);
   if (d.length <= 10) {
-    return d.replace(/(\d{0,2})(\d{0,4})(\d{0,4}).*/, (m, a, b, c) => [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' '));
+    return d.replace(/(\d{0,2})(\d{0,4})(\d{0,4}).*/, (m, a, b, c) =>
+      [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' ')
+    );
   }
-  return d.replace(/(\d{0,2})(\d{0,5})(\d{0,4}).*/, (m, a, b, c) => [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' '));
+  return d.replace(/(\d{0,2})(\d{0,5})(\d{0,4}).*/, (m, a, b, c) =>
+    [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' ')
+  );
 };
 const formatCPF = (v) => {
   const d = onlyDigits(v).slice(0, 11);
@@ -50,12 +69,35 @@ const formatCPFOrCNPJ = (v) => {
   return d.length > 11 ? formatCNPJ(d) : formatCPF(d);
 };
 
+const SectionHeader = ({ icon, title }) => (
+  <Stack direction="row" alignItems="center" spacing={2} sx={{ my: 3 }}>
+    <Box
+      sx={{
+        width: 40,
+        height: 40,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: '50%',
+        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+      }}
+    >
+      <Iconify icon={icon} width={24} color="primary.main" />
+    </Box>
+    <Typography variant="h6" sx={{ fontWeight: 700 }}>
+      {title}
+    </Typography>
+  </Stack>
+);
+
 export default function PortalClienteNovoPage() {
+  const theme = useTheme();
   const { user } = useAuthContext();
   const userId = user?.id || user?._id || user?.userId;
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
   const { podeGerenciarClientes } = useSettings();
+  const [fetchingCep, setFetchingCep] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -68,20 +110,28 @@ export default function PortalClienteNovoPage() {
     telefone: '',
     whatsapp: '',
     endereco: {
-      cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: ''
+      cep: '',
+      rua: '',
+      numero: '',
+      complemento: '',
+      bairro: '',
+      cidade: '',
+      estado: '',
     },
-    observacao: ''
+    observacao: '',
   });
 
   if (loadingEmpresas || !clienteProprietarioId) {
-    return <Typography>Carregando...</Typography>;
+    return <PortalClientesPageSkeleton />;
   }
 
   if (!podeGerenciarClientes) {
     return (
       <Box>
         <Typography variant="h6">Funcionalidade não disponível</Typography>
-        <Typography variant="body2" color="text.secondary">Peça ao administrador para ativar Cadastro de Clientes nas configurações.</Typography>
+        <Typography variant="body2" color="text.secondary">
+          Peça ao administrador para ativar Cadastro de Clientes nas configurações.
+        </Typography>
       </Box>
     );
   }
@@ -111,6 +161,7 @@ export default function PortalClienteNovoPage() {
     const rawCep = onlyDigits(formData.endereco.cep);
     if (rawCep.length !== 8) return;
     try {
+      setFetchingCep(true);
       const data = await buscarCep(rawCep);
       setFormData((f) => ({
         ...f,
@@ -124,122 +175,267 @@ export default function PortalClienteNovoPage() {
       }));
     } catch (err) {
       toast.error('CEP não encontrado');
+    } finally {
+      setFetchingCep(false);
     }
   };
 
   return (
-    <SimplePaper>
-      <form onSubmit={handleSubmit}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-          <Typography variant="h6">Novo Cliente</Typography>
-          <Stack direction="row" spacing={1}>
-            <Button href="../clientes" variant="text">Cancelar</Button>
-            <LoadingButton type="submit" variant="contained" loading={saving}>Salvar</LoadingButton>
-          </Stack>
-        </Stack>
+    <LazyMotion features={domAnimation}>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+      >
+        <form onSubmit={handleSubmit}>
+          <Card sx={{ borderRadius: 3 }}>
+            <Box
+              sx={{
+                p: 3,
+                display: 'flex',
+                flexDirection: { xs: 'column', md: 'row' },
+                alignItems: { md: 'center' },
+                justifyContent: 'space-between',
+                gap: 2,
+                background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`,
+              }}
+            >
+              <Box>
+                <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                  Novo Cliente
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                  Preencha os dados para cadastrar um novo cliente no sistema.
+                </Typography>
+              </Box>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Button href="../clientes" variant="outlined" color="inherit">
+                  Cancelar
+                </Button>
+                <LoadingButton type="submit" variant="contained" loading={saving}>
+                  Salvar Cliente
+                </LoadingButton>
+              </Stack>
+            </Box>
 
-        <Card sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ mb: 2 }}>Dados Básicos</Typography>
-            <Grid container spacing={2}>
-              <Grid xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  select
-                  label="Tipo de Pessoa"
-                  value={formData.tipoPessoa}
-                  onChange={(e) => setFormData((f) => ({ ...f, tipoPessoa: e.target.value }))}
-                >
-                  <MenuItem value="fisica">Pessoa Física</MenuItem>
-                  <MenuItem value="juridica">Pessoa Jurídica</MenuItem>
-                </TextField>
-              </Grid>
-              <Grid xs={12} sm={8}>
-                <TextField fullWidth label="Nome" value={formData.nome} onChange={(e) => setFormData((f) => ({ ...f, nome: e.target.value }))} />
-              </Grid>
-              {formData.tipoPessoa === 'juridica' && (
-                <Grid xs={12}>
-                  <TextField fullWidth label="Razão Social" value={formData.razaoSocial} onChange={(e) => setFormData((f) => ({ ...f, razaoSocial: e.target.value }))} />
+            <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+              <SectionHeader icon="solar:user-id-bold-duotone" title="Dados Básicos" />
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Tipo de Pessoa"
+                    value={formData.tipoPessoa}
+                    onChange={(e) => setFormData((f) => ({ ...f, tipoPessoa: e.target.value }))}
+                  >
+                    <MenuItem value="fisica">Pessoa Física</MenuItem>
+                    <MenuItem value="juridica">Pessoa Jurídica</MenuItem>
+                  </TextField>
                 </Grid>
-              )}
-              <Grid xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label={formData.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ'}
-                  value={formData.cpfCnpj}
-                  onChange={(e) => setFormData((f) => ({ ...f, cpfCnpj: formatCPFOrCNPJ(e.target.value) }))}
-                />
+                <Grid item xs={12} sm={8}>
+                  <TextField
+                    fullWidth
+                    label="Nome / Nome Fantasia"
+                    value={formData.nome}
+                    onChange={(e) => setFormData((f) => ({ ...f, nome: e.target.value }))}
+                  />
+                </Grid>
+                {formData.tipoPessoa === 'juridica' && (
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Razão Social"
+                      value={formData.razaoSocial}
+                      onChange={(e) => setFormData((f) => ({ ...f, razaoSocial: e.target.value }))}
+                    />
+                  </Grid>
+                )}
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label={formData.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ'}
+                    value={formData.cpfCnpj}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, cpfCnpj: formatCPFOrCNPJ(e.target.value) }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Email"
+                    value={formData.email}
+                    onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Telefone"
+                    value={formData.telefone}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, telefone: formatPhone(e.target.value) }))
+                    }
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Iconify icon="solar:phone-bold-duotone" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Whatsapp"
+                    value={formData.whatsapp}
+                    onChange={(e) =>
+                      setFormData((f) => ({ ...f, whatsapp: formatPhone(e.target.value) }))
+                    }
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Iconify icon="logos:whatsapp-icon" />
+                        </InputAdornment>
+                      ),
+                    }}
+                  />
+                </Grid>
               </Grid>
-              <Grid xs={12} sm={6}>
-                <TextField fullWidth label="Email" value={formData.email} onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))} />
-              </Grid>
-              <Grid xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Telefone"
-                  value={formData.telefone}
-                  onChange={(e) => setFormData((f) => ({ ...f, telefone: formatPhone(e.target.value) }))}
-                  InputProps={{ startAdornment: <InputAdornment position="start">📞</InputAdornment> }}
-                />
-              </Grid>
-              <Grid xs={12} sm={6}>
-                <TextField
-                  fullWidth
-                  label="Whatsapp"
-                  value={formData.whatsapp}
-                  onChange={(e) => setFormData((f) => ({ ...f, whatsapp: formatPhone(e.target.value) }))}
-                  InputProps={{ startAdornment: <InputAdornment position="start">💬</InputAdornment> }}
-                />
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
 
-        <Card sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ mb: 2 }}>Endereço</Typography>
-            <Grid container spacing={2}>
-              <Grid xs={12} sm={4}>
-                <TextField
-                  fullWidth
-                  label="CEP"
-                  value={formData.endereco.cep}
-                  onChange={(e) => setFormData((f) => ({ ...f, endereco: { ...f.endereco, cep: formatCEP(e.target.value) } }))}
-                  onBlur={handleCepBlur}
-                  InputProps={{ startAdornment: <InputAdornment position="start">🏷️</InputAdornment> }}
-                />
-              </Grid>
-              <Grid xs={12} sm={8}>
-                <TextField fullWidth label="Rua" value={formData.endereco.rua} onChange={(e) => setFormData((f) => ({ ...f, endereco: { ...f.endereco, rua: e.target.value } }))} />
-              </Grid>
-              <Grid xs={12} sm={4}>
-                <TextField fullWidth label="Número" value={formData.endereco.numero} onChange={(e) => setFormData((f) => ({ ...f, endereco: { ...f.endereco, numero: e.target.value } }))} />
-              </Grid>
-              <Grid xs={12} sm={6}>
-                <TextField fullWidth label="Complemento" value={formData.endereco.complemento} onChange={(e) => setFormData((f) => ({ ...f, endereco: { ...f.endereco, complemento: e.target.value } }))} />
-              </Grid>
-              <Grid xs={12} sm={6}>
-                <TextField fullWidth label="Bairro" value={formData.endereco.bairro} onChange={(e) => setFormData((f) => ({ ...f, endereco: { ...f.endereco, bairro: e.target.value } }))} />
-              </Grid>
-              <Grid xs={12} sm={4}>
-                <TextField fullWidth label="Cidade" value={formData.endereco.cidade} onChange={(e) => setFormData((f) => ({ ...f, endereco: { ...f.endereco, cidade: e.target.value } }))} />
-              </Grid>
-              <Grid xs={12} sm={4}>
-                <TextField fullWidth label="Estado" value={formData.endereco.estado} onChange={(e) => setFormData((f) => ({ ...f, endereco: { ...f.endereco, estado: e.target.value } }))} />
-              </Grid>
-            </Grid>
-          </CardContent>
-        </Card>
+              <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
 
-        <Card>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ mb: 2 }}>Observações</Typography>
-            <TextField fullWidth multiline minRows={3} label="Observação" value={formData.observacao} onChange={(e) => setFormData((f) => ({ ...f, observacao: e.target.value }))} />
-          </CardContent>
-        </Card>
-      </form>
-    </SimplePaper>
+              {/* SEÇÃO 2: ENDEREÇO */}
+              <SectionHeader icon="solar:map-point-bold-duotone" title="Endereço" />
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    fullWidth
+                    label="CEP"
+                    value={formData.endereco.cep}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        endereco: { ...f.endereco, cep: formatCEP(e.target.value) },
+                      }))
+                    }
+                    onBlur={handleCepBlur}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <Iconify icon="solar:map-arrow-square-bold-duotone" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: fetchingCep ? (
+                        <InputAdornment position="end">
+                          <Iconify icon="line-md:loading-loop" />
+                        </InputAdornment>
+                      ) : null,
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={8}>
+                  <TextField
+                    disabled={fetchingCep}
+                    fullWidth
+                    label="Rua"
+                    value={formData.endereco.rua}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        endereco: { ...f.endereco, rua: e.target.value },
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={3}>
+                  <TextField
+                    disabled={fetchingCep}
+                    fullWidth
+                    label="Número"
+                    value={formData.endereco.numero}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        endereco: { ...f.endereco, numero: e.target.value },
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={5}>
+                  <TextField
+                    fullWidth
+                    label="Complemento"
+                    value={formData.endereco.complemento}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        endereco: { ...f.endereco, complemento: e.target.value },
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    disabled={fetchingCep}
+                    fullWidth
+                    label="Bairro"
+                    value={formData.endereco.bairro}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        endereco: { ...f.endereco, bairro: e.target.value },
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={8}>
+                  <TextField
+                    disabled={fetchingCep}
+                    fullWidth
+                    label="Cidade"
+                    value={formData.endereco.cidade}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        endereco: { ...f.endereco, cidade: e.target.value },
+                      }))
+                    }
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <TextField
+                    disabled={fetchingCep}
+                    fullWidth
+                    label="Estado"
+                    value={formData.endereco.estado}
+                    onChange={(e) =>
+                      setFormData((f) => ({
+                        ...f,
+                        endereco: { ...f.endereco, estado: e.target.value },
+                      }))
+                    }
+                  />
+                </Grid>
+              </Grid>
+
+              <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
+
+              <SectionHeader icon="solar:document-text-bold-duotone" title="Observações" />
+              <TextField
+                fullWidth
+                multiline
+                minRows={4}
+                label="Observação (opcional)"
+                value={formData.observacao}
+                onChange={(e) => setFormData((f) => ({ ...f, observacao: e.target.value }))}
+              />
+            </CardContent>
+          </Card>
+        </form>
+      </motion.div>
+    </LazyMotion>
   );
 }
-
-

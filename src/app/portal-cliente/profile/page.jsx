@@ -1,27 +1,29 @@
 'use client';
 
-import { z as zod } from 'zod';
 import { toast } from 'sonner';
+import { z as zod } from 'zod';
 import { useForm } from 'react-hook-form';
 import { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { m, LazyMotion, domAnimation } from 'framer-motion';
 
+import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
-import CardHeader from '@mui/material/CardHeader';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CardContent from '@mui/material/CardContent';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import axios from 'src/utils/axios';
 
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
+
+import { ProfileCover } from 'src/sections/profile/ProfileCover';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -42,8 +44,18 @@ const PasswordSchema = zod.object({
 });
 
 // ----------------------------------------------------------------------
+const SectionHeader = ({ icon, title }) => (
+  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+    <Box sx={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) }}>
+      <Iconify icon={icon} width={24} color="primary.main" />
+    </Box>
+    <Typography variant="h6" sx={{ fontWeight: 700 }}>{title}</Typography>
+  </Stack>
+);
+
 
 export default function PortalClienteProfileView() {
+  const theme = useTheme();
   const { user, checkUserSession } = useAuthContext();
 
   const [loading, setLoading] = useState(false);
@@ -84,7 +96,7 @@ export default function PortalClienteProfileView() {
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dados/${  user.userId}`);
         const {data} = response;
         setClienteData(data);
-        
+
         // Atualiza os valores do formulário
         methods.reset({
           name: data.nome || user?.name || '',
@@ -145,166 +157,69 @@ export default function PortalClienteProfileView() {
     }
   });
 
-  return (
-    <>
-      <Stack 
-        direction="row" 
-        alignItems="center" 
-        justifyContent="space-between" 
-        sx={{ mb: { xs: 3, sm: 5 } }}
-      >
-        <Typography variant="h4" sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
-          Meu Perfil
-        </Typography>
-      </Stack>
+return (
+    <LazyMotion features={domAnimation}>
+      <m.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
+        <Card sx={{ borderRadius: 3 }}>
+          <Box sx={{ p: 4, bgcolor: 'background.neutral', borderRadius: '16px 16px 0 0', background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})` }}>
+            <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>Meu Perfil</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>Gerencie suas informações pessoais e de segurança.</Typography>
+          </Box>
 
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
-        <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Stack alignItems="center" spacing={2}>
-                <Avatar
-                  src={user?.imgprofile}
-                  sx={{
-                    width: { xs: 80, sm: 120 },
-                    height: { xs: 80, sm: 120 },
-                    bgcolor: 'primary.main',
-                  }}
-                >
-                  {!user?.imgprofile && (
-                    <Iconify icon="solar:user-bold-duotone" width={{ xs: 40, sm: 60 }} />
-                  )}
-                </Avatar>
-                <Stack alignItems="center" spacing={1}>
-                  <Typography variant="h6">{user?.name}</Typography>
-                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                    {user?.email}
-                  </Typography>
-                  <Chip
-                    label="Cliente"
-                    color="primary"
-                    size="small"
-                  />
+          <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+            <Grid container spacing={4}>
+              <Grid item xs={12} md={4}>
+                <ProfileCover user={user} />
+              </Grid>
+
+              <Grid item xs={12} md={8}>
+                <Stack spacing={4}>
+                  <Box>
+                    <SectionHeader icon="solar:user-id-bold-duotone" title="Informações Pessoais" />
+                    <Form methods={methods} onSubmit={onSubmit}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Field.Text name="name" label="Nome Completo" fullWidth />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Field.Text name="email" label="Email" fullWidth disabled />
+                        </Grid>
+                      </Grid>
+                      <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="flex-end">
+                        <Button variant="outlined" onClick={() => methods.reset()}>Cancelar</Button>
+                        <LoadingButton type="submit" variant="contained" loading={isSubmitting || loading}>Salvar Alterações</LoadingButton>
+                      </Stack>
+                    </Form>
+                  </Box>
+                  
+                  <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
+
+                  <Box>
+                    <SectionHeader icon="solar:lock-password-bold-duotone" title="Alterar Senha" />
+                    <Form methods={passwordMethods} onSubmit={handlePasswordChange}>
+                      <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6}>
+                          <Field.Text name="currentPassword" label="Senha Atual" type="password" fullWidth />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Field.Text name="newPassword" label="Nova Senha" type="password" fullWidth />
+                        </Grid>
+                        <Grid item xs={12} sm={6}>
+                          <Field.Text name="confirmPassword" label="Confirmar Nova Senha" type="password" fullWidth />
+                        </Grid>
+                      </Grid>
+                      <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="flex-end">
+                        <Button variant="outlined" onClick={() => passwordMethods.reset()}>Cancelar</Button>
+                        <LoadingButton type="submit" variant="contained" loading={isPasswordSubmitting || passwordLoading}>Alterar Senha</LoadingButton>
+                      </Stack>
+                    </Form>
+                  </Box>
                 </Stack>
-                <Divider sx={{ width: '100%' }} />
-                <Stack spacing={1} sx={{ width: '100%' }}>
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Tipo de Usuário:
-                    </Typography>
-                    <Typography variant="body2">
-                      Cliente
-                    </Typography>
-                  </Stack>
-                  <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      Status:
-                    </Typography>
-                    <Chip
-                      label={user?.status === true ? 'Ativo' : 'Inativo'}
-                      color={user?.status === true ? 'success' : 'error'}
-                      size="small"
-                    />
-                  </Stack>
-                </Stack>
-              </Stack>
-            </CardContent>
-          </Card>
-        </Grid>
-
-        <Grid item xs={12} md={8}>
-          <Card>
-            <CardHeader title="Informações Pessoais" />
-            <CardContent>
-              <Form methods={methods} onSubmit={onSubmit}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <Field.Text
-                      name="name"
-                      label="Nome Completo"
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Field.Text
-                      name="email"
-                      label="Email"
-                      fullWidth
-                      disabled
-                    />
-                  </Grid>
-                </Grid>
-
-                <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-                  <LoadingButton
-                    type="submit"
-                    variant="contained"
-                    loading={isSubmitting || loading}
-                  >
-                    Salvar Alterações
-                  </LoadingButton>
-                  <Button
-                    variant="outlined"
-                    onClick={() => methods.reset()}
-                  >
-                    Cancelar
-                  </Button>
-                </Stack>
-              </Form>
-            </CardContent>
-          </Card>
-
-          <Card sx={{ mt: 3 }}>
-            <CardHeader title="Alterar Senha" />
-            <CardContent>
-              <Form methods={passwordMethods} onSubmit={handlePasswordChange}>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <Field.Text
-                      name="currentPassword"
-                      label="Senha Atual"
-                      type="password"
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Field.Text
-                      name="newPassword"
-                      label="Nova Senha"
-                      type="password"
-                      fullWidth
-                    />
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <Field.Text
-                      name="confirmPassword"
-                      label="Confirmar Nova Senha"
-                      type="password"
-                      fullWidth
-                    />
-                  </Grid>
-                </Grid>
-
-                <Stack direction="row" spacing={2} sx={{ mt: 3 }}>
-                  <LoadingButton
-                    type="submit"
-                    variant="contained"
-                    loading={isPasswordSubmitting || passwordLoading}
-                  >
-                    Alterar Senha
-                  </LoadingButton>
-                  <Button
-                    variant="outlined"
-                    onClick={() => passwordMethods.reset()}
-                  >
-                    Cancelar
-                  </Button>
-                </Stack>
-              </Form>
-            </CardContent>
-          </Card>      
-        </Grid>
-      </Grid>
-    </>
+              </Grid>
+            </Grid>
+          </CardContent>
+        </Card>
+      </m.div>
+    </LazyMotion>
   );
 }
