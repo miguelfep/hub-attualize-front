@@ -147,14 +147,49 @@ export function ClientePortalSettings({ clienteId }) {
   const handleSave = async () => {
     try {
       setSaving(true);
-      await updateSettings(clienteId, {
+      const response = await updateSettings(clienteId, {
         funcionalidades: localState.funcionalidades,
         configuracoes: localState.configuracoes,
         eNotasConfig: localState.eNotas,
       });
       toast.success('Configurações atualizadas com sucesso');
+      // Atualiza o estado local imediatamente com o retorno da API (quando disponível)
+      const updated = response?.data?.settings || response?.settings;
+      if (updated) {
+        setLocalState({
+          funcionalidades: {
+            emissaoNFSe: Boolean(updated?.funcionalidades?.emissaoNFSe),
+            cadastroClientes: Boolean(updated?.funcionalidades?.cadastroClientes),
+            cadastroServicos: Boolean(updated?.funcionalidades?.cadastroServicos),
+            vendas: Boolean(updated?.funcionalidades?.vendas),
+            agendamentos: Boolean(updated?.funcionalidades?.agendamentos),
+          },
+          configuracoes: {
+            limiteClientes: updated?.configuracoes?.limiteClientes ?? '',
+            limiteServicos: updated?.configuracoes?.limiteServicos ?? '',
+            limiteOrcamentos: updated?.configuracoes?.limiteOrcamentos ?? '',
+          },
+          eNotas: {
+            empresaId: updated?.eNotasConfig?.empresaId ?? '',
+            ambiente: updated?.eNotasConfig?.ambiente ?? 'homologacao',
+            status: updated?.eNotasConfig?.status ?? 'inativa',
+            configuracaoNFSe: {
+              codigoMunicipio: updated?.eNotasConfig?.configuracaoNFSe?.codigoMunicipio ?? '',
+              codigoServico: updated?.eNotasConfig?.configuracaoNFSe?.codigoServico ?? '',
+              aliquotaIss: updated?.eNotasConfig?.configuracaoNFSe?.aliquotaIss ?? '',
+              discriminacao: updated?.eNotasConfig?.configuracaoNFSe?.discriminacao ?? '',
+            },
+            configuracaoEmpresa: {
+              logo: updated?.eNotasConfig?.configuracaoEmpresa?.logo ?? '',
+              certificadoVinculado:
+                (updated?.eNotasConfig?.configuracaoEmpresa?.certificadoVinculado ??
+                  updated?.eNotasConfig?.configuracaoEmpresa?.cerfificadoVinculado) ?? false,
+              idCertificado: updated?.eNotasConfig?.configuracaoEmpresa?.idCertificado ?? '',
+            },
+          },
+        });
+      }
       await refetchSettings();
-      syncLocal();
     } catch (error) {
       toast.error('Falha ao atualizar configurações');
     } finally {
