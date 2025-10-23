@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -104,6 +105,8 @@ const SectionHeader = ({ icon, title }) => (
 export function InvoiceHistory({ faturas }) {
   const theme = useTheme();
 
+  const faturasOrdenadas = useMemo(() => [...faturas].reverse(), [faturas]);
+
   if (faturas.length === 0) {
     return (
       <Stack alignItems="center" spacing={1} sx={{ py: 5, fontStyle: 'italic' }}>
@@ -135,7 +138,7 @@ export function InvoiceHistory({ faturas }) {
               </TableRow>
             </TableHead>
             <TableBody>
-              {faturas.map((fatura) => (
+              {faturasOrdenadas.map((fatura) => (
                 <FaturaTableRow key={fatura._id} fatura={fatura} />
               ))}
             </TableBody>

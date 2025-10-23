@@ -27,7 +27,30 @@ function descendingComparator(a, b, orderBy) {
   return 0;
 }
 
-export function applySortFilter({ inputData, comparator }) {
-  const stabilizedData = stableSort(inputData, comparator);
-  return stabilizedData;
+export function applySortFilter({ inputData, order, orderBy }) {
+  if (!Array.isArray(inputData)) return [];
+
+  return [...inputData].sort((a, b) => {
+    const statusA = a.status === true || a.status === 'true' || a.status === 1;
+    const statusB = b.status === true || b.status === 'true' || b.status === 1;
+    if (statusA !== statusB) return statusA ? -1 : 1;
+
+    const dateA = a.createdAt ? new Date(a.createdAt) : new Date(0);
+    const dateB = b.createdAt ? new Date(b.createdAt) : new Date(0);
+    if (dateA > dateB) return -1;
+    if (dateA < dateB) return 1;
+
+    const valA = a[orderBy] ?? '';
+    const valB = b[orderBy] ?? '';
+    const dir = order === 'asc' ? 1 : -1;
+
+    if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+      return valA === valB ? 0 : valA ? dir : -dir;
+    }
+
+    if (valA < valB) return -1 * dir;
+    if (valA > valB) return 1 * dir;
+    return 0;
+  });
 }
+

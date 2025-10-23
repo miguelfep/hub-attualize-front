@@ -426,7 +426,7 @@ export default function MinhaEmpresaView() {
       try {
         setLoading(true);
         const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dashboard/${user.userId}`
+          `${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dados/${user.userId}`
         );
         setEmpresaData(response.data.data.cliente);
       } catch (error) {
