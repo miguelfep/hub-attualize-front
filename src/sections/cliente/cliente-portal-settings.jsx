@@ -147,10 +147,35 @@ export function ClientePortalSettings({ clienteId }) {
   const handleSave = async () => {
     try {
       setSaving(true);
+      // Monta payload explícito para garantir envio correto da integração eNotas
+      const nfseCfg = localState?.eNotas?.configuracaoNFSe || {};
+      const empCfg = localState?.eNotas?.configuracaoEmpresa || {};
+      const eNotasPayload = {
+        empresaId: localState?.eNotas?.empresaId ?? '',
+        ambiente: localState?.eNotas?.ambiente ?? 'homologacao',
+        status: localState?.eNotas?.status ?? 'inativa',
+        configuracaoNFSe: {
+          codigoMunicipio: nfseCfg?.codigoMunicipio ?? '',
+          codigoServico: nfseCfg?.codigoServico ?? '',
+          aliquotaIss:
+            nfseCfg?.aliquotaIss === '' || nfseCfg?.aliquotaIss === null || typeof nfseCfg?.aliquotaIss === 'undefined'
+              ? null
+              : Number(nfseCfg?.aliquotaIss),
+          discriminacao: nfseCfg?.discriminacao ?? '',
+        },
+        configuracaoEmpresa: {
+          logo: empCfg?.logo ?? '',
+          certificadoVinculado: Boolean(
+            (empCfg?.certificadoVinculado ?? empCfg?.cerfificadoVinculado) ?? false
+          ),
+          idCertificado: empCfg?.idCertificado ?? '',
+        },
+      };
+
       const response = await updateSettings(clienteId, {
-        funcionalidades: localState.funcionalidades,
-        configuracoes: localState.configuracoes,
-        eNotasConfig: localState.eNotas,
+        funcionalidades: { ...localState.funcionalidades },
+        configuracoes: { ...localState.configuracoes },
+        eNotasConfig: eNotasPayload,
       });
       toast.success('Configurações atualizadas com sucesso');
       // Atualiza o estado local imediatamente com o retorno da API (quando disponível)
@@ -554,12 +579,23 @@ export function ClientePortalSettings({ clienteId }) {
                         <Typography variant="body2">{formatarDataCertificado(certificado.validTo)}</Typography>
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={certificado.status}
-                          color={getCorStatusCertificado(certificado.status)}
-                          size="small"
-                          icon={<Iconify icon={getIconeStatusCertificado(certificado.status)} />}
-                        />
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Chip
+                            label={certificado.status}
+                            color={getCorStatusCertificado(certificado.status)}
+                            size="small"
+                            icon={<Iconify icon={getIconeStatusCertificado(certificado.status)} />}
+                          />
+                          {localState?.eNotas?.configuracaoEmpresa?.idCertificado &&
+                            (certificado._id === localState.eNotas.configuracaoEmpresa.idCertificado ||
+                              certificado.id === localState.eNotas.configuracaoEmpresa.idCertificado) && (
+                              <Chip
+                                size="small"
+                                color="success"
+                                label={`Vinculado ao eNotas`}
+                              />
+                            )}
+                        </Stack>
                       </TableCell>
                       <TableCell>
                         <Typography variant="caption" color="text.secondary">
@@ -573,15 +609,6 @@ export function ClientePortalSettings({ clienteId }) {
                               <Iconify icon="solar:download-bold" />
                             </IconButton>
                           </Tooltip>
-                          {localState?.eNotas?.configuracaoEmpresa?.idCertificado &&
-                            (certificado._id === localState.eNotas.configuracaoEmpresa.idCertificado ||
-                              certificado.id === localState.eNotas.configuracaoEmpresa.idCertificado) && (
-                              <Chip
-                                size="small"
-                                color="success"
-                                label={`Vinculado ao eNotas até ${formatarDataCertificado(certificado.validTo)}`}
-                              />
-                            )}
                           {certificado.status === 'ativo' && (
                             <Tooltip title="Desativar certificado">
                               <IconButton size="small" onClick={() => handleDesativarCertificado(certificado.id)} sx={{ color: 'error.main' }}>
