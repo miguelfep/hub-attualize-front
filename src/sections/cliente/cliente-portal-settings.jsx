@@ -1,8 +1,8 @@
 'use client';
 
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { Controller } from 'react-hook-form';
 
+import { LoadingButton } from '@mui/lab';
 import Grid from '@mui/material/Unstable_Grid2';
 import {
   Box,
@@ -161,7 +161,6 @@ export function ClientePortalSettings({ clienteId }) {
       setSaving(false);
     }
   };
-export function ClientePortalSettings({ control }) {
 
   // --------------------------------------------------------------
   // Certificados Digitais (reutiliza ações existentes)
@@ -292,103 +291,61 @@ export function ClientePortalSettings({ control }) {
 
   return (
     <Box>
-      <Box mb={2}>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
         <Typography variant="h6">Funcionalidades do Portal</Typography>
+        <LoadingButton loading={saving} variant="contained" onClick={handleSave}>
+          Salvar Configurações
+        </LoadingButton>
       </Box>
 
       <Grid container spacing={2}>
         <Grid xs={12} md={6}>
-          <Controller
-            name="settings.funcionalidades.cadastroClientes"
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Switch {...field} checked={field.value || false} />}
-                label="Cadastro de Clientes"
-              />
-            )}
+          <FormControlLabel
+            control={<Switch checked={localState.funcionalidades.cadastroClientes} onChange={handleToggle('cadastroClientes')} />}
+            label="Cadastro de Clientes"
           />
-          <Controller
-            name="settings.funcionalidades.cadastroServicos"
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Switch {...field} checked={field.value || false} />}
-                label="Cadastro de Serviços"
-              />
-            )}
+          <FormControlLabel
+            control={<Switch checked={localState.funcionalidades.cadastroServicos} onChange={handleToggle('cadastroServicos')} />}
+            label="Cadastro de Serviços"
           />
-          <Controller
-            name="settings.funcionalidades.vendas"
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Switch {...field} checked={field.value || false} />}
-                label="Vendas / Orçamentos"
-              />
-            )}
+          <FormControlLabel
+            control={<Switch checked={localState.funcionalidades.vendas} onChange={handleToggle('vendas')} />}
+            label="Vendas / Orçamentos"
           />
-          <Controller
-            name="settings.funcionalidades.agendamentos"
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Switch {...field} checked={field.value || false} />}
-                label="Agendamentos"
-              />
-            )}
+          <FormControlLabel
+            control={<Switch checked={localState.funcionalidades.agendamentos} onChange={handleToggle('agendamentos')} />}
+            label="Agendamentos"
           />
-          <Controller
-            name="settings.funcionalidades.emissaoNFSe"
-            control={control}
-            render={({ field }) => (
-              <FormControlLabel
-                control={<Switch {...field} checked={field.value || false} />}
-                label="Emissão de NFSe"
-              />
-            )}
+          <FormControlLabel
+            control={<Switch checked={localState.funcionalidades.emissaoNFSe} onChange={handleToggle('emissaoNFSe')} />}
+            label="Emissão de NFSe"
           />
         </Grid>
 
         <Grid xs={12} md={6}>
           <Typography variant="subtitle1" sx={{ mb: 1 }}>Limites</Typography>
-          <Controller
-            name="settings.configuracoes.limiteClientes"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                type="number"
-                label="Limite de Clientes"
-                sx={{ mb: 2 }}
-              />
-            )}
+          <TextField
+            fullWidth
+            type="number"
+            label="Limite de Clientes"
+            value={localState.configuracoes.limiteClientes}
+            onChange={handleConfigChange('limiteClientes')}
+            sx={{ mb: 2 }}
           />
-          <Controller
-            name="settings.configuracoes.limiteServicos"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                type="number"
-                label="Limite de Serviços"
-                sx={{ mb: 2 }}
-              />
-            )}
+          <TextField
+            fullWidth
+            type="number"
+            label="Limite de Serviços"
+            value={localState.configuracoes.limiteServicos}
+            onChange={handleConfigChange('limiteServicos')}
+            sx={{ mb: 2 }}
           />
-          <Controller
-            name="settings.configuracoes.limiteOrcamentos"
-            control={control}
-            render={({ field }) => (
-              <TextField
-                {...field}
-                fullWidth
-                type="number"
-                label="Limite de Orçamentos"
-              />
-            )}
+          <TextField
+            fullWidth
+            type="number"
+            label="Limite de Orçamentos"
+            value={localState.configuracoes.limiteOrcamentos}
+            onChange={handleConfigChange('limiteOrcamentos')}
           />
         </Grid>
       </Grid>
@@ -669,3 +626,5 @@ export function ClientePortalSettings({ control }) {
     </Box>
   );
 }
+
+export default ClientePortalSettings;
