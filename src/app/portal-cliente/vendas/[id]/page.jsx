@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Card, Chip, Stack, Button, MenuItem, TextField, Typography, CardContent, Tooltip, Skeleton, Box } from '@mui/material';
+import { Card, Chip, Stack, Button, MenuItem, TextField, Typography, CardContent, Tooltip, Skeleton, Box, IconButton, Alert } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -19,7 +19,7 @@ import { useSettings } from 'src/hooks/useSettings';
 
 import { fCurrency } from 'src/utils/format-number';
 
-import { portalGetOrcamento, portalUpdateOrcamento, portalDownloadOrcamentoPDF, portalUpdateOrcamentoStatus } from 'src/actions/portal';
+import { portalGetOrcamento, portalUpdateOrcamento, portalDownloadOrcamentoPDF, portalUpdateOrcamentoStatus, usePortalServicos } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
@@ -47,11 +47,14 @@ export default function OrcamentoDetalhesPage({ params }) {
   const [generatingNf, setGeneratingNf] = React.useState(false);
   const [nfseList, setNfseList] = React.useState([]);
   const [itemEdit, setItemEdit] = React.useState({ quantidade: 1, valorUnitario: 0, valorUnitarioText: fCurrency(0), desconto: 0, descontoText: fCurrency(0), descricao: '' });
+  const [editingServico, setEditingServico] = React.useState(false);
+  const [editingPedido, setEditingPedido] = React.useState(false);
   const [cancelOpen, setCancelOpen] = React.useState(false);
   const [cancelReason, setCancelReason] = React.useState('');
   const [confirmCancel, setConfirmCancel] = React.useState(false);
   const [cancelLoading, setCancelLoading] = React.useState(false);
   const [nfseToCancel, setNfseToCancel] = React.useState(null);
+  const { data: servicosList, isLoading: loadingServicos } = usePortalServicos(clienteProprietarioId);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -148,7 +151,20 @@ export default function OrcamentoDetalhesPage({ params }) {
   if (!podeCriarOrcamentos) return <Typography>Funcionalidade não disponível</Typography>;
 
   const hasNFSeAutorizada = Array.isArray(nfseList) && nfseList.some((n) => n.status === 'emitida' || String(n.eNotasStatus).toLowerCase() === 'autorizada');
-  const canEdit = ['pendente', 'expirado', 'recusado'].includes(orcamento.status) && !hasNFSeAutorizada;
+  const isPaid = String(orcamento.status).toLowerCase() === 'pago';
+  const canEditPedido = !hasNFSeAutorizada && !isPaid;
+  // Status: Se já estiver pago, bloqueia. Se houver NFSe, só pode escolher "pago". Sem NFSe, qualquer status é permitido (inclui "pago").
+  const canEditStatusSelect = !isPaid;
+  const statusHelperText = isPaid
+    ? 'Venda paga - edição bloqueada'
+    : hasNFSeAutorizada
+    ? 'NFSe emitida: apenas "Pago" é permitido'
+    : '';
+  const isTargetStatusValid = (target) => {
+    if (isPaid) return false;
+    if (hasNFSeAutorizada) return target === 'pago';
+    return true;
+  };
 
   const subtotal = (orcamento.itens || []).reduce((acc, it) => acc + (Number(it.quantidade) * Number(it.valorUnitario) - Number(it.desconto || 0)), 0);
   const total = subtotal - Number(orcamento.descontoGeral || 0);
@@ -162,6 +178,7 @@ export default function OrcamentoDetalhesPage({ params }) {
         condicoesPagamento: orcamento.condicoesPagamento,
       });
       toast.success('Orçamento atualizado');
+      setEditingPedido(false);
     } catch (e) {
       toast.error('Erro ao salvar');
     } finally {
@@ -182,7 +199,7 @@ export default function OrcamentoDetalhesPage({ params }) {
       const base = (Array.isArray(orcamento.itens) && orcamento.itens.length) ? orcamento.itens[0] : {};
       const novoItem = {
         ...base,
-        servicoId: base.servicoId,
+        servicoId: (typeof itemEdit.servicoId === 'object' ? itemEdit.servicoId?._id : itemEdit.servicoId) || base.servicoId,
         descricao: itemEdit.descricao,
         quantidade: Number(itemEdit.quantidade || 1),
         valorUnitario: Number(itemEdit.valorUnitario || 0),
@@ -191,6 +208,7 @@ export default function OrcamentoDetalhesPage({ params }) {
       await portalUpdateOrcamento(id, { clienteProprietarioId, itens: [novoItem] });
       setOrcamento((o) => ({ ...o, itens: [novoItem] }));
       toast.success('Itens atualizados');
+      setEditingServico(false);
     } catch (e) {
       toast.error('Erro ao salvar itens');
     } finally {
@@ -249,7 +267,17 @@ export default function OrcamentoDetalhesPage({ params }) {
 
   console.log('orcamento', orcamento);
 
+  const getStatusColor = (st) => {
+    const s = String(st || '').toLowerCase();
+    if (s === 'pago') return 'success';
+    if (s === 'aprovado') return 'info';
+    if (s === 'recusado') return 'error';
+    if (s === 'pendente') return 'warning';
+    return 'default';
+  };
+
   const hasNotaAtiva = Array.isArray(nfseList) && nfseList.some((n) => n.status === 'emitida' || n.status === 'emitindo');
+  const selectedServicoId = typeof itemEdit.servicoId === 'object' ? itemEdit.servicoId?._id : itemEdit.servicoId;
 
   return (
     <SimplePaper>
@@ -269,9 +297,15 @@ export default function OrcamentoDetalhesPage({ params }) {
               Venda {orcamento.numero}
             </Typography>
             <Stack direction="row" spacing={1} alignItems="center">
-              <Chip label={orcamento.status} size="small" />
               <Typography variant="body2" sx={{ opacity: 0.7 }}>Cliente: {orcamento?.clienteDoClienteId?.nome}</Typography>
             </Stack>
+            <Chip
+              label={String(orcamento.status || '').toUpperCase()}
+              color={getStatusColor(orcamento.status)}
+              size="medium"
+              variant="soft"
+              sx={{ px: 1.25, py: 0.75, fontWeight: 700, fontSize: 13, letterSpacing: 0.4, alignSelf: 'flex-start' }}
+            />
           </Stack>
           <Stack direction="row" spacing={1.5} alignItems="center">
             <Button onClick={() => setViewOpen(true)} variant="outlined" startIcon={<Iconify icon="solar:eye-bold" />}>Ver</Button>
@@ -318,17 +352,35 @@ export default function OrcamentoDetalhesPage({ params }) {
               </Stack>
             </Grid>
             <Grid xs={12} sm={6}>
-              <Typography variant="subtitle2">Status</Typography>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Chip label={orcamento.status} />
-                <TextField size="small" select value={status} onChange={(e) => setStatus(e.target.value)} disabled={!canEdit}>
-                  <MenuItem value="pendente">pendente</MenuItem>
-                  <MenuItem value="aprovado">aprovado</MenuItem>
-                  <MenuItem value="recusado">recusado</MenuItem>
-                  <MenuItem value="expirado">expirado</MenuItem>
-                  <MenuItem value="pago">pago</MenuItem>
+              <Stack spacing={0.75} alignItems={{ xs: 'stretch', sm: 'flex-end' }} sx={{ ml: { sm: 'auto' } }}>
+                <Typography variant="caption" color="text.secondary" sx={{ alignSelf: { xs: 'flex-start', sm: 'auto' }, pl: 0.5 }}>
+                  Status
+                </Typography>
+                <TextField
+                  size="small"
+                  select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  disabled={!canEditStatusSelect}
+                  helperText={statusHelperText}
+                  sx={{ width: { xs: '100%', sm: 220 } }}
+                >
+                  <MenuItem value="pendente" disabled={!isTargetStatusValid('pendente')}>Pendente</MenuItem>
+                  <MenuItem value="aprovado" disabled={!isTargetStatusValid('aprovado')}>Aprovado</MenuItem>
+                  <MenuItem value="recusado" disabled={!isTargetStatusValid('recusado')}>Recusado</MenuItem>
+                  <MenuItem value="expirado" disabled={!isTargetStatusValid('expirado')}>Expirado</MenuItem>
+                  <MenuItem value="pago" disabled={!isTargetStatusValid('pago')}>Pago</MenuItem>
                 </TextField>
-                <LoadingButton loading={saving} onClick={handleStatus} disabled={!canEdit} variant="contained">Atualizar</LoadingButton>
+                <LoadingButton
+                  size="small"
+                  loading={saving}
+                  onClick={handleStatus}
+                  disabled={!canEditStatusSelect || !isTargetStatusValid(status)}
+                  variant="contained"
+                  sx={{ width: { xs: '100%', sm: 140 } }}
+                >
+                  Atualizar
+                </LoadingButton>
               </Stack>
             </Grid>
           </Grid>
@@ -397,9 +449,52 @@ export default function OrcamentoDetalhesPage({ params }) {
       <Card sx={{ mb: 2 }}>
         <CardContent>
           <Typography variant="subtitle2" sx={{ mb: 1 }}>Item do Serviço</Typography>
-          {canEdit ? (
+          {canEditPedido ? (
             <Grid container spacing={2}>
-              <Grid xs={12} sm={6}>
+              <Grid xs={12}>
+                <Stack direction="row" spacing={1} alignItems="center" sx={{ width: 1 }}>
+                  <TextField
+                    fullWidth
+                    select
+                    label="Serviço"
+                    value={selectedServicoId || ''}
+                    onChange={(e) => {
+                      const newId = e.target.value;
+                      const chosen = Array.isArray(servicosList) ? servicosList.find((s) => s?._id === newId) : null;
+                      setItemEdit((s) => {
+                        const toCurrencyText = (n) => fCurrency(Number(n || 0));
+                        const shouldFillDescricao = !s.descricao || s.descricao.trim() === '';
+                        const shouldFillValor = !s.valorUnitario || Number(s.valorUnitario) === 0;
+                        const novoValor = chosen?.valor ? Number(chosen.valor) : s.valorUnitario;
+                        return {
+                          ...s,
+                          servicoId: newId,
+                          descricao: shouldFillDescricao ? (chosen?.nome || s.descricao || '') : s.descricao,
+                          valorUnitario: shouldFillValor ? Number(novoValor || 0) : s.valorUnitario,
+                          valorUnitarioText: shouldFillValor ? toCurrencyText(novoValor || 0) : s.valorUnitarioText,
+                        };
+                      });
+                    }}
+                    SelectProps={{ displayEmpty: true }}
+                    InputLabelProps={{ shrink: true }}
+                    disabled={!editingServico || loadingServicos}
+                    helperText={!editingServico ? 'Clique no lápis para editar' : (loadingServicos ? 'Carregando serviços...' : '')}
+                  >
+                    <MenuItem value="">Selecione</MenuItem>
+                    {(servicosList || []).map((s) => (
+                      <MenuItem key={s?._id} value={s?._id}>
+                        {s?.nome}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <Tooltip title={editingServico ? 'Bloquear edição do serviço' : 'Editar serviço'}>
+                    <IconButton size="small" onClick={() => setEditingServico((v) => !v)}>
+                      <Iconify icon={editingServico ? 'solar:lock-keyhole-bold' : 'solar:pen-bold'} />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+              </Grid>
+              <Grid xs={12}>
                 <TextField fullWidth label="Descrição" value={itemEdit.descricao} onChange={(e) => setItemEdit((s) => ({ ...s, descricao: e.target.value }))} />
               </Grid>
               <Grid xs={6} sm={2}>
@@ -435,12 +530,22 @@ export default function OrcamentoDetalhesPage({ params }) {
 
       <Card>
         <CardContent>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+            <Typography variant="subtitle2">Dados do Pedido</Typography>
+            <Tooltip title={editingPedido ? 'Bloquear edição dos dados' : 'Editar dados do pedido'}>
+              <span>
+                <IconButton size="small" onClick={() => setEditingPedido((v) => !v)} disabled={!canEditPedido}>
+                  <Iconify icon={editingPedido ? 'solar:lock-keyhole-bold' : 'solar:pen-bold'} />
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
           <Grid container spacing={2}>
             <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Observações" multiline minRows={3} value={orcamento.observacoes || ''} onChange={(e) => setOrcamento((o) => ({ ...o, observacoes: e.target.value }))} disabled={!canEdit} />
+              <TextField fullWidth label="Observações" multiline minRows={3} value={orcamento.observacoes || ''} onChange={(e) => setOrcamento((o) => ({ ...o, observacoes: e.target.value }))} disabled={!editingPedido || !canEditPedido} />
             </Grid>
             <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Condições de Pagamento" multiline minRows={3} value={orcamento.condicoesPagamento || ''} onChange={(e) => setOrcamento((o) => ({ ...o, condicoesPagamento: e.target.value }))} disabled={!canEdit} />
+              <TextField fullWidth label="Condições de Pagamento" multiline minRows={3} value={orcamento.condicoesPagamento || ''} onChange={(e) => setOrcamento((o) => ({ ...o, condicoesPagamento: e.target.value }))} disabled={!editingPedido || !canEditPedido} />
             </Grid>
             <Grid xs={12}>
               <Stack direction="row" justifyContent="flex-end" spacing={3}>
@@ -450,7 +555,7 @@ export default function OrcamentoDetalhesPage({ params }) {
             </Grid>
           </Grid>
           <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
-            <LoadingButton loading={saving} onClick={handleSalvar} disabled={!canEdit} variant="contained">Salvar</LoadingButton>
+            <LoadingButton loading={saving} onClick={handleSalvar} disabled={!editingPedido || !canEditPedido} variant="contained">Salvar</LoadingButton>
           </Stack>
         </CardContent>
       </Card>
@@ -534,6 +639,15 @@ export default function OrcamentoDetalhesPage({ params }) {
                         <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{fCurrency(n.valorLiquido || 0)}</Typography>
                       </Stack>
                     </Stack>
+
+                    {(() => {
+                      const errorMsg = n.eNotasErro || n.enotasErro || n.erro || n.mensagemErro;
+                      return errorMsg ? (
+                        <Alert severity="error" sx={{ mt: 1 }}>
+                          {errorMsg}
+                        </Alert>
+                      ) : null;
+                    })()}
                   </Stack>
                 </Card>
               ))}

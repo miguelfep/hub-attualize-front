@@ -32,6 +32,7 @@ import { portalCreateServico } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+import { formatCNAE } from 'src/utils/formatter';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -84,6 +85,7 @@ export default function NovoServicoPage() {
   };
   const [cnaesEmpresa, setCnaesEmpresa] = React.useState([]);
   const [loadingCnaes, setLoadingCnaes] = React.useState(false);
+  const normalizeCNAE = (v) => String(v || '').replace(/\D/g, '');
 
   React.useEffect(() => {
     let ignore = false;
@@ -136,7 +138,7 @@ export default function NovoServicoPage() {
       const sanitizeCnae = (str) => {
         if (!str) return undefined;
         const onlyCode = String(str).split(' - ')[0].split(' ')[0];
-        return onlyCode.replace(/-/g, '.').replace(/[^0-9.]/g, '');
+        return onlyCode.replace(/\D/g, '');
       };
       const payload = {
         clienteProprietarioId,
@@ -291,11 +293,14 @@ export default function NovoServicoPage() {
                         helperText={loadingCnaes ? 'Carregando CNAEs...' : ''}
                       >
                         <MenuItem value="">Selecione</MenuItem>
-                        {cnaesEmpresa.map((c) => (
-                          <MenuItem key={c.code} value={c.code}>
-                            {c.code} - {c.text}
-                          </MenuItem>
-                        ))}
+                        {cnaesEmpresa.map((c) => {
+                          const val = normalizeCNAE(c.code);
+                          return (
+                            <MenuItem key={`${c.code}-${val}`} value={val}>
+                              {formatCNAE(val)} - {c.text}
+                            </MenuItem>
+                          );
+                        })}
                       </TextField>
                     </Grid>
                   </Grid>
