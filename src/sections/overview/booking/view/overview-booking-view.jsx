@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
@@ -23,8 +23,14 @@ import {
   ServerErrorIllustration,
 } from 'src/assets/illustrations';
 
-import { BookingDetails } from '../booking-details';
+import Accordion from '@mui/material/Accordion';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import { Iconify } from 'src/components/iconify';
+import { fDate } from 'src/utils/format-time';
+import { Label } from 'src/components/label';
 import { BookingWidgetSummary } from '../booking-widget-summary';
+import LicenseModal from '../LicenseModal';
 
 const licencasBrasil = [
   { id: 1, nome: 'Licença Ambiental' },
@@ -41,6 +47,7 @@ export function OverviewBookingView() {
   const [clientes, setClientes] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
+  const [selectedLicense, setSelectedLicense] = useState(null);
   const [newLicense, setNewLicense] = useState({
     nome: '',
     clienteId: '',
@@ -113,13 +120,33 @@ export function OverviewBookingView() {
     });
   };
 
-  const filteredLicencas = licencas.filter(
-    (licenca) =>
-      (licenca.nome?.toLowerCase() || '').includes(searchQuery.toLowerCase()) ||
-      (licenca.cliente?.razaoSocial?.toLowerCase() || '').includes(searchQuery.toLowerCase())
-  );
+  const filteredLicencas = useMemo(() => {
+    const q = (searchQuery || '').toLowerCase();
+    return licencas.filter((licenca) =>
+      (licenca.cliente?.razaoSocial || '').toLowerCase().includes(q)
+    );
+  }, [licencas, searchQuery]);
 
-  console.log(filteredLicencas);
+  const groupedByCliente = useMemo(() => {
+    const map = new Map();
+    filteredLicencas.forEach((l) => {
+      const key = l.cliente?._id || 'sem-cliente';
+      if (!map.has(key)) map.set(key, { cliente: l.cliente, itens: [] });
+      map.get(key).itens.push(l);
+    });
+    // ordena por razaoSocial
+    return Array.from(map.values()).sort((a, b) =>
+      (a.cliente?.razaoSocial || '').localeCompare(b.cliente?.razaoSocial || '')
+    );
+  }, [filteredLicencas]);
+
+  const statusMap = {
+    em_processo: { label: 'Em Processo', color: 'secondary' },
+    valida: { label: 'Válida', color: 'success' },
+    vencida: { label: 'Vencida', color: 'error' },
+    dispensada: { label: 'Dispensada', color: 'info' },
+    a_expirar: { label: 'A Expirar', color: 'warning' },
+  };
 
   return (
     <DashboardContent maxWidth="xl">
@@ -167,18 +194,29 @@ export function OverviewBookingView() {
             sx={{ my: 2 }}
           />
 
-          <BookingDetails
-            fetchLicencas={fetchLicencas}
-            tableData={filteredLicencas}
-            headLabel={[
-              { id: 'cliente', label: 'Cliente', width: '35%' },
-              { id: 'nome', label: 'Licença' , width: '25%'},
-              { id: 'dataInicio', label: 'Início' , width: '15%'},
-              { id: 'dataVencimento', label: 'Vencimento' , width: '15%'},
-              { id: 'status', label: 'Status', width: '10%' },
-              { id: '' },
-            ]}
-          />
+          {groupedByCliente.map(({ cliente, itens }) => (
+            <Accordion key={cliente?._id} defaultExpanded sx={{ mb: 1 }}>
+              <AccordionSummary expandIcon={<Iconify icon="eva:arrow-ios-downward-outline" />}>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <Typography variant="subtitle1">{cliente?.razaoSocial}</Typography>
+                  <Typography variant="body2" color="text.secondary">{itens.length} licença(s)</Typography>
+                </Box>
+              </AccordionSummary>
+              <AccordionDetails>
+                {itens.map((row) => (
+                  <Box key={row.id} sx={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr 0.9fr auto', gap: 2, py: 1, borderBottom: '1px dashed', borderColor: 'divider', alignItems: 'center' }}>
+                    <Typography>{row.nome}</Typography>
+                    <Typography>{fDate(row.dataInicio)}</Typography>
+                    <Typography>{fDate(row.dataVencimento)}</Typography>
+                    <Label variant="soft" color={statusMap[row.status]?.color || 'default'}>
+                      {statusMap[row.status]?.label || 'Desconhecido'}
+                    </Label>
+                    <Button size="small" variant="outlined" onClick={() => setSelectedLicense(row)}>Ver</Button>
+                  </Box>
+                ))}
+              </AccordionDetails>
+            </Accordion>
+          ))}
         </Grid>
       </Grid>
 
@@ -319,6 +357,14 @@ export function OverviewBookingView() {
           </Button>
         </Box>
       </Modal>
+
+      {selectedLicense && (
+        <LicenseModal
+          licenca={selectedLicense}
+          fetchLicencas={fetchLicencas}
+          onClose={() => setSelectedLicense(null)}
+        />
+      )}
     </DashboardContent>
   );
 }
