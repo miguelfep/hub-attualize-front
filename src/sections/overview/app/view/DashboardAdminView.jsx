@@ -42,7 +42,7 @@ export default function DashboardAdminView() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDateData, setSelectedDateData] = useState(null);
 
-
+  const password = process.env.NEXT_PUBLIC_PASSWORD_DASHBOARD_ADMIN;
   const [filters, setFilters] = useState({
     dataInicio: dayjs().startOf('month').toISOString(),
     dataFim: dayjs().endOf('month').toISOString(),
@@ -221,6 +221,8 @@ export default function DashboardAdminView() {
             title="Contas a Pagar"
             total={dashboardData.totalContasPagar}
             percent={dashboardData.percentualVariaçãoContasPagar}
+            requirePassword
+            password={password}
             isCurrency
             chart={{
               categories: dashboardData.categoriesContasPagar || [],
@@ -234,6 +236,8 @@ export default function DashboardAdminView() {
             title="Contas a Receber"
             total={dashboardData.totalCobrancas}
             percent={dashboardData.percentualVariacaoCobrancas}
+            requirePassword
+            password={password}
             isCurrency
             chart={{
               categories: dashboardData.categoriesCobrancas || [],

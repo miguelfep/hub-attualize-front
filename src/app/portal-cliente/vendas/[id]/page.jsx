@@ -153,18 +153,8 @@ export default function OrcamentoDetalhesPage({ params }) {
   const hasNFSeAutorizada = Array.isArray(nfseList) && nfseList.some((n) => n.status === 'emitida' || String(n.eNotasStatus).toLowerCase() === 'autorizada');
   const isPaid = String(orcamento.status).toLowerCase() === 'pago';
   const canEditPedido = !hasNFSeAutorizada && !isPaid;
-  // Status: Se já estiver pago, bloqueia. Se houver NFSe, só pode escolher "pago". Sem NFSe, qualquer status é permitido (inclui "pago").
-  const canEditStatusSelect = !isPaid;
-  const statusHelperText = isPaid
-    ? 'Venda paga - edição bloqueada'
-    : hasNFSeAutorizada
-    ? 'NFSe emitida: apenas "Pago" é permitido'
-    : '';
-  const isTargetStatusValid = (target) => {
-    if (isPaid) return false;
-    if (hasNFSeAutorizada) return target === 'pago';
-    return true;
-  };
+  // Status: Pode sempre editar; atualização imediata ao trocar o select
+  const canEditStatusSelect = true;
 
   const subtotal = (orcamento.itens || []).reduce((acc, it) => acc + (Number(it.quantidade) * Number(it.valorUnitario) - Number(it.desconto || 0)), 0);
   const total = subtotal - Number(orcamento.descontoGeral || 0);
@@ -216,11 +206,12 @@ export default function OrcamentoDetalhesPage({ params }) {
     }
   };
 
-  const handleStatus = async () => {
+  const handleStatus = async (newStatus) => {
     try {
       setSaving(true);
-      await portalUpdateOrcamentoStatus(id, { status, clienteProprietarioId });
-      setOrcamento((o) => ({ ...o, status }));
+      await portalUpdateOrcamentoStatus(id, { status: newStatus, clienteProprietarioId });
+      setStatus(newStatus);
+      setOrcamento((o) => ({ ...o, status: newStatus }));
       toast.success('Status atualizado');
     } catch (e) {
       toast.error('Erro ao atualizar status');
@@ -320,7 +311,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                 </Button>
               )}
             </PDFDownloadLink>
-            {podeEmitirNFSe && !hasNotaAtiva && (
+            {podeEmitirNFSe && !hasNFSeAutorizada && (
               <Button onClick={handleEmitirNFSe} variant="contained" startIcon={<Iconify icon="solar:bill-check-bold" />} disabled={generatingNf}>
                 {generatingNf ? 'Emitindo...' : 'Emitir NFSe'}
               </Button>
@@ -360,27 +351,16 @@ export default function OrcamentoDetalhesPage({ params }) {
                   size="small"
                   select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) => handleStatus(e.target.value)}
                   disabled={!canEditStatusSelect}
-                  helperText={statusHelperText}
                   sx={{ width: { xs: '100%', sm: 220 } }}
                 >
-                  <MenuItem value="pendente" disabled={!isTargetStatusValid('pendente')}>Pendente</MenuItem>
-                  <MenuItem value="aprovado" disabled={!isTargetStatusValid('aprovado')}>Aprovado</MenuItem>
-                  <MenuItem value="recusado" disabled={!isTargetStatusValid('recusado')}>Recusado</MenuItem>
-                  <MenuItem value="expirado" disabled={!isTargetStatusValid('expirado')}>Expirado</MenuItem>
-                  <MenuItem value="pago" disabled={!isTargetStatusValid('pago')}>Pago</MenuItem>
+                  <MenuItem value="pendente">Pendente</MenuItem>
+                  <MenuItem value="aprovado">Aprovado</MenuItem>
+                  <MenuItem value="recusado">Recusado</MenuItem>
+                  <MenuItem value="expirado">Expirado</MenuItem>
+                  <MenuItem value="pago">Pago</MenuItem>
                 </TextField>
-                <LoadingButton
-                  size="small"
-                  loading={saving}
-                  onClick={handleStatus}
-                  disabled={!canEditStatusSelect || !isTargetStatusValid(status)}
-                  variant="contained"
-                  sx={{ width: { xs: '100%', sm: 140 } }}
-                >
-                  Atualizar
-                </LoadingButton>
               </Stack>
             </Grid>
           </Grid>
