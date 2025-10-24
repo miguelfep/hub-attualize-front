@@ -19,7 +19,7 @@ import { AnimateCountUp, formatToInteger, formatToCurrency } from 'src/component
 
 // ----------------------------------------------------------------------
 
-export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency = false, requirePassword = false, password = '', maskInitially = true, ...other }) {
+export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency = false, requirePassword = false, password = '', maskInitially = true, eyeView = false, ...other }) {
   const theme = useTheme();
   const [showValue, setShowValue] = useState(!maskInitially);
   const [pwdOpen, setPwdOpen] = useState(false);
@@ -89,23 +89,37 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency 
       {...other}
     >
       <Box sx={{ flexGrow: 1 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Box sx={{ typography: 'subtitle2' }}>{title}</Box>
-          <Tooltip title={showValue ? 'Ocultar valor' : 'Mostrar valor'}>
-            <IconButton size="small" onClick={handleToggleVisibility}>
-              <Iconify icon={showValue ? 'solar:eye-closed-bold' : 'solar:eye-bold'} />
-            </IconButton>
-          </Tooltip>
-        </Box>
-        {showValue ? (
-          <AnimateCountUp
-            to={total}
-            component={Box}
-            formatter={isCurrency ? formatToCurrency : formatToInteger}
-            sx={{ mt: 1.5, typography: 'h3' }}
-          />
+        {eyeView ? (
+          <>
+            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Box sx={{ typography: 'subtitle2' }}>{title}</Box>
+              <Tooltip title={showValue ? 'Ocultar valor' : 'Mostrar valor'}>
+                <IconButton size="small" onClick={handleToggleVisibility}>
+                  <Iconify icon={showValue ? 'solar:eye-closed-bold' : 'solar:eye-bold'} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            {showValue ? (
+              <AnimateCountUp
+                to={total}
+                component={Box}
+                formatter={isCurrency ? formatToCurrency : formatToInteger}
+                sx={{ mt: 1.5, typography: 'h3' }}
+              />
+            ) : (
+              <Box sx={{ mt: 1.5, typography: 'h3', fontFamily: 'monospace' }}>••••</Box>
+            )}
+          </>
         ) : (
-          <Box sx={{ mt: 1.5, typography: 'h3', fontFamily: 'monospace' }}>••••</Box>
+          <>
+            <Box sx={{ typography: 'subtitle2' }}>{title}</Box>
+            <AnimateCountUp
+              to={total}
+              component={Box}
+              formatter={isCurrency ? formatToCurrency : formatToInteger}
+              sx={{ mt: 1.5, typography: 'h3' }}
+            />
+          </>
         )}
         <Box sx={{ mt: 1 }}>
           {renderPeriodInfo}
@@ -119,25 +133,27 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency 
         width={60}
         height={40}
       />
-      <Dialog open={pwdOpen} onClose={handleCloseDialog} maxWidth="xs" fullWidth>
-        <DialogTitle>Digite a senha para visualizar</DialogTitle>
-        <DialogContent>
-          <TextField
-            fullWidth
-            label="Senha"
-            type="password"
-            value={pwdInput}
-            onChange={(e) => setPwdInput(e.target.value)}
-            error={Boolean(pwdError)}
-            helperText={pwdError}
-            autoFocus
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>Cancelar</Button>
-          <Button variant="contained" onClick={handleConfirmPassword}>Confirmar</Button>
-        </DialogActions>
-      </Dialog>
+      {eyeView && (
+        <Dialog open={pwdOpen} onClose={handleCloseDialog} maxWidth="xs" fullWidth>
+          <DialogTitle>Digite a senha para visualizar</DialogTitle>
+          <DialogContent>
+            <TextField
+              fullWidth
+              label="Senha"
+              type="password"
+              value={pwdInput}
+              onChange={(e) => setPwdInput(e.target.value)}
+              error={Boolean(pwdError)}
+              helperText={pwdError}
+              autoFocus
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseDialog}>Cancelar</Button>
+            <Button variant="contained" onClick={handleConfirmPassword}>Confirmar</Button>
+          </DialogActions>
+        </Dialog>
+      )}
     </Card>
   );
 }
