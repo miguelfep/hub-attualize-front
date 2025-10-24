@@ -4,7 +4,8 @@ import React from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Card, Stack, Button, Dialog, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import { Card, Stack, Button, Dialog, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions, Box } from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
@@ -23,6 +24,7 @@ import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
 
 export default function NovoOrcamentoPage() {
+  const theme = useTheme();
   const { user } = useAuthContext();
   const userId = user?.id || user?._id || user?.userId;
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
@@ -112,7 +114,10 @@ export default function NovoOrcamentoPage() {
   if (loadingEmpresas || !clienteProprietarioId) return <Typography>Carregando...</Typography>;
   if (!podeCriarOrcamentos) return <Typography>Funcionalidade não disponível</Typography>;
 
-  const addItem = () => setItens((arr) => [...arr, { servicoId: '', quantidade: 1, valorUnitario: 0, valorUnitarioText: fCurrency(0), desconto: 0, descontoText: fCurrency(0), descricao: '' }]);
+  const addItem = () => setItens((arr) => {
+    if (arr.length >= 1) { toast.error('Apenas 1 item é permitido'); return arr; }
+    return [...arr, { servicoId: '', quantidade: 1, valorUnitario: 0, valorUnitarioText: fCurrency(0), desconto: 0, descontoText: fCurrency(0), descricao: '' }];
+  });
   const rmItem = (i) => setItens((arr) => arr.filter((_, idx) => idx !== i));
   const setItemField = (i, field, value) => setItens((arr) => arr.map((it, idx) => (idx === i ? { ...it, [field]: value } : it)));
 
@@ -157,13 +162,32 @@ export default function NovoOrcamentoPage() {
   return (
     <SimplePaper>
       <form onSubmit={handleSubmit}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-          <Typography variant="h6">Nova Venda</Typography>
-          <Stack direction="row" spacing={1}>
-            <Button href="../vendas" variant="text">Cancelar</Button>
-            <LoadingButton type="submit" variant="contained" loading={saving}>Salvar</LoadingButton>
-          </Stack>
-        </Stack>
+        <Card sx={{ borderRadius: 3, mb: 2 }}>
+          <Box
+            sx={{
+              p: 3,
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { xs: 'flex-start', md: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`
+            }}
+          >
+            <Stack spacing={0.5}>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                Nova Venda
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                Preencha os dados da venda e adicione o item de serviço.
+              </Typography>
+            </Stack>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Button href="../vendas" variant="outlined" color="inherit">Cancelar</Button>
+              <LoadingButton type="submit" variant="contained" loading={saving}>Salvar</LoadingButton>
+            </Stack>
+          </Box>
+        </Card>
 
         <Card sx={{ mb: 2 }}>
           <CardContent>
@@ -193,37 +217,40 @@ export default function NovoOrcamentoPage() {
         <Card sx={{ mb: 2 }}>
           <CardContent>
             <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-              <Typography variant="subtitle2">Itens</Typography>
-              <Button onClick={addItem} startIcon={<Iconify icon="solar:add-circle-bold" />}>Adicionar Item</Button>
+              <Typography variant="subtitle2">Item do Serviço</Typography>
+              <Button onClick={addItem} startIcon={<Iconify icon="solar:add-circle-bold" />} disabled={itens.length >= 1}>Adicionar Item</Button>
             </Stack>
             <Stack spacing={2}>
               {itens.map((it, i) => (
                 <Grid container spacing={2} key={i}>
-                  <Grid xs={12} sm={5}>
-                    <TextField fullWidth select label="Serviço" value={it.servicoId} onChange={(e) => handleServicoChange(i, e.target.value)}>
+                  <Grid xs={12}>
+                    <TextField fullWidth select label="Serviço" value={it.servicoId} onChange={(e) => handleServicoChange(i, e.target.value)} SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}>
                       <MenuItem value="">Selecione</MenuItem>
                       {(servicos || []).map((s) => (
                         <MenuItem key={s._id} value={s._id}>{s.nome}</MenuItem>
                       ))}
                     </TextField>
                   </Grid>
-                  <Grid xs={12} sm={2}>
+                  <Grid xs={12}>
+                    <TextField fullWidth label="Descrição" value={it.descricao} onChange={(e) => setItemField(i, 'descricao', e.target.value)} />
+                  </Grid>
+                  <Grid xs={6} sm={2}>
                     <TextField fullWidth type="number" label="Qtd" value={it.quantidade} onChange={(e) => setItemField(i, 'quantidade', Number(e.target.value))} />
                   </Grid>
-                  <Grid xs={12} sm={2}>
+                  <Grid xs={6} sm={2}>
                     <TextField fullWidth label="Vlr Unit" value={it.valorUnitarioText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, valorUnitario: value, valorUnitarioText: text } : item))); }} />
                   </Grid>
                   <Grid xs={12} sm={2}>
                     <TextField fullWidth label="Desconto" value={it.descontoText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, desconto: value, descontoText: text } : item))); }} />
                   </Grid>
-                  <Grid xs={12} sm={1}>
+                  <Grid xs={12} sm={2}>
                     <Button color="error" onClick={() => rmItem(i)}><Iconify icon="solar:trash-bin-trash-bold" /></Button>
-                  </Grid>
-                  <Grid xs={12}>
-                    <TextField fullWidth label="Descrição" value={it.descricao} onChange={(e) => setItemField(i, 'descricao', e.target.value)} />
                   </Grid>
                 </Grid>
               ))}
+              {itens.length > 1 && (
+                <Typography variant="caption" color="text.secondary">Apenas 1 item é permitido. Os demais itens não serão considerados.</Typography>
+              )}
             </Stack>
           </CardContent>
         </Card>

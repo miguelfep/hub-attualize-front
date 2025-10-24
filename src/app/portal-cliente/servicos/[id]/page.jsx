@@ -27,6 +27,7 @@ import { useSettings } from 'src/hooks/useSettings';
 
 import { endpoints } from 'src/utils/axios';
 import { fCurrency } from 'src/utils/format-number';
+import { formatCNAE } from 'src/utils/formatter';
 
 import { getClienteById } from 'src/actions/clientes';
 import { portalGetServico, portalUpdateServico } from 'src/actions/portal';
@@ -99,6 +100,7 @@ export default function EditarServicoPage() {
 
   const [cnaesEmpresa, setCnaesEmpresa] = useState([]);
   const [loadingCnaes, setLoadingCnaes] = useState(false);
+  const normalizeCNAE = (v) => String(v || '').replace(/\D/g, '');
 
   useEffect(() => {
 
@@ -117,7 +119,7 @@ export default function EditarServicoPage() {
           unidade: servicoData.unidade || 'UN',
           categoria: servicoData.categoria || '',
           codigoServico: servicoData.codigoServico || '',
-          cnae: servicoData.cnae || '',
+          cnae: normalizeCNAE(servicoData.cnae || ''),
         });
       } catch (error) {
         toast.error('Erro ao carregar dados do serviço.');
@@ -174,7 +176,7 @@ const handleSubmit = useCallback(async (e) => {
       const sanitizeCnae = (str) => {
         if (!str) return undefined;
         const onlyCode = String(str).split(' - ')[0].split(' ')[0];
-        return onlyCode.replace(/-/g, '.').replace(/[^0-9.]/g, '');
+        return onlyCode.replace(/\D/g, '');
       };
       const payload = {
         clienteProprietarioId,
@@ -329,11 +331,14 @@ router.replace(paths.cliente.servicos);
                         helperText={loadingCnaes ? 'Carregando CNAEs...' : ''}
                       >
                         <MenuItem value="">Selecione</MenuItem>
-                        {cnaesEmpresa.map((c) => (
-                          <MenuItem key={c.code} value={c.code}>
-                            {c.code} - {c.text}
-                          </MenuItem>
-                        ))}
+                        {cnaesEmpresa.map((c) => {
+                          const val = normalizeCNAE(c.code);
+                          return (
+                            <MenuItem key={`${c.code}-${val}`} value={val}>
+                              {formatCNAE(val)} - {c.text}
+                            </MenuItem>
+                          );
+                        })}
                       </TextField>
                     </Grid>
                   </Grid>
