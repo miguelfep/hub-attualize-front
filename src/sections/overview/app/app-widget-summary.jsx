@@ -1,6 +1,15 @@
+import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import { useTheme } from '@mui/material/styles';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
+import TextField from '@mui/material/TextField';
+import Button from '@mui/material/Button';
 
 import { fNumber } from 'src/utils/format-number';
 
@@ -10,8 +19,12 @@ import { AnimateCountUp, formatToInteger, formatToCurrency } from 'src/component
 
 // ----------------------------------------------------------------------
 
-export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency = false, ...other }) {
+export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency = false, requirePassword = false, password = '', maskInitially = true, ...other }) {
   const theme = useTheme();
+  const [showValue, setShowValue] = useState(!maskInitially);
+  const [pwdOpen, setPwdOpen] = useState(false);
+  const [pwdInput, setPwdInput] = useState('');
+  const [pwdError, setPwdError] = useState('');
 
   const chartColors = chart.colors ?? [theme.palette.primary.main];
 
@@ -40,6 +53,31 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency 
     </Box>
   );
 
+  const handleToggleVisibility = () => {
+    if (requirePassword && !showValue) {
+      setPwdOpen(true);
+    } else {
+      setShowValue((v) => !v);
+    }
+  };
+
+  const handleConfirmPassword = () => {
+    if (!requirePassword || !password || pwdInput === password) {
+      setShowValue(true);
+      setPwdOpen(false);
+      setPwdInput('');
+      setPwdError('');
+    } else {
+      setPwdError('Senha incorreta');
+    }
+  };
+
+  const handleCloseDialog = () => {
+    setPwdOpen(false);
+    setPwdInput('');
+    setPwdError('');
+  };
+
   return (
     <Card
       sx={{
@@ -51,13 +89,24 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency 
       {...other}
     >
       <Box sx={{ flexGrow: 1 }}>
-        <Box sx={{ typography: 'subtitle2' }}>{title}</Box>
-        <AnimateCountUp
-          to={total}
-          component={Box}
-          formatter={isCurrency ? formatToCurrency : formatToInteger}
-          sx={{ mt: 1.5, typography: 'h3' }}
-        />
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Box sx={{ typography: 'subtitle2' }}>{title}</Box>
+          <Tooltip title={showValue ? 'Ocultar valor' : 'Mostrar valor'}>
+            <IconButton size="small" onClick={handleToggleVisibility}>
+              <Iconify icon={showValue ? 'solar:eye-closed-bold' : 'solar:eye-bold'} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+        {showValue ? (
+          <AnimateCountUp
+            to={total}
+            component={Box}
+            formatter={isCurrency ? formatToCurrency : formatToInteger}
+            sx={{ mt: 1.5, typography: 'h3' }}
+          />
+        ) : (
+          <Box sx={{ mt: 1.5, typography: 'h3', fontFamily: 'monospace' }}>••••</Box>
+        )}
         <Box sx={{ mt: 1 }}>
           {renderPeriodInfo}
         </Box>
@@ -70,6 +119,25 @@ export function AppWidgetSummary({ title, percent, total, chart, sx, isCurrency 
         width={60}
         height={40}
       />
+      <Dialog open={pwdOpen} onClose={handleCloseDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Digite a senha para visualizar</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            label="Senha"
+            type="password"
+            value={pwdInput}
+            onChange={(e) => setPwdInput(e.target.value)}
+            error={Boolean(pwdError)}
+            helperText={pwdError}
+            autoFocus
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseDialog}>Cancelar</Button>
+          <Button variant="contained" onClick={handleConfirmPassword}>Confirmar</Button>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }

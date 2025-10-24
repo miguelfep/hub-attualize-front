@@ -91,7 +91,7 @@ export default function PortalClienteDashboardView() {
               formatar
               icon="solar:bill-list-bold-duotone"
               color="info"
-              link="/portal-cliente/orcamentos"
+              link="/portal-cliente/vendas"
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
@@ -100,7 +100,7 @@ export default function PortalClienteDashboardView() {
               total={dashboardData?.estatisticasGerais?.totalNotasFiscais || 0}
               icon="solar:file-text-bold-duotone"
               color="warning"
-              link="/portal-cliente/orcamentos"
+              link="/portal-cliente/vendas"
             />
           </Grid>
 

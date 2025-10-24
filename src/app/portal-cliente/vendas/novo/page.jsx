@@ -40,7 +40,6 @@ export default function NovoOrcamentoPage() {
   const [form, setForm] = React.useState({
     clienteDoClienteId: '',
     dataValidade: '',
-    descontoGeral: 0,
     observacoes: '',
     condicoesPagamento: '',
   });
@@ -128,7 +127,7 @@ export default function NovoOrcamentoPage() {
   };
 
   const subtotal = itens.reduce((acc, it) => acc + (Number(it.quantidade) * Number(it.valorUnitario) - Number(it.desconto || 0)), 0);
-  const total = subtotal - Number(form.descontoGeral || 0);
+  const total = subtotal;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -141,7 +140,6 @@ export default function NovoOrcamentoPage() {
         clienteDoClienteId: form.clienteDoClienteId,
         dataValidade: form.dataValidade,
         itens,
-        descontoGeral: Number(form.descontoGeral || 0),
         observacoes: form.observacoes,
         condicoesPagamento: form.condicoesPagamento,
       });
@@ -207,9 +205,7 @@ export default function NovoOrcamentoPage() {
               <Grid xs={12} sm={4}>
                 <TextField fullWidth type="date" label="Validade" value={form.dataValidade} onChange={(e) => setForm((f) => ({ ...f, dataValidade: e.target.value }))} InputLabelProps={{ shrink: true }} />
               </Grid>
-              <Grid xs={12} sm={4}>
-                <TextField fullWidth label="Desconto Geral" value={fCurrency(form.descontoGeral || 0)} onChange={(e) => { const { value } = formatBRLInput(e.target.value); setForm((f) => ({ ...f, descontoGeral: value })); }} />
-              </Grid>
+              
             </Grid>
           </CardContent>
         </Card>
