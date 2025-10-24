@@ -49,10 +49,16 @@ import LicenseModal from './LicenseModal';
       return (a, b) => {
         const valueA = a.cliente?.razaoSocial || '';
         const valueB = b.cliente?.razaoSocial || '';
-        if (order === 'desc') {
-          return valueB.localeCompare(valueA);
-        }
-        return valueA.localeCompare(valueB);
+        const primary = order === 'desc' ? valueB.localeCompare(valueA) : valueA.localeCompare(valueB);
+        if (primary !== 0) return primary;
+        // desempate por nome da licença e, em seguida, data de vencimento
+        const nomeA = a.nome || '';
+        const nomeB = b.nome || '';
+        const secondary = nomeA.localeCompare(nomeB);
+        if (secondary !== 0) return secondary;
+        const dateA = new Date(a.dataVencimento || 0).getTime();
+        const dateB = new Date(b.dataVencimento || 0).getTime();
+        return dateA - dateB;
       };
     }
     return getLicenceStatusComparator(order, orderBy);
@@ -73,7 +79,7 @@ export function BookingDetails({
   const [rowsPerPage, setRowsPerPage] = useState(50);
   const [selectedLicense, setSelectedLicense] = useState(null);
   const [order, setOrder] = useState('asc');
-  const [orderBy, setOrderBy] = useState('dataVencimento');
+  const [orderBy, setOrderBy] = useState('cliente');
   const [statusFilterIndex, setStatusFilterIndex] = useState(-1);
 
 

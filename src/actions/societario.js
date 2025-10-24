@@ -215,6 +215,29 @@ export async function deletarArquivoLicenca(id) {
   }
 }
 
+// Comentários de Licença
+export async function listarComentariosLicenca(licencaId, incluirInternos = true) {
+  try {
+    const response = await axios.get(`${baseUrl}societario/licenca/${licencaId}/comentarios`, {
+      params: { incluirInternos },
+    });
+    return response;
+  } catch (error) {
+    console.error('Erro ao listar comentários da licença:', error);
+    throw error;
+  }
+}
+
+export async function criarComentarioLicenca(licencaId, payload) {
+  try {
+    const response = await axios.post(`${baseUrl}societario/licenca/${licencaId}/comentario`, payload);
+    return response;
+  } catch (error) {
+    console.error('Erro ao criar comentário da licença:', error);
+    throw error;
+  }
+}
+
 export async function getAlteracoesSocietario() {
   return axios.get(`${baseUrl}societario/alteracoes`);
 }

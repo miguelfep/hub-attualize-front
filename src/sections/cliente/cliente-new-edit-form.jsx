@@ -21,6 +21,7 @@ import {
   Typography,
   CircularProgress,
   FormControlLabel,
+  Divider,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -33,6 +34,7 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 import FileUploadField from 'src/components/file-upload/FileUploadField';
+import MaskedInput from 'src/sections/societario/InputMask';
 
 import SociosForm from './cliete-socios-form';
 import { ClientePortalSettings } from './cliente-portal-settings';
@@ -67,6 +69,7 @@ export const TIPONEGOCIO = [
 
 export const NewUClienteSchema = zod.object({
   nome: zod.string().min(1, { message: 'Nome é obrigatório!' }),
+  nomeFantasia: zod.string().optional(),
   razaoSocial: zod.string().optional(),
   cnpj: zod.string().min(1, { message: 'CNPJ é obrigatório!' }),
   codigo: zod
@@ -121,9 +124,15 @@ export const NewUClienteSchema = zod.object({
         rua: zod.string().optional(),
         numero: zod.string().optional(),
         complemento: zod.string().optional(),
+        bairro: zod.string().optional(),
         cidade: zod.string().optional(),
         estado: zod.string().optional(),
-        cep: zod.string().optional(),
+        cep: zod
+          .string()
+          .min(1, { message: 'CEP é obrigatório!' })
+          .refine((v) => (v || '').replace(/\D/g, '').length === 8, {
+            message: 'CEP deve ter 8 dígitos',
+          }),
       })
     )
     .optional(),
@@ -166,16 +175,27 @@ export function ClienteNewEditForm({ currentCliente }) {
 
   const router = useRouter();
 
+  const normalizePhoneBR = (input) => {
+    const raw = String(input || '');
+    if (!raw) return '';
+    if (raw.startsWith('+')) return raw;
+    const digits = raw.replace(/\D/g, '');
+    if (!digits) return '';
+    if (digits.startsWith('55')) return `+${digits}`;
+    return `+55${digits}`;
+  };
+
   const defaultValues = useMemo(
     () => ({
       nome: currentCliente?.nome || '',
+      nomeFantasia: currentCliente?.nomeFantasia || '',
       razaoSocial: currentCliente?.razaoSocial || '',
       cnpj: currentCliente?.cnpj || '',
       codigo: currentCliente?.codigo || null,
       email: currentCliente?.email || '',
       emailFinanceiro: currentCliente?.emailFinanceiro || '',
-      whatsapp: currentCliente?.whatsapp || '',
-      telefoneComercial: currentCliente?.telefoneComercial || '',
+      whatsapp: normalizePhoneBR(currentCliente?.whatsapp),
+      telefoneComercial: normalizePhoneBR(currentCliente?.telefoneComercial),
       observacao: currentCliente?.observacao || '',
       im: currentCliente?.im || '',
       ie: currentCliente?.ie || '',
@@ -196,7 +216,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       tipoNegocio: currentCliente?.tipoNegocio || [],
       contadorResponsavel: currentCliente?.contadorResponsavel || 'semresponsavel',
       endereco: currentCliente?.endereco || [
-        { rua: '', numero: '', complemento: '', cidade: '', estado: '', cep: '' },
+        { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
       ],
       tributacao: currentCliente?.tributacao || [],
       socios: currentCliente?.socios || [],
@@ -248,11 +268,30 @@ const onSubmit = handleSubmit(
 
         const formData = new FormData();
         const textData = { ...data };
+        const trimStartDeep = (obj) => {
+          if (Array.isArray(obj)) return obj.map(trimStartDeep);
+          if (obj && typeof obj === 'object') {
+            const out = {};
+            Object.keys(obj).forEach((k) => {
+              out[k] = trimStartDeep(obj[k]);
+            });
+            return out;
+          }
+          if (typeof obj === 'string') return obj.replace(/^\s+/, '');
+          return obj;
+        };
+        const cleaned = trimStartDeep(textData);
+        if (Array.isArray(cleaned.endereco)) {
+          cleaned.endereco = cleaned.endereco.map((e) => ({
+            ...e,
+            cep: (e?.cep || '').toString().replace(/\D/g, ''),
+          }));
+        }
         
-        delete textData.contratoSocialFile;
-        delete textData.cartaoCnpjFile;
+        delete cleaned.contratoSocialFile;
+        delete cleaned.cartaoCnpjFile;
 
-        formData.append('data', JSON.stringify(textData));
+        formData.append('data', JSON.stringify(cleaned));
 
         if (data.contratoSocialFile instanceof File) {
           formData.append('contratoSocial', data.contratoSocialFile);
@@ -392,7 +431,14 @@ const onSubmit = handleSubmit(
                     )}
                   />
                 </Grid>
-                <Grid xs={7}>
+                <Grid xs={12} sm={7} sx={{ display: { xs: 'none', sm: 'block' } }} />
+                <Grid xs={12} sm={3}>
+                  <Field.Select name="tipoContato" label="Tipo de conta" fullWidth>
+                    <MenuItem value="cliente">Cliente</MenuItem>
+                    <MenuItem value="lead">Lead</MenuItem>
+                  </Field.Select>
+                </Grid>
+                <Grid xs={12}>
                   <Field.Text name="razaoSocial" label="Razão Social" fullWidth />
                 </Grid>
                 <Grid xs={12} sm={3}>
@@ -401,17 +447,28 @@ const onSubmit = handleSubmit(
                 <Grid xs={12} sm={4}>
                   <Field.Text name="nome" label="Nome" fullWidth />
                 </Grid>
+                <Grid xs={12} sm={5}>
+                  <Field.Text name="nomeFantasia" label="Nome Fantasia" fullWidth />
+                </Grid>
+                <Grid xs={12}>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Contato</Typography>
+                </Grid>
                 <Grid xs={12} sm={4}>
                   <Field.Text name="email" label="Email" fullWidth />
                 </Grid>
                 <Grid xs={12} sm={4}>
-                  <Field.Text name="whatsapp" label="Whatsapp" fullWidth />
-                </Grid>
-                <Grid xs={12} sm={6}>
                   <Field.Text name="emailFinanceiro" label="Email Financeiro" fullWidth />
                 </Grid>
-                <Grid xs={12} sm={6}>
-                  <Field.Text name="telefoneComercial" label="Telefone Comercial" fullWidth />
+                <Grid xs={12} sm={4}>
+                  <Field.Phone name="whatsapp" label="Whatsapp" fullWidth />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <Field.Phone name="telefoneComercial" label="Telefone Comercial" fullWidth />
+                </Grid>
+                <Grid xs={12}>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Endereço</Typography>
                 </Grid>
                 {enderecoFields.map((item, index) => (
                   <Grid container spacing={2} key={item.id} mt={2}>
@@ -420,13 +477,15 @@ const onSubmit = handleSubmit(
                         name={`endereco.${index}.cep`}
                         control={control}
                         render={({ field }) => (
-                          <TextField
-                            {...field}
+                          <MaskedInput
+                            mask="99999-999"
+                            value={field.value || ''}
+                            onChange={(e) => field.onChange(e.target.value)}
+                            onBlur={() => handleCepChange(index, (field.value || '').replace(/\D/g, ''))}
                             label="CEP"
                             fullWidth
                             error={!!errors.endereco?.[index]?.cep}
                             helperText={errors.endereco?.[index]?.cep?.message}
-                            onBlur={() => handleCepChange(index, field.value)}
                           />
                         )}
                       />
@@ -473,6 +532,22 @@ const onSubmit = handleSubmit(
                             fullWidth
                             error={!!errors.endereco?.[index]?.complemento}
                             helperText={errors.endereco?.[index]?.complemento?.message}
+                          />
+                        )}
+                      />
+                    </Grid>
+                    <Grid xs={12} sm={3}>
+                      <Controller
+                        name={`endereco.${index}.bairro`}
+                        control={control}
+                        render={({ field }) => (
+                          <TextField
+                            {...field}
+                            label="Bairro"
+                            fullWidth
+                            disabled={loadingCep}
+                            error={!!errors.endereco?.[index]?.bairro}
+                            helperText={errors.endereco?.[index]?.bairro?.message}
                           />
                         )}
                       />
