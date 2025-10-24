@@ -94,7 +94,6 @@ export default function EditarServicoPage() {
     unidade: 'UN',
     categoria: '',
     codigoServico: '',
-    aliquotaISS: '',
     cnae: '',
   });
 
@@ -118,7 +117,6 @@ export default function EditarServicoPage() {
           unidade: servicoData.unidade || 'UN',
           categoria: servicoData.categoria || '',
           codigoServico: servicoData.codigoServico || '',
-          aliquotaISS: servicoData.aliquotaISS || '',
           cnae: servicoData.cnae || '',
         });
       } catch (error) {
@@ -173,6 +171,11 @@ const handleSubmit = useCallback(async (e) => {
 
     try {
       setSaving(true);
+      const sanitizeCnae = (str) => {
+        if (!str) return undefined;
+        const onlyCode = String(str).split(' - ')[0].split(' ')[0];
+        return onlyCode.replace(/-/g, '.').replace(/[^0-9.]/g, '');
+      };
       const payload = {
         clienteProprietarioId,
         nome: form.nome,
@@ -182,8 +185,7 @@ const handleSubmit = useCallback(async (e) => {
         categoria: form.categoria,
         ...(podeEmitirNFSe ? {
           codigoServico: form.codigoServico || undefined,
-          aliquotaISS: form.aliquotaISS ? Number(form.aliquotaISS) : undefined,
-          cnae: form.cnae || undefined,
+          cnae: sanitizeCnae(form.cnae),
         } : {}),
       };
       await portalUpdateServico(servicoId, payload);
@@ -314,16 +316,7 @@ router.replace(paths.cliente.servicos);
                         placeholder="ex: 01.07"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Alíquota ISS (%)"
-                        value={form.aliquotaISS}
-                        onChange={(e) => setForm((f) => ({ ...f, aliquotaISS: e.target.value }))}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
+                    <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
                         select

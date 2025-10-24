@@ -125,7 +125,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
       <Stack direction="row" alignItems="center" spacing={1}>
         <Iconify icon="solar:buildings-bold" width={18} sx={{ color: 'primary.main' }} />
         <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-          {empresa.nome}
+          {empresa.razaoSocial}
         </Typography>
       </Stack>
     );
@@ -146,7 +146,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
           renderValue={(value) => {
             if (!value) return loadingEmpresas ? 'Carregando...' : 'Selecionar empresa';
             const emp = empresas.find((x) => x._id === value);
-            if (emp) return emp.nome;
+            if (emp) return emp.razaoSocial;
             if (loading || loadingEmpresas) return optimisticLabelRef.current || 'Carregando...';
             return '';
           }}
@@ -172,7 +172,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Iconify icon="solar:buildings-bold" width={16} />
                 <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                  {empresa.nome}
+                  {empresa.razaoSocial}
                 </Typography>
                 {empresa._id === empresaAtiva && (
                   <Chip
@@ -229,7 +229,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
             <MenuItem key={empresa._id} value={empresa._id}>
               <Stack spacing={0.5}>
                 <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                  {empresa.nome}
+                  {empresa.razaoSocial}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
                   {formatCNPJ(empresa.cnpj)}

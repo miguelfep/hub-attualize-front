@@ -11,6 +11,8 @@ import Container from '@mui/material/Container';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
+import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
 
 import { updateInvoice, getInvoiceById } from 'src/actions/invoices';
 
@@ -24,8 +26,10 @@ import { CheckoutOrderComplete } from '../checkout/checkout-order-complete';
 
 const ORCAMENTO_CHECKOUT_STEPS = ['Aprovação', 'Pagamento'];
 
-export function OrcamentoView({ invoice }) {
+export function OrcamentoView({ invoice, nfses }) {
+
   const [currentInvoice, setCurrentInvoice] = useState(invoice);
+  const [currentNfses, setCurrentNfses] = useState(nfses);
   const [activeStep, setActiveStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('boleto');
   const [status, setStatus] = useState(invoice?.status || 'orcamento');
@@ -122,6 +126,60 @@ export function OrcamentoView({ invoice }) {
         />
         <Typography variant="h4">Orçamento {currentInvoice?.invoiceNumber}</Typography>
       </Box>
+      {/* NFSe emitida/autorizada */}
+      {Array.isArray(currentNfses) && currentNfses.length > 0 && (() => {
+        console.log('currentNfses', currentNfses);
+        const nfseAtiva = currentNfses.find((n) => n?.status === 'autorizada' || String(n?.eNotasStatus || '').toLowerCase() === 'autorizada');
+        if (!nfseAtiva) return null;
+        return (
+          <Box sx={{ mt: 4, p: 2, border: 1, borderStyle: 'dashed', borderColor: 'divider', borderRadius: 1 }}>
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography variant="subtitle1">Nota Fiscal de Serviço (NFSe)</Typography>
+                <Chip size="small" label={nfseAtiva.status || nfseAtiva.eNotasStatus} color={(nfseAtiva.status === 'emitida' || String(nfseAtiva.eNotasStatus || '').toLowerCase() === 'autorizada') ? 'success' : 'default'} />
+              </Stack>
+              <Stack direction="row" spacing={1}>
+                {nfseAtiva.linkNota && (
+                  <Button size="small" variant="outlined" href={nfseAtiva.linkNota} target="_blank" rel="noopener noreferrer">
+                    Ver Nota
+                  </Button>
+                )}
+                {nfseAtiva.linkXml && (
+                  <Button size="small" variant="outlined" href={nfseAtiva.linkXml} target="_blank" rel="noopener noreferrer">
+                    Ver XML
+                  </Button>
+                )}
+              </Stack>
+            </Stack>
+            <Grid container spacing={1}>
+              <Grid item xs={12} sm={4}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Número</Typography>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{nfseAtiva.numeroNota || '-'}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Série</Typography>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{nfseAtiva.serie || '-'}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Código Verificação</Typography>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{nfseAtiva.codigoVerificacao || '-'}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Valor Serviços</Typography>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{(nfseAtiva.valorServicos ?? nfseAtiva.valorTotal ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Valor ISS</Typography>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{(nfseAtiva.valorIss ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>Valor Líquido</Typography>
+                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{(nfseAtiva.valorLiquido ?? nfseAtiva.valorTotal ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
+              </Grid>
+            </Grid>
+          </Box>
+        );
+      })()}
 
       <Grid container spacing={2} justifyContent="center">
         <Grid item xs={12}>
