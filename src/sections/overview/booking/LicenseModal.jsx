@@ -13,6 +13,7 @@ import {
   Typography,
   InputLabel,
   FormControl,
+  IconButton,
 } from '@mui/material';
 import Grid from '@mui/material/Unstable_Grid2';
 import { useAuthContext } from 'src/auth/hooks';
@@ -23,6 +24,7 @@ import {
   deletarArquivoLicenca,
   listarComentariosLicenca,
   criarComentarioLicenca,
+  deletarComentarioSocietario,
 } from 'src/actions/societario';
 
 export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
@@ -37,7 +39,7 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
   const [comentarios, setComentarios] = useState([]);
   const [novoComentario, setNovoComentario] = useState('');
   const [tipoComentario, setTipoComentario] = useState('comentario');
-  const [visivel, setVisivel] = useState(true);
+  const [visivel, setVisivel] = useState(false);
 
   const handleFileUpload = async (event) => {
     const selectedFile = event.target.files[0];
@@ -131,6 +133,16 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
     }
   };
 
+  const handleDeletarComentario = async (comentarioId) => {
+    try {
+      await deletarComentarioSocietario(comentarioId);
+      await loadComentarios();
+      toast.success('Comentário deletado');
+    } catch (error) {
+      toast.error('Erro ao deletar comentário');
+    }
+  };
+
   return (
     <Modal open={Boolean(licenca)} onClose={onClose}>
       <Box
@@ -151,24 +163,29 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
             <TextField fullWidth label="Nome" value={editedLicense.nome} InputProps={{ readOnly: true }} />
           </Grid>
           <Grid xs={12} sm={3}>
-            <TextField fullWidth label="Estado" value={editedLicense.estado} onChange={(e) => setEditedLicense({ ...editedLicense, estado: e.target.value })} />
+            <TextField fullWidth label="Estado" value={editedLicense.estado} InputProps={{ readOnly: true }} />
           </Grid>
           <Grid xs={12} sm={3}>
-            <TextField fullWidth label="Cidade" value={editedLicense.cidade} onChange={(e) => setEditedLicense({ ...editedLicense, cidade: e.target.value })} />
+            <TextField fullWidth label="Cidade" value={editedLicense.cidade} InputProps={{ readOnly: true }} />
           </Grid>
           <Grid xs={12}>
             <TextField fullWidth label="URL de Acesso" value={editedLicense.urldeacesso || ''} onChange={(e) => setEditedLicense({ ...editedLicense, urldeacesso: e.target.value })} />
           </Grid>
           <Grid xs={12} sm={4}>
-            <TextField fullWidth label="Data de Início" type="date" InputLabelProps={{ shrink: true }} value={editedLicense.dataInicio} onChange={(e) => setEditedLicense({ ...editedLicense, dataInicio: e.target.value })} />
-          </Grid>
-          <Grid xs={12} sm={4}>
-            <TextField fullWidth label="Data de Vencimento" type="date" InputLabelProps={{ shrink: true }} value={editedLicense.dataVencimento} onChange={(e) => setEditedLicense({ ...editedLicense, dataVencimento: e.target.value })} />
-          </Grid>
-          <Grid xs={12} sm={4}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
-              <Select value={editedLicense.status} label="Status" onChange={(e) => setEditedLicense({ ...editedLicense, status: e.target.value })}>
+              <Select
+                value={editedLicense.status}
+                label="Status"
+                onChange={(e) => {
+                  const status = e.target.value;
+                  setEditedLicense({
+                    ...editedLicense,
+                    status,
+                    dataVencimento: status === 'dispensada' ? '' : editedLicense.dataVencimento,
+                  });
+                }}
+              >
                 <MenuItem value="em_processo">Em Processo</MenuItem>
                 <MenuItem value="valida">Válida</MenuItem>
                 <MenuItem value="vencida">Vencida</MenuItem>
@@ -176,6 +193,27 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
                 <MenuItem value="a_expirar">A Expirar</MenuItem>
               </Select>
             </FormControl>
+          </Grid>
+          <Grid xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label="Data de Início"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              value={editedLicense.dataInicio}
+              onChange={(e) => setEditedLicense({ ...editedLicense, dataInicio: e.target.value })}
+            />
+          </Grid>
+          <Grid xs={12} sm={4}>
+            <TextField
+              fullWidth
+              label="Data de Vencimento"
+              type="date"
+              InputLabelProps={{ shrink: true }}
+              disabled={editedLicense.status === 'dispensada'}
+              value={editedLicense.status === 'dispensada' ? '' : editedLicense.dataVencimento}
+              onChange={(e) => setEditedLicense({ ...editedLicense, dataVencimento: e.target.value })}
+            />
           </Grid>
           <Grid xs={12}>
             <TextField fullWidth label="Observação" multiline rows={3} value={editedLicense.observacao || ''} onChange={(e) => setEditedLicense({ ...editedLicense, observacao: e.target.value })} />
@@ -237,9 +275,16 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
             {comentarios.map((c) => (
               <Box key={c._id} sx={{ position: 'relative', mb: 2, pl: 2 }}>
                 <Box sx={{ position: 'absolute', left: -2, top: 6, width: 10, height: 10, borderRadius: '50%', bgcolor: c.visivel ? 'success.main' : 'text.disabled' }} />
-                <Typography variant="subtitle2" sx={{ display: 'flex', justifyContent: 'space-between', gap: 2 }}>
+                <Typography variant="subtitle2" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
                   <span>{c.autor} • {new Date(c.dataComentario).toLocaleString()}</span>
-                  <span>{c.tipo}{c.visivel ? ' (público)' : ' (interno)'}</span>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <span>{c.tipo}{c.visivel ? ' (público)' : ' (interno)'}</span>
+                    {(c.autor === user?.name || c.autor === user?.email) && (
+                      <IconButton size="small" aria-label="Excluir comentário" onClick={() => handleDeletarComentario(c._id)}>
+                        ×
+                      </IconButton>
+                    )}
+                  </Box>
                 </Typography>
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{c.comentario}</Typography>
               </Box>

@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { toast } from 'sonner';
 
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
 import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -13,10 +15,15 @@ import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
 import Autocomplete from '@mui/material/Autocomplete';
+import Dialog from '@mui/material/Dialog';
+import DialogTitle from '@mui/material/DialogTitle';
+import DialogContent from '@mui/material/DialogContent';
+import DialogContentText from '@mui/material/DialogContentText';
+import DialogActions from '@mui/material/DialogActions';
 
 import { getClientes } from 'src/actions/clientes';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getLicencas, createLicenca } from 'src/actions/societario';
+import { getLicencas, createLicenca, deleteLicenca } from 'src/actions/societario';
 import {
   BookingIllustration,
   MotivationIllustration,
@@ -48,6 +55,8 @@ export function OverviewBookingView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [open, setOpen] = useState(false);
   const [selectedLicense, setSelectedLicense] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [licenseToDelete, setLicenseToDelete] = useState(null);
   const [newLicense, setNewLicense] = useState({
     nome: '',
     clienteId: '',
@@ -148,6 +157,26 @@ export function OverviewBookingView() {
     a_expirar: { label: 'A Expirar', color: 'warning' },
   };
 
+  const handleOpenDeleteDialog = (row) => {
+    const id = row._id || row.id;
+    if (!id) return;
+    setLicenseToDelete({ id, nome: row.nome });
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!licenseToDelete?.id) return;
+    try {
+      await deleteLicenca(licenseToDelete.id);
+      setDeleteDialogOpen(false);
+      setLicenseToDelete(null);
+      await fetchLicencas();
+      toast.success('Licença deletada');
+    } catch (error) {
+      toast.error('Erro ao deletar licença');
+    }
+  };
+
   return (
     <DashboardContent maxWidth="xl">
       <Grid container spacing={3} disableEqualOverflow>
@@ -211,7 +240,17 @@ export function OverviewBookingView() {
                     <Label variant="soft" color={statusMap[row.status]?.color || 'default'}>
                       {statusMap[row.status]?.label || 'Desconhecido'}
                     </Label>
-                    <Button size="small" variant="outlined" onClick={() => setSelectedLicense(row)}>Ver</Button>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, justifySelf: 'end' }}>
+                      <Button size="small" variant="outlined" onClick={() => setSelectedLicense(row)}>Ver</Button>
+                      <IconButton
+                        size="small"
+                        color="error"
+                        aria-label="Deletar licença"
+                        onClick={() => handleOpenDeleteDialog(row)}
+                      >
+                        <Iconify icon="solar:trash-bin-2-bold" />
+                      </IconButton>
+                    </Box>
                   </Box>
                 ))}
               </AccordionDetails>
@@ -365,6 +404,20 @@ export function OverviewBookingView() {
           onClose={() => setSelectedLicense(null)}
         />
       )}
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogTitle>Confirmar exclusão</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Tem certeza que deseja deletar a licença {licenseToDelete?.nome}?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+          <Button color="error" variant="contained" onClick={handleConfirmDelete} disabled={!licenseToDelete}>
+            Deletar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DashboardContent>
   );
 }
