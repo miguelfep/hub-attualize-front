@@ -238,6 +238,16 @@ export async function criarComentarioLicenca(licencaId, payload) {
   }
 }
 
+export async function deletarComentarioSocietario(comentarioId) {
+  try {
+    const response = await axios.delete(`${baseUrl}societario/comentario/${comentarioId}`);
+    return response;
+  } catch (error) {
+    console.error('Erro ao deletar comentário do societário:', error);
+    throw error;
+  }
+}
+
 export async function getAlteracoesSocietario() {
   return axios.get(`${baseUrl}societario/alteracoes`);
 }
