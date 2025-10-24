@@ -74,7 +74,6 @@ export default function NovoServicoPage() {
     unidade: 'UN',
     categoria: '',
     codigoServico: '',
-    aliquotaISS: '',
     cnae: '',
   });
   const onlyDigits = (v) => (v || '').replace(/\D/g, '');
@@ -134,6 +133,11 @@ export default function NovoServicoPage() {
     }
     try {
       setSaving(true);
+      const sanitizeCnae = (str) => {
+        if (!str) return undefined;
+        const onlyCode = String(str).split(' - ')[0].split(' ')[0];
+        return onlyCode.replace(/-/g, '.').replace(/[^0-9.]/g, '');
+      };
       const payload = {
         clienteProprietarioId,
         nome: form.nome,
@@ -145,8 +149,7 @@ export default function NovoServicoPage() {
         ...(podeEmitirNFSe
           ? {
               codigoServico: form.codigoServico || undefined,
-              aliquotaISS: form.aliquotaISS ? Number(form.aliquotaISS) : undefined,
-              cnae: form.cnae || undefined,
+              cnae: sanitizeCnae(form.cnae),
             }
           : {}),
       };
@@ -275,16 +278,7 @@ export default function NovoServicoPage() {
                         placeholder="ex: 01.07"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={3}>
-                      <TextField
-                        fullWidth
-                        type="number"
-                        label="Alíquota ISS (%)"
-                        value={form.aliquotaISS}
-                        onChange={(e) => setForm((f) => ({ ...f, aliquotaISS: e.target.value }))}
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={3}>
+                    <Grid item xs={12} sm={6}>
                       <TextField
                         fullWidth
                         select

@@ -158,9 +158,9 @@ export default function NovoOrcamentoPage() {
     <SimplePaper>
       <form onSubmit={handleSubmit}>
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-          <Typography variant="h6">Novo Orçamento</Typography>
+          <Typography variant="h6">Nova Venda</Typography>
           <Stack direction="row" spacing={1}>
-            <Button href="../orcamentos" variant="text">Cancelar</Button>
+            <Button href="../vendas" variant="text">Cancelar</Button>
             <LoadingButton type="submit" variant="contained" loading={saving}>Salvar</LoadingButton>
           </Stack>
         </Stack>

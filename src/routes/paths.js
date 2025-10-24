@@ -244,7 +244,7 @@ export const paths = {
     empresa: `${ROOTS.CLIENTE}/empresa`,
     clientes: `${ROOTS.CLIENTE}/clientes`,
     servicos: `${ROOTS.CLIENTE}/servicos`,
-    orcamentos: `${ROOTS.CLIENTE}/orcamentos`,
+    orcamentos: `${ROOTS.CLIENTE}/vendas`,
     financeiro: {
       root: `${ROOTS.CLIENTE}/financeiro`,
       contas: `${ROOTS.CLIENTE}/financeiro/contas`,

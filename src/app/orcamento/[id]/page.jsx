@@ -10,13 +10,13 @@ export const metadata = { title: `Orçamento attualize - ${CONFIG.site.name}` };
 export default async function Page({ params }) {
   const { id } = params;
 
-  const currentInvoice = await getInvoiceById(id);
+  const {invoice, nfses} = await getInvoiceById(id);
 
-  if (!currentInvoice) {
+  if (!invoice) {
     throw new Error('Invoice not found');
   }
 
-  return <OrcamentoView invoice={currentInvoice} />;
+  return <OrcamentoView invoice={invoice} nfses={nfses} />;
 }
 
 // ----------------------------------------------------------------------
@@ -37,6 +37,7 @@ export async function generateStaticParams() {
   if (CONFIG.isStaticExport) {
     try {
       const invoices = await getInvoices(); // Assumindo que há uma função para obter todas as invoices
+      console.log('invoices', invoices);
       return invoices.map((invoice) => ({ id: invoice.id }));
     } catch (error) {
       console.error('Failed to generate static params:', error);

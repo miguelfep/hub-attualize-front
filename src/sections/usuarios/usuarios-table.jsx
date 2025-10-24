@@ -220,7 +220,7 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
                                 <Stack spacing={0.5}>
                                   {usuario.empresasId.map((empresa, index) => (
                                     <Typography key={index} variant="body2">
-                                      • {typeof empresa === 'string' ? empresa : empresa.nome}
+                                      • {typeof empresa === 'string' ? empresa.razaoSocial : empresa.razaoSocial}
                                       {typeof empresa === 'object' && empresa.cnpj && (
                                         <Typography component="span" variant="caption" sx={{ ml: 1, color: 'text.secondary' }}>
                                           ({empresa.cnpj})
@@ -238,7 +238,7 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
                               {usuario.empresasId.slice(0, 2).map((empresa, index) => (
                                 <Chip
                                   key={index}
-                                  label={typeof empresa === 'string' ? empresa : empresa.nome}
+                                  label={empresa.razaoSocial}
                                   size="small"
                                   color="primary"
                                   variant="outlined"

@@ -100,7 +100,7 @@ export function EmpresaSelector({ userId, onEmpresaChange }) {
         <Iconify icon="solar:buildings-bold" width={20} sx={{ color: 'primary.main' }} />
         <Stack spacing={0.5}>
           <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-            {empresa.nome}
+            {empresa.razaoSocial}
           </Typography>
           <Typography variant="caption" color="text.secondary">
             {formatCNPJ(empresa.cnpj)}
