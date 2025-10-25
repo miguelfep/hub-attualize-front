@@ -16,12 +16,12 @@ import {
   Stack,
   Button,
   Switch,
+  Divider,
   MenuItem,
   TextField,
   Typography,
   CircularProgress,
   FormControlLabel,
-  Divider,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -34,6 +34,7 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 import FileUploadField from 'src/components/file-upload/FileUploadField';
+
 import MaskedInput from 'src/sections/societario/InputMask';
 
 import SociosForm from './cliete-socios-form';

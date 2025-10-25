@@ -5,21 +5,21 @@ import React from 'react';
 import Grid from '@mui/material/Unstable_Grid2';
 import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { Box, Card, Chip, Stack, Button, MenuItem, TextField, Typography, CardContent, Skeleton, Table, TableBody, TableContainer, TablePagination, IconButton, Tooltip, TableRow, TableCell } from '@mui/material';
-
-import { toast } from 'src/components/snackbar';
+import { Box, Card, Chip, Stack, Table, Button, Tooltip, MenuItem, Skeleton, TableRow, TextField, TableBody, TableCell, Typography, IconButton, CardContent, TableContainer, TablePagination } from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
 
+import { applySortFilter } from 'src/utils/constants/table-utils';
+
 import { usePortalOrcamentos, usePortalOrcamentosStats, portalUpdateOrcamentoStatus } from 'src/actions/portal';
 
+import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
- 
 import { useTable, getComparator } from 'src/components/table';
+
 import { TableHeadCustom } from 'src/sections/clientes/TableHeadCustom';
-import { applySortFilter } from 'src/utils/constants/table-utils';
 
 import { useAuthContext } from 'src/auth/hooks';
 

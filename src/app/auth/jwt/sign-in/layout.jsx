@@ -1,4 +1,3 @@
-import { AuthSplitLayout } from 'src/layouts/auth-split';
 import { AuthCenteredLayout } from 'src/layouts/auth-centered';
 
 import { GuestGuard } from 'src/auth/guard';

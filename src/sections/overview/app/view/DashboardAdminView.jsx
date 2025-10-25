@@ -4,13 +4,14 @@ import dayjs from 'dayjs';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
-import { Skeleton, Typography } from '@mui/material';
+import { Box, Button, Dialog, Tooltip, Skeleton, TextField, IconButton, Typography, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 
 import { toTitleCase } from 'src/utils/helper';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { buscarDadosDashboard, buscarDashboardFinanceiroPagar, buscarDashboardFinanceiroReceber, } from 'src/actions/lead';
 
+import { Iconify } from 'src/components/iconify';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 import ChartCardSkeleton from 'src/components/skeleton/ChartCardSkeleton';
 import WidgetSummarySkeleton from 'src/components/skeleton/WidgetSummarySkeleton';
@@ -43,6 +44,12 @@ export default function DashboardAdminView() {
   const [selectedDateData, setSelectedDateData] = useState(null);
 
   const password = process.env.NEXT_PUBLIC_PASSWORD_DASHBOARD_ADMIN;
+  
+  const [contentMasked, setContentMasked] = useState(true);
+  const [pwdOpen, setPwdOpen] = useState(false);
+  const [pwdInput, setPwdInput] = useState('');
+  const [pwdError, setPwdError] = useState('');
+
   const [filters, setFilters] = useState({
     dataInicio: dayjs().startOf('month').toISOString(),
     dataFim: dayjs().endOf('month').toISOString(),
@@ -82,6 +89,41 @@ export default function DashboardAdminView() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? window.sessionStorage.getItem('adminDashContentUnmasked') : null;
+      if (saved === 'true') setContentMasked(false);
+    } catch (e) {
+      // ignore
+    }
+  }, []);
+
+  const openPasswordDialog = () => {
+    setPwdOpen(true);
+    setPwdInput('');
+    setPwdError('');
+  };
+
+  const closePasswordDialog = () => {
+    setPwdOpen(false);
+    setPwdInput('');
+    setPwdError('');
+  };
+
+  const handleConfirmPassword = () => {
+    if (!password || pwdInput === password) {
+      setContentMasked(false);
+      try {
+        if (typeof window !== 'undefined') window.sessionStorage.setItem('adminDashContentUnmasked', 'true');
+      } catch (e) {
+        // ignore
+      }
+      closePasswordDialog();
+    } else {
+      setPwdError('Senha incorreta');
+    }
+  };
 
   const areaCharData = useMemo(() => {
     const aggregateByDay = (transtions, dateField, valueField) => {
@@ -198,6 +240,7 @@ export default function DashboardAdminView() {
 
   return (
     <DashboardContent maxWidth="xl">
+      <Box sx={{ position: 'relative' }}>
       <Grid container spacing={3}>
 
         <Grid xs={12} md={12}>
@@ -221,8 +264,6 @@ export default function DashboardAdminView() {
             title="Contas a Pagar"
             total={dashboardData.totalContasPagar}
             percent={dashboardData.percentualVariaçãoContasPagar}
-            requirePassword
-            password={password}
             isCurrency
             chart={{
               categories: dashboardData.categoriesContasPagar || [],
@@ -236,8 +277,6 @@ export default function DashboardAdminView() {
             title="Contas a Receber"
             total={dashboardData.totalCobrancas}
             percent={dashboardData.percentualVariacaoCobrancas}
-            requirePassword
-            password={password}
             isCurrency
             chart={{
               categories: dashboardData.categoriesCobrancas || [],
@@ -330,6 +369,54 @@ export default function DashboardAdminView() {
           />
         </Grid>
       </Grid>
+      {contentMasked && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 10,
+            bgcolor: 'rgba(0,0,0,0.3)',
+            backdropFilter: 'blur(10px)',
+            display: 'flex',
+            alignItems: 'flex-start',
+            justifyContent: 'center',
+            pt: 14,
+            borderRadius: 1,
+          }}
+        >
+          <Box sx={{ bgcolor: 'background.paper', borderRadius: 2, p: 2.5, boxShadow: 24, display: 'flex', alignItems: 'center', gap: 1.5, minWidth: 260 }}>
+            <Tooltip title="Desbloquear conteúdo">
+              <IconButton color="primary" onClick={openPasswordDialog}>
+                <Iconify icon="solar:eye-bold" width={24} />
+              </IconButton>
+            </Tooltip>
+            <Box>
+              <Typography variant="subtitle1">Conteúdo protegido</Typography>
+              <Typography variant="body2" color="text.secondary">Clique aqui para desbloquear</Typography>
+            </Box>
+          </Box>
+        </Box>
+      )}
+      </Box>
+      <Dialog open={pwdOpen} onClose={closePasswordDialog} maxWidth="xs" fullWidth>
+        <DialogTitle>Digite a senha para visualizar</DialogTitle>
+        <DialogContent>
+          <TextField
+            fullWidth
+            type="password"
+            label="Senha"
+            value={pwdInput}
+            onChange={(e) => setPwdInput(e.target.value)}
+            autoFocus
+            error={Boolean(pwdError)}
+            helperText={pwdError}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closePasswordDialog}>Cancelar</Button>
+          <Button variant="contained" onClick={handleConfirmPassword}>Confirmar</Button>
+        </DialogActions>
+      </Dialog>
     </DashboardContent>
   );
 }

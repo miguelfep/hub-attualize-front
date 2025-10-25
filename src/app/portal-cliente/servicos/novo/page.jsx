@@ -25,6 +25,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
 
+import { formatCNAE } from 'src/utils/formatter';
 import { fCurrency } from 'src/utils/format-number';
 
 import { getClienteById } from 'src/actions/clientes';
@@ -32,7 +33,6 @@ import { portalCreateServico } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
-import { formatCNAE } from 'src/utils/formatter';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -85,7 +85,42 @@ export default function NovoServicoPage() {
   };
   const [cnaesEmpresa, setCnaesEmpresa] = React.useState([]);
   const [loadingCnaes, setLoadingCnaes] = React.useState(false);
+  const [codigoOptions, setCodigoOptions] = React.useState([]);
+  const [loadingServicosENotas, setLoadingServicosENotas] = React.useState(false);
+  const [empresaUf, setEmpresaUf] = React.useState('');
+  const [empresaCidade, setEmpresaCidade] = React.useState('');
+  const [selectedServicoENotas, setSelectedServicoENotas] = React.useState(null);
   const normalizeCNAE = (v) => String(v || '').replace(/\D/g, '');
+ 
+  
+  const consultarServicosENotas = React.useCallback(async (uf, cidade, descricao, limit = 4) => {
+    if (!uf || !cidade || !descricao) return [];
+    const apiKey = process.env.NEXT_PUBLIC_ENOTAS_API_KEY;
+    if (!apiKey) return [];
+    try {
+      setLoadingServicosENotas(true);
+      const pageSize = Math.max(limit, 4);
+      const filter = `contains(descricao, '${descricao}')`;
+      const url = `https://api.enotasgw.com.br/v1/estados/${encodeURIComponent(uf)}/cidades/${encodeURIComponent(cidade)}/servicos?pageNumber=0&pageSize=${pageSize}&filter=${encodeURIComponent(filter)}`;
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Basic ${apiKey}`,
+        },
+      });
+      if (!res.ok) return [];
+      const json = await res.json();
+      const data = Array.isArray(json?.data) ? json.data : [];
+      return data.slice(0, limit).map((s) => ({
+        code: String(s.codigo),
+        descricao: s.descricao,
+        raw: s,
+      }));
+    } catch (e) {
+      return [];
+    } finally {
+      setLoadingServicosENotas(false);
+    }
+  }, []);
 
   React.useEffect(() => {
     let ignore = false;
@@ -108,6 +143,12 @@ export default function NovoServicoPage() {
           }))
           .filter((x) => x.code);
         if (!ignore) setCnaesEmpresa(cnaes);
+        const uf = cli?.endereco?.[0]?.estado || cli?.endereco?.[0]?.uf || '';
+        const cid = cli?.endereco?.[0]?.cidade || '';
+        if (!ignore) {
+          setEmpresaUf(String(uf || '').toUpperCase());
+          setEmpresaCidade(cid || '');
+        }
       } catch (e) {
         if (!ignore) setCnaesEmpresa([]);
       } finally {
@@ -149,10 +190,26 @@ export default function NovoServicoPage() {
         categoria: form.categoria,
         // NFSe (condicional)
         ...(podeEmitirNFSe
-          ? {
-              codigoServico: form.codigoServico || undefined,
-              cnae: sanitizeCnae(form.cnae),
-            }
+          ? (
+              selectedServicoENotas
+                ? {
+                    smu: {
+                      codigo: selectedServicoENotas?.codigo,
+                      descricao: selectedServicoENotas?.descricao,
+                      codigoIBGECidade: selectedServicoENotas?.codigoIBGECidade,
+                      aliquotaSugerida: selectedServicoENotas?.aliquotaSugerida,
+                      construcaoCivil: selectedServicoENotas?.construcaoCivil,
+                      percentualAproximadoFederalIBPT: selectedServicoENotas?.percentualAproximadoFederalIBPT,
+                      percentualAproximadoEstadualIBPT: selectedServicoENotas?.percentualAproximadoEstadualIBPT,
+                      percentualAproximadoMunicipalIBPT: selectedServicoENotas?.percentualAproximadoMunicipalIBPT,
+                      chaveTabelaIBPT: selectedServicoENotas?.chaveTabelaIBPT,
+                    },
+                  }
+                : {
+                    codigoServico: form.codigoServico || undefined,
+                    cnae: sanitizeCnae(form.cnae),
+                  }
+            )
           : {}),
       };
       await portalCreateServico(payload);
@@ -271,22 +328,26 @@ export default function NovoServicoPage() {
                     title="Informações Fiscais (NFSe)"
                   />
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Código Serviço (LC 116)"
-                        value={form.codigoServico}
-                        onChange={(e) => setForm((f) => ({ ...f, codigoServico: e.target.value }))}
-                        placeholder="ex: 01.07"
-                      />
-                    </Grid>
-                    <Grid item xs={12} sm={6}>
+                    <Grid item xs={12}>
                       <TextField
                         fullWidth
                         select
                         label="CNAE da Empresa"
                         value={form.cnae}
-                        onChange={(e) => setForm((f) => ({ ...f, cnae: e.target.value }))}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const selected = cnaesEmpresa.find((c) => normalizeCNAE(c.code) === val);
+                          setForm((f) => ({ ...f, cnae: val }));
+                          setSelectedServicoENotas(null);
+                          setCodigoOptions([]);
+                          (async () => {
+                            const opts = await consultarServicosENotas(empresaUf, empresaCidade, selected?.text || '', 4);
+                            setCodigoOptions(opts);
+                            const first = opts[0] || null;
+                            setSelectedServicoENotas(first?.raw || null);
+                            setForm((f) => ({ ...f, codigoServico: first?.code || '' }));
+                          })();
+                        }}
                         SelectProps={{ displayEmpty: true }}
                         InputLabelProps={{ shrink: true }}
                         disabled={loadingCnaes}
@@ -302,6 +363,45 @@ export default function NovoServicoPage() {
                           );
                         })}
                       </TextField>
+                    </Grid>
+                    <Grid item xs={12}>
+                      {codigoOptions.length > 0 ? (
+                        <TextField
+                          fullWidth
+                          select
+                          label="Código de Serviço"
+                          value={form.codigoServico}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const sel = codigoOptions.find((o) => o.code === val) || null;
+                            setSelectedServicoENotas(sel?.raw || null);
+                            setForm((f) => ({ ...f, codigoServico: val }));
+                          }}
+                          SelectProps={{ displayEmpty: true }}
+                          InputLabelProps={{ shrink: true }}
+                          placeholder="Selecione o CNAE para sugerir opções"
+                          helperText={loadingServicosENotas ? 'Consultando serviços na eNotas...' : 'Selecione a opção mais aderente'}
+                        >
+                          <MenuItem value="">Selecione</MenuItem>
+                          {codigoOptions.map((opt) => (
+                            <MenuItem key={opt.code} value={opt.code}>
+                              {opt.descricao} — {opt.code}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      ) : (
+                        <TextField
+                          fullWidth
+                          label="Código de Serviço"
+                          value={form.codigoServico}
+                          onChange={(e) => {
+                            setSelectedServicoENotas(null);
+                            setForm((f) => ({ ...f, codigoServico: e.target.value }));
+                          }}
+                          placeholder="Informe o código (LC 116) caso a eNotas não retorne opções"
+                          helperText={loadingServicosENotas ? 'Consultando serviços na eNotas...' : 'Nenhuma opção retornada. Informe manualmente.'}
+                        />
+                      )}
                     </Grid>
                   </Grid>
                 </>

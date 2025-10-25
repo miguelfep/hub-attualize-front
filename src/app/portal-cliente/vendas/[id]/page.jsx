@@ -1,33 +1,32 @@
 'use client';
 
 import React from 'react';
-
 import { useRouter } from 'next/navigation';
+import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
 
+import Dialog from '@mui/material/Dialog';
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Card, Chip, Stack, Button, MenuItem, TextField, Typography, CardContent, Tooltip, Skeleton, Box, IconButton, Alert } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
-
-import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
+import { Box, Card, Chip, Stack, Alert, Button, Tooltip, MenuItem, Skeleton, TextField, Typography, IconButton, CardContent } from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
 
 import { fCurrency } from 'src/utils/format-number';
 
-import { portalGetOrcamento, portalUpdateOrcamento, portalDownloadOrcamentoPDF, portalUpdateOrcamentoStatus, usePortalServicos } from 'src/actions/portal';
+import { criarNFSeOrcamento, getNfsesByOrcamento, cancelarNFSeInvoice } from 'src/actions/notafiscal';
+import { usePortalServicos, portalGetOrcamento, portalUpdateOrcamento, portalDownloadOrcamentoPDF, portalUpdateOrcamentoStatus } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 
-import { useAuthContext } from 'src/auth/hooks';
 import { OrcamentoPDF } from 'src/sections/orcamento/orcamento-pdf';
-import { criarNFSeOrcamento, getNfsesByOrcamento, cancelarNFSeInvoice } from 'src/actions/notafiscal';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 export default function OrcamentoDetalhesPage({ params }) {
   const { id } = params;
