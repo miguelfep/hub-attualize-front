@@ -1,25 +1,30 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
 import { toast } from 'sonner';
+import { useMemo, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Modal from '@mui/material/Modal';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
 import Select from '@mui/material/Select';
+import Dialog from '@mui/material/Dialog';
 import MenuItem from '@mui/material/MenuItem';
 import Grid from '@mui/material/Unstable_Grid2';
 import TextField from '@mui/material/TextField';
+import Accordion from '@mui/material/Accordion';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
 import FormControl from '@mui/material/FormControl';
-import Autocomplete from '@mui/material/Autocomplete';
-import Dialog from '@mui/material/Dialog';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
-import DialogContentText from '@mui/material/DialogContentText';
 import DialogActions from '@mui/material/DialogActions';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import DialogContentText from '@mui/material/DialogContentText';
+
+import { fDate } from 'src/utils/format-time';
 
 import { getClientes } from 'src/actions/clientes';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -30,14 +35,11 @@ import {
   ServerErrorIllustration,
 } from 'src/assets/illustrations';
 
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import { Iconify } from 'src/components/iconify';
-import { fDate } from 'src/utils/format-time';
 import { Label } from 'src/components/label';
-import { BookingWidgetSummary } from '../booking-widget-summary';
+import { Iconify } from 'src/components/iconify';
+
 import LicenseModal from '../LicenseModal';
+import { BookingWidgetSummary } from '../booking-widget-summary';
 
 const licencasBrasil = [
   { id: 1, nome: 'Licença Ambiental' },

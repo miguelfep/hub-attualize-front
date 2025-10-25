@@ -1,8 +1,7 @@
 import { toast } from 'sonner';
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import { useRef, useState, useEffect, useCallback } from 'react';
 
-import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Select from '@mui/material/Select';

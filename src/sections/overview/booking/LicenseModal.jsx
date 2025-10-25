@@ -3,6 +3,7 @@
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 
+import Grid from '@mui/material/Unstable_Grid2';
 import {
   Box,
   Modal,
@@ -12,20 +13,20 @@ import {
   TextField,
   Typography,
   InputLabel,
-  FormControl,
   IconButton,
+  FormControl,
 } from '@mui/material';
-import Grid from '@mui/material/Unstable_Grid2';
-import { useAuthContext } from 'src/auth/hooks';
 
 import {
   downloadLicenca,
   updateLicencaWithFile,
   deletarArquivoLicenca,
-  listarComentariosLicenca,
   criarComentarioLicenca,
+  listarComentariosLicenca,
   deletarComentarioSocietario,
 } from 'src/actions/societario';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
   const { user } = useAuthContext();

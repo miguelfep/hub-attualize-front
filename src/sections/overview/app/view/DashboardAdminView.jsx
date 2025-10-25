@@ -4,15 +4,15 @@ import dayjs from 'dayjs';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Skeleton, TextField, Tooltip, Typography } from '@mui/material';
+import { Box, Button, Dialog, Tooltip, Skeleton, TextField, IconButton, Typography, DialogTitle, DialogActions, DialogContent } from '@mui/material';
 
 import { toTitleCase } from 'src/utils/helper';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { buscarDadosDashboard, buscarDashboardFinanceiroPagar, buscarDashboardFinanceiroReceber, } from 'src/actions/lead';
 
-import { SimplePaper } from 'src/components/paper/SimplePaper';
 import { Iconify } from 'src/components/iconify';
+import { SimplePaper } from 'src/components/paper/SimplePaper';
 import ChartCardSkeleton from 'src/components/skeleton/ChartCardSkeleton';
 import WidgetSummarySkeleton from 'src/components/skeleton/WidgetSummarySkeleton';
 
