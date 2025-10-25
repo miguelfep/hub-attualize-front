@@ -72,8 +72,11 @@ export async function portalUpdateServico(id, payload) {
   return res.data;
 }
 
-export async function portalDeleteServico(id) {
-  const res = await axios.delete(endpoints.portal.servicos.delete(id));
+export async function portalDeleteServico(id, clienteProprietarioId) {
+  // Backend aceita tanto em params quanto body; enviaremos no body para garantir
+  const res = await axios.delete(endpoints.portal.servicos.delete(id), {
+    data: { clienteProprietarioId },
+  });
   return res.data;
 }
 
