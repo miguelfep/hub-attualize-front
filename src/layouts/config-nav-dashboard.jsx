@@ -35,6 +35,7 @@ const ICONS = {
   analytics: icon('ic-analytics'),
   dashboard: icon('ic-dashboard'),
   parameter: icon('ic-parameter'),
+  tax: icon('ic-tax'),
 };
 
 // ----------------------------------------------------------------------
@@ -88,6 +89,18 @@ export const navData = [
             title: 'A pagar',
             roles: ['admin', 'financeiro'],
             path: paths.dashboard.financeiro.pagar,
+          },
+        ],
+      },
+      {
+        title: 'Fiscal',
+        path: paths.dashboard.fiscal.root,
+        icon: ICONS.tax,
+        roles: ['admin', 'financeiro'],
+        children: [
+          {
+            title: 'Notas Fiscais por Cliente',
+            path: paths.dashboard.fiscal.root,
           },
         ],
       },
