@@ -96,7 +96,7 @@ export const navData = [
         title: 'Fiscal',
         path: paths.dashboard.fiscal.root,
         icon: ICONS.tax,
-        roles: ['admin', 'financeiro'],
+        roles: ['admin', 'financeiro', 'operacional'],
         children: [
           {
             title: 'Notas Fiscais por Cliente',
@@ -124,6 +124,11 @@ export const navData = [
             title: 'Licenças',
             roles: ['admin', 'operacional', 'comercial'],
             path: paths.dashboard.aberturas.licenca,
+          },
+          {
+            title: 'Certificados',
+            roles: ['admin', 'operacional', 'comercial'],
+            path: paths.dashboard.certificados.root,
           },
         ],
       },

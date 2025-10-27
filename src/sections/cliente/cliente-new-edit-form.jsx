@@ -35,7 +35,8 @@ import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 import FileUploadField from 'src/components/file-upload/FileUploadField';
 
-import MaskedInput from 'src/sections/societario/InputMask';
+// Removido uso de react-input-mask para evitar findDOMNode em StrictMode
+import { useAuthContext } from 'src/auth/hooks';
 
 import SociosForm from './cliete-socios-form';
 import { ClientePortalSettings } from './cliente-portal-settings';
@@ -161,11 +162,61 @@ export const NewUClienteSchema = zod.object({
       agendamentos: zod.boolean().optional(),
     }).optional(),
     configuracoes: zod.object({
-      limiteClientes: zod.number().or(zod.string()).optional(),
-      limiteServicos: zod.number().or(zod.string()).optional(),
-      limiteOrcamentos: zod.number().or(zod.string()).optional(),
+      limiteClientes: zod
+        .preprocess((v) => {
+          if (v === '' || v === null || v === undefined) return undefined;
+          if (typeof v === 'string') {
+            const n = Number(v);
+            return Number.isNaN(n) ? v : n;
+          }
+          return v;
+        }, zod.number().nonnegative().optional())
+        .optional(),
+      limiteServicos: zod
+        .preprocess((v) => {
+          if (v === '' || v === null || v === undefined) return undefined;
+          if (typeof v === 'string') {
+            const n = Number(v);
+            return Number.isNaN(n) ? v : n;
+          }
+          return v;
+        }, zod.number().nonnegative().optional())
+        .optional(),
+      limiteOrcamentos: zod
+        .preprocess((v) => {
+          if (v === '' || v === null || v === undefined) return undefined;
+          if (typeof v === 'string') {
+            const n = Number(v);
+            return Number.isNaN(n) ? v : n;
+          }
+          return v;
+        }, zod.number().nonnegative().optional())
+        .optional(),
     }).optional()
-  }).optional(),});
+  })
+  .optional()
+  .superRefine((val, ctx) => {
+    if (!val) return;
+    const func = val.funcionalidades || {};
+    const cfg = val.configuracoes || {};
+
+    const ensureNumberIfActive = (active, value, path) => {
+      if (!active) return; // não validar quando a feature não está ativa
+      if (value === undefined) return; // não obrigatório, apenas validar tipo se informado
+      if (typeof value !== 'number' || Number.isNaN(value)) {
+        ctx.addIssue({
+          code: zod.ZodIssueCode.custom,
+          message: 'Deve ser um número válido',
+          path,
+        });
+      }
+    };
+
+    ensureNumberIfActive(Boolean(func.cadastroClientes), cfg.limiteClientes, ['configuracoes', 'limiteClientes']);
+    ensureNumberIfActive(Boolean(func.cadastroServicos), cfg.limiteServicos, ['configuracoes', 'limiteServicos']);
+    ensureNumberIfActive(Boolean(func.vendas), cfg.limiteOrcamentos, ['configuracoes', 'limiteOrcamentos']);
+  }),
+});
 
 // ----------------------------------------------------------------------
 
@@ -175,6 +226,10 @@ export function ClienteNewEditForm({ currentCliente }) {
   const [loadingCep, setLoadingCep] = useState(false);
 
   const router = useRouter();
+  const { user } = useAuthContext();
+  const canSeeHistorico = ['admin', 'comercial'].includes(user?.role);
+  const historicoTabIndex = 5; // posição quando visível
+  const portalTabIndex = canSeeHistorico ? 6 : 5;
 
   const normalizePhoneBR = (input) => {
     const raw = String(input || '');
@@ -378,7 +433,7 @@ const onSubmit = handleSubmit(
         <Tab label="Dados Fiscais" />
         <Tab label="Dados Contábeis" />
         <Tab label="Departamento Pessoal" />
-        <Tab label="Histórico Comercial" />
+        {canSeeHistorico && <Tab label="Histórico Comercial" />}
         <Tab label="Configurações do Portal" />
       </Tabs>
       <Grid container spacing={3} mt={2}>
@@ -477,18 +532,34 @@ const onSubmit = handleSubmit(
                       <Controller
                         name={`endereco.${index}.cep`}
                         control={control}
-                        render={({ field }) => (
-                          <MaskedInput
-                            mask="99999-999"
-                            value={field.value || ''}
-                            onChange={(e) => field.onChange(e.target.value)}
-                            onBlur={() => handleCepChange(index, (field.value || '').replace(/\D/g, ''))}
-                            label="CEP"
-                            fullWidth
-                            error={!!errors.endereco?.[index]?.cep}
-                            helperText={errors.endereco?.[index]?.cep?.message}
-                          />
-                        )}
+                    render={({ field }) => {
+                      const formatCep = (raw) => {
+                        const digits = String(raw || '').replace(/\D/g, '');
+                        if (digits.length <= 5) return digits;
+                        return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+                      };
+                      const handleChange = (e) => {
+                        const digits = String(e.target.value || '').replace(/\D/g, '');
+                        const formatted = digits.length <= 5 ? digits : `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+                        field.onChange(formatted);
+                      };
+                      const handleBlur = () => {
+                        const digits = String(field.value || '').replace(/\D/g, '');
+                        handleCepChange(index, digits);
+                      };
+                      return (
+                        <TextField
+                          label="CEP"
+                          fullWidth
+                          value={formatCep(field.value)}
+                          onChange={handleChange}
+                          onBlur={handleBlur}
+                          error={!!errors.endereco?.[index]?.cep}
+                          helperText={errors.endereco?.[index]?.cep?.message}
+                          inputProps={{ inputMode: 'numeric' }}
+                        />
+                      );
+                    }}
                       />
                     </Grid>
                     <Grid xs={12} sm={3}>
@@ -836,12 +907,12 @@ const onSubmit = handleSubmit(
             </Card>
           </Grid>
         )}
-        {tabIndex === 5 && (
+        {canSeeHistorico && tabIndex === historicoTabIndex && (
           <Grid xs={12}>
             <HistoricoComercialCliente cliente={currentCliente} />
           </Grid>
         )}
-      {tabIndex === 6 && (
+      {tabIndex === portalTabIndex && (
         <Grid xs={12}>
           <Card sx={{ p: 3 }}>
             <ClientePortalSettings clienteId={currentCliente?._id} control={control} />
