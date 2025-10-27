@@ -1,6 +1,7 @@
 import 'src/global.css';
 
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 import { CONFIG } from 'src/config-global';
 import { primary } from 'src/theme/core/palette';
@@ -77,6 +78,7 @@ export default async function RootLayout({ children }) {
                       <Snackbar />
                       <ProgressBar />
                       <SettingsDrawer />
+                      <Analytics />
                       <ClientAnalytics />
                       {children}
                     </CheckoutProvider>
