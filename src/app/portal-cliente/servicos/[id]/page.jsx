@@ -205,6 +205,7 @@ const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!form.nome) { toast.error('Informe o nome do serviço'); return; }
     if (!form.valor || Number(form.valor) <= 0) { toast.error('Informe um valor válido'); return; }
+    if (podeEmitirNFSe && !form.codigoServico) { toast.error('Selecione o Código de Serviço'); return; }
 
     try {
       setSaving(true);
@@ -374,9 +375,8 @@ router.replace(paths.cliente.servicos);
                           const selected = cnaesEmpresa.find((c) => normalizeCNAE(c.code) === val);
                           const opts = await consultarServicosENotas(empresaUf, empresaCidade, selected?.text || '', 4);
                           setCodigoOptions(opts);
-                          const first = opts[0] || null;
-                          setSelectedServicoENotas(first?.raw || null);
-                          setForm((f) => ({ ...f, codigoServico: first?.code || '' }));
+                          // Não auto-selecionar; usuário deve escolher o código
+                          setForm((f) => ({ ...f, codigoServico: '' }));
                         }}
                         SelectProps={{ displayEmpty: true }}
                         InputLabelProps={{ shrink: true }}
@@ -400,6 +400,7 @@ router.replace(paths.cliente.servicos);
                           fullWidth
                           select
                           label="Código de Serviço"
+                          required
                           value={form.codigoServico}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -423,6 +424,7 @@ router.replace(paths.cliente.servicos);
                         <TextField
                           fullWidth
                           label="Código de Serviço"
+                          required
                           value={form.codigoServico}
                           onChange={(e) => {
                             setSelectedServicoENotas(null);
