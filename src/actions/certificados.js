@@ -145,3 +145,14 @@ export function getIconeStatusCertificado(status) {
       return 'eva:help-circle-fill';
   }
 }
+
+/**
+ * Listar certificados com filtros e paginação
+ * Suporta params: page, limit, status, vencidos, expiraEmDias, cliente, clienteId, sortBy, sortOrder
+ * @param {Object} params 
+ * @returns {Promise}
+ */
+export async function listarCertificados(params = {}) {
+  const query = { ...params };
+  return axios.get(`${baseUrl}certificados`, { params: query });
+}

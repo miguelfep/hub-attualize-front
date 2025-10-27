@@ -10,6 +10,7 @@ import { getUser } from 'src/auth/context/jwt';
 import DashboardAdminView from './DashboardAdminView';
 import DashboardComercialView from './DashboardComercialView';
 import DashboardFinanceiroView from './DashboardFinanceiroView';
+import DashboardOperacional from './DashboardOperacional';
 
 export function DashboardRouterView() {
   const user = getUser();
@@ -38,6 +39,10 @@ export function DashboardRouterView() {
 
   if (user.role === 'comercial') {
     return <DashboardComercialView />;
+  }
+
+  if (user.role === 'operacional') {
+    return <DashboardOperacional />;
   }
 
   return <div>Permissão não reconhecida.</div>;
