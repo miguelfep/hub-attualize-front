@@ -23,33 +23,56 @@ export default function PortalClienteFinanceiroView() {
 
   const planData = useMemo(() => ({
     start: { 
-      subscription: 'start', 
-      name: 'Start', 
+      subscription: 'start',
+      name: 'Start',
       faturamento: 'R$ 20.000,00',
-      description: 'Plano inicial para começar',
-      features: ['Contabilidade', 'Impostos', 'Pró-labore', 'Portal do Cliente']
+      subtitle: 'O Essencial para Começar Bem',
+      description: 'Para quem está abrindo o negócio e quer ficar 100% regularizado sem complicações.',
+      features: [
+        'Contabilidade Digital Completa',
+        'Pró-labore dos Sócios',
+        'Envio de Impostos e Taxas',
+        'Balanço de Patrimônial e DRE Anual',
+        'Suporte por Whatsapp e e-mail'
+      ]
     },
     pleno: { 
       subscription: 'pleno', 
       name: 'Pleno', 
       faturamento: 'R$ 100.000,00',
-      description: 'Plano intermediário',
-      features: ['Contabilidade', 'Impostos', 'Pró-labore', 'Portal do Cliente', 'Sistema financeiro', 'Atendimento via whatsapp']
+      subtitle: 'Gestão e Crescimento',
+      description: 'Para quem já tem operação constante e quer mais controle financeiro e previsibilidade.',
+      features: [
+        'Contabilidade Digital Completa',
+        'Pró-labore dos Sócios',
+        'Envio de Impostos e Taxas',
+        'Balanço de Patrimônial e DRE Anual',
+        'Suporte por Whatsapp e e-mail',
+        'Relatórios Trimestrais',
+        'Sistema Financeiro',
+        'Emissor de Notas Fiscais (até 20 NFs)', 
+      ]
     },
     premium: { 
       subscription: 'premium', 
       name: 'Premium', 
       faturamento: 'R$ 300.000,00',
-      description: 'Plano avançado',
-      features: ['Contabilidade', 'Impostos', 'Pró-labore', 'Certificado Digital E-CNPJ', 'Portal do Cliente', 'Sistema financeiro', 'Atendimento via whatsapp', 'Reuniões mensais']
-    },
-    plus: { 
-      subscription: 'plus', 
-      name: 'Plus', 
-      faturamento: 'Sem limites',
-      description: 'Plano completo sem limites',
-      features: ['Contabilidade', 'Impostos', 'Pró-labore', 'Certificado Digital E-CNPJ', 'Portal do Cliente', 'Sistema financeiro', 'Atendimento via whatsapp', 'Reuniões mensais', 'Gerente de sucesso']
-    },
+      subtitle: 'Estratégia e Performance',
+      description: 'Para quem busca crescimento com acompanhamento próximo e visão estratégica.',
+      features: [
+        'Contabilidade Digital Completa',
+        'Pró-labore dos Sócios',
+        'Envio de Impostos e Taxas',
+        'Balanço de Patrimônial e DRE Anual',
+        'Suporte por Whatsapp e e-mail',
+        'Relatórios Trimestrais',
+        'Sistema Financeiro',
+        'Emissor de Notas Fiscais (até 50 NFs)',
+        'Reuniões Trimestrais de Sucesso',
+        'Gerente exclusivo para sua empresa',
+        'Grupo de Whatsapp',
+      ]
+    }
   }), []);
 
   const fetchContratos = useCallback(async (userId) => {

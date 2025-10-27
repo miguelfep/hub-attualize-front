@@ -2,6 +2,7 @@ import { m } from 'framer-motion';
 import { useMemo, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -24,14 +25,12 @@ const PLAN_ICONS = {
   start: 'solar:rocket-bold-duotone',
   pleno: 'solar:users-group-rounded-bold-duotone',
   premium: 'solar:crown-bold-duotone',
-  plus: 'solar:cup-star-bold-duotone',
 };
 
 const PLAN_COLORS = {
   start: 'primary',
   pleno: 'info',
   premium: 'warning',
-  plus: 'error',
 };
 
 function PlanCard({ plan, isCurrent, isUpgrading, onUpgrade }) {
@@ -67,9 +66,28 @@ function PlanCard({ plan, isCurrent, isUpgrading, onUpgrade }) {
         <Iconify icon={PLAN_ICONS[plan.subscription]} width={28} />
       </Box>
 
-      <Typography variant="h5" sx={{ fontWeight: 'bold' }}>{plan.name}</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>Faturamento até {plan.faturamento}</Typography>
-      <Divider sx={{ my: 1, borderStyle: 'dashed' }} />
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+          {plan.name}
+        </Typography>
+        <Chip
+          label={plan.subtitle}
+          size="small"
+          sx={{
+            ml: 'auto',
+            bgcolor: 'action.selected', 
+            color: 'text.secondary',
+            fontWeight: 'medium',
+            borderRadius: '16px', 
+          }}
+        />
+      </Box>
+
+      <Typography variant="body1" color="text.secondary" sx={{ py: 2 }}>
+        {plan.description}
+      </Typography>
+
+      <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
       <Stack spacing={1.5} sx={{ flexGrow: 1, mb: 2.5 }}>
         {plan.features.map((feature) => (
@@ -95,7 +113,7 @@ export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
   const theme = useTheme();
   
   const [isUpgrading, setIsUpgrading] = useState(false);
-  const planOrder = useMemo(() => ['start', 'pleno', 'premium', 'plus'], []);
+  const planOrder = useMemo(() => ['start', 'pleno', 'premium'], []);
 
   const availablePlans = useMemo(() => {
     if (!currentPlan || !planData) return [];
