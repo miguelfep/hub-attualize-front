@@ -156,3 +156,15 @@ export async function listarCertificados(params = {}) {
   const query = { ...params };
   return axios.get(`${baseUrl}certificados`, { params: query });
 }
+
+/**
+ * Obter senha (decriptada) de um certificado específico
+ * Requer que o backend exponha endpoint seguro e com permissões
+ * @param {string} certificadoId
+ * @returns {Promise}
+ */
+export async function getSenhaCertificado(certificadoId) {
+  // Endpoint protegido que retorna a senha do certificado usando o Bearer Token do usuário
+  // Conforme solicitado: urlapi/api/certificados/:certificateId/senha
+  return axios.get(`${baseUrl}certificados/${certificadoId}/senha`);
+}

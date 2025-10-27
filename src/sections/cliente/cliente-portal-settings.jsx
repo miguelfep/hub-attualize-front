@@ -45,6 +45,7 @@ import {
   getCorStatusCertificado,
   validarArquivoCertificado,
   getIconeStatusCertificado,
+    getSenhaCertificado,
 } from 'src/actions/certificados';
 
 import { toast } from 'src/components/snackbar';
@@ -232,6 +233,13 @@ export function ClientePortalSettings({ clienteId }) {
   const [certificatePassword, setCertificatePassword] = useState('');
   const [certificatePasswordConfirm, setCertificatePasswordConfirm] = useState('');
   const [uploadingCertificate, setUploadingCertificate] = useState(false);
+  const [showPasswordDialog, setShowPasswordDialog] = useState(false);
+  const [passwordValue, setPasswordValue] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  // Exibição da senha do certificado
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordTimerId, setPasswordTimerId] = useState(null);
+  const [passwordCertId, setPasswordCertId] = useState(null);
 
   const fetchCertificados = useCallback(async () => {
     if (!clienteId) return;
@@ -347,6 +355,38 @@ export function ClientePortalSettings({ clienteId }) {
       toast.error('Erro ao fazer download do certificado');
     }
   };
+
+  const handleVerSenhaCertificado = async (certificadoId) => {
+    try {
+      setPasswordCertId(certificadoId);
+      setPasswordValue('');
+      setPasswordVisible(false);
+      setShowPasswordDialog(true);
+      setPasswordLoading(true);
+      const res = await getSenhaCertificado(certificadoId);
+      const value = res?.data?.password || res?.data?.senha || '';
+      if (!value) {
+        toast.error('Senha não disponível. Tente novamente.');
+        setShowPasswordDialog(false);
+        return;
+      }
+      setPasswordValue(String(value));
+      setPasswordVisible(true);
+      if (passwordTimerId) clearTimeout(passwordTimerId);
+      const id = setTimeout(() => {
+        setPasswordVisible(false);
+      }, 30000);
+      setPasswordTimerId(id);
+    } catch (e) {
+      const msg = e?.response?.data?.message || 'Falha ao obter senha';
+      toast.error(msg);
+      setShowPasswordDialog(false);
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
+
+  // Removido fluxo de confirmação por senha do usuário; agora busca direto com token
 
   return (
     <Box>
@@ -615,6 +655,11 @@ export function ClientePortalSettings({ clienteId }) {
                               </IconButton>
                             </Tooltip>
                           )}
+                          <Tooltip title="Ver senha">
+                            <IconButton size="small" onClick={() => handleVerSenhaCertificado(certificado.id)} sx={{ color: 'text.secondary' }}>
+                              <Iconify icon="solar:eye-bold" />
+                            </IconButton>
+                          </Tooltip>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -676,6 +721,50 @@ export function ClientePortalSettings({ clienteId }) {
           >
             {uploadingCertificate ? 'Enviando...' : 'Enviar Certificado'}
           </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={showPasswordDialog} onClose={() => setShowPasswordDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="solar:lock-password-bold" width={24} sx={{ color: 'primary.main' }} />
+            <Typography variant="h6">Senha do Certificado</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={1}>
+            {passwordLoading && (
+              <Typography variant="body2" color="text.secondary">Buscando senha...</Typography>
+            )}
+            {!!passwordValue && (
+              <TextField
+                type={passwordVisible ? 'text' : 'password'}
+                label="Senha do certificado"
+                value={passwordValue}
+                InputProps={{ readOnly: true }}
+                InputLabelProps={{ shrink: true }}
+                fullWidth
+              />
+            )}
+            <Stack direction="row" spacing={1}>
+              {!!passwordValue && (
+                <>
+                  <Button size="small" variant="outlined" onClick={() => setPasswordVisible((v) => !v)} startIcon={<Iconify icon={passwordVisible ? 'solar:eye-closed-bold' : 'solar:eye-bold'} />}>
+                    {passwordVisible ? 'Ocultar' : 'Mostrar'}
+                  </Button>
+                  <Button size="small" variant="outlined" onClick={() => { navigator.clipboard.writeText(passwordValue || ''); toast.success('Senha copiada'); }} startIcon={<Iconify icon="solar:copy-bold" />}>
+                    Copiar
+                  </Button>
+                </>
+              )}
+            </Stack>
+            <Alert severity="warning">
+              Exiba a senha apenas quando necessário. Ela pode ficar visível temporariamente nesta sessão.
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => { setShowPasswordDialog(false); if (passwordTimerId) clearTimeout(passwordTimerId); }}>Fechar</Button>
         </DialogActions>
       </Dialog>
 

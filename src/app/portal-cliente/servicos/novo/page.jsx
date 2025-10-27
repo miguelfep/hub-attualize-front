@@ -174,6 +174,10 @@ export default function NovoServicoPage() {
       toast.error('Informe um valor válido');
       return false;
     }
+    if (podeEmitirNFSe && !form.codigoServico) {
+      toast.error('Selecione o Código de Serviço');
+      return false;
+    }
     try {
       setSaving(true);
       const sanitizeCnae = (str) => {
@@ -343,9 +347,8 @@ export default function NovoServicoPage() {
                           (async () => {
                             const opts = await consultarServicosENotas(empresaUf, empresaCidade, selected?.text || '', 4);
                             setCodigoOptions(opts);
-                            const first = opts[0] || null;
-                            setSelectedServicoENotas(first?.raw || null);
-                            setForm((f) => ({ ...f, codigoServico: first?.code || '' }));
+                            // Não auto-selecionar; usuário deve escolher o código
+                            setForm((f) => ({ ...f, codigoServico: '' }));
                           })();
                         }}
                         SelectProps={{ displayEmpty: true }}
@@ -370,6 +373,7 @@ export default function NovoServicoPage() {
                           fullWidth
                           select
                           label="Código de Serviço"
+                          required
                           value={form.codigoServico}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -393,6 +397,7 @@ export default function NovoServicoPage() {
                         <TextField
                           fullWidth
                           label="Código de Serviço"
+                          required
                           value={form.codigoServico}
                           onChange={(e) => {
                             setSelectedServicoENotas(null);
