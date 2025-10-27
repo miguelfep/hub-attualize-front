@@ -326,6 +326,9 @@ const onSubmit = handleSubmit(
         const textData = { ...data };
         const trimStartDeep = (obj) => {
           if (Array.isArray(obj)) return obj.map(trimStartDeep);
+          // Preservar datas e objetos dayjs
+          if (obj instanceof Date) return obj;
+          if (dayjs.isDayjs?.(obj)) return obj.toDate();
           if (obj && typeof obj === 'object') {
             const out = {};
             Object.keys(obj).forEach((k) => {
