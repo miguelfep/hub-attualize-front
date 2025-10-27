@@ -48,7 +48,7 @@ export default function PortalClienteFinanceiroView() {
       name: 'Plus', 
       faturamento: 'Sem limites',
       description: 'Plano completo sem limites',
-      features: ['Contabilidade', 'Impostos', 'Pró-labore', 'Certificado Digital E-CNPJ', 'Portal do Cliente', 'Sistema financeiro', 'Atendimento via whatsapp', 'Reuniões mensais', 'Gerente de sucesso', 'Power BI']
+      features: ['Contabilidade', 'Impostos', 'Pró-labore', 'Certificado Digital E-CNPJ', 'Portal do Cliente', 'Sistema financeiro', 'Atendimento via whatsapp', 'Reuniões mensais', 'Gerente de sucesso']
     },
   }), []);
 

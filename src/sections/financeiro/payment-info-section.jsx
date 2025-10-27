@@ -51,7 +51,7 @@ export function PaymentInfoSection({ contratos = [] }) {
 
   if (contratos.length === 0) {
     return (
-      <Card>
+      <Card sx={{ mb: 3 }}>
         <CardContent
           sx={{
             p: 4,

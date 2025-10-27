@@ -3,6 +3,8 @@ import { useState } from 'react';
 import { useTheme } from '@mui/material/styles';
 import { Box, Card, Stack, CardHeader, Typography } from '@mui/material';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import { Chart, useChart } from 'src/components/chart';
 import { formatToCurrency } from 'src/components/animate';
 
@@ -13,6 +15,7 @@ export default function VisaoGeralOrcamentos({
   ...other
 }) {
   const theme = useTheme();
+  const isMobile = useResponsive('down', 'sm');
 
   const [selectedSeries, setSelectedSeries] = useState(['Orçamentos', 'Vendas (NF-e)']);
 
@@ -87,13 +90,42 @@ export default function VisaoGeralOrcamentos({
     legend: { show: false },
   });
 
-  return (
-    <Card {...other} sx={{ height: '100%', ...other.sx }}>
+return (
+  <Box
+    sx={{
+      width: '100%',
+      overflowX: 'hidden',
+      overflowY: 'auto',
+      pb: 2,
+    }}
+  >
+    <Card
+      {...other}
+      sx={{
+        ...other.sx,
+        height: 'auto',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       <CardHeader
         title={title}
         subheader={subheader}
+        sx={{
+          flexDirection: isMobile ? 'column' : 'row',
+          alignItems: isMobile ? 'flex-start' : 'center',
+          gap: isMobile ? 3 : 0,
+        }}
         action={
-          <Stack direction="row" spacing={3} sx={{ mr: 1.5, mt: 0.5 }}>
+          <Stack
+            direction={isMobile ? 'row' : 'row'}
+            spacing={isMobile ? 1 : 3}
+            sx={{
+              mt: isMobile ? 1 : 0,
+              mr: isMobile ? 0 : 1.5,
+              alignItems: isMobile ? 'flex-start' : 'center',
+            }}
+          >
             {allSeries.map((seriesItem) => (
               <Stack
                 key={seriesItem.name}
@@ -122,8 +154,9 @@ export default function VisaoGeralOrcamentos({
         }
       />
       <Box sx={{ p: 3, pb: 1 }}>
-        <Chart dir="ltr" type="bar" series={series} options={chartOptions} height={364} />
+        <Chart dir="ltr" type="bar" series={series} options={chartOptions} height={364} sx={{ mb: 4 }} />
       </Box>
     </Card>
-  );
+  </Box>
+);
 }

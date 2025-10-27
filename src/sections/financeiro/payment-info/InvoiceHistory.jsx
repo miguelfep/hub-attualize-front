@@ -20,9 +20,11 @@ import TableContainer from '@mui/material/TableContainer';
 import { useStatusProps } from 'src/hooks/use-status-cobranca';
 
 import axios from 'src/utils/axios';
-import { fCurrency } from 'src/utils/format-number'; 
+import { fCurrency } from 'src/utils/format-number';
 
 import { Iconify } from 'src/components/iconify';
+
+import { InvoiceHistoryCardMobile } from './InvoiceHistoryCardMobile';
 
 const handleDownloadBoleto = async (codigoSolicitacao) => {
   if (!codigoSolicitacao) {
@@ -54,13 +56,11 @@ const FaturaTableRow = ({ fatura }) => {
   return (
     <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
       <TableCell component="th" scope="row">
-        <Typography variant="subtitle2" noWrap>
+        <Typography variant="subtitle2" noWrap sx={{ maxWidth: 250 }}>
           {fatura.observacoes}
         </Typography>
       </TableCell>
-      <TableCell>
-        {new Date(fatura.dataVencimento).toLocaleDateString('pt-BR')}
-      </TableCell>
+      <TableCell>{new Date(fatura.dataVencimento).toLocaleDateString('pt-BR')}</TableCell>
       <TableCell align="right">{fCurrency(fatura.valor)}</TableCell>
       <TableCell>
         <Chip label={label} color={color} size="small" icon={<Iconify icon={icon} />} />
@@ -70,7 +70,7 @@ const FaturaTableRow = ({ fatura }) => {
           <span>
             <IconButton
               onClick={() => handleDownloadBoleto(boleto?.codigoSolicitacao || fatura.codigoSolicitacao)}
-              disabled={!boleto?.codigoSolicitacao}
+              disabled={!boleto?.codigoSolicitacao && !fatura.codigoSolicitacao}
             >
               <Iconify icon="solar:download-bold" />
             </IconButton>
@@ -104,7 +104,6 @@ const SectionHeader = ({ icon, title }) => (
 
 export function InvoiceHistory({ faturas }) {
   const theme = useTheme();
-
   const faturasOrdenadas = useMemo(() => [...faturas].reverse(), [faturas]);
 
   if (faturas.length === 0) {
@@ -121,30 +120,39 @@ export function InvoiceHistory({ faturas }) {
   return (
     <Box>
       <SectionHeader icon="solar:history-bold-duotone" title="Histórico de Faturas" />
-      <Card>
-        <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
-          <Table sx={{ minWidth: 650 }} aria-label="tabela de histórico de faturas">
-            <TableHead sx={{ bgcolor: theme.palette.background.neutral }}>
-              <TableRow>
-                <TableCell sx={{ fontWeight: 'bold' }}>Descrição</TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Vencimento</TableCell>
-                <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                  Valor
-                </TableCell>
-                <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
-                <TableCell align="center" sx={{ fontWeight: 'bold' }}>
-                  Ações
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {faturasOrdenadas.map((fatura) => (
-                <FaturaTableRow key={fatura._id} fatura={fatura} />
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Card>
+
+      <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+        {faturasOrdenadas.map((fatura) => (
+          <InvoiceHistoryCardMobile key={fatura._id} fatura={fatura} />
+        ))}
+      </Box>
+
+      <Box sx={{ display: { xs: 'none', md: 'block' } }}>
+        <Card>
+          <TableContainer component={Paper} sx={{ boxShadow: 'none' }}>
+            <Table sx={{ minWidth: 650 }} aria-label="tabela de histórico de faturas">
+              <TableHead sx={{ bgcolor: theme.palette.background.neutral }}>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Descrição</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Vencimento</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                    Valor
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Status</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 'bold' }}>
+                    Ações
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {faturasOrdenadas.map((fatura) => (
+                  <FaturaTableRow key={fatura._id} fatura={fatura} />
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Card>
+      </Box>
     </Box>
   );
 }

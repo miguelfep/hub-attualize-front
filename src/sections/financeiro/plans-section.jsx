@@ -162,7 +162,7 @@ export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
         }}
       />
       <CardContent>
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ flexWrap: ''}}>
           {loading
             ? renderSkeletons()
             : availablePlans.map((plan, index) => (

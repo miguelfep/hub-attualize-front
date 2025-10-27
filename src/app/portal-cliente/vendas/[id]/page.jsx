@@ -1,28 +1,53 @@
 'use client';
 
 import React from 'react';
-import { useRouter } from 'next/navigation';
 import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
+import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 
 import Dialog from '@mui/material/Dialog';
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
 import DialogActions from '@mui/material/DialogActions';
-import CircularProgress from '@mui/material/CircularProgress';
-import { Box, Card, Chip, Stack, Alert, Button, Tooltip, MenuItem, Skeleton, TextField, Typography, IconButton, CardContent } from '@mui/material';
+import {
+  Box,
+  Card,
+  Chip,
+  Stack,
+  Alert,
+  Button,
+  Tooltip,
+  Divider,
+  MenuItem,
+  TextField,
+  Typography,
+  IconButton,
+  CardContent,
+  InputAdornment,
+  CircularProgress,
+} from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
 
 import { fCurrency } from 'src/utils/format-number';
 
-import { criarNFSeOrcamento, getNfsesByOrcamento, cancelarNFSeInvoice } from 'src/actions/notafiscal';
-import { usePortalServicos, portalGetOrcamento, portalUpdateOrcamento, portalDownloadOrcamentoPDF, portalUpdateOrcamentoStatus } from 'src/actions/portal';
+import {
+  criarNFSeOrcamento,
+  getNfsesByOrcamento,
+  cancelarNFSeInvoice,
+} from 'src/actions/notafiscal';
+import {
+  usePortalServicos,
+  portalGetOrcamento,
+  portalUpdateOrcamento,
+  portalDownloadOrcamentoPDF,
+  portalUpdateOrcamentoStatus,
+} from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
-import { SimplePaper } from 'src/components/paper/SimplePaper';
+import { OrcamentoEditPageSkeleton } from 'src/components/skeleton/VendaEditPageSkeleton';
 
 import { OrcamentoPDF } from 'src/sections/orcamento/orcamento-pdf';
 
@@ -35,7 +60,6 @@ export default function OrcamentoDetalhesPage({ params }) {
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
   const { podeCriarOrcamentos, podeEmitirNFSe, settings } = useSettings();
-  const router = useRouter();
   const theme = useTheme();
 
   const [loading, setLoading] = React.useState(true);
@@ -45,7 +69,14 @@ export default function OrcamentoDetalhesPage({ params }) {
   const [viewOpen, setViewOpen] = React.useState(false);
   const [generatingNf, setGeneratingNf] = React.useState(false);
   const [nfseList, setNfseList] = React.useState([]);
-  const [itemEdit, setItemEdit] = React.useState({ quantidade: 1, valorUnitario: 0, valorUnitarioText: fCurrency(0), desconto: 0, descontoText: fCurrency(0), descricao: '' });
+  const [itemEdit, setItemEdit] = React.useState({
+    quantidade: 1,
+    valorUnitario: 0,
+    valorUnitarioText: fCurrency(0),
+    desconto: 0,
+    descontoText: fCurrency(0),
+    descricao: '',
+  });
   const [editingServico, setEditingServico] = React.useState(false);
   const [editingPedido, setEditingPedido] = React.useState(false);
   const [cancelOpen, setCancelOpen] = React.useState(false);
@@ -53,7 +84,8 @@ export default function OrcamentoDetalhesPage({ params }) {
   const [confirmCancel, setConfirmCancel] = React.useState(false);
   const [cancelLoading, setCancelLoading] = React.useState(false);
   const [nfseToCancel, setNfseToCancel] = React.useState(null);
-  const { data: servicosList, isLoading: loadingServicos } = usePortalServicos(clienteProprietarioId);
+  const { data: servicosList, isLoading: loadingServicos } =
+    usePortalServicos(clienteProprietarioId);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -88,12 +120,12 @@ export default function OrcamentoDetalhesPage({ params }) {
             const list = Array.isArray(dataResp?.notaFiscals)
               ? dataResp.notaFiscals
               : Array.isArray(dataResp?.notas)
-              ? dataResp.notas
-              : Array.isArray(dataResp)
-              ? dataResp
-              : dataResp?.notaFiscal
-              ? [dataResp.notaFiscal]
-              : [];
+                ? dataResp.notas
+                : Array.isArray(dataResp)
+                  ? dataResp
+                  : dataResp?.notaFiscal
+                    ? [dataResp.notaFiscal]
+                    : [];
             setNfseList(list);
           }
         } catch (e) {
@@ -117,45 +149,31 @@ export default function OrcamentoDetalhesPage({ params }) {
       loadWithRetry();
     }
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [clienteProprietarioId, id]);
 
-  if (loadingEmpresas || !clienteProprietarioId || loading) return (
-    <SimplePaper>
-      <Skeleton variant="text" width={220} height={32} sx={{ mb: 2 }} />
-      <Grid container spacing={2} sx={{ mb: 2 }}>
-        <Grid xs={6} sm={4} md={2}><Skeleton variant="rounded" height={80} /></Grid>
-        <Grid xs={6} sm={4} md={2}><Skeleton variant="rounded" height={80} /></Grid>
-        <Grid xs={6} sm={4} md={2}><Skeleton variant="rounded" height={80} /></Grid>
-        <Grid xs={6} sm={4} md={3}><Skeleton variant="rounded" height={80} /></Grid>
-        <Grid xs={6} sm={4} md={3}><Skeleton variant="rounded" height={80} /></Grid>
-      </Grid>
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid xs={12} sm={4}><Skeleton variant="rounded" height={40} /></Grid>
-            <Grid xs={12} sm={4}><Skeleton variant="rounded" height={40} /></Grid>
-            <Grid xs={12} sm={4}><Skeleton variant="rounded" height={40} /></Grid>
-          </Grid>
-        </CardContent>
-      </Card>
-      <Stack spacing={2}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} variant="rounded" height={76} />
-        ))}
-      </Stack>
-    </SimplePaper>
-  );
+  if (loadingEmpresas || !clienteProprietarioId || loading) return <OrcamentoEditPageSkeleton />;
+
   if (!orcamento) return <Typography>Orçamento não encontrado</Typography>;
   if (!podeCriarOrcamentos) return <Typography>Funcionalidade não disponível</Typography>;
 
-  const hasNFSeAutorizada = Array.isArray(nfseList) && nfseList.some((n) => n.status === 'emitida' || String(n.eNotasStatus).toLowerCase() === 'autorizada');
+  const hasNFSeAutorizada =
+    Array.isArray(nfseList) &&
+    nfseList.some(
+      (n) => n.status === 'emitida' || String(n.eNotasStatus).toLowerCase() === 'autorizada'
+    );
   const isPaid = String(orcamento.status).toLowerCase() === 'pago';
   const canEditPedido = !hasNFSeAutorizada && !isPaid;
   // Status: Pode sempre editar; atualização imediata ao trocar o select
   const canEditStatusSelect = true;
 
-  const subtotal = (orcamento.itens || []).reduce((acc, it) => acc + (Number(it.quantidade) * Number(it.valorUnitario) - Number(it.desconto || 0)), 0);
+  const subtotal = (orcamento.itens || []).reduce(
+    (acc, it) =>
+      acc + (Number(it.quantidade) * Number(it.valorUnitario) - Number(it.desconto || 0)),
+    0
+  );
   const total = subtotal - Number(orcamento.descontoGeral || 0);
 
   const handleSalvar = async () => {
@@ -175,7 +193,7 @@ export default function OrcamentoDetalhesPage({ params }) {
     }
   };
 
-  const onlyDigits = (v) => (String(v || '')).replace(/\D/g, '');
+  const onlyDigits = (v) => String(v || '').replace(/\D/g, '');
   const formatBRLInput = (v) => {
     const d = onlyDigits(v);
     const n = Number(d) / 100;
@@ -185,10 +203,13 @@ export default function OrcamentoDetalhesPage({ params }) {
   const handleSalvarItens = async () => {
     try {
       setSaving(true);
-      const base = (Array.isArray(orcamento.itens) && orcamento.itens.length) ? orcamento.itens[0] : {};
+      const base =
+        Array.isArray(orcamento.itens) && orcamento.itens.length ? orcamento.itens[0] : {};
       const novoItem = {
         ...base,
-        servicoId: (typeof itemEdit.servicoId === 'object' ? itemEdit.servicoId?._id : itemEdit.servicoId) || base.servicoId,
+        servicoId:
+          (typeof itemEdit.servicoId === 'object' ? itemEdit.servicoId?._id : itemEdit.servicoId) ||
+          base.servicoId,
         descricao: itemEdit.descricao,
         quantidade: Number(itemEdit.quantidade || 1),
         valorUnitario: Number(itemEdit.valorUnitario || 0),
@@ -227,7 +248,13 @@ export default function OrcamentoDetalhesPage({ params }) {
       const res = await criarNFSeOrcamento({ clienteId: clienteProprietarioId, orcamentoId: id });
       if (res?.status === 200) {
         toast.success('Processando emissão da NFSe...');
-        const placeholder = { status: 'emitindo', numeroNota: 'Processando...', serie: 'Processando...', codigoVerificacao: 'Processando...', linkNota: 'Processando...' };
+        const placeholder = {
+          status: 'emitindo',
+          numeroNota: 'Processando...',
+          serie: 'Processando...',
+          codigoVerificacao: 'Processando...',
+          linkNota: 'Processando...',
+        };
         setNfseList((list) => [placeholder, ...list]);
       } else {
         toast.error('Falha ao iniciar emissão da NFSe');
@@ -255,8 +282,6 @@ export default function OrcamentoDetalhesPage({ params }) {
     }
   };
 
-  console.log('orcamento', orcamento);
-
   const getStatusColor = (st) => {
     const s = String(st || '').toLowerCase();
     if (s === 'pago') return 'success';
@@ -266,391 +291,688 @@ export default function OrcamentoDetalhesPage({ params }) {
     return 'default';
   };
 
-  const hasNotaAtiva = Array.isArray(nfseList) && nfseList.some((n) => n.status === 'emitida' || n.status === 'emitindo');
-  const selectedServicoId = typeof itemEdit.servicoId === 'object' ? itemEdit.servicoId?._id : itemEdit.servicoId;
+  const hasNotaAtiva =
+    Array.isArray(nfseList) &&
+    nfseList.some((n) => n.status === 'emitida' || n.status === 'emitindo');
+  const selectedServicoId =
+    typeof itemEdit.servicoId === 'object' ? itemEdit.servicoId?._id : itemEdit.servicoId;
 
   return (
-    <SimplePaper>
-      <Card sx={{ borderRadius: 3, mb: 2 }}>
-        <Box
-          sx={{
-            p: 3,
-            display: 'flex',
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`
-          }}
-        >
-          <Stack spacing={0.5}>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-              Venda {orcamento.numero}
-            </Typography>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="body2" sx={{ opacity: 0.7 }}>Cliente: {orcamento?.clienteDoClienteId?.nome}</Typography>
+    <LazyMotion features={domAnimation}>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+      >
+        <Card sx={{ borderRadius: 3 }}>
+          <Box
+            sx={{
+              p: 3,
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { md: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
+              background: `linear-gradient(135deg, ${alpha(
+                theme.palette.primary.main,
+                0.1
+              )}, ${alpha(theme.palette.secondary.main, 0.1)})`,
+            }}
+          >
+            <Stack spacing={1}>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                Venda {orcamento.numero}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.7, pb: 0.5 }}>
+                Cliente: {orcamento?.clienteDoClienteId?.nome}
+              </Typography>
+              <Chip
+                label={String(orcamento.status || '').toUpperCase()}
+                color={getStatusColor(orcamento.status)}
+                size="small"
+                variant="soft"
+                sx={{ fontWeight: 700, alignSelf: 'flex-start' }}
+              />
             </Stack>
-            <Chip
-              label={String(orcamento.status || '').toUpperCase()}
-              color={getStatusColor(orcamento.status)}
-              size="medium"
-              variant="soft"
-              sx={{ px: 1.25, py: 0.75, fontWeight: 700, fontSize: 13, letterSpacing: 0.4, alignSelf: 'flex-start' }}
-            />
-          </Stack>
-          <Stack direction="row" spacing={1.5} alignItems="center">
-            <Button onClick={() => setViewOpen(true)} variant="outlined" startIcon={<Iconify icon="solar:eye-bold" />}>Ver</Button>
-            <PDFDownloadLink
-              document={<OrcamentoPDF orcamento={orcamento} settings={settings} />}
-              fileName={`${orcamento.numero || 'orcamento'}.pdf`}
-              style={{ textDecoration: 'none' }}
+            <Stack
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+              flexWrap="wrap"
+              justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
+              sx={{ mt: { xs: 2, md: 0 }, width: { xs: '100%', md: 'auto' } }}
             >
-              {({ loading: pdfLoading }) => (
-                <Button variant="outlined" startIcon={<Iconify icon="solar:document-text-bold" />}>
-                  {pdfLoading ? 'Gerando...' : 'Baixar'}
+              <Button
+                onClick={() => setViewOpen(true)}
+                variant="outlined"
+                startIcon={<Iconify icon="solar:eye-bold" />}
+              >
+                Ver
+              </Button>
+              <PDFDownloadLink
+                document={<OrcamentoPDF orcamento={orcamento} settings={settings} />}
+                fileName={`${orcamento.numero || 'orcamento'}.pdf`}
+                style={{ textDecoration: 'none' }}
+              >
+                {({ loading: pdfLoading }) => (
+                  <Button
+                    variant="outlined"
+                    startIcon={<Iconify icon="solar:document-text-bold" />}
+                  >
+                    {pdfLoading ? 'Gerando...' : 'Baixar'}
+                  </Button>
+                )}
+              </PDFDownloadLink>
+              {podeEmitirNFSe && !hasNFSeAutorizada && (
+                <Button
+                  onClick={handleEmitirNFSe}
+                  variant="contained"
+                  startIcon={<Iconify icon="solar:bill-check-bold" />}
+                  disabled={generatingNf}
+                >
+                  {generatingNf ? 'Emitindo...' : 'Emitir NFSe'}
                 </Button>
               )}
-            </PDFDownloadLink>
-            {podeEmitirNFSe && !hasNFSeAutorizada && (
-              <Button onClick={handleEmitirNFSe} variant="contained" startIcon={<Iconify icon="solar:bill-check-bold" />} disabled={generatingNf}>
-                {generatingNf ? 'Emitindo...' : 'Emitir NFSe'}
-              </Button>
-            )}
-          </Stack>
-        </Box>
-      </Card>
-
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <Grid container spacing={2}>
-            <Grid xs={12} sm={6}>
-              <Typography variant="subtitle2">Cliente</Typography>
-              <Stack spacing={0.5}>
-                <Typography variant="body2">{orcamento?.clienteDoClienteId?.nome}</Typography>
-                {orcamento?.clienteDoClienteId?.cpfCnpj && (
-                  <Typography variant="caption" sx={{ fontFamily: 'monospace', color: 'text.secondary' }}>
-                    {orcamento?.clienteDoClienteId?.cpfCnpj}
-                  </Typography>
-                )}
-                {orcamento?.clienteDoClienteId?.email && (
-                  <Typography variant="caption" color="text.secondary">{orcamento?.clienteDoClienteId?.email}</Typography>
-                )}
-                {(orcamento?.clienteDoClienteId?.telefone || orcamento?.clienteDoClienteId?.whatsapp) && (
-                  <Typography variant="caption" color="text.secondary">
-                    {orcamento?.clienteDoClienteId?.telefone || orcamento?.clienteDoClienteId?.whatsapp}
-                  </Typography>
-                )}
-              </Stack>
-            </Grid>
-            <Grid xs={12} sm={6}>
-              <Stack spacing={0.75} alignItems={{ xs: 'stretch', sm: 'flex-end' }} sx={{ ml: { sm: 'auto' } }}>
-                <Typography variant="caption" color="text.secondary" sx={{ alignSelf: { xs: 'flex-start', sm: 'auto' }, pl: 0.5 }}>
-                  Status
+            </Stack>
+          </Box>
+          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Detalhes da Venda
                 </Typography>
-                <TextField
-                  size="small"
-                  select
-                  value={status}
-                  onChange={(e) => handleStatus(e.target.value)}
-                  disabled={!canEditStatusSelect}
-                  sx={{ width: { xs: '100%', sm: 220 } }}
-                >
-                  <MenuItem value="pendente">Pendente</MenuItem>
-                  <MenuItem value="aprovado">Aprovado</MenuItem>
-                  <MenuItem value="recusado">Recusado</MenuItem>
-                  <MenuItem value="expirado">Expirado</MenuItem>
-                  <MenuItem value="pago">Pago</MenuItem>
-                </TextField>
-              </Stack>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={8}>
+                    <Typography variant="subtitle2">Cliente</Typography>
+                    <Stack spacing={0.5} sx={{ mt: 1 }}>
+                      <Typography variant="body2">{orcamento?.clienteDoClienteId?.nome}</Typography>
+                      {orcamento?.clienteDoClienteId?.cpfCnpj && (
+                        <Typography
+                          variant="caption"
+                          sx={{ fontFamily: 'monospace', color: 'text.secondary' }}
+                        >
+                          {orcamento?.clienteDoClienteId?.cpfCnpj}
+                        </Typography>
+                      )}
+                      {orcamento?.clienteDoClienteId?.email && (
+                        <Typography variant="caption" color="text.secondary">
+                          {orcamento?.clienteDoClienteId?.email}
+                        </Typography>
+                      )}
+                      {(orcamento?.clienteDoClienteId?.telefone ||
+                        orcamento?.clienteDoClienteId?.whatsapp) && (
+                        <Typography variant="caption" color="text.secondary">
+                          {orcamento?.clienteDoClienteId?.telefone ||
+                            orcamento?.clienteDoClienteId?.whatsapp}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Stack
+                      spacing={1}
+                      sx={{
+                        width: { xs: '100%', sm: '220' },
+                        ml: { sm: 'auto' },
+                      }}
+                    >
+                      <Typography
+                        variant="subtitle2"
+                        sx={{ alignSelf: { xs: 'flex-start', sm: 'flex-start' } }}
+                      >
+                        Status
+                      </Typography>
+                      <TextField
+                        size="small"
+                        select
+                        value={status}
+                        onChange={(e) => handleStatus(e.target.value)}
+                        disabled={!canEditStatusSelect}
+                        fullWidth
+                      >
+                        <MenuItem value="pendente">Pendente</MenuItem>
+                        <MenuItem value="aprovado">Aprovado</MenuItem>
+                        <MenuItem value="recusado">Recusado</MenuItem>
+                        <MenuItem value="expirado">Expirado</MenuItem>
+                        <MenuItem value="pago">Pago</MenuItem>
+                      </TextField>
+                    </Stack>
+                  </Grid>
+                </Grid>
+              </Box>
 
+              <Divider />
 
-      {/* Diálogo de Cancelamento */}
-      <Dialog open={cancelOpen} onClose={() => setCancelOpen(false)} maxWidth="sm" fullWidth>
-        <DialogActions sx={{ px: 2, pt: 2 }}>
-          <Typography variant="h6" sx={{ flexGrow: 1, pl: 1 }}>Cancelar NFSe</Typography>
-          <Button onClick={() => setCancelOpen(false)}>Fechar</Button>
-        </DialogActions>
-        <CardContent>
-          <Stack spacing={2} sx={{ mt: 1 }}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <TextField
-                fullWidth
-                label="Motivo do cancelamento"
-                value={cancelReason}
-                onChange={(e) => setCancelReason(e.target.value)}
-                helperText="Descreva brevemente o motivo"
-              />
-            </Stack>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <TextField
-                label="Confirmar cancelamento"
-                value={confirmCancel ? 'Sim' : 'Não'}
-                InputProps={{ readOnly: true }}
-              />
-              <Button variant="outlined" onClick={() => setConfirmCancel((v) => !v)}>
-                {confirmCancel ? 'Desmarcar' : 'Confirmar'}
-              </Button>
-            </Stack>
-            <LoadingButton
-              color="error"
-              variant="contained"
-              loading={cancelLoading}
-              disabled={!confirmCancel || !cancelReason}
-              onClick={async () => {
-                try {
-                  setCancelLoading(true);
-                  const res = await cancelarNFSeInvoice({ nfseId: nfseToCancel?._id, motivo: cancelReason });
-                  if (res?.status === 200) {
-                    toast.success('NFSe cancelada');
-                    setNfseList((list) => list.map((n) => (n._id === nfseToCancel?._id ? { ...n, status: 'cancelada' } : n)));
-                    setCancelOpen(false);
-                    setCancelReason('');
-                    setConfirmCancel(false);
-                  } else {
-                    toast.error('Falha ao cancelar NFSe');
-                  }
-                } catch (e) {
-                  toast.error('Falha ao cancelar NFSe');
-                } finally {
-                  setCancelLoading(false);
-                }
-              }}
-            >
-              Cancelar NFSe
-            </LoadingButton>
-          </Stack>
-        </CardContent>
-      </Dialog>
-
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <Typography variant="subtitle2" sx={{ mb: 1 }}>Item do Serviço</Typography>
-          {canEditPedido ? (
-            <Grid container spacing={2}>
-              <Grid xs={12}>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ width: 1 }}>
-                  <TextField
-                    fullWidth
-                    select
-                    label="Serviço"
-                    value={selectedServicoId || ''}
-                    onChange={(e) => {
-                      const newId = e.target.value;
-                      const chosen = Array.isArray(servicosList) ? servicosList.find((s) => s?._id === newId) : null;
-                      setItemEdit((s) => {
-                        const toCurrencyText = (n) => fCurrency(Number(n || 0));
-                        const shouldFillDescricao = !s.descricao || s.descricao.trim() === '';
-                        const shouldFillValor = !s.valorUnitario || Number(s.valorUnitario) === 0;
-                        const novoValor = chosen?.valor ? Number(chosen.valor) : s.valorUnitario;
-                        return {
-                          ...s,
-                          servicoId: newId,
-                          descricao: shouldFillDescricao ? (chosen?.nome || s.descricao || '') : s.descricao,
-                          valorUnitario: shouldFillValor ? Number(novoValor || 0) : s.valorUnitario,
-                          valorUnitarioText: shouldFillValor ? toCurrencyText(novoValor || 0) : s.valorUnitarioText,
-                        };
-                      });
+              <Box>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Item do Serviço
+                </Typography>
+                {canEditPedido ? (
+                  <Box
+                    sx={{
+                      borderColor: 'divider',
+                      borderRadius: 1.5,
                     }}
-                    SelectProps={{ displayEmpty: true }}
-                    InputLabelProps={{ shrink: true }}
-                    disabled={!editingServico || loadingServicos}
-                    helperText={!editingServico ? 'Clique no lápis para editar' : (loadingServicos ? 'Carregando serviços...' : '')}
                   >
-                    <MenuItem value="">Selecione</MenuItem>
-                    {(servicosList || []).map((s) => (
-                      <MenuItem key={s?._id} value={s?._id}>
-                        {s?.nome}
-                      </MenuItem>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12}>
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: 1 }}>
+                          <TextField
+                            fullWidth
+                            select
+                            label="Serviço"
+                            value={selectedServicoId || ''}
+                            onChange={(e) => {
+                              const newId = e.target.value;
+                              const chosen = Array.isArray(servicosList)
+                                ? servicosList.find((s) => s?._id === newId)
+                                : null;
+                              setItemEdit((s) => {
+                                const toCurrencyText = (n) => fCurrency(Number(n || 0));
+                                const shouldFillDescricao =
+                                  !s.descricao || s.descricao.trim() === '';
+                                const shouldFillValor =
+                                  !s.valorUnitario || Number(s.valorUnitario) === 0;
+                                const novoValor = chosen?.valor
+                                  ? Number(chosen.valor)
+                                  : s.valorUnitario;
+                                return {
+                                  ...s,
+                                  servicoId: newId,
+                                  descricao: shouldFillDescricao
+                                    ? chosen?.nome || s.descricao || ''
+                                    : s.descricao,
+                                  valorUnitario: shouldFillValor
+                                    ? Number(novoValor || 0)
+                                    : s.valorUnitario,
+                                  valorUnitarioText: shouldFillValor
+                                    ? toCurrencyText(novoValor || 0)
+                                    : s.valorUnitarioText,
+                                };
+                              });
+                            }}
+                            SelectProps={{ displayEmpty: true }}
+                            InputLabelProps={{ shrink: true }}
+                            disabled={!editingServico || loadingServicos}
+                            helperText={
+                              !editingServico
+                                ? 'Clique no lápis para habilitar a edição'
+                                : loadingServicos
+                                  ? 'Carregando serviços...'
+                                  : ''
+                            }
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <Tooltip
+                                    title={
+                                      editingServico
+                                        ? 'Bloquear edição do serviço'
+                                        : 'Editar serviço'
+                                    }
+                                  >
+                                    <IconButton
+                                      edge="end"
+                                      onClick={() => setEditingServico((v) => !v)}
+                                    >
+                                      <Iconify
+                                        icon={
+                                          editingServico
+                                            ? 'solar:lock-keyhole-bold'
+                                            : 'solar:pen-bold'
+                                        }
+                                      />
+                                    </IconButton>
+                                  </Tooltip>
+                                </InputAdornment>
+                              ),
+                            }}
+                          >
+                            <MenuItem value="">Selecione</MenuItem>
+                            {(servicosList || []).map((s) => (
+                              <MenuItem key={s?._id} value={s?._id}>
+                                {s?.nome}
+                              </MenuItem>
+                            ))}
+                          </TextField>
+                        </Stack>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          label="Descrição"
+                          value={itemEdit.descricao}
+                          onChange={(e) =>
+                            setItemEdit((s) => ({ ...s, descricao: e.target.value }))
+                          }
+                        />
+                      </Grid>
+                      <Grid item xs={6} sm={4} md={3}>
+                        <TextField
+                          fullWidth
+                          type="number"
+                          label="Qtd"
+                          value={itemEdit.quantidade}
+                          onChange={(e) =>
+                            setItemEdit((s) => ({ ...s, quantidade: Number(e.target.value || 0) }))
+                          }
+                        />
+                      </Grid>
+                      <Grid item xs={6} sm={4} md={3}>
+                        <TextField
+                          fullWidth
+                          label="Vlr Unit"
+                          value={itemEdit.valorUnitarioText}
+                          onChange={(e) => {
+                            const { value, text } = formatBRLInput(e.target.value);
+                            setItemEdit((s) => ({
+                              ...s,
+                              valorUnitario: value,
+                              valorUnitarioText: text,
+                            }));
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12} sm={4} md={3}>
+                        <TextField
+                          fullWidth
+                          label="Desconto"
+                          value={itemEdit.descontoText}
+                          onChange={(e) => {
+                            const { value, text } = formatBRLInput(e.target.value);
+                            setItemEdit((s) => ({ ...s, desconto: value, descontoText: text }));
+                          }}
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <Stack direction="row" justifyContent="flex-end">
+                          <LoadingButton
+                            loading={saving}
+                            onClick={handleSalvarItens}
+                            variant="contained"
+                          >
+                            Salvar Itens
+                          </LoadingButton>
+                        </Stack>
+                      </Grid>
+                    </Grid>
+                  </Box>
+                ) : (
+                  <Stack
+                    spacing={1}
+                    sx={{ p: 2, bgcolor: 'background.neutral', borderRadius: 1.5 }}
+                  >
+                    {(orcamento.itens || []).slice(0, 1).map((it, i) => (
+                      <Stack key={i} direction="row" justifyContent="space-between">
+                        <Typography variant="body2">
+                          {it.descricao || it?.servicoId?.nome}
+                        </Typography>
+                        <Typography variant="body2">
+                          {it.quantidade} x {fCurrency(it.valorUnitario)}{' '}
+                          {it.desconto ? `(desc ${fCurrency(it.desconto)})` : ''}
+                        </Typography>
+                      </Stack>
                     ))}
-                  </TextField>
-                  <Tooltip title={editingServico ? 'Bloquear edição do serviço' : 'Editar serviço'}>
-                    <IconButton size="small" onClick={() => setEditingServico((v) => !v)}>
-                      <Iconify icon={editingServico ? 'solar:lock-keyhole-bold' : 'solar:pen-bold'} />
-                    </IconButton>
+                    {Array.isArray(orcamento.itens) && orcamento.itens.length > 1 && (
+                      <Typography variant="caption" color="text.secondary">
+                        Apenas 1 item é permitido.
+                      </Typography>
+                    )}
+                  </Stack>
+                )}
+              </Box>
+
+              <Divider />
+
+              <Box>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 2 }}
+                >
+                  <Typography variant="h6">Observações e Totais</Typography>
+                  <Tooltip
+                    title={editingPedido ? 'Bloquear edição dos dados' : 'Editar dados do pedido'}
+                  >
+                    <span>
+                      <IconButton
+                        size="small"
+                        onClick={() => setEditingPedido((v) => !v)}
+                        disabled={!canEditPedido}
+                      >
+                        <Iconify
+                          icon={editingPedido ? 'solar:lock-keyhole-bold' : 'solar:pen-bold'}
+                        />
+                      </IconButton>
+                    </span>
                   </Tooltip>
                 </Stack>
-              </Grid>
-              <Grid xs={12}>
-                <TextField fullWidth label="Descrição" value={itemEdit.descricao} onChange={(e) => setItemEdit((s) => ({ ...s, descricao: e.target.value }))} />
-              </Grid>
-              <Grid xs={6} sm={2}>
-                <TextField fullWidth type="number" label="Qtd" value={itemEdit.quantidade} onChange={(e) => setItemEdit((s) => ({ ...s, quantidade: Number(e.target.value || 0) }))} />
-              </Grid>
-              <Grid xs={6} sm={2}>
-                <TextField fullWidth label="Vlr Unit" value={itemEdit.valorUnitarioText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItemEdit((s) => ({ ...s, valorUnitario: value, valorUnitarioText: text })); }} />
-              </Grid>
-              <Grid xs={12} sm={2}>
-                <TextField fullWidth label="Desconto" value={itemEdit.descontoText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItemEdit((s) => ({ ...s, desconto: value, descontoText: text })); }} />
-              </Grid>
-              <Grid xs={12}>
-                <Stack direction="row" justifyContent="flex-end">
-                  <LoadingButton loading={saving} onClick={handleSalvarItens} variant="contained">Salvar Itens</LoadingButton>
-                </Stack>
-              </Grid>
-            </Grid>
-          ) : (
-            <Stack spacing={1}>
-              {(orcamento.itens || []).slice(0,1).map((it, i) => (
-                <Stack key={i} direction="row" justifyContent="space-between">
-                  <Typography variant="body2">{it.descricao || it?.servicoId?.nome}</Typography>
-                  <Typography variant="body2">{it.quantidade} x {fCurrency(it.valorUnitario)} {it.desconto ? `(desc ${fCurrency(it.desconto)})` : ''}</Typography>
-                </Stack>
-              ))}
-              {(Array.isArray(orcamento.itens) && orcamento.itens.length > 1) && (
-                <Typography variant="caption" color="text.secondary">Apenas 1 item é permitido. Os demais itens não serão considerados.</Typography>
-              )}
-            </Stack>
-          )}
-        </CardContent>
-      </Card>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Observações"
+                      multiline
+                      minRows={3}
+                      value={orcamento.observacoes || ''}
+                      onChange={(e) => setOrcamento((o) => ({ ...o, observacoes: e.target.value }))}
+                      disabled={!editingPedido || !canEditPedido}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Condições de Pagamento"
+                      multiline
+                      minRows={3}
+                      value={orcamento.condicoesPagamento || ''}
+                      onChange={(e) =>
+                        setOrcamento((o) => ({ ...o, condicoesPagamento: e.target.value }))
+                      }
+                      disabled={!editingPedido || !canEditPedido}
+                    />
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Stack
+                      spacing={1}
+                      alignItems={{ xs: 'stretch', sm: 'flex-end' }}
+                      sx={{ mt: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}
+                    >
+                      <Typography variant="body1">
+                        Subtotal: <strong>{fCurrency(subtotal)}</strong>
+                      </Typography>
+                      <Typography variant="h6">
+                        Total: <strong>{fCurrency(total)}</strong>
+                      </Typography>
+                    </Stack>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Stack direction="row" justifyContent="flex-end">
+                      <LoadingButton
+                        loading={saving}
+                        onClick={handleSalvar}
+                        disabled={!editingPedido || !canEditPedido}
+                        variant="contained"
+                      >
+                        Salvar
+                      </LoadingButton>
+                    </Stack>
+                  </Grid>
+                </Grid>
+              </Box>
 
-      <Card>
-        <CardContent>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <Typography variant="subtitle2">Dados do Pedido</Typography>
-            <Tooltip title={editingPedido ? 'Bloquear edição dos dados' : 'Editar dados do pedido'}>
-              <span>
-                <IconButton size="small" onClick={() => setEditingPedido((v) => !v)} disabled={!canEditPedido}>
-                  <Iconify icon={editingPedido ? 'solar:lock-keyhole-bold' : 'solar:pen-bold'} />
-                </IconButton>
-              </span>
-            </Tooltip>
-          </Stack>
-          <Grid container spacing={2}>
-            <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Observações" multiline minRows={3} value={orcamento.observacoes || ''} onChange={(e) => setOrcamento((o) => ({ ...o, observacoes: e.target.value }))} disabled={!editingPedido || !canEditPedido} />
-            </Grid>
-            <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Condições de Pagamento" multiline minRows={3} value={orcamento.condicoesPagamento || ''} onChange={(e) => setOrcamento((o) => ({ ...o, condicoesPagamento: e.target.value }))} disabled={!editingPedido || !canEditPedido} />
-            </Grid>
-            <Grid xs={12}>
-              <Stack direction="row" justifyContent="flex-end" spacing={3}>
-                <Typography>Subtotal: {fCurrency(subtotal)}</Typography>
-                <Typography>Total: {fCurrency(total)}</Typography>
-              </Stack>
-            </Grid>
-          </Grid>
-          <Stack direction="row" justifyContent="flex-end" sx={{ mt: 2 }}>
-            <LoadingButton loading={saving} onClick={handleSalvar} disabled={!editingPedido || !canEditPedido} variant="contained">Salvar</LoadingButton>
-          </Stack>
-        </CardContent>
-      </Card>
-
-      {/* Lista de NFSe após observações */}
-      {nfseList && nfseList.length > 0 && (
-        <Card sx={{ mt: 2 }}>
-          <CardContent>
-            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Iconify icon="solar:bill-list-bold" width={22} />
-                <Typography variant="subtitle1">Nota Fiscal de Serviço (NFSe)</Typography>
-              </Stack>
-              <Chip size="small" label={`${nfseList.length} ${nfseList.length === 1 ? 'nota' : 'notas'}`} />
-            </Stack>
-            <Stack spacing={2}>
-              {nfseList.map((n, idx) => (
-                <Card key={n._id || `nf-${idx}`} variant="outlined" sx={{ p: 2 }}>
-                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
-                    <Stack direction="row" spacing={1} alignItems="center">
+              {nfseList && nfseList.length > 0 && (
+                <>
+                  <Divider />
+                  <Box>
+                    <Stack
+                      direction="row"
+                      justifyContent="space-between"
+                      alignItems="center"
+                      sx={{ mb: 2 }}
+                    >
+                      <Typography variant="h6">Notas Fiscais (NFSe)</Typography>
                       <Chip
                         size="small"
-                        label={n.status}
-                        color={n.status === 'emitida' ? 'success' : n.status === 'emitindo' ? 'warning' : (n.status === 'cancelada' || n.status === 'negada') ? 'error' : 'default'}
-                        variant={n.status === 'emitindo' ? 'soft' : 'filled'}
-                        icon={n.status === 'emitindo' ? <CircularProgress size={12} /> : undefined}
+                        label={`${nfseList.length} ${nfseList.length === 1 ? 'nota' : 'notas'}`}
                       />
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>{n.createdAt || ''}</Typography>
                     </Stack>
-                    <Stack direction="row" spacing={1}>
-                      {n.linkNota && n.linkNota !== 'Processando...' && (
-                        <Tooltip title="Abrir NFSe">
-                          <Button href={n.linkNota} target="_blank" rel="noopener noreferrer" variant="outlined" size="small" startIcon={<Iconify icon="solar:document-text-bold" />}>
-                            Ver Nota
-                          </Button>
-                        </Tooltip>
-                      )}
-                      {n.status === 'emitida' && (
-                        <Tooltip title="Cancelar NFSe">
-                          <Button
-                            color="error"
-                            variant="outlined"
-                            size="small"
-                            startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
-                            onClick={() => { setNfseToCancel(n); setCancelOpen(true); }}
+                    <Stack spacing={2}>
+                      {nfseList.map((n, idx) => (
+                        <Card key={n._id || `nf-${idx}`} variant="outlined" sx={{ p: 2 }}>
+                          <Stack
+                            direction="row"
+                            justifyContent="space-between"
+                            alignItems="center"
+                            sx={{ mb: 1 }}
                           >
-                            Cancelar
-                          </Button>
-                        </Tooltip>
-                      )}
-                    </Stack>
-                  </Stack>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Chip
+                                size="small"
+                                label={n.status}
+                                color={
+                                  n.status === 'emitida'
+                                    ? 'success'
+                                    : n.status === 'emitindo'
+                                      ? 'warning'
+                                      : n.status === 'cancelada' || n.status === 'negada'
+                                        ? 'error'
+                                        : 'default'
+                                }
+                                variant={n.status === 'emitindo' ? 'soft' : 'filled'}
+                                icon={
+                                  n.status === 'emitindo' ? (
+                                    <CircularProgress size={12} />
+                                  ) : undefined
+                                }
+                              />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {n.createdAt || ''}
+                              </Typography>
+                            </Stack>
+                            <Stack direction="row" spacing={1}>
+                              {n.linkNota && n.linkNota !== 'Processando...' && (
+                                <Tooltip title="Abrir NFSe">
+                                  <Button
+                                    href={n.linkNota}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<Iconify icon="solar:document-text-bold" />}
+                                  >
+                                    Ver Nota
+                                  </Button>
+                                </Tooltip>
+                              )}
+                              {n.status === 'emitida' && (
+                                <Tooltip title="Cancelar NFSe">
+                                  <Button
+                                    color="error"
+                                    variant="outlined"
+                                    size="small"
+                                    startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+                                    onClick={() => {
+                                      setNfseToCancel(n);
+                                      setCancelOpen(true);
+                                    }}
+                                  >
+                                    Cancelar
+                                  </Button>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          </Stack>
 
-                  <Stack spacing={1.5}>
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <Stack direction="row" spacing={1} sx={{ minWidth: 200 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Número</Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{n.numeroNota || '-'}</Typography>
-                      </Stack>
-                      <Stack direction="row" spacing={1} sx={{ minWidth: 160 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Série</Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{n.serie || '-'}</Typography>
-                      </Stack>
-                      <Stack direction="row" spacing={1} sx={{ minWidth: 260 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Código Verificação</Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{n.codigoVerificacao || '-'}</Typography>
-                      </Stack>
-                    </Stack>
+                          <Stack spacing={1.5}>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                              <Stack direction="row" spacing={1} sx={{ minWidth: 200 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+                                >
+                                  Número
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                  {n.numeroNota || '-'}
+                                </Typography>
+                              </Stack>
+                              <Stack direction="row" spacing={1} sx={{ minWidth: 160 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+                                >
+                                  Série
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                  {n.serie || '-'}
+                                </Typography>
+                              </Stack>
+                              <Stack direction="row" spacing={1} sx={{ minWidth: 260 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+                                >
+                                  Código Verificação
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                  {n.codigoVerificacao || '-'}
+                                </Typography>
+                              </Stack>
+                            </Stack>
 
-                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <Stack direction="row" spacing={1} sx={{ minWidth: 220 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Valor Serviços</Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{fCurrency(n.valorServicos || 0)}</Typography>
-                      </Stack>
-                      <Stack direction="row" spacing={1} sx={{ minWidth: 200 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Valor ISS</Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{fCurrency(n.valorIss || 0)}</Typography>
-                      </Stack>
-                      <Stack direction="row" spacing={1} sx={{ minWidth: 220 }}>
-                        <Typography variant="caption" sx={{ color: 'text.secondary', textTransform: 'uppercase' }}>Valor Líquido</Typography>
-                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{fCurrency(n.valorLiquido || 0)}</Typography>
-                      </Stack>
-                    </Stack>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                              <Stack direction="row" spacing={1} sx={{ minWidth: 220 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+                                >
+                                  Valor Serviços
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                  {fCurrency(n.valorServicos || 0)}
+                                </Typography>
+                              </Stack>
+                              <Stack direction="row" spacing={1} sx={{ minWidth: 200 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+                                >
+                                  Valor ISS
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                  {fCurrency(n.valorIss || 0)}
+                                </Typography>
+                              </Stack>
+                              <Stack direction="row" spacing={1} sx={{ minWidth: 220 }}>
+                                <Typography
+                                  variant="caption"
+                                  sx={{ color: 'text.secondary', textTransform: 'uppercase' }}
+                                >
+                                  Valor Líquido
+                                </Typography>
+                                <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                  {fCurrency(n.valorLiquido || 0)}
+                                </Typography>
+                              </Stack>
+                            </Stack>
 
-                    {(() => {
-                      const errorMsg = n.eNotasErro || n.enotasErro || n.erro || n.mensagemErro;
-                      return errorMsg ? (
-                        <Alert severity="error" sx={{ mt: 1 }}>
-                          {errorMsg}
-                        </Alert>
-                      ) : null;
-                    })()}
-                  </Stack>
-                </Card>
-              ))}
+                            {(() => {
+                              const errorMsg =
+                                n.eNotasErro || n.enotasErro || n.erro || n.mensagemErro;
+                              return errorMsg ? (
+                                <Alert severity="error" sx={{ mt: 1 }}>
+                                  {errorMsg}
+                                </Alert>
+                              ) : null;
+                            })()}
+                          </Stack>
+                        </Card>
+                      ))}
+                    </Stack>{' '}
+                  </Box>
+                </>
+              )}
             </Stack>
           </CardContent>
         </Card>
-      )}
-      <Dialog fullScreen open={viewOpen} onClose={() => setViewOpen(false)}>
-        <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
-          <DialogActions sx={{ p: 1.5 }}>
-            <Button color="inherit" variant="contained" onClick={() => setViewOpen(false)}>
-              Fechar
-            </Button>
-          </DialogActions>
-          <Box sx={{ flexGrow: 1, height: 1, overflow: 'hidden' }}>
-            <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
-              <OrcamentoPDF orcamento={orcamento} settings={settings} />
-            </PDFViewer>
+
+        <Dialog fullScreen open={viewOpen} onClose={() => setViewOpen(false)}>
+          <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
+            <DialogActions sx={{ p: 1.5 }}>
+              <Button color="inherit" variant="contained" onClick={() => setViewOpen(false)}>
+                Fechar
+              </Button>
+            </DialogActions>
+            <Box sx={{ flexGrow: 1, height: 1, overflow: 'hidden' }}>
+              <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+                <OrcamentoPDF orcamento={orcamento} settings={settings} />
+              </PDFViewer>
+            </Box>
           </Box>
-        </Box>
-      </Dialog>
-    </SimplePaper>
+        </Dialog>
+        <Dialog fullScreen open={viewOpen} onClose={() => setViewOpen(false)}>
+          <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
+            <DialogActions sx={{ p: 1.5 }}>
+              <Button color="inherit" variant="contained" onClick={() => setViewOpen(false)}>
+                Fechar
+              </Button>
+            </DialogActions>
+            <Box sx={{ flexGrow: 1, height: 1, overflow: 'hidden' }}>
+              <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+                <OrcamentoPDF orcamento={orcamento} settings={settings} />
+              </PDFViewer>
+            </Box>
+          </Box>
+        </Dialog>
+
+        <Dialog open={cancelOpen} onClose={() => setCancelOpen(false)} maxWidth="sm" fullWidth>
+          <DialogActions sx={{ px: 2, pt: 2 }}>
+            <Typography variant="h6" sx={{ flexGrow: 1, pl: 1 }}>
+              Cancelar NFSe
+            </Typography>
+            <Button onClick={() => setCancelOpen(false)}>Fechar</Button>
+          </DialogActions>
+          <CardContent>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <TextField
+                  fullWidth
+                  label="Motivo do cancelamento"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  helperText="Descreva brevemente o motivo"
+                />
+              </Stack>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <TextField
+                  label="Confirmar cancelamento"
+                  value={confirmCancel ? 'Sim' : 'Não'}
+                  InputProps={{ readOnly: true }}
+                />
+                <Button variant="outlined" onClick={() => setConfirmCancel((v) => !v)}>
+                  {confirmCancel ? 'Desmarcar' : 'Confirmar'}
+                </Button>
+              </Stack>
+              <LoadingButton
+                color="error"
+                variant="contained"
+                loading={cancelLoading}
+                disabled={!confirmCancel || !cancelReason}
+                onClick={async () => {
+                  try {
+                    setCancelLoading(true);
+                    const res = await cancelarNFSeInvoice({
+                      nfseId: nfseToCancel?._id,
+                      motivo: cancelReason,
+                    });
+                    if (res?.status === 200) {
+                      toast.success('NFSe cancelada');
+                      setNfseList((list) =>
+                        list.map((n) =>
+                          n._id === nfseToCancel?._id ? { ...n, status: 'cancelada' } : n
+                        )
+                      );
+                      setCancelOpen(false);
+                      setCancelReason('');
+                      setConfirmCancel(false);
+                    } else {
+                      toast.error('Falha ao cancelar NFSe');
+                    }
+                  } catch (e) {
+                    toast.error('Falha ao cancelar NFSe');
+                  } finally {
+                    setCancelLoading(false);
+                  }
+                }}
+              >
+                Cancelar NFSe
+              </LoadingButton>
+            </Stack>
+          </CardContent>
+        </Dialog>
+      </motion.div>
+    </LazyMotion>
   );
 }
-
-
-

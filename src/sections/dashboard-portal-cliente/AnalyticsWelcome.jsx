@@ -9,6 +9,8 @@ import { alpha, useTheme } from '@mui/material/styles';
 
 import { paths } from 'src/routes/paths';
 
+import { toTitleCase } from 'src/utils/helper';
+
 import { Iconify } from 'src/components/iconify';
 
 const getGreeting = () => {
@@ -40,7 +42,7 @@ export function AnalyticsWelcome({ user, vencidasCount = 0, aExpirarCount = 0, s
   } else {
     message = 'Tudo em dia para começar a trabalhar! Que tal criar uma nova venda?';
     ctaText = 'Nova Venda';
-    ctaLink = paths.cliente.vendas;
+    ctaLink = paths.cliente.orcamentos.novo;
     ctaIcon = 'solar:add-circle-bold-duotone';
   }
 
@@ -83,11 +85,11 @@ export function AnalyticsWelcome({ user, vencidasCount = 0, aExpirarCount = 0, s
           <Stack direction="row" alignItems="center" spacing={1}>
             <Iconify icon={greeting.icon} width={28} />
               <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 700, mb: 0.5, wordBreak: 'break-word' }}
-            >
-              {greeting.text},
-            </Typography>
+                variant="subtitle1"
+                sx={{ fontWeight: 700, mb: 0.5, wordBreak: 'break-word' }}
+              >
+                {toTitleCase(greeting.text)},
+              </Typography>
           </Stack>
         </m.div>
 

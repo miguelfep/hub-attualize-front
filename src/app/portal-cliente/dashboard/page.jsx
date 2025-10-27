@@ -6,6 +6,8 @@ import { LazyMotion, domAnimation } from 'framer-motion';
 
 import { Grid, Container } from '@mui/material';
 
+import { useResponsive } from 'src/hooks/use-responsive'; 
+
 import axios from 'src/utils/axios';
 
 import { getBannersForUser } from 'src/data/banners';
@@ -27,6 +29,8 @@ export default function PortalClienteDashboardView() {
   const [dashboardData, setDashboardData] = useState(null);
   const [banners, setBanners] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const isMobile = useResponsive('down', 'sm');
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -60,7 +64,6 @@ export default function PortalClienteDashboardView() {
   return (
     <LazyMotion features={domAnimation}>
       <Container maxWidth="xl">
-
         <Grid container spacing={3}>
           <Grid item xs={12} md={8}>
             <AnalyticsWelcome 
@@ -70,9 +73,11 @@ export default function PortalClienteDashboardView() {
             />
           </Grid>
 
-          <Grid item xs={12} md={4}>
-            <BannersSection banners={banners} />
-          </Grid>
+        {!isMobile && (
+            <Grid item xs={12} md={4}>
+              <BannersSection banners={banners} />
+            </Grid>
+          )}
 
           <Grid item xs={12} sm={6} md={4}>
             <AnalyticsWidgetSummary
@@ -91,7 +96,7 @@ export default function PortalClienteDashboardView() {
               formatar
               icon="solar:bill-list-bold-duotone"
               color="info"
-              link="/portal-cliente/vendas"
+              link="/portal-cliente/orcamentos"
             />
           </Grid>
           <Grid item xs={12} sm={6} md={4}>
@@ -100,11 +105,11 @@ export default function PortalClienteDashboardView() {
               total={dashboardData?.estatisticasGerais?.totalNotasFiscais || 0}
               icon="solar:file-text-bold-duotone"
               color="warning"
-              link="/portal-cliente/vendas"
+              link="/portal-cliente/orcamentos"
             />
           </Grid>
 
-          <Grid item xs={12} md={12}>
+          <Grid item xs={12}> 
             <VisaoGeralOrcamentos data={dashboardData?.visaoGeralAnual || []} />
           </Grid>
         </Grid>

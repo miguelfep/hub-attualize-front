@@ -192,15 +192,17 @@ export default function PortalClientesPage() {
             sx={{
               p: 3,
               display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' }, // Empilha na vertical no mobile (xs)
+              alignItems: { sm: 'center' },               // Centraliza verticalmente no desktop (sm)
               justifyContent: 'space-between',
+              gap: 2,
               background: `linear-gradient(135deg, ${alpha(
                 theme.palette.primary.main,
                 0.1
-              )}, ${alpha(theme.palette.secondary.main, 0.1)})`}}
+              )}, ${alpha(theme.palette.secondary.main, 0.1)})`,
+            }}
           >
-            <Box>
+          <Box>
               <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
                 Meus Clientes
               </Typography>
@@ -208,7 +210,7 @@ export default function PortalClientesPage() {
                 Visualize, gerencie e cadastre seus clientes.
               </Typography>
             </Box>
-            <Stack direction="row" spacing={1.5} alignItems="center">
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}>
               {limiteClientes && (
                 <Chip
                   label={`${dataFiltered.length} / ${limiteClientes}`}

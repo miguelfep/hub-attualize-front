@@ -53,12 +53,12 @@ export function DocumentoCard({ documento }) {
           await navigator.share({
             files: [file],
             title: documento.nome,
-            text: `Confira o documento: ${documento.nome}`,
+            text: `Aqui está seu ${documento.nome}`,
           });
         } else {
           await navigator.share({
             title: documento.nome,
-            text: `Confira o documento: ${documento.nome}`,
+            text: `Aqui está seu ${documento.nome}`,
             url: fullFileUrl,
           });
         }

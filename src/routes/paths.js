@@ -250,7 +250,10 @@ export const paths = {
     empresa: `${ROOTS.CLIENTE}/empresa`,
     clientes: `${ROOTS.CLIENTE}/clientes`,
     servicos: `${ROOTS.CLIENTE}/servicos`,
-    orcamentos: `${ROOTS.CLIENTE}/vendas`,
+    orcamentos: { 
+      root: `${ROOTS.CLIENTE}/vendas`,
+      novo: `${ROOTS.CLIENTE}/vendas/novo`, 
+    },
     financeiro: {
       root: `${ROOTS.CLIENTE}/financeiro`,
       contas: `${ROOTS.CLIENTE}/financeiro/contas`,
