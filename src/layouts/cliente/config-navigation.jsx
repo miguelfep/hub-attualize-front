@@ -22,7 +22,7 @@ export function usePortalNavData() {
     },
     podeCriarOrcamentos && {
       title: 'Vendas',
-      path: paths.cliente.orcamentos,
+      path: paths.cliente.orcamentos.root,
       icon: <Iconify icon="solar:money-bag-bold" />,
     },
   ].filter(Boolean); 

@@ -9,7 +9,6 @@ import axios from 'src/utils/axios';
 // MUI Imports
 
 import Box from '@mui/material/Box';
-import Fab from '@mui/material/Fab';
 import Card from '@mui/material/Card';
 import Grid from '@mui/material/Grid';
 import Chip from '@mui/material/Chip';
@@ -730,16 +729,6 @@ export default function MinhaEmpresaView() {
             )}
           </Section>
         </Card>
-
-        {/* Botão Flutuante para Ações */}
-        <Fab
-          color="primary"
-          aria-label="edit"
-          sx={{ position: 'fixed', bottom: 24, right: 24 }}
-          onClick={() => toast.info('Funcionalidade de edição em desenvolvimento!')}
-        >
-          <Iconify icon="mdi:pencil-outline" />
-        </Fab>
       </Box>
     </LazyMotion>
   );

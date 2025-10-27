@@ -119,7 +119,8 @@ export function ClienteLayout({ children }) {
               onClick={mobileNavOpen.onTrue}
               sx={{ 
                 display: { xs: 'block', lg: 'none' },
-                color: 'text.primary',
+                color: `${theme.palette.primary.main}`,
+                backgroundColor: `${theme.palette.primary.contrastText}`,
                 '&:hover': {
                   bgcolor: 'action.hover'
                 }
@@ -137,6 +138,8 @@ export function ClienteLayout({ children }) {
             >
               Portal do Cliente
             </Typography>
+
+            <Box sx={{ flexGrow: 1 }} />
             
             <Stack 
               direction="row" 
@@ -251,12 +254,12 @@ export function ClienteLayout({ children }) {
             </Avatar>
             Meu Perfil
           </MenuItem>
-          <MenuItem component={RouterLink} href={paths.cliente.settings}>
-            <Iconify icon="solar:settings-bold-duotone" width={20} />
+          <MenuItem sx={{ gap: 1}} component={RouterLink} href={paths.cliente.settings} >
+            <Iconify icon="solar:settings-bold-duotone" width={20}/>
             Configurações
           </MenuItem>
           <Divider />
-          <MenuItem onClick={handleLogout}>
+          <MenuItem onClick={handleLogout} sx={{ gap: 1 }}>
             <Iconify icon="solar:logout-3-bold-duotone" width={20} />
             Sair
           </MenuItem>

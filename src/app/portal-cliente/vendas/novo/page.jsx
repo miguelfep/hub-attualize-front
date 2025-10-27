@@ -1,11 +1,12 @@
 'use client';
 
 import React from 'react';
+import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Box, Card, Stack, Button, Dialog, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Box, Card, Stack, Button, Dialog, Divider, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions,  } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -20,7 +21,7 @@ import { usePortalClientes, usePortalServicos, portalCreateCliente, portalCreate
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
-import { SimplePaper } from 'src/components/paper/SimplePaper';
+import { NovoOrcamentoPageSkeleton } from 'src/components/skeleton/PortalNovaVendaPageSkeleton';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -111,7 +112,7 @@ export default function NovoOrcamentoPage() {
     }
   };
 
-  if (loadingEmpresas || !clienteProprietarioId) return <Typography>Carregando...</Typography>;
+  if (loadingEmpresas || !clienteProprietarioId) return <NovoOrcamentoPageSkeleton />;
   if (!podeCriarOrcamentos) return <Typography>Funcionalidade não disponível</Typography>;
 
   const addItem = () => setItens((arr) => {
@@ -147,9 +148,9 @@ export default function NovoOrcamentoPage() {
       toast.success('Orçamento criado');
       const newId = created?._id || created?.data?._id;
       if (newId) {
-        router.replace(`${paths.cliente.orcamentos}/${newId}`);
+        router.replace(`${paths.cliente.orcamentos.root}/${newId}`);
       } else {
-        router.replace(paths.cliente.orcamentos);
+        router.replace(paths.cliente.orcamentos.root);
       }
     } catch (err) {
       toast.error('Erro ao criar orçamento');
@@ -158,19 +159,27 @@ export default function NovoOrcamentoPage() {
     }
   };
 
-  return (
-    <SimplePaper>
+return (
+  <LazyMotion features={domAnimation}>
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7 }}
+    >
       <form onSubmit={handleSubmit}>
-        <Card sx={{ borderRadius: 3, mb: 2 }}>
+        <Card sx={{ borderRadius: 3 }}>
           <Box
             sx={{
               p: 3,
               display: 'flex',
-              flexDirection: { xs: 'column', md: 'row' },
-              alignItems: { xs: 'flex-start', md: 'center' },
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { sm: 'center' },
               justifyContent: 'space-between',
               gap: 2,
-              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`
+              background: `linear-gradient(135deg, ${alpha(
+                theme.palette.primary.main,
+                0.1
+              )}, ${alpha(theme.palette.secondary.main, 0.1)})`,
             }}
           >
             <Stack spacing={0.5}>
@@ -181,93 +190,146 @@ export default function NovoOrcamentoPage() {
                 Preencha os dados da venda e adicione o item de serviço.
               </Typography>
             </Stack>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Button href="../vendas" variant="outlined" color="inherit">Cancelar</Button>
-              <LoadingButton type="submit" variant="contained" loading={saving}>Salvar</LoadingButton>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              alignItems="center"
+              sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}
+            >
+              <Button href="../vendas" variant="outlined" color="inherit">
+                Cancelar
+              </Button>
+              <LoadingButton type="submit" variant="contained" loading={saving}>
+                Salvar
+              </LoadingButton>
             </Stack>
           </Box>
-        </Card>
 
-        <Card sx={{ mb: 2 }}>
-          <CardContent>
-            <Typography variant="subtitle2" sx={{ mb: 2 }}>Dados</Typography>
-            <Grid container spacing={2}>
-              <Grid xs={12} sm={8}>
-                <TextField fullWidth select label="Cliente" value={form.clienteDoClienteId} onChange={(e) => setForm((f) => ({ ...f, clienteDoClienteId: e.target.value }))} SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}>
-                  <MenuItem value="">Selecione</MenuItem>
-                  {(clientes || []).map((c) => (
-                    <MenuItem key={c._id} value={c._id}>{c.nome} {c.cpfCnpj ? `- ${c.cpfCnpj}` : ''}</MenuItem>
-                  ))}
-                </TextField>
-              </Grid>
-              <Grid xs={12} sm={4}>
-                <Button onClick={() => setOpenNovoCliente(true)} fullWidth startIcon={<Iconify icon="solar:user-plus-bold" />} variant="outlined">Novo Cliente</Button>
-              </Grid>
-              <Grid xs={12} sm={4}>
-                <TextField fullWidth type="date" label="Validade" value={form.dataValidade} onChange={(e) => setForm((f) => ({ ...f, dataValidade: e.target.value }))} InputLabelProps={{ shrink: true }} />
-              </Grid>
-              
-            </Grid>
-          </CardContent>
-        </Card>
-
-        <Card sx={{ mb: 2 }}>
-          <CardContent>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-              <Typography variant="subtitle2">Item do Serviço</Typography>
-              <Button onClick={addItem} startIcon={<Iconify icon="solar:add-circle-bold" />} disabled={itens.length >= 1}>Adicionar Item</Button>
-            </Stack>
-            <Stack spacing={2}>
-              {itens.map((it, i) => (
-                <Grid container spacing={2} key={i}>
-                  <Grid xs={12}>
-                    <TextField fullWidth select label="Serviço" value={it.servicoId} onChange={(e) => handleServicoChange(i, e.target.value)} SelectProps={{ displayEmpty: true }} InputLabelProps={{ shrink: true }}>
-                      <MenuItem value="">Selecione</MenuItem>
-                      {(servicos || []).map((s) => (
-                        <MenuItem key={s._id} value={s._id}>{s.nome}</MenuItem>
+          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+            <Stack spacing={3}>
+              <Box>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Dados da Venda
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid xs={12} md={8}>
+                    <TextField
+                      fullWidth
+                      select
+                      label="Cliente"
+                      value={form.clienteDoClienteId}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, clienteDoClienteId: e.target.value }))
+                      }
+                    >
+                      <MenuItem value="">
+                        <em>Selecione</em>
+                      </MenuItem>
+                      {(clientes || []).map((c) => (
+                        <MenuItem key={c._id} value={c._id}>
+                          {c.nome} {c.cpfCnpj ? `- ${c.cpfCnpj}` : ''}
+                        </MenuItem>
                       ))}
                     </TextField>
                   </Grid>
-                  <Grid xs={12}>
-                    <TextField fullWidth label="Descrição" value={it.descricao} onChange={(e) => setItemField(i, 'descricao', e.target.value)} />
+                  <Grid xs={12} md={4}>
+                    <Button
+                      onClick={() => setOpenNovoCliente(true)}
+                      fullWidth
+                      startIcon={<Iconify icon="solar:user-plus-bold" />}
+                      variant="outlined"
+                      sx={{ height: '100%' }}
+                    >
+                      Novo Cliente
+                    </Button>
                   </Grid>
-                  <Grid xs={6} sm={2}>
-                    <TextField fullWidth type="number" label="Qtd" value={it.quantidade} onChange={(e) => setItemField(i, 'quantidade', Number(e.target.value))} />
-                  </Grid>
-                  <Grid xs={6} sm={2}>
-                    <TextField fullWidth label="Vlr Unit" value={it.valorUnitarioText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, valorUnitario: value, valorUnitarioText: text } : item))); }} />
-                  </Grid>
-                  <Grid xs={12} sm={2}>
-                    <TextField fullWidth label="Desconto" value={it.descontoText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, desconto: value, descontoText: text } : item))); }} />
-                  </Grid>
-                  <Grid xs={12} sm={2}>
-                    <Button color="error" onClick={() => rmItem(i)}><Iconify icon="solar:trash-bin-trash-bold" /></Button>
+                  <Grid xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      type="date"
+                      label="Validade"
+                      value={form.dataValidade}
+                      onChange={(e) => setForm((f) => ({ ...f, dataValidade: e.target.value }))}
+                      InputLabelProps={{ shrink: true }}
+                    />
                   </Grid>
                 </Grid>
-              ))}
-              {itens.length > 1 && (
-                <Typography variant="caption" color="text.secondary">Apenas 1 item é permitido. Os demais itens não serão considerados.</Typography>
-              )}
-            </Stack>
-          </CardContent>
-        </Card>
+              </Box>
 
-        <Card>
-          <CardContent>
-            <Grid container spacing={2}>
-              <Grid xs={12} sm={6}>
-                <TextField fullWidth multiline minRows={3} label="Observações" value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} />
-              </Grid>
-              <Grid xs={12} sm={6}>
-                <TextField fullWidth multiline minRows={3} label="Condições de Pagamento" value={form.condicoesPagamento} onChange={(e) => setForm((f) => ({ ...f, condicoesPagamento: e.target.value }))} />
-              </Grid>
-              <Grid xs={12}>
-                <Stack direction="row" justifyContent="flex-end" spacing={3}>
-                  <Typography>Subtotal: {fCurrency(subtotal)}</Typography>
-                  <Typography>Total: {fCurrency(total)}</Typography>
+              <Divider />
+
+              <Box>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  sx={{ mb: 2 }}
+                >
+                  <Typography variant="h6">Item do Serviço</Typography>
+                  <Button
+                    onClick={addItem}
+                    startIcon={<Iconify icon="solar:add-circle-bold" />}
+                    disabled={itens.length >= 1}
+                  >
+                    Adicionar Item
+                  </Button>
                 </Stack>
-              </Grid>
-            </Grid>
+                <Stack spacing={3}>
+                  {itens.map((it, i) => (
+                    <Box key={i} >
+                      <Grid container spacing={2}>
+                        <Grid xs={12}>
+                          <TextField fullWidth select label="Serviço" value={it.servicoId} onChange={(e) => handleServicoChange(i, e.target.value)}>
+                            <MenuItem value=""><em>Selecione</em></MenuItem>
+                            {(servicos || []).map((s) => (<MenuItem key={s._id} value={s._id}>{s.nome}</MenuItem>))}
+                          </TextField>
+                        </Grid>
+                        <Grid xs={12}>
+                          <TextField fullWidth label="Descrição" value={it.descricao} onChange={(e) => setItemField(i, 'descricao', e.target.value)} />
+                        </Grid>
+                        <Grid xs={6} sm={4} md={3}>
+                          <TextField fullWidth type="number" label="Qtd" value={it.quantidade} onChange={(e) => setItemField(i, 'quantidade', Number(e.target.value))} />
+                        </Grid>
+                        <Grid xs={6} sm={4} md={3}>
+                          <TextField fullWidth label="Vlr Unit" value={it.valorUnitarioText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, valorUnitario: value, valorUnitarioText: text } : item))); }} />
+                        </Grid>
+                        <Grid xs={12} sm={4} md={3}>
+                          <TextField fullWidth label="Desconto" value={it.descontoText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, desconto: value, descontoText: text } : item))); }} />
+                        </Grid>
+                        <Grid xs={12} md={3} sx={{ display: 'flex', alignItems: 'center' }}>
+                          <Button color="error" onClick={() => rmItem(i)} startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}>Remover</Button>
+                        </Grid>
+                      </Grid>
+                    </Box>
+                  ))}
+                  {itens.length === 0 && (
+                     <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>Nenhum item adicionado.</Typography>
+                  )}
+                </Stack>
+              </Box>
+              
+              <Divider />
+
+              <Box>
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                  Observações e Totais
+                </Typography>
+                <Grid container spacing={2}>
+                  <Grid xs={12} md={6}>
+                    <TextField fullWidth multiline minRows={3} label="Observações" value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} />
+                  </Grid>
+                  <Grid xs={12} md={6}>
+                    <TextField fullWidth multiline minRows={3} label="Condições de Pagamento" value={form.condicoesPagamento} onChange={(e) => setForm((f) => ({ ...f, condicoesPagamento: e.target.value }))} />
+                  </Grid>
+                  <Grid xs={12}>
+                    <Stack spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-end' }} sx={{ mt: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
+                      <Typography variant="body1">Subtotal: <strong>{fCurrency(subtotal)}</strong></Typography>
+                      <Typography variant="h6">Total: <strong>{fCurrency(total)}</strong></Typography>
+                    </Stack>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Stack>
           </CardContent>
         </Card>
       </form>
@@ -397,7 +459,8 @@ export default function NovoOrcamentoPage() {
           }} variant="contained">Salvar</Button>
         </DialogActions>
       </Dialog>
-    </SimplePaper>
+     </motion.div>
+    </LazyMotion>
   );
 }
 

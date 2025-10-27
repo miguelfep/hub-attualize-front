@@ -114,7 +114,7 @@ export default function PortalServicosPage() {
   const userId = user?.id || user?._id || user?.userId;
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
-  const { podeGerenciarServicos } = useSettings();
+  const { podeGerenciarServicos, limiteServicos } = useSettings();
   const router = useRouter();
 
   const table = useTable({ defaultOrderBy: 'nome' });
@@ -213,15 +213,16 @@ export default function PortalServicosPage() {
             sx={{
               p: 3,
               display: 'flex',
-              flexDirection: 'row',
-              alignItems: 'center',
+              flexDirection: { xs: 'column', sm: 'row' },
+              alignItems: { sm: 'center' },
               justifyContent: 'space-between',
+              gap: 2,
               background: `linear-gradient(135deg, ${alpha(
                 theme.palette.primary.main,
                 0.1
-              )}, ${alpha(theme.palette.secondary.main, 0.1)})`
+              )}, ${alpha(theme.palette.secondary.main, 0.1)})`,
             }}
-          >
+          >   
             <Box>
               <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
                 Meus Serviços
@@ -230,14 +231,23 @@ export default function PortalServicosPage() {
                 Visualize, gerencie e cadastre seus serviços.
               </Typography>
             </Box>
-            <Button
-              href="./novo"
-              variant="contained"
-              color="primary"
-              startIcon={<Iconify icon="solar:add-circle-bold" />}
-            >
-              Novo Serviço
-            </Button>
+            <Stack direction="row" spacing={1.5} alignItems="center" sx={{ alignSelf: { xs: 'flex-end', sm: 'center' }}}>
+              {limiteServicos && (
+                <Chip
+                  label={`${dataFiltered.length} / ${limiteServicos}`}
+                  size="small"
+                  sx={{ bgcolor: 'black', color: 'common.white' }}
+                />
+              )}
+              <Button
+                href="./novo"
+                variant="contained"
+                color="primary"
+                startIcon={<Iconify icon="solar:add-circle-bold" />}
+              >
+                Novo Serviço
+              </Button>
+            </Stack>
           </Box>
 
           <ServicoTableToolbar filters={filters} onFilters={handleFilters} />
