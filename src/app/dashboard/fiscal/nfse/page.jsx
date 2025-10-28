@@ -34,7 +34,7 @@ export default function DashboardFiscalPage() {
   const [selectedCliente, setSelectedCliente] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [rowsPerPage, setRowsPerPage] = useState(50); // Aumentado para 50 por padrão
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
@@ -47,7 +47,7 @@ export default function DashboardFiscalPage() {
     const load = async () => {
       try {
         setLoadingClientes(true);
-        const res = await getClientes({status: true});
+        const res = await getClientes({status: true, tipoContato: 'cliente'});
         setClientes(res);
       } catch (e) {
         setClientes([]);
@@ -61,11 +61,15 @@ export default function DashboardFiscalPage() {
   const { filteredNotas, totalValorNotas, totalNotas } = useMemo(() => {
     const arr = Array.isArray(notas?.data) ? notas.data : [];
     let list = arr;
+    
     const hasRange = Boolean(startDate || endDate);
+    const hasMonth = Boolean(refMonth);
+    
+    // Se tiver início/fim, usa filtro de range
     if (hasRange) {
       const start = startDate ? dayjs(startDate).startOf('day') : null;
       const end = endDate ? dayjs(endDate).endOf('day') : null;
-      list = arr.filter((n) => {
+      list = list.filter((n) => {
         const dt = n.dataEmissao || n.createdAt || n.data;
         if (!dt) return true;
         const d = dayjs(dt);
@@ -73,14 +77,18 @@ export default function DashboardFiscalPage() {
         if (end && d.isAfter(end)) return false;
         return true;
       });
-    } else {
-      list = arr.filter((n) => {
+    } 
+    // Se tiver mês selecionado mas não tiver range, usa filtro de mês
+    else if (hasMonth) {
+      list = list.filter((n) => {
         const dt = n.dataEmissao || n.createdAt || n.data;
         if (!dt) return true;
         const ym = dayjs(dt).format('YYYY-MM');
         return ym === refMonth;
       });
     }
+    // Se não tiver nenhum filtro de data, exibe TODAS as notas
+    
     const total = list.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
     return { filteredNotas: list, totalValorNotas: total, totalNotas: list.length };
   }, [notas, refMonth, startDate, endDate]);
@@ -96,7 +104,7 @@ export default function DashboardFiscalPage() {
         status: status || undefined,
       });
 
-    
+    console.log('======> ',res.data);
       const data = res.data
       
       setNotas({
@@ -205,25 +213,45 @@ export default function DashboardFiscalPage() {
             const dataEmissao = n.dataEmissao || n.createdAt || n.data;
             const tomador = n.tomador || {};
             const servicoDesc = Array.isArray(n.servicos) && n.servicos.length ? n.servicos[0]?.descricao : (n.descricao || n.discriminacao);
+            const isSieg = n.origem === 'sieg';
+            const isEnotas = n.origem === 'enotas' || !n.origem; // fallback para notas antigas
+            
             return (
               <Card key={n._id || n.id} variant="outlined" sx={{ p: 2 }}>
                 <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                    <Typography variant="subtitle2">#{n.numeroNota || n.numero || '-'}</Typography>
+                    <Chip 
+                      size="small" 
+                      label={isSieg ? 'SIEG' : 'eNotas'} 
+                      color={isSieg ? 'secondary' : 'primary'} 
+                      variant="filled"
+                    />
+                    <Typography variant="subtitle2">
+                      #{isSieg ? (n.siegNumero || n.numeroNota || '-') : (n.numeroNota || n.numero || '-')}
+                    </Typography>
                     {n.serie && (
                       <Chip size="small" variant="outlined" label={`Série ${n.serie}`} />
                     )}
+                    {isSieg && n.siegTipo && (
+                      <Chip size="small" variant="outlined" label={n.siegTipo === 'entrada' ? 'Entrada' : 'Saída'} />
+                    )}
                     <Chip size="small" label={statusLabel} color={color} />
-                    <Chip size="small" label={`eNotas: ${eNotasLabel}`} color={colorEnotas} />
+                    {isEnotas && (
+                      <Chip size="small" label={`eNotas: ${eNotasLabel}`} color={colorEnotas} />
+                    )}
                   </Stack>
                   <Typography variant="caption" color="text.secondary">{dataEmissao ? dayjs(dataEmissao).format('DD/MM/YYYY HH:mm') : '-'}</Typography>
                 </Stack>
 
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 1 }}>
                   <Stack spacing={0.25} flex={1}>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>Tomador</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      {isSieg && n.siegTipo === 'entrada' ? 'Emitente' : 'Tomador'}
+                    </Typography>
                     <Typography variant="body2">{tomador?.nome || '-'}</Typography>
-                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>{tomador?.cpfCnpj || ''}</Typography>
+                    <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                      {tomador?.cpfCnpj || (isSieg && n.siegCnpjEmitente) || ''}
+                    </Typography>
                   </Stack>
                   <Stack spacing={0.25} flex={2}>
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>Serviço</Typography>
@@ -254,13 +282,33 @@ export default function DashboardFiscalPage() {
                   {!!n.linkXml && (
                     <Button size="small" variant="outlined" href={n.linkXml} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
                   )}
+                  {isSieg && n.siegXmlBase64 && (
+                    <Button 
+                      size="small" 
+                      variant="outlined" 
+                      startIcon={<Iconify icon="solar:code-square-bold" />}
+                      onClick={() => {
+                        const blob = new Blob([atob(n.siegXmlBase64)], { type: 'application/xml' });
+                        const url = window.URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = `nota-${n.siegNumero || 'sieg'}.xml`;
+                        document.body.appendChild(link);
+                        link.click();
+                        link.remove();
+                        window.URL.revokeObjectURL(url);
+                      }}
+                    >
+                      XML Sieg
+                    </Button>
+                  )}
                 </Stack>
               </Card>
             );
           })}
         </Stack>
         <TablePagination
-          rowsPerPageOptions={[10, 25, 50]}
+          rowsPerPageOptions={[10, 25, 50, 100]}
           component="div"
           count={Number(notas.totalRecords || 0)}
           rowsPerPage={rowsPerPage}

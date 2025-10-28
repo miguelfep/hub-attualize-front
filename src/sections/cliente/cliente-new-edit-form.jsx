@@ -112,6 +112,7 @@ export const NewUClienteSchema = zod.object({
     .array(zod.enum(['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'simei', 'autonomo']))
     .optional(),
   dadosFiscal: zod.string().optional(),
+  importarNotasSieg: zod.boolean().optional(),
   possuiExtrato: zod.boolean().optional(),
   dadosContabil: zod.string().optional(),
   possuiFuncionario: zod.boolean().optional(),
@@ -259,6 +260,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       atividades_secundarias: currentCliente?.atividades_secundarias || [],
       clienteVip: currentCliente?.clienteVip || false,
       dadosFiscal: currentCliente?.dadosFiscal || '',
+      importarNotasSieg: currentCliente?.importarNotasSieg || false,
       possuiExtrato: currentCliente?.possuiExtrato || false,
       dadosContabil: currentCliente?.dadosContabil || '',
       possuiFuncionario: currentCliente?.possuiFuncionario || false,
@@ -852,6 +854,25 @@ const onSubmit = handleSubmit(
                       );
                     }}
                   />
+                </Grid>
+                <Grid xs={12}>
+                  <Divider sx={{ my: 1 }} />
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Integração Sieg</Typography>
+                </Grid>
+                <Grid xs={12}>
+                  <Controller
+                    name="importarNotasSieg"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={<Switch {...field} checked={field.value} />}
+                        label="Importar Notas Fiscais da Sieg automaticamente"
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Divider sx={{ my: 1 }} />
                 </Grid>
                 <Grid xs={12}>
                   <Field.Editor name="dadosFiscal" label="Dados Fiscais" fullWidth />
