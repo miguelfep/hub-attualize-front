@@ -47,7 +47,7 @@ export default function DashboardFiscalPage() {
     const load = async () => {
       try {
         setLoadingClientes(true);
-        const res = await getClientes();
+        const res = await getClientes({status: true});
         setClientes(res);
       } catch (e) {
         setClientes([]);

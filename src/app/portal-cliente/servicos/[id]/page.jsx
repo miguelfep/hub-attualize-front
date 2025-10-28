@@ -105,6 +105,8 @@ export default function EditarServicoPage() {
   const [empresaUf, setEmpresaUf] = useState('');
   const [empresaCidade, setEmpresaCidade] = useState('');
   const [selectedServicoENotas, setSelectedServicoENotas] = useState(null);
+  const [initialSMU, setInitialSMU] = useState(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const normalizeCNAE = (v) => String(v || '').replace(/\D/g, '');
 
   useEffect(() => {
@@ -126,6 +128,7 @@ export default function EditarServicoPage() {
           codigoServico: servicoData.codigoServico || '',
           cnae: normalizeCNAE(servicoData.cnae || ''),
         });
+        setInitialSMU(servicoData?.smu || null);
       } catch (error) {
         toast.error('Erro ao carregar dados do serviço.');
         console.error(error);
@@ -201,6 +204,51 @@ export default function EditarServicoPage() {
     }
   }, []);
 
+  // Quando já existe CNAE/código (ou SMU) no serviço, popular opções e seleção na primeira carga
+  useEffect(() => {
+    let ignore = false;
+    
+    if (!initialLoadDone && podeEmitirNFSe && empresaUf && empresaCidade && form.cnae && cnaesEmpresa.length > 0) {
+      const selected = cnaesEmpresa.find((c) => normalizeCNAE(c.code) === form.cnae);
+      if (selected) {
+        const run = async () => {
+          const opts = await consultarServicosENotas(empresaUf, empresaCidade, selected?.text || '', 4);
+          if (ignore) return;
+          
+          let merged = Array.isArray(opts) ? opts : [];
+          
+          // Se tiver SMU inicial, garantir que está nas opções
+          const selCode = (initialSMU?.codigo && String(initialSMU.codigo)) || (form.codigoServico ? String(form.codigoServico) : '');
+          if (selCode && !merged.some((o) => String(o.code) === selCode)) {
+            merged = [
+              { 
+                code: selCode, 
+                descricao: initialSMU?.descricao || `Código ${selCode}`, 
+                raw: initialSMU || null 
+              }, 
+              ...merged
+            ];
+          }
+          
+          setCodigoOptions(merged);
+          
+          // Pré-selecionar o código inicial
+          if (selCode) {
+            setForm((f) => ({ ...f, codigoServico: selCode }));
+            if (initialSMU) setSelectedServicoENotas(initialSMU);
+          }
+          
+          setInitialLoadDone(true);
+        };
+        run();
+      }
+    }
+    
+    return () => {
+      ignore = true;
+    };
+  }, [empresaUf, empresaCidade, form.cnae, cnaesEmpresa, initialSMU, podeEmitirNFSe, consultarServicosENotas, initialLoadDone, form.codigoServico]);
+
 const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!form.nome) { toast.error('Informe o nome do serviço'); return; }
@@ -221,8 +269,10 @@ const handleSubmit = useCallback(async (e) => {
         valor: Number(form.valor),
         unidade: form.unidade,
         categoria: form.categoria,
-        ...(podeEmitirNFSe ? (
-          selectedServicoENotas
+        // NFSe (condicional) - sempre enviar CNAE + SMU ou CNAE + codigoServico
+        ...(podeEmitirNFSe ? {
+          cnae: sanitizeCnae(form.cnae),
+          ...(selectedServicoENotas
             ? {
                 smu: {
                   codigo: selectedServicoENotas?.codigo,
@@ -238,9 +288,8 @@ const handleSubmit = useCallback(async (e) => {
               }
             : {
                 codigoServico: form.codigoServico || undefined,
-                cnae: sanitizeCnae(form.cnae),
-              }
-        ) : {}),
+              }),
+        } : {}),
       };
       await portalUpdateServico(servicoId, payload);
       toast.success('Serviço atualizado com sucesso!');
