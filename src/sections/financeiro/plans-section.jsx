@@ -75,10 +75,13 @@ function PlanCard({ plan, isCurrent, isUpgrading, onUpgrade }) {
           size="small"
           sx={{
             ml: 'auto',
-            bgcolor: 'action.selected', 
+            bgcolor: 'action.selected',
             color: 'text.secondary',
             fontWeight: 'medium',
-            borderRadius: '16px', 
+            borderRadius: '16px',
+            '&:hover': {
+              bgcolor: 'action.selected',
+            }
           }}
         />
       </Box>
@@ -111,7 +114,7 @@ function PlanCard({ plan, isCurrent, isUpgrading, onUpgrade }) {
 
 export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
   const theme = useTheme();
-  
+
   const [isUpgrading, setIsUpgrading] = useState(false);
   const planOrder = useMemo(() => ['start', 'pleno', 'premium'], []);
 
