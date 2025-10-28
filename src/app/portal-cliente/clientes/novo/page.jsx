@@ -312,6 +312,7 @@ export default function PortalClienteNovoPage() {
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
                   <TextField
+                    required
                     fullWidth
                     label="CEP"
                     value={formData.endereco.cep}
@@ -352,6 +353,7 @@ export default function PortalClienteNovoPage() {
                 </Grid>
                 <Grid item xs={12} sm={3}>
                   <TextField
+                    required
                     disabled={fetchingCep}
                     fullWidth
                     label="Número"
