@@ -104,6 +104,11 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const formatDateWithTime = (dateString) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleDateString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+  };
+
   const isSelected = (id) => selected.indexOf(id) !== -1;
 
   const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - usuarios.length) : 0;
@@ -285,7 +290,7 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
 
                       <TableCell>
                         <Typography variant="body2" color="text.secondary">
-                          {formatDate(usuario.ultimoAcesso)}
+                          {formatDateWithTime(usuario.ultimoAcesso)}
                         </Typography>
                       </TableCell>
 
