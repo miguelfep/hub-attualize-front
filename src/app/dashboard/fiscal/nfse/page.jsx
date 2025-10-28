@@ -17,7 +17,6 @@ import {
   CardContent,
   InputLabel,
   FormControl,
-  TablePagination,
   Chip,
   Alert,
 } from '@mui/material';
@@ -33,15 +32,14 @@ export default function DashboardFiscalPage() {
 
   const [selectedCliente, setSelectedCliente] = useState('');
   const [status, setStatus] = useState('');
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(50); // Aumentado para 50 por padrão
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
-  const [notas, setNotas] = useState({ totalRecords: 0, data: [] });
-  const [refMonth, setRefMonth] = useState(() => new Date().toISOString().slice(0, 7)); // YYYY-MM
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [notas, setNotas] = useState([]);
+  
+  // Datas: primeiro dia do mês atual até hoje
+  const [startDate, setStartDate] = useState(() => dayjs().startOf('month').format('YYYY-MM-DD'));
+  const [endDate, setEndDate] = useState(() => dayjs().format('YYYY-MM-DD'));
 
   useEffect(() => {
     const load = async () => {
@@ -58,40 +56,11 @@ export default function DashboardFiscalPage() {
     load();
   }, []);
 
-  const { filteredNotas, totalValorNotas, totalNotas } = useMemo(() => {
-    const arr = Array.isArray(notas?.data) ? notas.data : [];
-    let list = arr;
-    
-    const hasRange = Boolean(startDate || endDate);
-    const hasMonth = Boolean(refMonth);
-    
-    // Se tiver início/fim, usa filtro de range
-    if (hasRange) {
-      const start = startDate ? dayjs(startDate).startOf('day') : null;
-      const end = endDate ? dayjs(endDate).endOf('day') : null;
-      list = list.filter((n) => {
-        const dt = n.dataEmissao || n.createdAt || n.data;
-        if (!dt) return true;
-        const d = dayjs(dt);
-        if (start && d.isBefore(start)) return false;
-        if (end && d.isAfter(end)) return false;
-        return true;
-      });
-    } 
-    // Se tiver mês selecionado mas não tiver range, usa filtro de mês
-    else if (hasMonth) {
-      list = list.filter((n) => {
-        const dt = n.dataEmissao || n.createdAt || n.data;
-        if (!dt) return true;
-        const ym = dayjs(dt).format('YYYY-MM');
-        return ym === refMonth;
-      });
-    }
-    // Se não tiver nenhum filtro de data, exibe TODAS as notas
-    
-    const total = list.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
-    return { filteredNotas: list, totalValorNotas: total, totalNotas: list.length };
-  }, [notas, refMonth, startDate, endDate]);
+  const { totalValorNotas, totalNotas } = useMemo(() => {
+    const arr = Array.isArray(notas) ? notas : [];
+    const total = arr.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
+    return { totalValorNotas: total, totalNotas: arr.length };
+  }, [notas]);
 
   const fetchNotas = async () => {
     if (!selectedCliente) return;
@@ -99,21 +68,15 @@ export default function DashboardFiscalPage() {
       setLoading(true);
       const res = await listarNotasFiscaisPorCliente({
         clienteId: selectedCliente,
-        page: page + 1,
-        limit: rowsPerPage,
         status: status || undefined,
+        inicio: startDate || undefined,
+        fim: endDate || undefined,
       });
 
-    console.log('======> ',res.data);
-      const data = res.data
-      
-      setNotas({
-        totalRecords: data?.totalRecords ?? data?.total ?? 0, 
-        data: data.notasFiscais
-      });
-
+      const data = res.data;
+      setNotas(data?.notasFiscais || []);
     } catch (e) {
-      setNotas({ totalRecords: 0, data: [] });
+      setNotas([]);
     } finally {
       setLoading(false);
     }
@@ -122,7 +85,27 @@ export default function DashboardFiscalPage() {
   useEffect(() => {
     fetchNotas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCliente, status, page, rowsPerPage]);
+  }, [selectedCliente, status, startDate, endDate]);
+  
+  // Navegação mensal
+  const handlePrevMonth = () => {
+    const newStart = dayjs(startDate).subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
+    const newEnd = dayjs(startDate).subtract(1, 'month').endOf('month').format('YYYY-MM-DD');
+    setStartDate(newStart);
+    setEndDate(newEnd);
+  };
+  
+  const handleNextMonth = () => {
+    const newStart = dayjs(startDate).add(1, 'month').startOf('month').format('YYYY-MM-DD');
+    const newEnd = dayjs(startDate).add(1, 'month').endOf('month').format('YYYY-MM-DD');
+    setStartDate(newStart);
+    setEndDate(newEnd);
+  };
+  
+  const handleCurrentMonth = () => {
+    setStartDate(dayjs().startOf('month').format('YYYY-MM-DD'));
+    setEndDate(dayjs().format('YYYY-MM-DD'));
+  };
 
   return (
     <Card sx={{ borderRadius: 3 }}>
@@ -148,6 +131,7 @@ export default function DashboardFiscalPage() {
       </Box>
 
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+        {/* Linha 1: Cliente e Status */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
           <Grid xs={12} md={6}>
             <Autocomplete
@@ -157,16 +141,16 @@ export default function DashboardFiscalPage() {
               getOptionLabel={(option) => `${option?.razaoSocial || ''}${option?.cpfCnpj ? ` - ${option.cpfCnpj}` : ''}`.trim()}
               isOptionEqualToValue={(opt, val) => (opt?._id || opt?.id) === (val?._id || val?.id)}
               value={(clientes || []).find((c) => c._id === selectedCliente) || null}
-              onChange={(_, newValue) => { setSelectedCliente(newValue?._id || ''); setPage(0); }}
+              onChange={(_, newValue) => { setSelectedCliente(newValue?._id || ''); }}
               renderInput={(params) => (
                 <TextField {...params} label="Cliente" placeholder="Digite para buscar" />
               )}
             />
           </Grid>
-          <Grid xs={12} md={3}>
+          <Grid xs={12} md={6}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
-              <Select label="Status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(0); }}>
+              <Select label="Status" value={status} onChange={(e) => { setStatus(e.target.value); }}>
                 <MenuItem value="">Todos</MenuItem>
                 <MenuItem value="emitida">Emitida</MenuItem>
                 <MenuItem value="autorizada">Autorizada</MenuItem>
@@ -175,25 +159,45 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel shrink htmlFor="ref-month">Mês</InputLabel>
-              <TextField id="ref-month" type="month" value={refMonth} onChange={(e) => { setRefMonth(e.target.value); setPage(0); }} />
-            </FormControl>
-          </Grid>
-          <Grid xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel shrink htmlFor="inicio">Início</InputLabel>
-              <TextField id="inicio" type="date" value={startDate} onChange={(e) => { setStartDate(e.target.value); setPage(0); }} />
-            </FormControl>
-          </Grid>
-          <Grid xs={12} md={3}>
-            <FormControl fullWidth>
-              <InputLabel shrink htmlFor="fim">Fim</InputLabel>
-              <TextField id="fim" type="date" value={endDate} onChange={(e) => { setEndDate(e.target.value); setPage(0); }} />
-            </FormControl>
-          </Grid>
         </Grid>
+        
+        {/* Linha 2: Navegação mensal e período */}
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
+          <Button 
+            variant="outlined" 
+            onClick={handlePrevMonth}
+            startIcon={<Iconify icon="solar:alt-arrow-left-bold" />}
+            sx={{ minWidth: 150 }}
+          >
+            Mês Anterior
+          </Button>
+          <TextField 
+            label="Início"
+            type="date" 
+            size="small"
+            value={startDate} 
+            onChange={(e) => setStartDate(e.target.value)} 
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 160 }}
+          />
+          <TextField 
+            label="Fim"
+            type="date" 
+            size="small"
+            value={endDate} 
+            onChange={(e) => setEndDate(e.target.value)} 
+            InputLabelProps={{ shrink: true }}
+            sx={{ minWidth: 160 }}
+          />
+          <Button 
+            variant="outlined" 
+            onClick={handleNextMonth}
+            endIcon={<Iconify icon="solar:alt-arrow-right-bold" />}
+            sx={{ minWidth: 150 }}
+          >
+            Próximo Mês
+          </Button>
+        </Stack>
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between" sx={{ mb: 2 }}>
           <Typography variant="subtitle2" color="text.secondary">
             {totalNotas} nota(s) • Total: {fCurrency(totalValorNotas)}
@@ -202,7 +206,7 @@ export default function DashboardFiscalPage() {
         </Stack>
 
         <Stack spacing={1.5}>
-          {filteredNotas.map((n) => {
+          {notas.map((n) => {
             const valor = n.valorServicos || n.valor || 0;
             const statusLabel = n.status || '-';
             const eNotasLabel = n.eNotasStatus || '-';
@@ -307,15 +311,6 @@ export default function DashboardFiscalPage() {
             );
           })}
         </Stack>
-        <TablePagination
-          rowsPerPageOptions={[10, 25, 50, 100]}
-          component="div"
-          count={Number(notas.totalRecords || 0)}
-          rowsPerPage={rowsPerPage}
-          page={page}
-          onPageChange={(_, p) => setPage(p)}
-          onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
-        />
       </CardContent>
     </Card>
   );
