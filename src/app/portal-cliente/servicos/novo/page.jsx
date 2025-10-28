@@ -192,10 +192,11 @@ export default function NovoServicoPage() {
         valor: Number(form.valor),
         unidade: form.unidade,
         categoria: form.categoria,
-        // NFSe (condicional)
+        // NFSe (condicional) - sempre enviar CNAE + SMU ou CNAE + codigoServico
         ...(podeEmitirNFSe
-          ? (
-              selectedServicoENotas
+          ? {
+              cnae: sanitizeCnae(form.cnae),
+              ...(selectedServicoENotas
                 ? {
                     smu: {
                       codigo: selectedServicoENotas?.codigo,
@@ -211,9 +212,8 @@ export default function NovoServicoPage() {
                   }
                 : {
                     codigoServico: form.codigoServico || undefined,
-                    cnae: sanitizeCnae(form.cnae),
-                  }
-            )
+                  }),
+            }
           : {}),
       };
       await portalCreateServico(payload);

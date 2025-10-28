@@ -2,15 +2,15 @@ import axios, { endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-export async function getClientes() {
-  const res = await axios.get(endpoints.clientes.list);
+export async function getClientes(params) {
+  const res = await axios.get(endpoints.clientes.list, { params });
   return res.data;
 }
 
 // ----------------------------------------------------------------------
 
-export async function getClientesAndLeads() {
-  const res = await axios.get(endpoints.clientes.leads);
+export async function getClientesAndLeads(params) {
+  const res = await axios.get(endpoints.clientes.leads, { params });
   
   return res.data;
 }
