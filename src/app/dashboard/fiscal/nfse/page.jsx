@@ -384,7 +384,7 @@ export default function DashboardFiscalPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Alert severity="warning">
-              Esta ação cancelará a nota fiscal no sistema. Certifique-se de cancelar também na Sieg/eNotas se necessário.
+              Esta ação cancelará a nota fiscal no sistema. Certifique-se de cancelar também na Prefeitura/eNotas se necessário.
             </Alert>
             
             {notaToCancel && (
