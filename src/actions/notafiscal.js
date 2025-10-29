@@ -32,3 +32,18 @@ export async function listarNotasFiscaisPorCliente({ clienteId, page = 1, limit 
   if (fim) params.fim = fim;
   return axios.get(`${baseUrl}nota-fiscal/${clienteId}`, { params });
 }
+
+/**
+ * Cancelar nota fiscal
+ * @param {string} notaFiscalId - ID da nota fiscal
+ * @param {string} motivoCancelamento - Motivo do cancelamento
+ * @param {string} dataCancelamento - Data do cancelamento (ISO string)
+ * @returns {Promise}
+ */
+export async function cancelarNotaFiscal(notaFiscalId, motivoCancelamento, dataCancelamento) {
+  return axios.put(`${baseUrl}nota-fiscal/${notaFiscalId}/status`, {
+    status: 'cancelada',
+    motivoCancelamento,
+    dataCancelamento,
+  });
+}

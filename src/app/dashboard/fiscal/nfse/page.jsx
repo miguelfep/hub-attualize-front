@@ -19,13 +19,20 @@ import {
   FormControl,
   Chip,
   Alert,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
 } from '@mui/material';
+import { LoadingButton } from '@mui/lab';
 import dayjs from 'dayjs';
 
 import { getClientes } from 'src/actions/clientes';
-import { listarNotasFiscaisPorCliente } from 'src/actions/notafiscal';
+import { listarNotasFiscaisPorCliente, cancelarNotaFiscal } from 'src/actions/notafiscal';
 import { fCurrency } from 'src/utils/format-number';
 import { Iconify } from 'src/components/iconify';
+import { toast } from 'src/components/snackbar';
 
 export default function DashboardFiscalPage() {
   const theme = useTheme();
@@ -40,6 +47,13 @@ export default function DashboardFiscalPage() {
   // Datas: primeiro dia do mês atual até hoje
   const [startDate, setStartDate] = useState(() => dayjs().startOf('month').format('YYYY-MM-DD'));
   const [endDate, setEndDate] = useState(() => dayjs().format('YYYY-MM-DD'));
+  
+  // Modal de cancelamento
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [notaToCancel, setNotaToCancel] = useState(null);
+  const [motivoCancelamento, setMotivoCancelamento] = useState('');
+  const [dataCancelamento, setDataCancelamento] = useState(() => dayjs().format('YYYY-MM-DD'));
+  const [canceling, setCanceling] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -105,6 +119,41 @@ export default function DashboardFiscalPage() {
   const handleCurrentMonth = () => {
     setStartDate(dayjs().startOf('month').format('YYYY-MM-DD'));
     setEndDate(dayjs().format('YYYY-MM-DD'));
+  };
+  
+  const handleOpenCancelDialog = (nota) => {
+    setNotaToCancel(nota);
+    setMotivoCancelamento('Nota cancelada manualmente pelo administrador');
+    setDataCancelamento(dayjs().format('YYYY-MM-DD'));
+    setCancelDialogOpen(true);
+  };
+  
+  const handleCloseCancelDialog = () => {
+    setCancelDialogOpen(false);
+    setNotaToCancel(null);
+    setMotivoCancelamento('');
+    setDataCancelamento(dayjs().format('YYYY-MM-DD'));
+  };
+  
+  const handleConfirmCancel = async () => {
+    if (!notaToCancel) return;
+    if (!motivoCancelamento.trim()) {
+      toast.error('Informe o motivo do cancelamento');
+      return;
+    }
+    try {
+      setCanceling(true);
+      const dataISO = dayjs(dataCancelamento).toISOString();
+      await cancelarNotaFiscal(notaToCancel._id || notaToCancel.id, motivoCancelamento, dataISO);
+      toast.success('Nota fiscal cancelada com sucesso!');
+      handleCloseCancelDialog();
+      await fetchNotas(); // Recarrega a lista
+    } catch (error) {
+      const msg = error?.response?.data?.message || 'Erro ao cancelar nota fiscal';
+      toast.error(msg);
+    } finally {
+      setCanceling(false);
+    }
   };
 
   return (
@@ -279,7 +328,7 @@ export default function DashboardFiscalPage() {
                   </Alert>
                 )}
 
-                <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
+                <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap">
                   {!!n.linkNota && n.linkNota !== 'Processando...' && (
                     <Button size="small" variant="outlined" href={n.linkNota} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:document-text-bold" />}>PDF</Button>
                   )}
@@ -306,12 +355,87 @@ export default function DashboardFiscalPage() {
                       XML Sieg
                     </Button>
                   )}
+                  {s !== 'cancelada' && (
+                    <Button 
+                      size="small" 
+                      variant="outlined" 
+                      color="error"
+                      startIcon={<Iconify icon="solar:close-circle-bold" />}
+                      onClick={() => handleOpenCancelDialog(n)}
+                    >
+                      Cancelar
+                    </Button>
+                  )}
                 </Stack>
               </Card>
             );
           })}
         </Stack>
       </CardContent>
+      
+      {/* Modal de Cancelamento */}
+      <Dialog open={cancelDialogOpen} onClose={handleCloseCancelDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="solar:close-circle-bold" width={24} sx={{ color: 'error.main' }} />
+            <Typography variant="h6">Cancelar Nota Fiscal</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="warning">
+              Esta ação cancelará a nota fiscal no sistema. Certifique-se de cancelar também na Sieg/eNotas se necessário.
+            </Alert>
+            
+            {notaToCancel && (
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary">
+                  Nota #{notaToCancel.numeroNota || notaToCancel.siegNumero || '-'}
+                </Typography>
+                <Typography variant="body2">
+                  {notaToCancel.tomador?.nome || '-'}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Valor: {fCurrency(notaToCancel.valorServicos || notaToCancel.valor || 0)}
+                </Typography>
+              </Box>
+            )}
+            
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Motivo do Cancelamento"
+              value={motivoCancelamento}
+              onChange={(e) => setMotivoCancelamento(e.target.value)}
+              placeholder="Descreva o motivo do cancelamento..."
+            />
+            
+            <TextField
+              fullWidth
+              type="date"
+              label="Data do Cancelamento"
+              value={dataCancelamento}
+              onChange={(e) => setDataCancelamento(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseCancelDialog} variant="outlined">
+            Cancelar
+          </Button>
+          <LoadingButton
+            onClick={handleConfirmCancel}
+            variant="contained"
+            color="error"
+            loading={canceling}
+            startIcon={<Iconify icon="solar:close-circle-bold" />}
+          >
+            Confirmar Cancelamento
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
     </Card>
   );
 }
