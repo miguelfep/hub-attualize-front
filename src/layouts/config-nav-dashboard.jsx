@@ -58,6 +58,11 @@ export const navData = [
         roles: ['financeiro', 'admin', 'comercial'],
         children: [
           {
+            title: 'Leads',
+            roles: ['admin', 'financeiro', 'comercial'],
+            path: paths.dashboard.comercial.leads,
+          },
+          {
             title: 'Funil',
             roles: ['admin', 'financeiro', 'comercial'],
             path: paths.dashboard.comercial.funil,

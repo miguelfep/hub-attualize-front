@@ -1,44 +1,72 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
+import { useMemo, useState, useEffect } from 'react';
 
+import { LoadingButton } from '@mui/lab';
 import Grid from '@mui/material/Unstable_Grid2';
 import { alpha, useTheme } from '@mui/material/styles';
 import {
   Box,
-  Button,
   Card,
+  Chip,
   Stack,
-  Autocomplete,
+  Alert,
+  Button,
   Select,
+  Dialog,
   MenuItem,
   TextField,
   Typography,
-  CardContent,
   InputLabel,
+  CardContent,
   FormControl,
-  Chip,
-  Alert,
-  Dialog,
   DialogTitle,
+  Autocomplete,
   DialogContent,
   DialogActions,
-  IconButton,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
-import dayjs from 'dayjs';
+
+import { fCurrency } from 'src/utils/format-number';
 
 import { getClientes } from 'src/actions/clientes';
-import { listarNotasFiscaisPorCliente, cancelarNotaFiscal } from 'src/actions/notafiscal';
-import { fCurrency } from 'src/utils/format-number';
-import { Iconify } from 'src/components/iconify';
+import { cancelarNotaFiscal, listarNotasFiscaisPorCliente } from 'src/actions/notafiscal';
+
 import { toast } from 'src/components/snackbar';
+import { Iconify } from 'src/components/iconify';
+
+// Helper para formatar tipo de nota
+const formatTipoNota = (tipo) => {
+  const tipos = {
+    'nfse': 'NFS-e',
+    'nfc': 'NF-C',
+    'nfe': 'NF-e',
+    'cte': 'CT-e',
+    'mdfe': 'MDF-e',
+    'nfce': 'NFC-e',
+  };
+  return tipos[String(tipo || '').toLowerCase()] || tipo?.toUpperCase() || 'NFS-e';
+};
+
+// Helper para cor do tipo de nota
+const getTipoNotaColor = (tipo) => {
+  const tipos = {
+    'nfse': 'primary',
+    'nfc': 'secondary',
+    'nfe': 'info',
+    'cte': 'warning',
+    'mdfe': 'success',
+    'nfce': 'error',
+  };
+  return tipos[String(tipo || '').toLowerCase()] || 'default';
+};
 
 export default function DashboardFiscalPage() {
   const theme = useTheme();
 
   const [selectedCliente, setSelectedCliente] = useState('');
   const [status, setStatus] = useState('');
+  const [tipoNota, setTipoNota] = useState('');
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
@@ -70,11 +98,20 @@ export default function DashboardFiscalPage() {
     load();
   }, []);
 
-  const { totalValorNotas, totalNotas } = useMemo(() => {
-    const arr = Array.isArray(notas) ? notas : [];
+  const { totalValorNotas, totalNotas, notasFiltradas } = useMemo(() => {
+    let arr = Array.isArray(notas) ? notas : [];
+    
+    // Filtrar por tipo de nota se selecionado
+    if (tipoNota) {
+      arr = arr.filter((n) => {
+        const tipo = (n.tipoNota || 'nfse').toLowerCase();
+        return tipo === tipoNota.toLowerCase();
+      });
+    }
+    
     const total = arr.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
-    return { totalValorNotas: total, totalNotas: arr.length };
-  }, [notas]);
+    return { totalValorNotas: total, totalNotas: arr.length, notasFiltradas: arr };
+  }, [notas, tipoNota]);
 
   const fetchNotas = async () => {
     if (!selectedCliente) return;
@@ -87,7 +124,7 @@ export default function DashboardFiscalPage() {
         fim: endDate || undefined,
       });
 
-      const data = res.data;
+      const {data} = res;
       setNotas(data?.notasFiscais || []);
     } catch (e) {
       setNotas([]);
@@ -180,9 +217,9 @@ export default function DashboardFiscalPage() {
       </Box>
 
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-        {/* Linha 1: Cliente e Status */}
+        {/* Linha 1: Cliente, Status e Tipo */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid xs={12} md={6}>
+          <Grid xs={12} md={4}>
             <Autocomplete
               fullWidth
               options={clientes || []}
@@ -196,7 +233,7 @@ export default function DashboardFiscalPage() {
               )}
             />
           </Grid>
-          <Grid xs={12} md={6}>
+          <Grid xs={12} md={4}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select label="Status" value={status} onChange={(e) => { setStatus(e.target.value); }}>
@@ -208,7 +245,48 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
+          <Grid xs={12} md={4}>
+            <FormControl fullWidth>
+              <InputLabel>Tipo de Nota</InputLabel>
+              <Select label="Tipo de Nota" value={tipoNota} onChange={(e) => { setTipoNota(e.target.value); }}>
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="nfse">NFS-e (Serviço)</MenuItem>
+                <MenuItem value="nfe">NF-e (Produto)</MenuItem>
+                <MenuItem value="nfc">NF-C (Consumidor)</MenuItem>
+                <MenuItem value="nfce">NFC-e (Eletrônica)</MenuItem>
+                <MenuItem value="cte">CT-e (Transporte)</MenuItem>
+                <MenuItem value="mdfe">MDF-e (Manifesto)</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
         </Grid>
+        
+        {/* Filtros Ativos */}
+        {(status || tipoNota) && (
+          <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }} useFlexGap>
+            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+              Filtros ativos:
+            </Typography>
+            {status && (
+              <Chip
+                size="small"
+                label={`Status: ${status}`}
+                onDelete={() => setStatus('')}
+                color="primary"
+                variant="outlined"
+              />
+            )}
+            {tipoNota && (
+              <Chip
+                size="small"
+                label={`Tipo: ${formatTipoNota(tipoNota)}`}
+                onDelete={() => setTipoNota('')}
+                color="primary"
+                variant="outlined"
+              />
+            )}
+          </Stack>
+        )}
         
         {/* Linha 2: Navegação mensal e período */}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center" sx={{ mb: 2 }}>
@@ -251,11 +329,27 @@ export default function DashboardFiscalPage() {
           <Typography variant="subtitle2" color="text.secondary">
             {totalNotas} nota(s) • Total: {fCurrency(totalValorNotas)}
           </Typography>
-          {loading && (<Chip size="small" label="Carregando..." />)}
+          <Stack direction="row" spacing={1} alignItems="center">
+            {(status || tipoNota) && (
+              <Button
+                size="small"
+                variant="outlined"
+                color="inherit"
+                startIcon={<Iconify icon="solar:refresh-linear" />}
+                onClick={() => {
+                  setStatus('');
+                  setTipoNota('');
+                }}
+              >
+                Limpar Filtros
+              </Button>
+            )}
+            {loading && (<Chip size="small" label="Carregando..." />)}
+          </Stack>
         </Stack>
 
         <Stack spacing={1.5}>
-          {notas.map((n) => {
+          {notasFiltradas.map((n) => {
             const valor = n.valorServicos || n.valor || 0;
             const statusLabel = n.status || '-';
             const eNotasLabel = n.eNotasStatus || '-';
@@ -268,6 +362,8 @@ export default function DashboardFiscalPage() {
             const servicoDesc = Array.isArray(n.servicos) && n.servicos.length ? n.servicos[0]?.descricao : (n.descricao || n.discriminacao);
             const isSieg = n.origem === 'sieg';
             const isEnotas = n.origem === 'enotas' || !n.origem; // fallback para notas antigas
+            const tipoNotaLabel = formatTipoNota(n.tipoNota);
+            const tipoNotaColor = getTipoNotaColor(n.tipoNota);
             
             return (
               <Card key={n._id || n.id} variant="outlined" sx={{ p: 2 }}>
@@ -275,9 +371,16 @@ export default function DashboardFiscalPage() {
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                     <Chip 
                       size="small" 
+                      label={tipoNotaLabel}
+                      color={tipoNotaColor}
+                      variant="filled"
+                      sx={{ fontWeight: 600 }}
+                    />
+                    <Chip 
+                      size="small" 
                       label={isSieg ? 'SIEG' : 'eNotas'} 
                       color={isSieg ? 'secondary' : 'primary'} 
-                      variant="filled"
+                      variant="outlined"
                     />
                     <Typography variant="subtitle2">
                       #{isSieg ? (n.siegNumero || n.numeroNota || '-') : (n.numeroNota || n.numero || '-')}

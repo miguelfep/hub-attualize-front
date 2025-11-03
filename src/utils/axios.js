@@ -109,8 +109,12 @@ export const endpoints = {
     subscription: `${baseUrl}contratos/subscription`,
   },
   marketing: {
+    getLeads: `${baseUrl}marketing/leads`,
     create: `${baseUrl}marketing/criar/lead`,
-    update: `${baseUrl}marketing/atualizar/lead`,
+    update: (leadId) => `${baseUrl}marketing/atualizar/lead/${leadId}`,
+    progress: `${baseUrl}marketing/lead/progress`,
+    contacts: (leadId) => `${baseUrl}marketing/lead/${leadId}/contacts`,
+    contactStatus: (leadId) => `${baseUrl}marketing/lead/${leadId}/contact-status`,
     dashboard: `${baseUrl}marketing/dashboard-data`,
     financeiro: {
       pagar: `${baseUrl}marketing/dashboard-contas-a-pagar`,

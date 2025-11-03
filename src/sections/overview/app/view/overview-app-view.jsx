@@ -195,6 +195,7 @@ export function OverviewAppView() {
                   { id: 'status', label: 'Contato' },
                   { id: '' },
                 ]}
+                onUpdate={fetchDashboardData}
               />
             </Grid>
           </>

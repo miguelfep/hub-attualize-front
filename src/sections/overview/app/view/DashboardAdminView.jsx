@@ -366,6 +366,7 @@ export default function DashboardAdminView() {
               { id: 'status', label: 'Contato' },
               { id: '' },
             ]}
+            onUpdate={fetchData}
           />
         </Grid>
       </Grid>

@@ -4,7 +4,6 @@
 
 import Grid from '@mui/material/Unstable_Grid2';
 
-
 import { DashboardContent } from 'src/layouts/dashboard';
 import { SeoIllustration } from 'src/assets/illustrations';
 

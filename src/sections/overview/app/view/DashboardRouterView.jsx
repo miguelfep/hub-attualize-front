@@ -8,9 +8,9 @@ import { useRouter } from 'src/routes/hooks';
 import { getUser } from 'src/auth/context/jwt';
 
 import DashboardAdminView from './DashboardAdminView';
+import DashboardOperacional from './DashboardOperacional';
 import DashboardComercialView from './DashboardComercialView';
 import DashboardFinanceiroView from './DashboardFinanceiroView';
-import DashboardOperacional from './DashboardOperacional';
 
 export function DashboardRouterView() {
   const user = getUser();

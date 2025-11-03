@@ -138,14 +138,13 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
                   />
                 </TableCell>
 
-                <TableCell>Usuário</TableCell>
-                <TableCell>Email</TableCell>
-                <TableCell>Perfil</TableCell>
+                <TableCell width={220}>Usuário</TableCell>
+                <TableCell width={180}>Email</TableCell>
                 <TableCell>Empresas</TableCell>
-                <TableCell>Status</TableCell>
-                <TableCell>Último Acesso</TableCell>
-                <TableCell>Criado em</TableCell>
-                <TableCell align="center">Ações</TableCell>
+                <TableCell width={120}>Status</TableCell>
+                <TableCell width={140}>Último Acesso</TableCell>
+                <TableCell width={120}>Criado em</TableCell>
+                <TableCell align="center" width={100}>Ações</TableCell>
               </TableRow>
             </TableHead>
 
@@ -200,18 +199,9 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
                       </TableCell>
 
                       <TableCell>
-                        <Typography variant="body2">
+                        <Typography variant="body2" noWrap>
                           {usuario.email || '-'}
                         </Typography>
-                      </TableCell>
-
-                      <TableCell>
-                        <Chip
-                          label={usuario.role || 'Cliente'}
-                          color="info"
-                          size="small"
-                          variant="outlined"
-                        />
                       </TableCell>
 
                       <TableCell>
@@ -329,7 +319,7 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
 
               {emptyRows > 0 && (
                 <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={8} />
+                  <TableCell colSpan={7} />
                 </TableRow>
               )}
             </TableBody>

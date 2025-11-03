@@ -19,6 +19,8 @@ const ROOTS = {
 
 export const paths = {
   esteticaHome: '/contabilidade-para-clinicas-de-estetica',
+  psychologistHome: '/contabilidade-para-psicologos',
+  aberturaCnpjPsicologo: '/abertura-cnpj-psicologo',
   comingSoon: '/coming-soon',
   maintenance: '/maintenance',
   pricing: '/pricing',
@@ -179,6 +181,8 @@ export const paths = {
       edit: (id) => `${ROOTS.DASHBOARD}/societario/alteracao/${id}/edit`,
     },
     comercial: {
+      leads: `${ROOTS.DASHBOARD}/comercial/leads`,
+      leadDetails: (id) => `${ROOTS.DASHBOARD}/comercial/leads/${id}`,
       funil: `${ROOTS.DASHBOARD}/comercial/vendas`,
     },
     product: {
