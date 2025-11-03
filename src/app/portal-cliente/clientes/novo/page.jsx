@@ -1,7 +1,9 @@
 'use client';
 
+import { mutate } from 'swr';
 import { useState } from 'react';
 import { useTheme } from '@emotion/react';
+import { useRouter } from 'next/navigation';
 import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 
 import Grid from '@mui/material/Unstable_Grid2';
@@ -22,6 +24,8 @@ import {
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
+
+import { endpoints } from 'src/utils/axios';
 
 import { buscarCep } from 'src/actions/cep';
 import { portalCreateCliente } from 'src/actions/portal';
@@ -92,6 +96,7 @@ const SectionHeader = ({ icon, title }) => (
 
 export default function PortalClienteNovoPage() {
   const theme = useTheme();
+  const router = useRouter();
   const { user } = useAuthContext();
   const userId = user?.id || user?._id || user?.userId;
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
@@ -99,6 +104,7 @@ export default function PortalClienteNovoPage() {
   const { podeGerenciarClientes } = useSettings();
   const [fetchingCep, setFetchingCep] = useState(false);
 
+  const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
     clienteProprietarioId,
@@ -121,6 +127,31 @@ export default function PortalClienteNovoPage() {
     observacao: '',
   });
 
+  const validateForm = () => {
+    const newErrors = {};
+    const docDigits = onlyDigits(formData.cpfCnpj);
+
+    if (!formData.nome.trim()) newErrors.nome = 'Nome / Nome Fantasia é obrigatório';
+    if (formData.tipoPessoa === 'juridica' && !formData.razaoSocial.trim()) {
+      newErrors.razaoSocial = 'Razão Social é obrigatória para Pessoa Jurídica';
+    }
+    if (!docDigits) {
+      newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório';
+    } else if (formData.tipoPessoa === 'fisica' && docDigits.length !== 11) {
+      newErrors.cpfCnpj = 'CPF inválido, deve conter 11 dígitos';
+    } else if (formData.tipoPessoa === 'juridica' && docDigits.length !== 14) {
+      newErrors.cpfCnpj = 'CNPJ inválido, deve conter 14 dígitos';
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Formato de email inválido';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   if (loadingEmpresas || !clienteProprietarioId) {
     return <PortalClientesPageSkeleton />;
   }
@@ -138,6 +169,12 @@ export default function PortalClienteNovoPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      toast.warning('Por favor, preencha os dados corretamente.');
+      return;
+    }
+
     try {
       setSaving(true);
       await portalCreateCliente({
@@ -149,9 +186,18 @@ export default function PortalClienteNovoPage() {
         endereco: { ...formData.endereco, cep: onlyDigits(formData.endereco.cep) },
       });
       toast.success('Cliente criado com sucesso');
-      window.location.href = '../clientes';
+
+      const baseUrlLista = endpoints.portal.clientes.list(clienteProprietarioId);
+      mutate(
+        (key) => typeof key === 'string' && key.startsWith(baseUrlLista),
+        undefined,
+        { revalidate: true }
+      );
+
+      router.push('../clientes');
     } catch (error) {
-      toast.error(error?.message || 'Erro ao criar cliente');
+      const errorMessage = error.response?.data?.message || 'Erro ao criar cliente. Tente novamente.';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -209,7 +255,7 @@ export default function PortalClienteNovoPage() {
                 </Typography>
               </Box>
               <Stack direction="row" spacing={1.5} alignItems="center">
-                <Button href="../clientes" variant="outlined" color="inherit">
+                <Button href="/portal-cliente/clientes" variant="outlined" color="inherit">
                   Cancelar
                 </Button>
                 <LoadingButton type="submit" variant="contained" loading={saving}>
@@ -239,6 +285,8 @@ export default function PortalClienteNovoPage() {
                     label="Nome / Nome Fantasia"
                     value={formData.nome}
                     onChange={(e) => setFormData((f) => ({ ...f, nome: e.target.value }))}
+                    error={!!errors.nome}
+                    helperText={errors.nome}
                   />
                 </Grid>
                 {formData.tipoPessoa === 'juridica' && (
@@ -248,6 +296,8 @@ export default function PortalClienteNovoPage() {
                       label="Razão Social"
                       value={formData.razaoSocial}
                       onChange={(e) => setFormData((f) => ({ ...f, razaoSocial: e.target.value }))}
+                      error={!!errors.razaoSocial}
+                      helperText={errors.razaoSocial}
                     />
                   </Grid>
                 )}
@@ -259,6 +309,8 @@ export default function PortalClienteNovoPage() {
                     onChange={(e) =>
                       setFormData((f) => ({ ...f, cpfCnpj: formatCPFOrCNPJ(e.target.value) }))
                     }
+                    error={!!errors.cpfCnpj}
+                    helperText={errors.cpfCnpj}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -267,6 +319,8 @@ export default function PortalClienteNovoPage() {
                     label="Email"
                     value={formData.email}
                     onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                    error={!!errors.email}
+                    helperText={errors.email}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -312,7 +366,6 @@ export default function PortalClienteNovoPage() {
               <Grid container spacing={2}>
                 <Grid item xs={12} sm={4}>
                   <TextField
-                    required
                     fullWidth
                     label="CEP"
                     value={formData.endereco.cep}
@@ -353,7 +406,7 @@ export default function PortalClienteNovoPage() {
                 </Grid>
                 <Grid item xs={12} sm={3}>
                   <TextField
-                    required
+                    // required
                     disabled={fetchingCep}
                     fullWidth
                     label="Número"

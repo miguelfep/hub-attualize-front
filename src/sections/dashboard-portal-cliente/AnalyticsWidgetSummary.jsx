@@ -46,7 +46,7 @@ export function AnalyticsWidgetSummary({
                 fontWeight: 'fontWeightRegular',
               }}
             >
-              {`(${count})`}
+              {`(${count} Notas Emitidas)`}
             </Box>
           )}{' '}
         </Typography>

@@ -117,7 +117,7 @@ export default function PortalServicosPage() {
   const { podeGerenciarServicos, limiteServicos } = useSettings();
   const router = useRouter();
 
-  const table = useTable({ defaultOrderBy: 'nome' });
+  const table = useTable({ defaultOrderBy: 'nome', defaultRowsPerPage: 25 });
 
   const [filters, setFilters] = useState({ status: 'true', categoria: '', search: '' });
   const { data: servicos, isLoading, mutate } = usePortalServicos(clienteProprietarioId, filters);

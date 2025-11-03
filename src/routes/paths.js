@@ -263,6 +263,9 @@ export const paths = {
       contas: `${ROOTS.CLIENTE}/financeiro/contas`,
       relatorios: `${ROOTS.CLIENTE}/financeiro/relatorios`,
     },
+    faturamentos: {
+      root: `${ROOTS.CLIENTE}/faturamentos`,
+    },
     societario: {
       root: `${ROOTS.CLIENTE}/societario`,
       documentos: `${ROOTS.CLIENTE}/societario/documentos`,
