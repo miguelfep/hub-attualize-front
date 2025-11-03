@@ -1,5 +1,6 @@
 'use client';
 
+import { mutate } from 'swr';
 import { useTheme } from '@emotion/react';
 import { useState, useEffect } from 'react';
 import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
@@ -24,6 +25,8 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
+
+import { endpoints } from 'src/utils/axios';
 
 import { buscarCep } from 'src/actions/cep';
 import { portalGetCliente, portalUpdateCliente } from 'src/actions/portal';
@@ -107,8 +110,9 @@ export default function PortalClienteEditPage({ params }) {
   const [formData, setFormData] = useState(null);
   const [loadedEmpresaId, setLoadedEmpresaId] = useState(null);
   const router = useRouter();
+  const [errors, setErrors] = useState({});
 
-  useEffect(() => {
+useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
@@ -142,12 +146,11 @@ export default function PortalClienteEditPage({ params }) {
         setLoading(false);
       }
     };
-    if (clienteProprietarioId) {
+    if (clienteProprietarioId && id) {
       load();
     }
   }, [clienteProprietarioId, id, router]);
-
-  // Se a empresa ativa mudar após o carregamento do cliente, redireciona para a lista
+  
   useEffect(() => {
     if (loadedEmpresaId && clienteProprietarioId && loadedEmpresaId !== clienteProprietarioId) {
       router.replace('../../clientes');
@@ -171,6 +174,12 @@ export default function PortalClienteEditPage({ params }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      toast.warning('Por favor, preencha os dados corretamente.');
+      return;
+    }
+
     try {
       setSaving(true);
       await portalUpdateCliente(clienteProprietarioId, id, {
@@ -181,9 +190,16 @@ export default function PortalClienteEditPage({ params }) {
         endereco: { ...formData.endereco, cep: onlyDigits(formData.endereco.cep) },
       });
       toast.success('Cliente atualizado com sucesso');
-      window.location.href = '../../clientes';
+      const baseUrlLista = endpoints.portal.clientes.list(clienteProprietarioId);
+      mutate(
+      (key) => typeof key === 'string' && key.startsWith(baseUrlLista),
+      undefined,
+      { revalidate: true } 
+    );
+      router.push('../../clientes');
     } catch (error) {
-      toast.error('Erro ao atualizar cliente');
+    const errorMessage = error.response?.data?.message || 'Erro ao atualizar cliente. Tente novamente.';
+    toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -214,6 +230,31 @@ export default function PortalClienteEditPage({ params }) {
     } finally {
       setFetchingCep(false);
     }
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const docDigits = onlyDigits(formData.cpfCnpj);
+
+    if (!formData.nome.trim()) newErrors.nome = 'Nome / Nome Fantasia é obrigatório';
+    if (formData.tipoPessoa === 'juridica' && !formData.razaoSocial.trim()) {
+      newErrors.razaoSocial = 'Razão Social é obrigatória para Pessoa Jurídica';
+    }
+    if (!docDigits) {
+      newErrors.cpfCnpj = 'CPF/CNPJ é obrigatório';
+    } else if (formData.tipoPessoa === 'fisica' && docDigits.length !== 11) {
+      newErrors.cpfCnpj = 'CPF inválido, deve conter 11 dígitos';
+    } else if (formData.tipoPessoa === 'juridica' && docDigits.length !== 14) {
+      newErrors.cpfCnpj = 'CNPJ inválido, deve conter 14 dígitos';
+    }
+    if (!formData.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Formato de email inválido';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   return (
@@ -275,6 +316,8 @@ export default function PortalClienteEditPage({ params }) {
                     label="Nome / Nome Fantasia"
                     value={formData.nome}
                     onChange={(e) => setFormData((f) => ({ ...f, nome: e.target.value }))}
+                    error={!!errors.nome}
+                    helperText={errors.nome}
                   />
                 </Grid>
                 {formData.tipoPessoa === 'juridica' && (
@@ -284,6 +327,8 @@ export default function PortalClienteEditPage({ params }) {
                       label="Razão Social"
                       value={formData.razaoSocial}
                       onChange={(e) => setFormData((f) => ({ ...f, razaoSocial: e.target.value }))}
+                      error={!!errors.razaoSocial}
+                      helperText={errors.razaoSocial}
                     />
                   </Grid>
                 )}
@@ -295,6 +340,8 @@ export default function PortalClienteEditPage({ params }) {
                     onChange={(e) =>
                       setFormData((f) => ({ ...f, cpfCnpj: formatCPFOrCNPJ(e.target.value) }))
                     }
+                    error={!!errors.cpfCnpj}
+                    helperText={errors.cpfCnpj}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -303,6 +350,8 @@ export default function PortalClienteEditPage({ params }) {
                     label="Email"
                     value={formData.email}
                     onChange={(e) => setFormData((f) => ({ ...f, email: e.target.value }))}
+                    error={!!errors.email}
+                    helperText={errors.email}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>

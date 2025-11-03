@@ -6,7 +6,7 @@ import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Box, Card, Stack, Button, Dialog, Divider, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions,  } from '@mui/material';
+import { Box, Card, Stack, Button, Dialog, Divider, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions, CircularProgress,  } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -24,6 +24,7 @@ import { Iconify } from 'src/components/iconify';
 import { NovoOrcamentoPageSkeleton } from 'src/components/skeleton/PortalNovaVendaPageSkeleton';
 
 import { useAuthContext } from 'src/auth/hooks';
+
 
 export default function NovoOrcamentoPage() {
   const theme = useTheme();
@@ -50,6 +51,52 @@ export default function NovoOrcamentoPage() {
   const [openNovoServico, setOpenNovoServico] = React.useState(false);
   const onlyDigits = (v) => (v || '').replace(/\D/g, '');
   const formatBRLInput = (v) => { const digits = onlyDigits(v); const num = Number(digits) / 100; return { text: fCurrency(num), value: num }; };
+
+  const [errors, setErrors] = React.useState({});
+  const [fetchingCep, setFetchingCep] = React.useState(false);
+
+  const validateForm = () => {
+    const newErrors = {};
+    const docDigits = onlyDigits(quickCli.doc);
+
+    if (!quickCli.nome.trim()) newErrors.nome = 'Nome é obrigatório';
+    if (!quickCli.email.trim()) {
+      newErrors.email = 'Email é obrigatório';
+    } else if (!/\S+@\S+\.\S+/.test(quickCli.email)) {
+      newErrors.email = 'Email inválido';
+    }
+    if (docDigits.length !== 11 && docDigits.length !== 14) {
+      newErrors.doc = 'CPF/CNPJ inválido';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateItens = () => {
+    const hasError = itens.some(item => {
+      if (!item.servicoId) {
+        toast.error('Existe um item na lista sem um serviço selecionado.');
+        return true;
+      }
+
+      if (!item.quantidade || item.quantidade <= 0) {
+        const nomeServico = item.descricao || item.servicoNome || 'um dos serviços';
+        toast.error(`A quantidade de "${nomeServico}" deve ser maior que zero.`);
+        return true;
+      }
+
+      if (item.valorUnitario === null || item.valorUnitario === undefined || item.valorUnitario < 0) {
+        const nomeServico = item.descricao || item.servicoNome || 'um dos serviços';
+        toast.error(`O valor de "${nomeServico}" não pode ser negativo.`);
+        return true;
+      }
+
+      return false;
+    });
+
+    return !hasError;
+  };
 
   // Máscaras CPF/CNPJ, Telefone e CEP
   const formatCEP = (v) => {
@@ -84,18 +131,27 @@ export default function NovoOrcamentoPage() {
     return d.length > 11 ? formatCNPJ(d) : formatCPF(d);
   };
 
-  const [quickCli, setQuickCli] = React.useState({
+  const initialState = {
     nome: '',
     doc: '',
     email: '',
     telefone: '',
     endereco: { cep: '', rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '' },
-  });
+  }
+
+  const [quickCli, setQuickCli] = React.useState(initialState);
+
+  const handleCloseModal = () => {
+    setOpenNovoCliente(false);
+    setQuickCli(initialState);
+    setErrors({});
+  }
 
   const handleQuickCepBlur = async () => {
     const raw = onlyDigits(quickCli.endereco.cep);
     if (raw.length !== 8) return;
     try {
+      setFetchingCep(true);
       const data = await buscarCep(raw);
       setQuickCli((q) => ({
         ...q,
@@ -109,6 +165,8 @@ export default function NovoOrcamentoPage() {
       }));
     } catch (e) {
       toast.error('CEP não encontrado');
+    } finally {
+      setFetchingCep(false);
     }
   };
 
@@ -133,8 +191,10 @@ export default function NovoOrcamentoPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.clienteDoClienteId) { toast.error('Selecione um cliente'); return; }
-    if (!itens.length) { toast.error('Adicione ao menos um item'); return; }
+    if (!form.clienteDoClienteId) { toast.error('É obritatório selecionar um cliente'); return; }
+    if (!form.dataValidade) { toast.error('É obrigatório selecionar uma data de validade'); return; }
+    if (!itens.length) { toast.error('Adicione pelo menos um item de serviço ao orçamento.'); return; }
+    if (!validateItens()) return;
     try {
       setSaving(true);
       const created = await portalCreateOrcamento({
@@ -145,7 +205,7 @@ export default function NovoOrcamentoPage() {
         observacoes: form.observacoes,
         condicoesPagamento: form.condicoesPagamento,
       });
-      toast.success('Orçamento criado');
+      toast.success('Orçamento criado com sucesso!');
       const newId = created?._id || created?.data?._id;
       if (newId) {
         router.replace(`${paths.cliente.orcamentos.root}/${newId}`);
@@ -153,7 +213,8 @@ export default function NovoOrcamentoPage() {
         router.replace(paths.cliente.orcamentos.root);
       }
     } catch (err) {
-      toast.error('Erro ao criar orçamento');
+      const errorMessage = err.response?.data?.message || 'Erro ao criar orçamento';
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -186,7 +247,7 @@ return (
               <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
                 Nova Venda
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+              <Typography variant="body2" sx={{ opacity: 0. }}>
                 Preencha os dados da venda e adicione o item de serviço.
               </Typography>
             </Stack>
@@ -334,27 +395,27 @@ return (
         </Card>
       </form>
 
-      <Dialog open={openNovoCliente} onClose={() => setOpenNovoCliente(false)} fullWidth maxWidth="sm">
+      <Dialog open={openNovoCliente} onClose={() => setOpenNovoCliente(false)} fullWidth maxWidth="md">
         <DialogTitle>Novo Cliente</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid xs={12}>
-              <TextField fullWidth label="Nome" value={quickCli.nome} onChange={(e) => setQuickCli((q) => ({ ...q, nome: e.target.value }))} />
+              <TextField fullWidth label="Nome" value={quickCli.nome} onChange={(e) => setQuickCli((q) => ({ ...q, nome: e.target.value }))} error={!!errors.nome} helperText={errors.nome} />
             </Grid>
             <Grid xs={12}>
-              <TextField fullWidth label="CPF/CNPJ" value={quickCli.doc} onChange={(e) => setQuickCli((q) => ({ ...q, doc: formatCPFOrCNPJ(e.target.value) }))} />
+              <TextField fullWidth label="CPF/CNPJ" value={quickCli.doc} onChange={(e) => setQuickCli((q) => ({ ...q, doc: formatCPFOrCNPJ(e.target.value) }))} error={!!errors.doc} helperText={errors.doc} />
             </Grid>
             <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Email" value={quickCli.email} onChange={(e) => setQuickCli((q) => ({ ...q, email: e.target.value }))} />
+              <TextField fullWidth label="Email" value={quickCli.email} onChange={(e) => setQuickCli((q) => ({ ...q, email: e.target.value }))} error={!!errors.email} helperText={errors.email} />
             </Grid>
             <Grid xs={12} sm={6}>
               <TextField fullWidth label="Telefone" value={quickCli.telefone} onChange={(e) => setQuickCli((q) => ({ ...q, telefone: formatPhone(e.target.value) }))} />
             </Grid>
             <Grid xs={12} sm={4}>
-              <TextField fullWidth label="CEP" value={quickCli.endereco.cep} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cep: formatCEP(e.target.value) } }))} onBlur={handleQuickCepBlur} />
+              <TextField fullWidth label="CEP" value={quickCli.endereco.cep} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cep: formatCEP(e.target.value) } }))} onBlur={handleQuickCepBlur} InputProps={{ endAdornment: fetchingCep ? <CircularProgress size={20} /> : null }}/>
             </Grid>
             <Grid xs={12} sm={8}>
-              <TextField fullWidth label="Rua" value={quickCli.endereco.rua} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, rua: e.target.value } }))} />
+              <TextField fullWidth disabled={fetchingCep}label="Rua" value={quickCli.endereco.rua} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, rua: e.target.value } }))} />
             </Grid>
             <Grid xs={12} sm={3}>
               <TextField fullWidth label="Número" value={quickCli.endereco.numero} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, numero: e.target.value } }))} />
@@ -363,19 +424,23 @@ return (
               <TextField fullWidth label="Complemento" value={quickCli.endereco.complemento} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, complemento: e.target.value } }))} />
             </Grid>
             <Grid xs={12} sm={4}>
-              <TextField fullWidth label="Bairro" value={quickCli.endereco.bairro} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, bairro: e.target.value } }))} />
+              <TextField fullWidth disabled={fetchingCep} label="Bairro" value={quickCli.endereco.bairro} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, bairro: e.target.value } }))} />
             </Grid>
             <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Cidade" value={quickCli.endereco.cidade} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cidade: e.target.value } }))} />
+              <TextField fullWidth disabled={fetchingCep} label="Cidade" value={quickCli.endereco.cidade} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cidade: e.target.value } }))} />
             </Grid>
             <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Estado" value={quickCli.endereco.estado} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, estado: e.target.value } }))} />
+              <TextField fullWidth disabled={fetchingCep} label="Estado" value={quickCli.endereco.estado} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, estado: e.target.value } }))} />
             </Grid>
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpenNovoCliente(false)}>Cancelar</Button>
+          <Button onClick={handleCloseModal}>Cancelar</Button>
           <Button onClick={async () => {
+            if (!validateForm()) {
+              toast.warning('Preencha todos os campos');
+              return;
+            }
             try {
               const docDigits = onlyDigits(quickCli.doc);
               const payload = {
@@ -391,8 +456,8 @@ return (
                 },
               };
               const res = await portalCreateCliente(payload);
-              toast.success('Cliente criado');
-              setOpenNovoCliente(false);
+              toast.success('Cliente criado com sucesso!');
+
               const newId = res?._id || res?.data?._id;
               if (newId) {
                 // otimista: adiciona novo cliente na lista
@@ -400,13 +465,13 @@ return (
                 await mutateClientes((prev) => (Array.isArray(prev) ? [...prev, optimistic] : [optimistic]), false);
                 setForm((f) => ({ ...f, clienteDoClienteId: newId }));
                 // revalida em background
-                mutateClientes();
-              } else {
-                // fallback: revalida lista
-                mutateClientes();
               }
+              mutateClientes();
+              setQuickCli(initialState);
+              setOpenNovoCliente(false);
             } catch (err) {
-              toast.error('Erro ao criar cliente');
+              const errorMessage = err.response?.data?.message || 'Erro ao criar cliente. Tente novamente.';
+              toast.error(errorMessage);
             }
           }} variant="contained">Salvar</Button>
         </DialogActions>
@@ -417,7 +482,7 @@ return (
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid xs={12}>
-              <TextField fullWidth label="Nome" id="qs-nome" />
+              <TextField fullWidth label="Nome" id="qs-nome"/>
             </Grid>
             <Grid xs={12}>
               <TextField fullWidth label="Descrição" id="qs-descricao" />

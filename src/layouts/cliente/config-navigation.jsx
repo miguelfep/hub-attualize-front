@@ -45,6 +45,11 @@ export function usePortalNavData() {
       children: vendasChildren,
     },
     {
+      title: 'Meu Faturamento',
+      path: paths.cliente.faturamentos.root,
+      icon: <Iconify icon="solar:hand-money-linear" />,
+    },
+    {
       title: 'Meu Plano',
       path: paths.cliente.financeiro.root,
       icon: <Iconify icon="solar:money-bag-bold" />,

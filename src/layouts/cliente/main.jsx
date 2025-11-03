@@ -20,6 +20,8 @@ import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { toTitleCase } from 'src/utils/helper';
+
 import { Logo } from 'src/components/logo';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -175,7 +177,7 @@ export function ClienteLayout({ children }) {
                   whiteSpace: 'nowrap'
                 }}
               >
-                Bem-vindo, {user?.name}
+                Bem-vindo, {toTitleCase(user?.name)}
               </Typography>
               
               {/* Avatar do usuário */}
@@ -242,7 +244,7 @@ export function ClienteLayout({ children }) {
               Bem-vindo
             </Typography>
             <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
-              {user?.name}
+              {toTitleCase(user?.name)}
             </Typography>
           </Box>
           

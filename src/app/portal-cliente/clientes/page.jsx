@@ -121,7 +121,7 @@ export default function PortalClientesPage() {
   const { podeGerenciarClientes, limiteClientes } = useSettings();
   const router = useRouter();
 
-  const table = useTable({ defaultOrderBy: 'nome' });
+  const table = useTable({ defaultOrderBy: 'nome', defaultRowsPerPage: 25});
 
   const [filters, setFilters] = useState({ search: '', status: '', tipoPessoa: '' });
   const { data: clientes, isLoading, mutate } = usePortalClientes(clienteProprietarioId, filters);

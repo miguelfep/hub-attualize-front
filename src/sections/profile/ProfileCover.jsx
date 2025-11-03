@@ -1,10 +1,13 @@
+import { formatDate } from 'date-fns';
+
 import { Box, Card, Chip, Stack, Badge, Avatar, Divider, Typography, CardContent } from '@mui/material';
 
-import { fDate } from 'src/utils/format-time'; // Supondo que você tenha um utilitário para formatar datas
+import { toTitleCase } from 'src/utils/helper';
 
 import { Iconify } from 'src/components/iconify';
 
 export function ProfileCover({ user }) {
+
   return (
     <Card sx={{ height: '100%' }}>
       <CardContent>
@@ -39,7 +42,7 @@ export function ProfileCover({ user }) {
 
           <Stack alignItems="center" spacing={0.5}>
             <Typography variant="h5" sx={{ fontWeight: 700 }}>
-              {user?.name}
+              {toTitleCase(user?.name)}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {user?.email}
@@ -48,7 +51,7 @@ export function ProfileCover({ user }) {
           
           <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
              <Iconify icon="solar:calendar-bold-duotone" width={16} />
-             <Typography variant="caption">Membro desde {fDate(user?.createdAt, 'dd MMM yyyy')}</Typography>
+             <Typography variant="caption">Membro desde {formatDate(user.createdAt, 'dd/MM/yyyy')}</Typography>
           </Stack>
 
           <Divider sx={{ width: '100%', borderStyle: 'dashed', my: 2 }} />

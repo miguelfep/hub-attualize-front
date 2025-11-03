@@ -20,31 +20,14 @@ const getGreeting = () => {
   return { text: 'Boa noite 👋', icon: 'solar:moon-bold-duotone' };
 };
 
-export function AnalyticsWelcome({ user, vencidasCount = 0, aExpirarCount = 0, sx, ...other }) {
+export function AnalyticsWelcome({ user, sx, ...other }) {
   const theme = useTheme();
   const greeting = getGreeting();
 
-  let message;
-  let ctaText;
-  let ctaLink;
-  let ctaIcon;
-
-  if (vencidasCount > 0) {
-    message = `Você possui ${vencidasCount} licença(s) vencida(s). Regularize para evitar problemas.`;
-    ctaText = 'Verificar Pendências';
-    ctaLink = paths.cliente.licencas;
-    ctaIcon = 'solar:danger-triangle-bold-duotone';
-  } else if (aExpirarCount > 0) {
-    message = `Você possui ${aExpirarCount} licença(s) próximas do vencimento.`;
-    ctaText = 'Verificar Licenças';
-    ctaLink = paths.cliente.licencas;
-    ctaIcon = 'solar:danger-triangle-bold-duotone';
-  } else {
-    message = 'Tudo em dia para começar a trabalhar! Que tal criar uma nova venda?';
-    ctaText = 'Nova Venda';
-    ctaLink = paths.cliente.orcamentos.novo;
-    ctaIcon = 'solar:add-circle-bold-duotone';
-  }
+  const message = 'Tudo em dia para começar a trabalhar! Que tal criar uma nova venda?';
+  const ctaText = 'Nova Venda';
+  const ctaLink = paths.cliente.orcamentos.novo;
+  const ctaIcon = 'solar:add-circle-bold-duotone';
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -95,7 +78,7 @@ export function AnalyticsWelcome({ user, vencidasCount = 0, aExpirarCount = 0, s
 
         <m.div variants={itemVariants}>
           <Typography variant="h5" sx={{ opacity: 0.9 }}>
-            {user?.name || 'Cliente'}!
+            {toTitleCase(user?.name) || 'Cliente'}!
           </Typography>
         </m.div>
 

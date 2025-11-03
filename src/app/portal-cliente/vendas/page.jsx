@@ -68,7 +68,7 @@ function ServiceOrderMobileCard({ serviceOrder, getStatusColor }) {
           </Box>
           <Chip
             size="small"
-            label={serviceOrder.status}
+            label={toTitleCase(serviceOrder.status)}
             color={getStatusColor(serviceOrder.status)}
             variant="soft"
           />
@@ -145,7 +145,7 @@ export default function PortalOrcamentosPage() {
   const { data: orcamentos, isLoading } = usePortalOrcamentos(clienteProprietarioId, filters);
   const { data: stats } = usePortalOrcamentosStats(clienteProprietarioId);
 
-  const table = useTable({ defaultOrderBy: 'numero' });
+  const table = useTable({ defaultOrderBy: 'numero', defaultRowsPerPage: 25 });
 
   const [statusEdits, setStatusEdits] = React.useState({});
   const [savingMap, setSavingMap] = React.useState({});
@@ -293,7 +293,6 @@ export default function PortalOrcamentosPage() {
                   fullWidth
                   select
                   label="Status"
-                  size='small'
                   value={filters.status}
                   onChange={(e) => setFilters((f) => ({ ...f, status: e.target.value }))}
                 >
