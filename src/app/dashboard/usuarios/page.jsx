@@ -38,7 +38,8 @@ export default function DashboardUsuariosView() {
     try {
       setLoading(true);
       const response = await getUsersCliente();
-      
+
+      console.log("response", response.data.data);
       if (response.data.success) {
         setUsuarios(response.data.data || []);
       }

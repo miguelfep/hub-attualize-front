@@ -315,11 +315,18 @@ export function UsuarioModal({ open, onClose, onSave, usuario }) {
                       multiple
                       label="Empresas"
                       disabled={loadingEmpresas}
+                      MenuProps={{
+                        PaperProps: {
+                          style: {
+                            maxHeight: 300,
+                          },
+                        },
+                      }}
                       renderValue={(selected) => {
                         if (selected.length === 0) return '';
                         if (selected.length === 1) {
                           const empresa = empresasDisponiveis.find(e => e._id === selected[0]);
-                          return empresa ? empresa.nome : selected[0];
+                          return empresa ? empresa.razaoSocial || empresa.nome : selected[0];
                         }
                         return `${selected.length} empresas selecionadas`;
                       }}
@@ -334,13 +341,15 @@ export function UsuarioModal({ open, onClose, onSave, usuario }) {
                       ) : (
                         empresasDisponiveis.map((empresa) => (
                           <MenuItem key={empresa._id} value={empresa._id}>
-                            <Stack spacing={0.5}>
-                              <Typography variant="body2" sx={{ fontWeight: 'medium' }}>
-                                {empresa.nome}
+                            <Stack spacing={0.5} sx={{ width: '100%' }}>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                {empresa.razaoSocial || empresa.nome}
                               </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                {empresa.cnpj} • Código: {empresa.codigo}
-                              </Typography>
+                              {empresa.cnpj && (
+                                <Typography variant="caption" color="text.secondary">
+                                  CNPJ: {empresa.cnpj}
+                                </Typography>
+                              )}
                             </Stack>
                           </MenuItem>
                         ))
@@ -360,13 +369,13 @@ export function UsuarioModal({ open, onClose, onSave, usuario }) {
                   <Typography variant="body2" color="text.secondary">
                     Empresas selecionadas:
                   </Typography>
-                  <Stack direction="row" spacing={1} flexWrap="wrap">
+                  <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                     {watch('empresasId').map((empresaId) => {
                       const empresa = empresasDisponiveis.find(e => e._id === empresaId);
                       return empresa ? (
                         <Chip
                           key={empresaId}
-                          label={empresa.nome}
+                          label={empresa.razaoSocial || empresa.nome}
                           size="small"
                           color="primary"
                           variant="outlined"

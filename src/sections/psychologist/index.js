@@ -1,0 +1,11 @@
+export * from './view';
+export { PsychologistCta } from './psychologist-cta';
+export { PsychologistFaq } from './psychologist-faq';
+export { PsychologistWhy } from './psychologist-why';
+export { PsychologistHero } from './psychologist-hero';
+export { PsychologistOffer } from './psychologist-offer';
+export { PsychologistSteps } from './psychologist-steps';
+export { PsychologistPricing } from './psychologist-pricing';
+export { PsychologistServices } from './psychologist-services';
+export { PsychologistTestimonials } from './psychologist-testimonials';
+export { PsychologistCoverage } from './psychologist-coverage';

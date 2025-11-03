@@ -18,10 +18,14 @@ export default function DashboardComercialView() {
   const user = getUser();
   const [leads, setLeads] = useState([]);
 
-  useEffect(() => {
+  const carregarLeads = () => {
     buscarDadosDashboard().then((res) => {
       setLeads(res.leads || []);
     });
+  };
+
+  useEffect(() => {
+    carregarLeads();
   }, []);
 
   return (
@@ -46,6 +50,7 @@ export default function DashboardComercialView() {
               { id: 'status', label: 'Contato' },
               { id: '' },
             ]}
+            onUpdate={carregarLeads}
           />
         </Grid>
       </Grid>

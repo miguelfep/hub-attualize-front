@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -10,18 +10,20 @@ import {
   Chip,
   Stack,
   Button,
+  Switch,
   MenuItem,
   TextField,
   Typography,
-  Switch,
   FormControlLabel,
 } from '@mui/material';
 
 import { useRouter } from 'src/routes/hooks';
+
 import { listarCertificados, getCorStatusCertificado, getIconeStatusCertificado } from 'src/actions/certificados';
-import { useAuthContext } from 'src/auth/hooks';
 
 import { Iconify } from 'src/components/iconify';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 export default function CertificadosPage() {
   const theme = useTheme();

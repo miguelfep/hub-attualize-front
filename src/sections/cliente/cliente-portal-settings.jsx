@@ -39,13 +39,13 @@ import {
   uploadCertificado,
   getCertificadoAtivo,
   downloadCertificado,
+  getSenhaCertificado,
   desativarCertificado,
   getCertificadosCliente,
   formatarDataCertificado,
   getCorStatusCertificado,
   validarArquivoCertificado,
-  getIconeStatusCertificado,
-    getSenhaCertificado,
+    getIconeStatusCertificado,
 } from 'src/actions/certificados';
 
 import { toast } from 'src/components/snackbar';
@@ -81,6 +81,7 @@ export function ClientePortalSettings({ clienteId }) {
       empresaId: settings?.eNotasConfig?.empresaId ?? '',
       ambiente: settings?.eNotasConfig?.ambiente ?? 'homologacao',
       status: settings?.eNotasConfig?.status ?? 'inativa',
+      emiteNFSeNacional: Boolean(settings?.eNotasConfig?.emiteNFSeNacional),
       configuracaoNFSe: {
         codigoMunicipio: settings?.eNotasConfig?.configuracaoNFSe?.codigoMunicipio ?? '',
         codigoServico: settings?.eNotasConfig?.configuracaoNFSe?.codigoServico ?? '',
@@ -111,9 +112,28 @@ export function ClientePortalSettings({ clienteId }) {
   }, [settings, funcionalidades, configuracoes, eNotas]);
 
   const handleToggle = (key) => (event) => {
+    setLocalState((prev) => {
+      const newState = {
+        ...prev,
+        funcionalidades: { ...prev.funcionalidades, [key]: event.target.checked },
+      };
+      
+      // Se desmarcar emissaoNFSe, também desmarcar emiteNFSeNacional em eNotas
+      if (key === 'emissaoNFSe' && !event.target.checked) {
+        newState.eNotas = {
+          ...prev.eNotas,
+          emiteNFSeNacional: false,
+        };
+      }
+      
+      return newState;
+    });
+  };
+
+  const handleEnotasToggle = (key) => (event) => {
     setLocalState((prev) => ({
       ...prev,
-      funcionalidades: { ...prev.funcionalidades, [key]: event.target.checked },
+      eNotas: { ...prev.eNotas, [key]: event.target.checked },
     }));
   };
 
@@ -154,6 +174,7 @@ export function ClientePortalSettings({ clienteId }) {
         empresaId: localState?.eNotas?.empresaId ?? '',
         ambiente: localState?.eNotas?.ambiente ?? 'homologacao',
         status: localState?.eNotas?.status ?? 'inativa',
+        emiteNFSeNacional: Boolean(localState?.eNotas?.emiteNFSeNacional),
         configuracaoNFSe: {
           codigoMunicipio: nfseCfg?.codigoMunicipio ?? '',
           codigoServico: nfseCfg?.codigoServico ?? '',
@@ -419,6 +440,24 @@ export function ClientePortalSettings({ clienteId }) {
             control={<Switch checked={localState.funcionalidades.emissaoNFSe} onChange={handleToggle('emissaoNFSe')} />}
             label="Emissão de NFSe"
           />
+          {localState.funcionalidades.emissaoNFSe && (
+            <FormControlLabel
+              control={
+                <Switch 
+                  checked={localState.eNotas.emiteNFSeNacional || false} 
+                  onChange={handleEnotasToggle('emiteNFSeNacional')} 
+                />
+              }
+              label="Emite NFSe Nacional"
+              sx={{ 
+                ml: 4,
+                '& .MuiFormControlLabel-label': {
+                  fontSize: '0.875rem',
+                  color: 'text.secondary',
+                }
+              }}
+            />
+          )}
         </Grid>
 
         <Grid xs={12} md={6}>
