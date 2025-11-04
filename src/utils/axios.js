@@ -66,6 +66,9 @@ export const endpoints = {
     create: `${baseUrl}financeiro/invoice/create`,
     update: `${baseUrl}clientes`,
     historico: `${baseUrl}clientes/historico`,
+    servicos: {
+      admin: `${baseUrl}/servicos`,
+    },
   },
   invoices: {
     list: `${baseUrl}financeiro/invoices`,
@@ -144,6 +147,7 @@ export const endpoints = {
       create: `${baseUrl}portal/servicos`,
       update: (id) => `${baseUrl}portal/servicos/${id}`,
       delete: (id) => `${baseUrl}portal/servicos/${id}`,
+      admin: `${baseUrl}servicos`,
     },
     orcamentos: {
       list: (clienteProprietarioId) => `${baseUrl}portal/orcamentos/${clienteProprietarioId}`,

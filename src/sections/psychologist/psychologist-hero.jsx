@@ -144,9 +144,9 @@ export function PsychologistHero() {
                     sx={{
                       bgcolor: '#28a745',
                       color: 'white',
-                      px: 6,
-                      py: 3,
-                      fontSize: { xs: '1.125rem', md: '1.25rem' },
+                      px: { xs: 3, md: 6 },
+                      py: { xs: 2, md: 3 },
+                      fontSize: { xs: '0.875rem', md: '1.25rem' },
                       fontWeight: 900,
                       borderRadius: 50,
                       boxShadow: '0 10px 30px 0 rgba(40, 167, 69, 0.5)',
@@ -155,6 +155,7 @@ export function PsychologistHero() {
                       overflow: 'hidden',
                       border: '3px solid rgba(255, 255, 255, 0.3)',
                       minWidth: { xs: '100%', sm: 340 },
+                      whiteSpace: 'nowrap',
                       '&:hover': {
                         bgcolor: '#218838',
                         transform: 'scale(1.1)',

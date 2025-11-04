@@ -50,6 +50,8 @@ export const navData = [
       { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
 
       { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
+      
+      { title: 'Serviços dos Clientes', path: paths.dashboard.servicos, icon: ICONS.product, roles: ['admin', 'operacional'] },
      
       {
         title: 'Comercial',

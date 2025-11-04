@@ -6,6 +6,6 @@ export { PsychologistHero } from './psychologist-hero';
 export { PsychologistOffer } from './psychologist-offer';
 export { PsychologistSteps } from './psychologist-steps';
 export { PsychologistPricing } from './psychologist-pricing';
+export { PsychologistCoverage } from './psychologist-coverage';
 export { PsychologistServices } from './psychologist-services';
 export { PsychologistTestimonials } from './psychologist-testimonials';
-export { PsychologistCoverage } from './psychologist-coverage';

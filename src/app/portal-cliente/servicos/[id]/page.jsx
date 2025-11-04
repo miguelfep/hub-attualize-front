@@ -17,9 +17,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CardContent from '@mui/material/CardContent';
-import CircularProgress from '@mui/material/CircularProgress';
 import { alpha, useTheme } from '@mui/material/styles';
 import InputAdornment from '@mui/material/InputAdornment';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
@@ -95,80 +95,20 @@ export default function EditarServicoPage() {
     valorText: fCurrency(0),
     unidade: 'UN',
     categoria: '',
-    codigoServico: '',
     cnae: '',
+    codigoServicoMunicipio: '',
+    itemListaServicoLC116: '',
   });
 
   const enotasConfig = settings.eNotasConfig;
 
   const [cnaesEmpresa, setCnaesEmpresa] = useState([]);
   const [loadingCnaes, setLoadingCnaes] = useState(false);
-  const [codigoOptions, setCodigoOptions] = useState([]);
-  const [loadingServicosENotas, setLoadingServicosENotas] = useState(false);
   const [empresaUf, setEmpresaUf] = useState('');
   const [empresaCidade, setEmpresaCidade] = useState('');
-  const [selectedServicoENotas, setSelectedServicoENotas] = useState(null);
-  const [initialSMU, setInitialSMU] = useState(null);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const [emiteNFSeNacional, setEmiteNFSeNacional] = useState(enotasConfig.emiteNFSeNacional);
-  const [buscaLivreServico, setBuscaLivreServico] = useState('');
 
- 
   const normalizeCNAE = (v) => String(v || '').replace(/\D/g, '');
-
-  // Função para consultar serviços na eNotas
-  const consultarServicosENotas = useCallback(async (uf, cidade, descricao, limit = 4) => {
-    if (!descricao) return [];
-    const apiKey = process.env.NEXT_PUBLIC_ENOTAS_API_KEY;
-    if (!apiKey) return [];
-    
-    // Verificar se emite NFSe Nacional
-    const emiteNacional = settings?.eNotasConfig?.emiteNFSeNacional;
-    
-    try {
-      setLoadingServicosENotas(true);
-      const pageSize = Math.max(limit, 4);
-      const filter = `contains(descricao, '${descricao}')`;
-      
-      // Construir URL baseado no tipo de emissão
-      let url;
-      if (emiteNacional) {
-        // Rota nacional - usa codigoIBGECidade = -1
-        url = `https://api.enotasgw.com.br/v1/estados/cidades/-1/servicos?pageNumber=0&pageSize=${pageSize}&filter=${encodeURIComponent(filter)}`;
-      } else {
-        // Rota municipal - usa UF e cidade específica
-        if (!uf || !cidade) return [];
-        url = `https://api.enotasgw.com.br/v1/estados/${encodeURIComponent(uf)}/cidades/${encodeURIComponent(cidade)}/servicos?pageNumber=0&pageSize=${pageSize}&filter=${encodeURIComponent(filter)}`;
-      }
-      
-      const res = await fetch(url, {
-        headers: { Authorization: `Basic ${apiKey}` },
-      });
-      if (!res.ok) return [];
-      const json = await res.json();
-      const data = Array.isArray(json?.data) ? json.data : [];
-      return data.slice(0, limit).map((s) => ({ code: String(s.codigo), descricao: s.descricao, raw: s }));
-    } catch (e) {
-      return [];
-    } finally {
-      setLoadingServicosENotas(false);
-    }
-  }, [settings?.eNotasConfig?.emiteNFSeNacional]);
-
-  // Busca livre com debounce (para NFSe Nacional)
-  useEffect(() => {
-    if (!emiteNFSeNacional || !buscaLivreServico || buscaLivreServico.length < 3) {
-      return undefined;
-    }
-
-    const timer = setTimeout(async () => {
-      const opts = await consultarServicosENotas('', '', buscaLivreServico, 10);
-      setCodigoOptions(opts);
-      setForm((f) => ({ ...f, codigoServico: '' }));
-    }, 800); // Debounce de 800ms
-
-    return () => clearTimeout(timer);
-  }, [buscaLivreServico, emiteNFSeNacional, consultarServicosENotas]);
 
   useEffect(() => {
 
@@ -186,10 +126,10 @@ export default function EditarServicoPage() {
           valorText: text,
           unidade: servicoData.unidade || 'UN',
           categoria: servicoData.categoria || '',
-          codigoServico: servicoData.codigoServico || '',
           cnae: normalizeCNAE(servicoData.cnae || ''),
+          codigoServicoMunicipio: servicoData.codigoServicoMunicipio || '',
+          itemListaServicoLC116: servicoData.itemListaServicoLC116 || '',
         });
-        setInitialSMU(servicoData?.smu || null);
       } catch (error) {
         toast.error('Erro ao carregar dados do serviço.');
         console.error(error);
@@ -242,56 +182,12 @@ export default function EditarServicoPage() {
     };
   }, [clienteProprietarioId]);
 
-  // Quando já existe CNAE/código (ou SMU) no serviço, popular opções e seleção na primeira carga
-  useEffect(() => {
-    let ignore = false;
-    
-    if (!initialLoadDone && podeEmitirNFSe && empresaUf && empresaCidade && form.cnae && cnaesEmpresa.length > 0) {
-      const selected = cnaesEmpresa.find((c) => normalizeCNAE(c.code) === form.cnae);
-      if (selected) {
-        const run = async () => {
-          const opts = await consultarServicosENotas(empresaUf, empresaCidade, selected?.text || '', 4);
-          if (ignore) return;
-          
-          let merged = Array.isArray(opts) ? opts : [];
-          
-          // Se tiver SMU inicial, garantir que está nas opções
-          const selCode = (initialSMU?.codigo && String(initialSMU.codigo)) || (form.codigoServico ? String(form.codigoServico) : '');
-          if (selCode && !merged.some((o) => String(o.code) === selCode)) {
-            merged = [
-              { 
-                code: selCode, 
-                descricao: initialSMU?.descricao || `Código ${selCode}`, 
-                raw: initialSMU || null 
-              }, 
-              ...merged
-            ];
-          }
-          
-          setCodigoOptions(merged);
-          
-          // Pré-selecionar o código inicial
-          if (selCode) {
-            setForm((f) => ({ ...f, codigoServico: selCode }));
-            if (initialSMU) setSelectedServicoENotas(initialSMU);
-          }
-          
-          setInitialLoadDone(true);
-        };
-        run();
-      }
-    }
-    
-    return () => {
-      ignore = true;
-    };
-  }, [empresaUf, empresaCidade, form.cnae, cnaesEmpresa, initialSMU, podeEmitirNFSe, consultarServicosENotas, initialLoadDone, form.codigoServico]);
 
 const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!form.nome) { toast.error('Informe o nome do serviço'); return; }
     if (!form.valor || Number(form.valor) <= 0) { toast.error('Informe um valor válido'); return; }
-    if (podeEmitirNFSe && !form.codigoServico) { toast.error('Selecione o Código de Serviço'); return; }
+    if (podeEmitirNFSe && !form.cnae) { toast.error('Informe o CNAE'); return; }
 
     try {
       setSaving(true);
@@ -307,26 +203,11 @@ const handleSubmit = useCallback(async (e) => {
         valor: Number(form.valor),
         unidade: form.unidade,
         categoria: form.categoria,
-        // NFSe (condicional) - sempre enviar CNAE + SMU ou CNAE + codigoServico
+        // NFSe (condicional) - enviar CNAE + campos de serviço
         ...(podeEmitirNFSe ? {
           cnae: sanitizeCnae(form.cnae),
-          ...(selectedServicoENotas
-            ? {
-                smu: {
-                  codigo: selectedServicoENotas?.codigo,
-                  descricao: selectedServicoENotas?.descricao,
-                  codigoIBGECidade: selectedServicoENotas?.codigoIBGECidade,
-                  aliquotaSugerida: selectedServicoENotas?.aliquotaSugerida,
-                  construcaoCivil: selectedServicoENotas?.construcaoCivil,
-                  percentualAproximadoFederalIBPT: selectedServicoENotas?.percentualAproximadoFederalIBPT,
-                  percentualAproximadoEstadualIBPT: selectedServicoENotas?.percentualAproximadoEstadualIBPT,
-                  percentualAproximadoMunicipalIBPT: selectedServicoENotas?.percentualAproximadoMunicipalIBPT,
-                  chaveTabelaIBPT: selectedServicoENotas?.chaveTabelaIBPT,
-                },
-              }
-            : {
-                codigoServico: form.codigoServico || undefined,
-              }),
+          codigoServicoMunicipio: form.codigoServicoMunicipio || '',
+          itemListaServicoLC116: form.itemListaServicoLC116 || '',
         } : {}),
       };
       await portalUpdateServico(servicoId, payload);
@@ -334,14 +215,13 @@ const handleSubmit = useCallback(async (e) => {
       const baseKey = endpoints.portal.servicos.list(clienteProprietarioId);
       mutateGlobal((key) => typeof key === 'string' && key.startsWith(baseKey), undefined, { revalidate: true });
 
-router.replace(paths.cliente.servicos);
       router.replace(paths.cliente.servicos);
     } catch (err) {
       toast.error('Erro ao atualizar serviço');
     } finally {
       setSaving(false);
     }
-  }, [form, podeEmitirNFSe, router, servicoId, clienteProprietarioId, selectedServicoENotas]);
+  }, [form, podeEmitirNFSe, router, servicoId, clienteProprietarioId]);
 
   if (loadingEmpresas || loadingData) return <EditarServicoPageSkeleton />;
   if (!podeGerenciarServicos) return <Typography>Funcionalidade não disponível</Typography>;
@@ -449,108 +329,50 @@ router.replace(paths.cliente.servicos);
                   />
                   <Grid container spacing={2}>
                     <Grid item xs={12}>
-                      {emiteNFSeNacional ? (
-                        // Campo livre para NFSe Nacional
-                        <TextField
-                          fullWidth
-                          label="Descreva o serviço que você faz"
-                          value={buscaLivreServico}
-                          onChange={(e) => setBuscaLivreServico(e.target.value)}
-                          placeholder="Ex: treinamento, consultoria, desenvolvimento..."
-                          helperText={
-                            buscaLivreServico.length < 3 
-                              ? 'Digite pelo menos 3 caracteres para buscar'
-                              : loadingServicosENotas 
-                              ? 'Buscando códigos de serviço...'
-                              : `${codigoOptions.length} código(s) encontrado(s)`
-                          }
-                          InputProps={{
-                            startAdornment: (
-                              <InputAdornment position="start">
-                                <Iconify icon="eva:search-fill" />
-                              </InputAdornment>
-                            ),
-                            endAdornment: loadingServicosENotas && (
-                              <InputAdornment position="end">
-                                <CircularProgress size={20} />
-                              </InputAdornment>
-                            ),
-                          }}
-                        />
-                      ) : (
-                        // Select de CNAE para NFSe Municipal
-                        <TextField
-                          fullWidth
-                          select
-                          label="CNAE da Empresa"
-                          value={form.cnae}
-                          onChange={async (e) => {
-                            const val = e.target.value;
-                            setForm((f) => ({ ...f, cnae: val }));
-                            setSelectedServicoENotas(null);
-                            setCodigoOptions([]);
-                            const selected = cnaesEmpresa.find((c) => normalizeCNAE(c.code) === val);
-                            const opts = await consultarServicosENotas(empresaUf, empresaCidade, selected?.text || '', 4);
-                            setCodigoOptions(opts);
-                            setForm((f) => ({ ...f, codigoServico: '' }));
-                          }}
-                          SelectProps={{ displayEmpty: true }}
-                          InputLabelProps={{ shrink: true }}
-                          disabled={loadingCnaes}
-                          helperText={loadingCnaes ? 'Carregando CNAEs...' : ''}
-                        >
-                          <MenuItem value="">Selecione</MenuItem>
-                          {cnaesEmpresa.map((c) => {
-                            const val = normalizeCNAE(c.code);
-                            return (
-                              <MenuItem key={`${c.code}-${val}`} value={val}>
-                                {formatCNAE(val)} - {c.text}
-                              </MenuItem>
-                            );
-                          })}
-                        </TextField>
-                      )}
-                    </Grid>
-                    <Grid item xs={12}>
-                      {codigoOptions.length > 0 ? (
-                        <TextField
-                          fullWidth
-                          select
-                          label="Código de Serviço"
-                          required
-                          value={form.codigoServico}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            const sel = codigoOptions.find((o) => o.code === val) || null;
-                            setSelectedServicoENotas(sel?.raw || null);
-                            setForm((f) => ({ ...f, codigoServico: val }));
-                          }}
-                          SelectProps={{ displayEmpty: true }}
-                          InputLabelProps={{ shrink: true }}
-                          placeholder="Selecione o CNAE para sugerir opções"
-                          helperText={loadingServicosENotas ? 'Consultando serviços na eNotas...' : 'Selecione a opção mais aderente'}
-                        >
-                          <MenuItem value="">Selecione</MenuItem>
-                          {codigoOptions.map((opt) => (
-                            <MenuItem key={opt.code} value={opt.code}>
-                              {opt.descricao} — {opt.code}
+                      <TextField
+                        fullWidth
+                        select
+                        required
+                        label="CNAE da Empresa"
+                        value={form.cnae}
+                        onChange={(e) => setForm((f) => ({ ...f, cnae: e.target.value }))}
+                        SelectProps={{ displayEmpty: true }}
+                        InputLabelProps={{ shrink: true }}
+                        disabled={loadingCnaes}
+                        helperText={loadingCnaes ? 'Carregando CNAEs...' : 'Selecione o CNAE relacionado ao serviço'}
+                      >
+                        <MenuItem value="">Selecione</MenuItem>
+                        {cnaesEmpresa.map((c) => {
+                          const val = normalizeCNAE(c.code);
+                          return (
+                            <MenuItem key={`${c.code}-${val}`} value={val}>
+                              {formatCNAE(val)} - {c.text}
                             </MenuItem>
-                          ))}
-                        </TextField>
-                      ) : (
-                        <TextField
-                          fullWidth
-                          label="Código de Serviço"
-                          required
-                          value={form.codigoServico}
-                          onChange={(e) => {
-                            setSelectedServicoENotas(null);
-                            setForm((f) => ({ ...f, codigoServico: e.target.value }));
-                          }}
-                          placeholder="Informe o código (LC 116) caso a eNotas não retorne opções"
-                          helperText={loadingServicosENotas ? 'Consultando serviços na eNotas...' : 'Nenhuma opção retornada. Informe manualmente.'}
-                        />
-                      )}
+                          );
+                        })}
+                      </TextField>
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Código do Serviço no Município"
+                        value={form.codigoServicoMunicipio}
+                        onChange={(e) => setForm((f) => ({ ...f, codigoServicoMunicipio: e.target.value }))}
+                        placeholder="Ex: 01010501"
+                        helperText="Código do serviço conforme cadastro municipal"
+                      />
+                    </Grid>
+                    
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Item Lista Serviço LC 116/2003"
+                        value={form.itemListaServicoLC116}
+                        onChange={(e) => setForm((f) => ({ ...f, itemListaServicoLC116: e.target.value }))}
+                        placeholder="Ex: 01.01"
+                        helperText="Item da Lei Complementar 116/2003"
+                      />
                     </Grid>
                   </Grid>
                 </>

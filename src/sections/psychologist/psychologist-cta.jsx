@@ -64,12 +64,13 @@ export function PsychologistCta() {
               sx={{
                 bgcolor: '#FEC615',
                 color: '#333',
-                px: 6,
+                px: { xs: 4, md: 6 },
                 py: 2,
-                fontSize: '1.25rem',
+                fontSize: { xs: '0.95rem', md: '1.25rem' },
                 fontWeight: 700,
                 borderRadius: 10,
                 boxShadow: '0 8px 24px 0 rgba(254, 198, 21, 0.4)',
+                whiteSpace: 'nowrap',
                 '&:hover': {
                   bgcolor: '#e5b213',
                   transform: 'scale(1.05)',
