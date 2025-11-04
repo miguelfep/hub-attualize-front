@@ -22,6 +22,7 @@ import {
 } from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
+import { useDebounce } from 'src/hooks/use-debounce';
 
 import { toTitleCase } from 'src/utils/helper';
 
@@ -49,6 +50,9 @@ export default function PortalFaturamentoPage() {
   const [startDate, setStartDate] = useState(() => dayjs().startOf('month').format('YYYY-MM-DD'));
   const [endDate, setEndDate] = useState(() => dayjs().format('YYYY-MM-DD'));
 
+  const [filtroNumeroNota, setFiltroNumeroNota] = useState('');
+  const numeroNotaDebounce = useDebounce(filtroNumeroNota, 500);
+
   const { totalValorNotas, totalNotas } = useMemo(() => {
     const arr = Array.isArray(notas) ? notas : [];
     const total = arr.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
@@ -60,8 +64,10 @@ export default function PortalFaturamentoPage() {
     
     try {
       setLoading(true);
+      const numeroNota = numeroNotaDebounce || undefined;
       const res = await listarNotasFiscaisPorCliente({
-        clienteId, 
+        clienteId,
+        numeroNota,
         status: status || undefined,
         inicio: startDate || undefined,
         fim: endDate || undefined,
@@ -79,7 +85,7 @@ export default function PortalFaturamentoPage() {
   useEffect(() => {
     fetchNotas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clienteId, status, startDate, endDate]);
+  }, [clienteId, status, startDate, endDate, numeroNotaDebounce]);
   
   const handlePrevMonth = () => {
     const newStart = dayjs(startDate).subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
@@ -108,16 +114,16 @@ export default function PortalFaturamentoPage() {
           Minhas Notas Fiscais
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-          Visualize e baixe o PDF ou XML das suas notas fiscais emitidas.
+          Visualize e baixe o PDF ou XML de todas suas notas fiscais.
         </Typography>
       </Box>
 
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid xs={12} md={5}>
+          <Grid xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Status da Nota</InputLabel>
-              <Select label="Status da Nota" value={status} onChange={(e) => { setStatus(e.target.value); }}>
+              <Select label="Status da Nota" value={status} onChange={(e) => { setStatus(e.target.value); }}  >
                 <MenuItem value="">Todos</MenuItem>
                 <MenuItem value="emitida">Emitida</MenuItem>
                 <MenuItem value="autorizada">Autorizada</MenuItem>
@@ -126,8 +132,18 @@ export default function PortalFaturamentoPage() {
               </Select>
             </FormControl>
           </Grid>
-          
-          <Grid xs={12} sm={6} md={3.5}>
+          <Grid xs={12} md={3}>
+            <TextField 
+              label="Número da Nota"
+              type="text"
+              fullWidth
+              value={filtroNumeroNota}
+              onChange={(e) => setFiltroNumeroNota(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              placeholder="Digite para buscar..."
+            />
+          </Grid>
+          <Grid xs={12} sm={6} md={3}>
             <TextField 
               label="De"
               type="date" 
@@ -137,7 +153,7 @@ export default function PortalFaturamentoPage() {
               InputLabelProps={{ shrink: true }}
             />
           </Grid>
-          <Grid xs={12} sm={6} md={3.5}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField 
               label="Até"
               type="date" 
@@ -253,7 +269,7 @@ export default function PortalFaturamentoPage() {
                         window.URL.revokeObjectURL(url);
                       }}
                     >
-                      Baixar XML (Sieg)
+                      Baixar XML
                     </Button>
                   )}
                 </Stack>
