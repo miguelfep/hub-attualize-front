@@ -294,6 +294,14 @@ export default function OrcamentoDetalhesPage({ params }) {
   const hasNotaAtiva =
     Array.isArray(nfseList) &&
     nfseList.some((n) => n.status === 'emitida' || n.status === 'emitindo');
+  
+  const hasNotaProcessando =
+    Array.isArray(nfseList) &&
+    nfseList.some((n) => 
+      n.status === 'emitindo' || 
+      n.linkNota === 'Processando...' ||
+      String(n.numeroNota).toLowerCase() === 'processando...'
+    );
   const selectedServicoId =
     typeof itemEdit.servicoId === 'object' ? itemEdit.servicoId?._id : itemEdit.servicoId;
 
@@ -364,14 +372,27 @@ export default function OrcamentoDetalhesPage({ params }) {
                 )}
               </PDFDownloadLink>
               {podeEmitirNFSe && !hasNFSeAutorizada && (
-                <Button
-                  onClick={handleEmitirNFSe}
-                  variant="contained"
-                  startIcon={<Iconify icon="solar:bill-check-bold" />}
-                  disabled={generatingNf}
-                >
-                  {generatingNf ? 'Emitindo...' : 'Emitir NFSe'}
-                </Button>
+                <>
+                  {hasNotaProcessando ? (
+                    <Button
+                      variant="outlined"
+                      color="warning"
+                      disabled
+                      startIcon={<Iconify icon="solar:clock-circle-bold" />}
+                    >
+                      Nota em Emissão...
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={handleEmitirNFSe}
+                      variant="contained"
+                      startIcon={<Iconify icon="solar:bill-check-bold" />}
+                      disabled={generatingNf}
+                    >
+                      {generatingNf ? 'Emitindo...' : 'Emitir NFSe'}
+                    </Button>
+                  )}
+                </>
               )}
             </Stack>
           </Box>

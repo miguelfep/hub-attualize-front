@@ -82,7 +82,8 @@ function ServiceOrderMobileCard({ serviceOrder, getStatusColor }) {
           </Typography>
         </Stack>
         <Stack direction="row" spacing={1} justifyContent="flex-end">
-          {serviceOrder?.notaFiscalId?.linkNota && (
+          {serviceOrder?.notaFiscalId?.linkNota && 
+           serviceOrder.notaFiscalId.linkNota !== 'Processando...' && (
             <Tooltip title="Ver NFSe (PDF)">
               <IconButton
                 href={serviceOrder.notaFiscalId.linkNota}
@@ -92,6 +93,13 @@ function ServiceOrderMobileCard({ serviceOrder, getStatusColor }) {
                 color="default"
               >
                 <Iconify icon="solar:document-text-bold" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {serviceOrder?.notaFiscalId?.linkNota === 'Processando...' && (
+            <Tooltip title="Nota em processo de emissão">
+              <IconButton size="small" color="warning" disabled>
+                <Iconify icon="solar:clock-circle-bold" />
               </IconButton>
             </Tooltip>
           )}
@@ -409,7 +417,8 @@ export default function PortalOrcamentosPage() {
                                       <Iconify icon="solar:eye-bold" />
                                     </IconButton>
                                   </Tooltip>
-                                  {o?.notaFiscalId?.linkNota && (
+                                  {o?.notaFiscalId?.linkNota && 
+                                   o.notaFiscalId.linkNota !== 'Processando...' && (
                                     <Tooltip title="Ver NFSe (PDF)">
                                       <IconButton
                                         href={o.notaFiscalId.linkNota}
@@ -419,6 +428,13 @@ export default function PortalOrcamentosPage() {
                                         color="default"
                                       >
                                         <Iconify icon="solar:document-text-bold" />
+                                      </IconButton>
+                                    </Tooltip>
+                                  )}
+                                  {o?.notaFiscalId?.linkNota === 'Processando...' && (
+                                    <Tooltip title="Nota em processo de emissão">
+                                      <IconButton size="small" color="warning" disabled>
+                                        <Iconify icon="solar:clock-circle-bold" />
                                       </IconButton>
                                     </Tooltip>
                                   )}

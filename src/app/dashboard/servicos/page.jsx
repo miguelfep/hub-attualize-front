@@ -112,7 +112,7 @@ export default function ServicosAdminPage() {
   });
 
   const { data: clientes, isLoading: loadingClientes } = useGetAllClientes();
-  const { data: servicos, isLoading: loadingServicos } = useServicosAdmin(
+  const { data: servicos, isLoading: loadingServicos, mutate: mutateServicos } = useServicosAdmin(
     clienteSelecionado?._id || null,
     filters
   );
@@ -122,8 +122,13 @@ export default function ServicosAdminPage() {
       setClienteSelecionado(newValue);
       table.onResetPage();
       setFilters({ status: '', categoria: '' });
+      
+      // Força revalidação ao trocar de cliente
+      if (newValue?._id) {
+        mutateServicos();
+      }
     },
-    [table]
+    [table, mutateServicos]
   );
 
   const handleFilters = useCallback(

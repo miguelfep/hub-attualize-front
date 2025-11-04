@@ -67,7 +67,7 @@ export const endpoints = {
     update: `${baseUrl}clientes`,
     historico: `${baseUrl}clientes/historico`,
     servicos: {
-      admin: `${baseUrl}/servicos`,
+      admin: `${baseUrl}clientes/servicos/admin/all`,
     },
   },
   invoices: {
