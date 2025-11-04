@@ -177,7 +177,7 @@ export default function PortalClienteNovoPage() {
 
     try {
       setSaving(true);
-      await portalCreateCliente({
+      const res = await portalCreateCliente({
         ...formData,
         clienteProprietarioId,
         cpfCnpj: onlyDigits(formData.cpfCnpj),
@@ -185,16 +185,44 @@ export default function PortalClienteNovoPage() {
         whatsapp: onlyDigits(formData.whatsapp),
         endereco: { ...formData.endereco, cep: onlyDigits(formData.endereco.cep) },
       });
-      toast.success('Cliente criado com sucesso');
+      
+      // Verificar se o cliente já existia
+      if (res?.jaExistia === true) {
+        const existingCliente = res?.cliente;
+        const nomeCliente = existingCliente?.nome || existingCliente?.razaoSocial || 'Cliente';
+        
+        toast.warning(
+          `Cliente já existente: ${nomeCliente}. Redirecionando...`,
+          {
+            duration: 3000,
+          }
+        );
+        
+        // Revalidar lista de clientes
+        const baseUrlLista = endpoints.portal.clientes.list(clienteProprietarioId);
+        mutate(
+          (key) => typeof key === 'string' && key.startsWith(baseUrlLista),
+          undefined,
+          { revalidate: true }
+        );
+        
+        // Redirecionar para o cadastro do cliente existente
+        setTimeout(() => {
+          router.push(`../${existingCliente._id}`);
+        }, 1500);
+      } else {
+        // Cliente criado com sucesso
+        toast.success('Cliente criado com sucesso');
 
-      const baseUrlLista = endpoints.portal.clientes.list(clienteProprietarioId);
-      mutate(
-        (key) => typeof key === 'string' && key.startsWith(baseUrlLista),
-        undefined,
-        { revalidate: true }
-      );
+        const baseUrlLista = endpoints.portal.clientes.list(clienteProprietarioId);
+        mutate(
+          (key) => typeof key === 'string' && key.startsWith(baseUrlLista),
+          undefined,
+          { revalidate: true }
+        );
 
-      router.push('../clientes');
+        router.push('../clientes');
+      }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Erro ao criar cliente. Tente novamente.';
       toast.error(errorMessage);

@@ -6,7 +6,7 @@ import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Box, Card, Stack, Button, Dialog, Divider, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions, CircularProgress,  } from '@mui/material';
+import { Box, Card, Stack, Button, Dialog, Divider, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions, CircularProgress, Autocomplete } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -274,24 +274,29 @@ return (
                 </Typography>
                 <Grid container spacing={2}>
                   <Grid xs={12} md={8}>
-                    <TextField
+                    <Autocomplete
                       fullWidth
-                      select
-                      label="Cliente"
-                      value={form.clienteDoClienteId}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, clienteDoClienteId: e.target.value }))
-                      }
-                    >
-                      <MenuItem value="">
-                        <em>Selecione</em>
-                      </MenuItem>
-                      {(clientes || []).map((c) => (
-                        <MenuItem key={c._id} value={c._id}>
-                          {c.nome} {c.cpfCnpj ? `- ${c.cpfCnpj}` : ''}
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                      options={Array.isArray(clientes) ? clientes : []}
+                      getOptionLabel={(option) => {
+                        if (!option) return '';
+                        const nome = option.nome || '';
+                        const doc = option.cpfCnpj ? ` - ${option.cpfCnpj}` : '';
+                        return `${nome}${doc}`;
+                      }}
+                      value={clientes?.find((c) => c._id === form.clienteDoClienteId) || null}
+                      onChange={(event, newValue) => {
+                        setForm((f) => ({ ...f, clienteDoClienteId: newValue?._id || '' }));
+                      }}
+                      isOptionEqualToValue={(option, value) => option._id === value._id}
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Cliente"
+                          placeholder="Digite para buscar o cliente..."
+                        />
+                      )}
+                      noOptionsText="Nenhum cliente encontrado"
+                    />
                   </Grid>
                   <Grid xs={12} md={4}>
                     <Button
@@ -456,17 +461,39 @@ return (
                 },
               };
               const res = await portalCreateCliente(payload);
-              toast.success('Cliente criado com sucesso!');
-
-              const newId = res?._id || res?.data?._id;
-              if (newId) {
-                // otimista: adiciona novo cliente na lista
-                const optimistic = { _id: newId, nome: payload.nome, cpfCnpj: quickCli.doc, email: payload.email, telefone: quickCli.telefone };
-                await mutateClientes((prev) => (Array.isArray(prev) ? [...prev, optimistic] : [optimistic]), false);
-                setForm((f) => ({ ...f, clienteDoClienteId: newId }));
-                // revalida em background
+              
+              // Verificar se o cliente já existia
+              if (res?.jaExistia === true) {
+                toast.info('Cliente já existe! Selecionado automaticamente na venda.');
+                const existingCliente = res?.cliente;
+                const clienteId = existingCliente?._id;
+                
+                if (clienteId) {
+                  // Atualizar lista de clientes para incluir o existente se não estiver
+                  await mutateClientes();
+                  // Setar automaticamente na venda
+                  setForm((f) => ({ ...f, clienteDoClienteId: clienteId }));
+                }
+              } else {
+                // Cliente criado com sucesso
+                toast.success('Cliente criado com sucesso!');
+                const newId = res?._id || res?.data?._id;
+                
+                if (newId) {
+                  // otimista: adiciona novo cliente na lista
+                  const optimistic = { 
+                    _id: newId, 
+                    nome: payload.nome, 
+                    cpfCnpj: quickCli.doc, 
+                    email: payload.email, 
+                    telefone: quickCli.telefone 
+                  };
+                  await mutateClientes((prev) => (Array.isArray(prev) ? [...prev, optimistic] : [optimistic]), false);
+                  setForm((f) => ({ ...f, clienteDoClienteId: newId }));
+                }
+                mutateClientes();
               }
-              mutateClientes();
+              
               setQuickCli(initialState);
               setOpenNovoCliente(false);
             } catch (err) {

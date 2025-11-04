@@ -1,17 +1,53 @@
-import axios, { endpoints } from 'src/utils/axios';
+import useSWR from 'swr';
+import { useMemo } from 'react';
 
-// Re-exportar a função do portal para usar a rota existente
-import { usePortalServicos } from './portal';
+import axios, { fetcher, endpoints } from 'src/utils/axios';
+
+const swrOptions = {
+  revalidateIfStale: true,
+  revalidateOnFocus: false,
+  revalidateOnReconnect: true,
+};
+
+// Util: monta query string ignorando valores vazios
+function buildQuery(params) {
+  if (!params) return '';
+  const cleaned = Object.entries(params).reduce((acc, [k, v]) => {
+    if (v !== '' && v !== undefined && v !== null) acc[k] = v;
+    return acc;
+  }, {});
+  const qs = new URLSearchParams(cleaned).toString();
+  return qs ? `?${qs}` : '';
+}
 
 /**
  * Hook para buscar serviços de um cliente específico (admin)
- * Usa a rota existente do portal que busca por empresa
- * @param {string} clienteProprietarioId - ID do cliente/empresa (obrigatório)
+ * Usa a rota /clientes/servicos/admin/all com query params
+ * @param {string} clienteId - ID do cliente/empresa
  * @param {Object} filters - Filtros (status, categoria)
  * @returns {Object} { data, isLoading, error, mutate }
  */
-export function useServicosAdmin(clienteProprietarioId, filters = {}) {
-  return usePortalServicos(clienteProprietarioId, filters);
+export function useServicosAdmin(clienteId, filters = {}) {
+  const params = {
+    ...(clienteId && { clienteId }),
+    ...filters,
+  };
+  
+  const qs = buildQuery(params);
+  const url = clienteId ? `${endpoints.clientes.servicos.admin}${qs}` : null;
+  
+  const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, swrOptions);
+  
+  return useMemo(
+    () => ({ 
+      data: data || [], 
+      isLoading, 
+      error, 
+      isValidating, 
+      mutate 
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
 }
 
 /**
