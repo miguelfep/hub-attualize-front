@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ComposableMap, Geographies, Geography, Marker } from 'react-simple-maps';
+import { Marker, Geography, Geographies, ComposableMap } from 'react-simple-maps';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';

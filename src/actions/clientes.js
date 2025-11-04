@@ -1,10 +1,37 @@
-import axios, { endpoints } from 'src/utils/axios';
+import useSWR from 'swr';
+import { useMemo } from 'react';
+
+import axios, { fetcher, endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
 export async function getClientes(params) {
   const res = await axios.get(endpoints.clientes.list, { params });
   return res.data;
+}
+
+// ----------------------------------------------------------------------
+
+export function useGetAllClientes() {
+  const { data, isLoading, error, mutate } = useSWR(
+    endpoints.clientes.list,
+    fetcher,
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+    }
+  );
+
+  return useMemo(
+    () => ({
+      data: data || [],
+      isLoading,
+      error,
+      mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
 }
 
 // ----------------------------------------------------------------------
