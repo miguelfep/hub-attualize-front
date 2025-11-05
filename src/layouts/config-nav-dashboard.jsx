@@ -49,9 +49,17 @@ export const navData = [
     items: [
       { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
 
-      { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
+      { 
+        title: 'Clientes', 
+        path: paths.dashboard.cliente.root, 
+        icon: ICONS.user, 
+        roles: ['admin', 'operacional', 'comercial'],
+        children: [
+          { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
+          { title: 'Serviços dos Clientes', path: paths.dashboard.servicos, icon: ICONS.product, roles: ['admin', 'operacional'] },
+        ],
+      },
       
-      { title: 'Serviços dos Clientes', path: paths.dashboard.servicos, icon: ICONS.product, roles: ['admin', 'operacional'] },
      
       {
         title: 'Comercial',

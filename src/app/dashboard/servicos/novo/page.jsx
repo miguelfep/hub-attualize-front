@@ -1,7 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -15,9 +15,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CardContent from '@mui/material/CardContent';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha } from '@mui/material/styles';
 import InputAdornment from '@mui/material/InputAdornment';
-import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
@@ -25,7 +24,7 @@ import { formatCNAE } from 'src/utils/formatter';
 import { fCurrency } from 'src/utils/format-number';
 
 import { getClienteById } from 'src/actions/clientes';
-import { getServicoAdminById, updateServicoAdmin } from 'src/actions/servicos-admin';
+import { createServicoAdmin } from 'src/actions/servicos-admin';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -66,15 +65,13 @@ const formatBRLInput = (v) => {
 
 // ----------------------------------------------------------------------
 
-export default function EditarServicoAdminPage() {
+export default function NovoServicoAdminPage() {
   const router = useRouter();
-  const params = useParams();
   const searchParams = useSearchParams();
-  const { clienteId, id: servicoId } = params;
-  const theme = useTheme();
+  const clienteIdFromUrl = searchParams.get('clienteId');
 
   const [saving, setSaving] = useState(false);
-  const [loadingData, setLoadingData] = useState(true);
+  const [loadingCliente, setLoadingCliente] = useState(true);
   const [cliente, setCliente] = useState(null);
   const [form, setForm] = useState({
     nome: '',
@@ -89,46 +86,28 @@ export default function EditarServicoAdminPage() {
     status: true,
   });
 
-  // Carregar dados do serviço e cliente
+  // Carregar dados do cliente
   useEffect(() => {
-    const loadData = async () => {
+    const loadCliente = async () => {
+      if (!clienteIdFromUrl) {
+        setLoadingCliente(false);
+        return;
+      }
+      
       try {
-        setLoadingData(true);
-        
-        // Carregar serviço
-        const servicoData = await getServicoAdminById(clienteId, servicoId);
-        
-        // Carregar cliente
-        const clienteData = await getClienteById(clienteId);
+        setLoadingCliente(true);
+        const clienteData = await getClienteById(clienteIdFromUrl);
         setCliente(clienteData);
-
-        // Preencher formulário
-        if (servicoData) {
-          setForm({
-            nome: servicoData.nome || '',
-            descricao: servicoData.descricao || '',
-            valor: servicoData.valor || 0,
-            valorText: fCurrency(servicoData.valor || 0),
-            unidade: servicoData.unidade || 'UN',
-            categoria: servicoData.categoria || '',
-            cnae: servicoData.cnae || '',
-            codigoServicoMunicipio: servicoData.codigoServicoMunicipio || '',
-            itemListaServicoLC116: servicoData.itemListaServicoLC116 || '',
-            status: servicoData.status === true || servicoData.status === 'true' || servicoData.status === 1,
-          });
-        }
       } catch (error) {
-        console.error('Erro ao carregar dados:', error);
-        toast.error('Erro ao carregar serviço');
+        console.error('Erro ao carregar cliente:', error);
+        toast.error('Erro ao carregar dados do cliente');
       } finally {
-        setLoadingData(false);
+        setLoadingCliente(false);
       }
     };
 
-    if (clienteId && servicoId) {
-      loadData();
-    }
-  }, [clienteId, servicoId]);
+    loadCliente();
+  }, [clienteIdFromUrl]);
 
   const handleChange = useCallback((field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -146,6 +125,11 @@ export default function EditarServicoAdminPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!clienteIdFromUrl) {
+      toast.error('Cliente não informado');
+      return;
+    }
     
     if (!form.nome?.trim()) {
       toast.warning('O nome do serviço é obrigatório');
@@ -170,24 +154,21 @@ export default function EditarServicoAdminPage() {
         codigoServicoMunicipio: form.codigoServicoMunicipio?.trim() || '',
         itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
         status: form.status,
-        clienteProprietarioId: clienteId,
+        clienteProprietarioId: clienteIdFromUrl,
       };
 
-      await updateServicoAdmin(servicoId, payload);
+      await createServicoAdmin(payload);
       
-      toast.success('Serviço atualizado com sucesso!');
-      
-      // Voltar para a página de serviços com o cliente selecionado
-      const returnClienteId = searchParams.get('returnClienteId') || clienteId;
-      router.push(`${paths.dashboard.servicos}?clienteId=${returnClienteId}`);
+      toast.success('Serviço criado com sucesso!');
+      router.push(`${paths.dashboard.servicos}?clienteId=${clienteIdFromUrl}`);
     } catch (error) {
-      console.error('Erro ao salvar:', error);
+      console.error('Erro ao criar:', error);
       
       // Extrair mensagem de erro da resposta da API
       const errorMessage = 
         error?.response?.data?.message || 
         error?.message || 
-        'Erro ao atualizar serviço';
+        'Erro ao criar serviço';
       
       toast.error(errorMessage);
     } finally {
@@ -195,12 +176,36 @@ export default function EditarServicoAdminPage() {
     }
   };
 
-  if (loadingData) {
+  if (loadingCliente) {
     return (
       <DashboardContent>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-          <CircularProgress />
+          <Typography>Carregando...</Typography>
         </Box>
+      </DashboardContent>
+    );
+  }
+
+  if (!clienteIdFromUrl) {
+    return (
+      <DashboardContent>
+        <Card>
+          <CardContent>
+            <Typography variant="h6" color="error">
+              Cliente não informado
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Por favor, selecione um cliente na página de gerenciamento de serviços.
+            </Typography>
+            <Button
+              sx={{ mt: 2 }}
+              variant="contained"
+              onClick={() => router.push(paths.dashboard.servicos)}
+            >
+              Voltar
+            </Button>
+          </CardContent>
+        </Card>
       </DashboardContent>
     );
   }
@@ -211,14 +216,14 @@ export default function EditarServicoAdminPage() {
         <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
           <Button
             startIcon={<Iconify icon="solar:arrow-left-bold" />}
-            onClick={() => router.push(paths.dashboard.servicos)}
+            onClick={() => router.push(`${paths.dashboard.servicos}?clienteId=${clienteIdFromUrl}`)}
           >
             Voltar
           </Button>
         </Stack>
         
         <Typography variant="h4" sx={{ mb: 0.5 }}>
-          Editar Serviço
+          Novo Serviço
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Cliente: {cliente?.razaoSocial || cliente?.nomeFantasia || cliente?.email || 'Carregando...'}
@@ -367,14 +372,14 @@ export default function EditarServicoAdminPage() {
                       loading={saving}
                       startIcon={<Iconify icon="solar:diskette-bold" />}
                     >
-                      Salvar Alterações
+                      Criar Serviço
                     </LoadingButton>
 
                     <Button
                       fullWidth
                       variant="outlined"
                       color="inherit"
-                      onClick={() => router.push(paths.dashboard.servicos)}
+                      onClick={() => router.push(`${paths.dashboard.servicos}?clienteId=${clienteIdFromUrl}`)}
                     >
                       Cancelar
                     </Button>

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useCallback, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -102,6 +102,7 @@ function ServicoTableRow({ row, onEdit }) {
 
 export default function ServicosAdminPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const theme = useTheme();
   const table = useTable({ defaultOrderBy: 'nome' });
 
@@ -141,12 +142,23 @@ export default function ServicosAdminPage() {
 
   const handleEditServico = (servicoId) => {
     if (!clienteSelecionado?._id) return;
-    router.push(`${paths.dashboard.servicos}/${clienteSelecionado._id}/${servicoId}`);
+    router.push(`${paths.dashboard.servicos}/${clienteSelecionado._id}/${servicoId}?returnClienteId=${clienteSelecionado._id}`);
   };
 
   const dataFiltered = Array.isArray(servicos) ? servicos : [];
 
   const isNotFound = !loadingServicos && (!clienteSelecionado || dataFiltered.length === 0);
+  
+  // Restaurar cliente selecionado ao voltar da edição
+  useEffect(() => {
+    const returnClienteId = searchParams.get('clienteId');
+    if (returnClienteId && clientes && clientes.length > 0 && !clienteSelecionado) {
+      const cliente = clientes.find((c) => c._id === returnClienteId);
+      if (cliente) {
+        setClienteSelecionado(cliente);
+      }
+    }
+  }, [searchParams, clientes, clienteSelecionado]);
 
   return (
     <DashboardContent>
@@ -160,6 +172,16 @@ export default function ServicosAdminPage() {
               Visualize e edite os serviços cadastrados pelos seus clientes
             </Typography>
           </div>
+          {clienteSelecionado && (
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Iconify icon="solar:add-circle-bold" />}
+              onClick={() => router.push(`${paths.dashboard.servicos}/novo?clienteId=${clienteSelecionado._id}`)}
+            >
+              Novo Serviço
+            </Button>
+          )}
         </Stack>
       </Box>
 

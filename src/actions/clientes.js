@@ -12,9 +12,22 @@ export async function getClientes(params) {
 
 // ----------------------------------------------------------------------
 
-export function useGetAllClientes() {
+export function useGetAllClientes(params = {}) {
+  // Adicionar filtros padrão
+  const defaultParams = {
+    status: true,
+    tipoContato: 'cliente',
+    ...params,
+  };
+  
+  const queryString = new URLSearchParams(
+    Object.entries(defaultParams).filter(([_, v]) => v !== undefined && v !== null && v !== '')
+  ).toString();
+  
+  const url = queryString ? `${endpoints.clientes.list}?${queryString}` : endpoints.clientes.list;
+  
   const { data, isLoading, error, mutate } = useSWR(
-    endpoints.clientes.list,
+    url,
     fetcher,
     {
       revalidateIfStale: false,
