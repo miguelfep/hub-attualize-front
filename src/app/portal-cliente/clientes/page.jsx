@@ -17,7 +17,6 @@ import {
   Button,
   TableBody,
   Typography,
-  IconButton,
   CardContent,
   TableContainer,
   TablePagination,
@@ -89,19 +88,23 @@ function ClienteMobileCard({ cliente, onToggleStatus, onEdit, isToggling }) {
           </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={1} justifyContent="flex-end">
-          <IconButton color="primary" onClick={onEdit} size="small">
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
+        <Stack direction="row" spacing={1} justifyContent="space-between">
           <Button
             size="small"
             variant="contained"
-            color={isActive(cliente.status) ? 'warning' : 'success'}
+            color={isActive(cliente.status) ? 'error' : 'success'}
             disabled={isToggling}
             onClick={onToggleStatus}
-            sx={{ minWidth: 80 }}
           >
             {isActive(cliente.status) ? 'Inativar' : 'Ativar'}
+          </Button>
+          <Button
+            size="small"
+            color="primary"
+            variant="contained"
+            onClick={onEdit} 
+          >
+            Editar
           </Button>
         </Stack>
       </CardContent>
@@ -164,11 +167,11 @@ export default function PortalClientesPage() {
   });
 
   const TABLE_HEAD = [
-    { id: 'nome', label: 'Nome / Razão Social' },
-    { id: 'cpfCnpj', label: 'CPF/CNPJ', width: 180 },
-    { id: 'email', label: 'Email', width: 220 },
-    { id: 'telefone', label: 'Telefone', width: 160 },
-    { id: 'status', label: 'Status', width: 100 },
+    { id: 'nome', label: 'Nome / Razão Social',  width: 300, align: 'left' },
+    { id: 'cpfCnpj', label: 'CPF/CNPJ', width: 300, align: 'center' },
+    { id: 'email', label: 'Email', width: 300 , align: 'center'},
+    { id: 'telefone', label: 'Telefone', width: 300, align: 'center' },
+    { id: 'status', label: 'Status', width: 300, align: 'center' },
     { id: '', label: '', align: 'right' },
   ];
 

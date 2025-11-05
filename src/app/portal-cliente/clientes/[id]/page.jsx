@@ -198,8 +198,7 @@ useEffect(() => {
     );
       router.push('../../clientes');
     } catch (error) {
-    const errorMessage = error.response?.data?.message || 'Erro ao atualizar cliente. Tente novamente.';
-    toast.error(errorMessage);
+      toast.error(error.message || 'Erro ao atualizar cliente');
     } finally {
       setSaving(false);
     }

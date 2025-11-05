@@ -4,8 +4,8 @@ import useSWR from 'swr';
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { toast } from 'sonner';
-import { useMemo } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
+import { useMemo, useState, useTransition } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import {
@@ -46,7 +46,7 @@ function getStatusColor(status, theme) {
 }
 
 
-function GraficoAreaNotas({ notas }) {
+function GraficoAreaNotas({ notas, onDayClick }) {
   const chartData = useMemo(() => {
     if (!notas || notas.length === 0) {
       return { seriesData: [] };
@@ -77,6 +77,18 @@ function GraficoAreaNotas({ notas }) {
   }, [notas]);
 
   const chartOptions = useChart({
+    chart: {
+      events: {
+        markerClick: (event, chartContext, { dataPointIndex }) => {
+          const data = chartData.seriesData; 
+          
+          if (dataPointIndex >= 0 && data[dataPointIndex] && onDayClick) {
+            const day = data[dataPointIndex].x;
+            onDayClick(day);
+          }
+        },
+      },
+    },
     markers: {
       size: 5,
       strokeWidth: 2,
@@ -172,17 +184,90 @@ const EmptyState = () => (
 
 function NotaRowSkeleton() {
   return (
-    <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2, mb: 1.5 }}>
-      <Stack spacing={1} sx={{ flexGrow: 1 }}>
-        <Skeleton variant="text" width="60%" sx={{ fontSize: '1rem' }} />
-        <Skeleton variant="text" width="40%" />
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2.5,
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        gap: 3,
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          backgroundColor: (theme) => theme.palette.grey[300],
+        },
+      }}
+    >
+      <Stack
+        direction="row"
+        alignItems="flex-start"
+        spacing={2}
+        sx={{ flexGrow: 1, minWidth: 0 }}
+      >
+        <Skeleton
+          variant="circular"
+          width={24}
+          height={24}
+          sx={{ mt: 0.5, flexShrink: 0 }}
+        />
+
+        <Stack spacing={1.5} sx={{ flexGrow: 1, minWidth: 0 }}>
+          
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Skeleton variant="circular" width={18} height={18} />
+            <Skeleton variant="text" sx={{ fontSize: '1rem', width: '60%' }} />
+          </Stack>
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
+            spacing={1}
+          >
+            <Skeleton variant="rounded" width={90} height={24} />
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Skeleton variant="circular" width={14} height={14} />
+              <Skeleton variant="text" sx={{ fontSize: '0.75rem', width: 80 }} />
+            </Stack>
+          </Stack>
+
+          <Stack>
+            <Skeleton
+              variant="text"
+              sx={{ fontSize: '0.75rem', width: 70, mb: 0.5 }}
+            />
+            <Skeleton variant="rounded" width="100%" height={32} />
+          </Stack>
+        </Stack>
       </Stack>
-      <Stack direction="row" spacing={2} alignItems="center">
-        <Skeleton variant="text" sx={{ fontSize: '1.2rem', width: 80 }} />
+
+      <Stack
+        direction="column"
+        alignItems="flex-end"
+        sx={{ flexShrink: 0 }}
+        spacing={1}
+      >
+        <Skeleton variant="text" sx={{ fontSize: '1.25rem', width: 100 }} />
         <Skeleton variant="rounded" width={80} height={24} />
-        <Skeleton variant="circular" width={32} height={32} />
       </Stack>
     </Paper>
+  );
+}
+
+function ListSkeleton() {
+  return (
+    <Stack spacing={1.5} sx={{ p: { xs: 1.5, md: 3 }, pt: 1 }}>
+      <NotaRowSkeleton />
+      <NotaRowSkeleton />
+      <NotaRowSkeleton />
+      <NotaRowSkeleton />
+    </Stack>
   );
 }
 
@@ -517,6 +602,10 @@ function NotaRowMobile({ nota }) {
 export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId }) {
   const isDesktop = useResponsive('up', 'sm');
 
+  const [isPending, startTransition] = useTransition();
+  
+  const [selectedDay, setSelectedDay] = useState(null);
+
   const canFetch = isOpen && userId && monthData?.ano && monthData?.mes;
 
   const params = canFetch
@@ -529,9 +618,35 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
 
   const { data, error, isLoading, mutate } = useSWR(url, fetcher, {
     revalidateOnFocus: false,
+    onSuccess: () => {
+      if (selectedDay) {
+        setSelectedDay(null);
+      }
+    }
   });
 
-  const notas = useMemo(() => data?.data || [], [data]);
+  const allNotas = useMemo(() => {
+    if (!data?.data) return [];
+    return data.data.map((nota) => ({
+      ...nota,
+      diaDaEmissao: dayjs(nota.dataEmissao).date(),
+    }));
+  }, [data]); 
+
+  const filteredNotas = useMemo(() => {
+    if (selectedDay === null) {
+      return allNotas;
+    }
+    return allNotas.filter((nota) => nota.diaDaEmissao === selectedDay);
+  }, [allNotas, selectedDay]);
+  
+  const handleDayClick = (day) => {
+    const dayNumber = Number(day);
+
+    startTransition(() => {
+      setSelectedDay((prevDay) => (prevDay === dayNumber ? null : dayNumber));
+    });
+  };
 
   if (error) {
     console.error('Erro ao buscar notas do mês:', error);
@@ -580,7 +695,7 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
             <ModalLoadingState />
           ) : error ? (
             <ErrorState onRetry={() => mutate()} />
-          ) : !notas || notas.length === 0 ? (
+          ) : !allNotas || allNotas.length === 0 ? (
             <EmptyState />
           ) : (
             <>
@@ -588,28 +703,71 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
                 <Typography variant="h6" sx={{ mb: 2 }}>
                   Faturamentos por Dia
                 </Typography>
-                <GraficoAreaNotas notas={notas} />
+                <GraficoAreaNotas notas={allNotas} onDayClick={handleDayClick} />
               </Box>
 
               <Divider sx={{ borderStyle: 'dashed' }} />
 
-              <Box
-                component={m.div}
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                sx={{ p: { xs: 1.5, md: 3 } }}
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                justifyContent="space-between"
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+                spacing={1}
+                sx={{
+                  pt: 2,
+                  pb: 1,
+                  px: { xs: 1.5, md: 3 },
+                  opacity: isPending ? 0.6 : 1,
+                  transition: (theme) =>
+                    theme.transitions.create('opacity', {
+                      duration: theme.transitions.duration.shorter,
+                    }),
+                }}
               >
-                <Stack spacing={1.5}>
-                  {notas.map((nota) => (
-                    isDesktop ? (
-                      <NotaRow key={nota._id} nota={nota} />
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {selectedDay
+                    ? `Mostrando notas do dia ${dayjs().date(selectedDay).format('DD/MM/YYYY')} (${filteredNotas.length} no total)`
+                    : 'Mostrando todas as notas'}
+                </Typography>
+                {selectedDay !== null && (
+                  <Button
+                    size="small"
+                    color="inherit"
+                    onClick={() => handleDayClick(selectedDay)}
+                    startIcon={<Iconify icon="solar:refresh-circle-line-duotone" />}
+                    disabled={isPending}
+                  >
+                    Limpar filtro
+                  </Button>
+                )}
+              </Stack>
+              {isPending ? (
+                <ListSkeleton />
+              ) : (
+                <Box
+                  component={m.div}
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="visible"
+                  sx={{ p: { xs: 1.5, md: 3 } }}
+                >
+                  <Stack spacing={1.5}>
+                    {filteredNotas.length > 0 ? (
+                      filteredNotas.map((nota) =>
+                        isDesktop ? (
+                          <NotaRow key={nota._id} nota={nota} />
+                        ) : (
+                          <NotaRowMobile key={nota._id} nota={nota} />
+                        )
+                      )
                     ) : (
-                      <NotaRowMobile key={nota._id} nota={nota} />
-                    )
-                  ))}
-                </Stack>
-              </Box>
+                      <Typography sx={{ textAlign: 'center', p: 3, color: 'text.secondary' }}>
+                        Nenhuma nota encontrada para o dia {selectedDay}.
+                      </Typography>
+                    )}
+                  </Stack>
+                </Box>
+              )}
             </>
           )}
         </AnimatePresence>
