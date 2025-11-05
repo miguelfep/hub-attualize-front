@@ -82,6 +82,7 @@ export function ClientePortalSettings({ clienteId }) {
       ambiente: settings?.eNotasConfig?.ambiente ?? 'homologacao',
       status: settings?.eNotasConfig?.status ?? 'inativa',
       emiteNFSeNacional: Boolean(settings?.eNotasConfig?.emiteNFSeNacional),
+      emiteNotaRetroativa: Boolean(settings?.eNotasConfig?.emiteNotaRetroativa),
       configuracaoNFSe: {
         codigoMunicipio: settings?.eNotasConfig?.configuracaoNFSe?.codigoMunicipio ?? '',
         codigoServico: settings?.eNotasConfig?.configuracaoNFSe?.codigoServico ?? '',
@@ -175,6 +176,7 @@ export function ClientePortalSettings({ clienteId }) {
         ambiente: localState?.eNotas?.ambiente ?? 'homologacao',
         status: localState?.eNotas?.status ?? 'inativa',
         emiteNFSeNacional: Boolean(localState?.eNotas?.emiteNFSeNacional),
+        emiteNotaRetroativa: Boolean(localState?.eNotas?.emiteNotaRetroativa),
         configuracaoNFSe: {
           codigoMunicipio: nfseCfg?.codigoMunicipio ?? '',
           codigoServico: nfseCfg?.codigoServico ?? '',
@@ -219,6 +221,8 @@ export function ClientePortalSettings({ clienteId }) {
             empresaId: updated?.eNotasConfig?.empresaId ?? '',
             ambiente: updated?.eNotasConfig?.ambiente ?? 'homologacao',
             status: updated?.eNotasConfig?.status ?? 'inativa',
+            emiteNFSeNacional: Boolean(updated?.eNotasConfig?.emiteNFSeNacional),
+            emiteNotaRetroativa: Boolean(updated?.eNotasConfig?.emiteNotaRetroativa),
             configuracaoNFSe: {
               codigoMunicipio: updated?.eNotasConfig?.configuracaoNFSe?.codigoMunicipio ?? '',
               codigoServico: updated?.eNotasConfig?.configuracaoNFSe?.codigoServico ?? '',
@@ -441,22 +445,40 @@ export function ClientePortalSettings({ clienteId }) {
             label="Emissão de NFSe"
           />
           {localState.funcionalidades.emissaoNFSe && (
-            <FormControlLabel
-              control={
-                <Switch 
-                  checked={localState.eNotas.emiteNFSeNacional || false} 
-                  onChange={handleEnotasToggle('emiteNFSeNacional')} 
-                />
-              }
-              label="Emite NFSe Nacional"
-              sx={{ 
-                ml: 4,
-                '& .MuiFormControlLabel-label': {
-                  fontSize: '0.875rem',
-                  color: 'text.secondary',
+            <>
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={localState.eNotas.emiteNFSeNacional || false} 
+                    onChange={handleEnotasToggle('emiteNFSeNacional')} 
+                  />
                 }
-              }}
-            />
+                label="Emite NFSe Nacional"
+                sx={{ 
+                  ml: 4,
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '0.875rem',
+                    color: 'text.secondary',
+                  }
+                }}
+              />
+              <FormControlLabel
+                control={
+                  <Switch 
+                    checked={localState.eNotas.emiteNotaRetroativa || false} 
+                    onChange={handleEnotasToggle('emiteNotaRetroativa')} 
+                  />
+                }
+                label="Emite Nota Retroativa"
+                sx={{ 
+                  ml: 4,
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '0.875rem',
+                    color: 'text.secondary',
+                  }
+                }}
+              />
+            </>
           )}
         </Grid>
 

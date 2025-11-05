@@ -19,12 +19,14 @@ import {
   Tooltip,
   Divider,
   MenuItem,
+  Checkbox,
   TextField,
   Typography,
   IconButton,
   CardContent,
   InputAdornment,
   CircularProgress,
+  FormControlLabel,
 } from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
@@ -84,8 +86,11 @@ export default function OrcamentoDetalhesPage({ params }) {
   const [confirmCancel, setConfirmCancel] = React.useState(false);
   const [cancelLoading, setCancelLoading] = React.useState(false);
   const [nfseToCancel, setNfseToCancel] = React.useState(null);
+  const [notaRetroativa, setNotaRetroativa] = React.useState(false);
   const { data: servicosList, isLoading: loadingServicos } =
     usePortalServicos(clienteProprietarioId);
+  
+  const emiteNotaRetroativa = settings?.eNotasConfig?.emiteNotaRetroativa === true;
 
   React.useEffect(() => {
     let cancelled = false;
@@ -97,6 +102,12 @@ export default function OrcamentoDetalhesPage({ params }) {
         if (cancelled) return;
         setOrcamento(data);
         setStatus(data?.status || 'pendente');
+        
+        // Verificar se tem data de competência da nota (nota retroativa)
+        if (data?.dataCompetenciaNota) {
+          setNotaRetroativa(true);
+        }
+        
         // inicializa edição de item (apenas o primeiro)
         const first = Array.isArray(data?.itens) && data.itens.length ? data.itens[0] : null;
         if (first) {
@@ -183,6 +194,7 @@ export default function OrcamentoDetalhesPage({ params }) {
         clienteProprietarioId,
         observacoes: orcamento.observacoes,
         condicoesPagamento: orcamento.condicoesPagamento,
+        dataCompetenciaNota: notaRetroativa ? orcamento.dataCompetenciaNota : null,
       });
       toast.success('Orçamento atualizado');
       setEditingPedido(false);
@@ -694,6 +706,51 @@ export default function OrcamentoDetalhesPage({ params }) {
                       disabled={!editingPedido || !canEditPedido}
                     />
                   </Grid>
+                  {emiteNotaRetroativa && (
+                    <Grid item xs={12} md={6}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={notaRetroativa}
+                            onChange={(e) => {
+                              setNotaRetroativa(e.target.checked);
+                              // Se desmarcar, remove a data
+                              if (!e.target.checked) {
+                                setOrcamento((o) => ({ ...o, dataCompetenciaNota: null }));
+                              } else if (!orcamento.dataCompetenciaNota) {
+                                // Se marcar e não tiver data, seta a atual
+                                setOrcamento((o) => ({ 
+                                  ...o, 
+                                  dataCompetenciaNota: new Date().toISOString().split('T')[0] 
+                                }));
+                              }
+                            }}
+                            disabled={!editingPedido || !canEditPedido}
+                          />
+                        }
+                        label="Nota Retroativa?"
+                      />
+                      {notaRetroativa && (
+                        <TextField
+                          fullWidth
+                          type="date"
+                          label="Data Competência da Nota"
+                          value={
+                            orcamento.dataCompetenciaNota 
+                              ? new Date(orcamento.dataCompetenciaNota).toISOString().split('T')[0]
+                              : new Date().toISOString().split('T')[0]
+                          }
+                          onChange={(e) =>
+                            setOrcamento((o) => ({ ...o, dataCompetenciaNota: e.target.value }))
+                          }
+                          disabled={!editingPedido || !canEditPedido}
+                          InputLabelProps={{ shrink: true }}
+                          helperText="Data de competência para emissão da NFSe retroativa"
+                          sx={{ mt: 1 }}
+                        />
+                      )}
+                    </Grid>
+                  )}
                   <Grid item xs={12}>
                     <Stack
                       spacing={1}

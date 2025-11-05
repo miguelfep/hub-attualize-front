@@ -17,7 +17,6 @@ import {
   Typography,
   CardContent,
   InputAdornment,
-  CircularProgress,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';

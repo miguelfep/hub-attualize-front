@@ -1,8 +1,8 @@
 'use client';
 
 import { toast } from 'sonner';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -25,11 +25,10 @@ import { formatCNAE } from 'src/utils/formatter';
 import { fCurrency } from 'src/utils/format-number';
 
 import { getClienteById } from 'src/actions/clientes';
-import { getServicoAdminById, updateServicoAdmin } from 'src/actions/servicos-admin';
+import { DashboardContent } from 'src/layouts/dashboard';
+import { updateServicoAdmin, getServicoAdminById } from 'src/actions/servicos-admin';
 
 import { Iconify } from 'src/components/iconify';
-
-import { DashboardContent } from 'src/layouts/dashboard';
 
 // ----------------------------------------------------------------------
 
