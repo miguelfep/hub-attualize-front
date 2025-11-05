@@ -67,6 +67,21 @@ export async function getServicoAdminById(clienteId, servicoId) {
 }
 
 /**
+ * Criar serviço (admin)
+ * @param {Object} payload - Dados do serviço
+ * @returns {Promise<Object>}
+ */
+export async function createServicoAdmin(payload) {
+  try {
+    const res = await axios.post(endpoints.portal.servicos.create, payload);
+    return res.data;
+  } catch (error) {
+    console.error('❌ Erro ao criar serviço:', error);
+    throw error;
+  }
+}
+
+/**
  * Atualizar serviço (admin)
  * @param {string} servicoId - ID do serviço
  * @param {Object} payload - Dados a atualizar
