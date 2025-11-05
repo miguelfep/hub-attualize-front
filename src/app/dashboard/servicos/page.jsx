@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import Box from '@mui/material/Box';
@@ -12,27 +12,25 @@ import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CardContent from '@mui/material/CardContent';
+import Autocomplete from '@mui/material/Autocomplete';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
-import { alpha, useTheme } from '@mui/material/styles';
-import Autocomplete from '@mui/material/Autocomplete';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
-import { RouterLink } from 'src/routes/components';
 
 import { fCurrency } from 'src/utils/format-number';
 
 import { useGetAllClientes } from 'src/actions/clientes';
+import { DashboardContent } from 'src/layouts/dashboard';
 import { useServicosAdmin } from 'src/actions/servicos-admin';
 
 import { Iconify } from 'src/components/iconify';
-import { useTable, TableHeadCustom, TableNoData } from 'src/components/table';
-
-import { DashboardContent } from 'src/layouts/dashboard';
+import { useTable, TableNoData, TableHeadCustom } from 'src/components/table';
 
 // ----------------------------------------------------------------------
 

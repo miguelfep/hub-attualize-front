@@ -10,12 +10,12 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CardContent from '@mui/material/CardContent';
-import { alpha } from '@mui/material/styles';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import { paths } from 'src/routes/paths';
@@ -24,11 +24,10 @@ import { formatCNAE } from 'src/utils/formatter';
 import { fCurrency } from 'src/utils/format-number';
 
 import { getClienteById } from 'src/actions/clientes';
+import { DashboardContent } from 'src/layouts/dashboard';
 import { createServicoAdmin } from 'src/actions/servicos-admin';
 
 import { Iconify } from 'src/components/iconify';
-
-import { DashboardContent } from 'src/layouts/dashboard';
 
 // ----------------------------------------------------------------------
 

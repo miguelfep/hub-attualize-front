@@ -6,7 +6,7 @@ import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Box, Card, Stack, Button, Dialog, Divider, MenuItem, TextField, Typography, CardContent, DialogTitle, DialogContent, DialogActions, CircularProgress, Autocomplete } from '@mui/material';
+import { Box, Card, Stack, Button, Dialog, Divider, MenuItem, Checkbox, TextField, Typography, CardContent, DialogTitle, Autocomplete, DialogContent, DialogActions, CircularProgress, FormControlLabel } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -32,8 +32,10 @@ export default function NovoOrcamentoPage() {
   const userId = user?.id || user?._id || user?.userId;
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
-  const { podeCriarOrcamentos } = useSettings();
+  const { podeCriarOrcamentos, settings } = useSettings();
   const router = useRouter();
+  
+  const emiteNotaRetroativa = settings?.eNotasConfig?.emiteNotaRetroativa === true;
 
   const [saving, setSaving] = React.useState(false);
   const [filtersCli, setFiltersCli] = React.useState({ status: 'true', search: '' });
@@ -47,6 +49,8 @@ export default function NovoOrcamentoPage() {
     condicoesPagamento: '',
   });
   const [itens, setItens] = React.useState([]);
+  const [notaRetroativa, setNotaRetroativa] = React.useState(false);
+  const [dataCompetenciaNota, setDataCompetenciaNota] = React.useState(new Date().toISOString().split('T')[0]);
   const [openNovoCliente, setOpenNovoCliente] = React.useState(false);
   const [openNovoServico, setOpenNovoServico] = React.useState(false);
   const onlyDigits = (v) => (v || '').replace(/\D/g, '');
@@ -201,6 +205,7 @@ export default function NovoOrcamentoPage() {
         clienteProprietarioId,
         clienteDoClienteId: form.clienteDoClienteId,
         dataValidade: form.dataValidade,
+        dataCompetenciaNota: notaRetroativa ? dataCompetenciaNota : null,
         itens,
         observacoes: form.observacoes,
         condicoesPagamento: form.condicoesPagamento,
@@ -309,7 +314,7 @@ return (
                       Novo Cliente
                     </Button>
                   </Grid>
-                  <Grid xs={12} md={4}>
+                  <Grid xs={12} md={6}>
                     <TextField
                       fullWidth
                       type="date"
@@ -319,6 +324,37 @@ return (
                       InputLabelProps={{ shrink: true }}
                     />
                   </Grid>
+                  {emiteNotaRetroativa && (
+                    <Grid xs={12} md={6}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={notaRetroativa}
+                            onChange={(e) => {
+                              setNotaRetroativa(e.target.checked);
+                              // Se desmarcar, reseta para data atual
+                              if (!e.target.checked) {
+                                setDataCompetenciaNota(new Date().toISOString().split('T')[0]);
+                              }
+                            }}
+                          />
+                        }
+                        label="Nota Retroativa?"
+                      />
+                      {notaRetroativa && (
+                        <TextField
+                          fullWidth
+                          type="date"
+                          label="Data Competência da Nota"
+                          value={dataCompetenciaNota}
+                          onChange={(e) => setDataCompetenciaNota(e.target.value)}
+                          InputLabelProps={{ shrink: true }}
+                          helperText="Data de competência para emissão da NFSe retroativa"
+                          sx={{ mt: 1 }}
+                        />
+                      )}
+                    </Grid>
+                  )}
                 </Grid>
               </Box>
 
