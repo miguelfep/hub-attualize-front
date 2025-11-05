@@ -208,7 +208,7 @@ export default function PortalClienteNovoPage() {
         
         // Redirecionar para o cadastro do cliente existente
         setTimeout(() => {
-          router.push(`../${existingCliente._id}`);
+          router.push(`/portal-cliente/clientes/${existingCliente._id}`);
         }, 1500);
       } else {
         // Cliente criado com sucesso
@@ -221,7 +221,7 @@ export default function PortalClienteNovoPage() {
           { revalidate: true }
         );
 
-        router.push('../clientes');
+        router.push('/portal-cliente/clientes');
       }
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Erro ao criar cliente. Tente novamente.';
