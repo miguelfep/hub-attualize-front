@@ -20,7 +20,7 @@ function CertificateListItem({ certificado, onDownload }) {
         <Typography variant="caption" color="text.secondary">Validade: {formatDate(certificado.validFrom)} até {formatDate(certificado.validTo)}</Typography>
       </Stack>
       <Tooltip title="Baixar Arquivo .pfx" arrow>
-        <IconButton onClick={() => onDownload(certificado._id, certificado.fileName)}>
+        <IconButton onClick={() => onDownload(certificado.id, certificado.fileName)}>
           <Iconify icon="solar:download-minimalistic-line-duotone" />
         </IconButton>
       </Tooltip>

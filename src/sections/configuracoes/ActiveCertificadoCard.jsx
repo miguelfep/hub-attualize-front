@@ -16,6 +16,7 @@ const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-B
 export function ActiveCertificateCard({ certificado, onDesativar, onDownload }) {
   const theme = useTheme();
 
+
   return (
     <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
       <Paper
@@ -43,7 +44,7 @@ export function ActiveCertificateCard({ certificado, onDesativar, onDownload }) 
 
           <Stack direction="row" spacing={1} justifyContent="flex-end">
             <Tooltip title="Baixar Arquivo .pfx" arrow>
-              <IconButton onClick={() => onDownload(certificado._id, certificado.fileName)}>
+              <IconButton onClick={() => onDownload(certificado.id, certificado.fileName)}>
                 <Iconify icon="solar:download-minimalistic-bold" />
               </IconButton>
             </Tooltip>
@@ -51,7 +52,7 @@ export function ActiveCertificateCard({ certificado, onDesativar, onDownload }) 
               color="error"
               variant="soft"
               startIcon={<Iconify icon="solar:power-bold" />}
-              onClick={() => onDesativar(certificado._id)}
+              onClick={() => onDesativar(certificado.id)}
             >
               Desativar
             </Button>
