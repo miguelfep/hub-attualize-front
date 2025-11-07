@@ -69,14 +69,14 @@ export function StepResumo({ formData, orcamento, onEdit, temAberturaGratuita, o
   const planosDisponiveis = [
     {
       nome: 'START',
-      valor: 199,
+      valor: 367,
       faturamentoMax: 20000,
       features: ['Até R$ 20mil/mês', 'Simples Nacional', 'Suporte básico', 'Portal do cliente'],
       color: '#0096D9',
     },
     {
       nome: 'PLENO',
-      valor: 349,
+      valor: 467,
       faturamentoMax: 100000,
       features: ['Até R$ 100mil/mês', 'Simples Nacional', 'Suporte prioritário', 'Consultoria mensal'],
       color: '#FEC615',
@@ -84,7 +84,7 @@ export function StepResumo({ formData, orcamento, onEdit, temAberturaGratuita, o
     },
     {
       nome: 'PREMIUM',
-      valor: 549,
+      valor: 879,
       faturamentoMax: 300000,
       features: ['Até R$ 300mil/mês', 'Qualquer regime', 'Suporte VIP 24/7', 'Planejamento tributário'],
       color: '#8B5CF6',
@@ -328,7 +328,7 @@ export function StepResumo({ formData, orcamento, onEdit, temAberturaGratuita, o
                         A partir de
                       </Typography>
                       <Typography variant="h4" sx={{ fontWeight: 700, color: plano.color }}>
-                        {formatCurrency(valorFinal)}
+                        {formatCurrency(plano.valor)}
                       </Typography>
                       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                         por mês

@@ -15,6 +15,7 @@ import { Snackbar } from 'src/components/snackbar';
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { detectSettings } from 'src/components/settings/server';
+import { MercadoPagoProvider } from 'src/components/mercado-pago';
 import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
 
 import { CheckoutProvider } from 'src/sections/checkout/context';
@@ -74,14 +75,16 @@ export default async function RootLayout({ children }) {
                 <ThemeProvider>
                   <SpeedInsights />
                   <MotionLazy>
-                    <CheckoutProvider>
-                      <Snackbar />
-                      <ProgressBar />
-                      <SettingsDrawer />
-                      <Analytics />
-                      <ClientAnalytics />
-                      {children}
-                    </CheckoutProvider>
+                    <MercadoPagoProvider>
+                      <CheckoutProvider>
+                        <Snackbar />
+                        <ProgressBar />
+                        <SettingsDrawer />
+                        <Analytics />
+                        <ClientAnalytics />
+                        {children}
+                      </CheckoutProvider>
+                    </MercadoPagoProvider>
                   </MotionLazy>
                 </ThemeProvider>
               </SettingsProvider>

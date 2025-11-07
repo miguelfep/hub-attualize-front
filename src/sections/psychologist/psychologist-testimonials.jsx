@@ -148,7 +148,7 @@ export function PsychologistTestimonials() {
               mx: 'auto',
             }}
           >
-            Mais de <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>500 psicólogos</Box> confiam na Attualize para cuidar de sua contabilidade
+            Mais de <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>200 psicólogos</Box> confiam na Attualize para cuidar de sua contabilidade
           </Typography>
         </Stack>
 

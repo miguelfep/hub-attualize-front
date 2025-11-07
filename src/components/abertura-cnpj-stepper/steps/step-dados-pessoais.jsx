@@ -51,7 +51,7 @@ export function StepDadosPessoais({ formData, updateFormData }) {
               Você está a poucos passos de profissionalizar sua prática!
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Mais de <strong>500 psicólogos</strong> já abriram seu CNPJ conosco. Seja o próximo!
+              Mais de <strong>200 psicólogos</strong> já abriram seu CNPJ conosco. Seja o próximo!
             </Typography>
           </Box>
         </Stack>

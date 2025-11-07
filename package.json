@@ -42,6 +42,7 @@
     "@fullcalendar/timeline": "^6.1.14",
     "@hookform/resolvers": "^3.6.0",
     "@iconify/react": "^5.0.1",
+    "@mercadopago/sdk-react": "^1.0.6",
     "@mui/lab": "^5.0.0-alpha.170",
     "@mui/material": "^5.15.20",
     "@mui/material-nextjs": "^5.15.11",
