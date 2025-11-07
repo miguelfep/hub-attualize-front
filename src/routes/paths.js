@@ -247,6 +247,10 @@ export const paths = {
       comercial: `${ROOTS.DASHBOARD}/relatorios/comercial`,
       financeiro: `${ROOTS.DASHBOARD}/relatorios/financeiro`,
     },
+    avaliacoes: {
+      root: `${ROOTS.DASHBOARD}/avaliacoes`,
+      detalhes: (id) => `${ROOTS.DASHBOARD}/avaliacoes/${id}`,
+    },
   },
   // CLIENTE AREA
   cliente: {
@@ -279,5 +283,6 @@ export const paths = {
     licencas: `${ROOTS.CLIENTE}/licencas`,
     profile: `${ROOTS.CLIENTE}/profile`,
     settings: `${ROOTS.CLIENTE}/settings`,
+    aulaoReforma: `${ROOTS.CLIENTE}/aulao-reforma`,
   },
 };

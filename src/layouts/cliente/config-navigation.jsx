@@ -34,6 +34,12 @@ export function usePortalNavData() {
       icon: <Iconify icon="solar:home-2-bold-duotone" />,
     },
     {
+      title: 'Aulão Reforma',
+      path: paths.cliente.aulaoReforma,
+      icon: <Iconify icon="solar:play-circle-bold-duotone" />,
+      info: "temporario"
+    },
+    {
       title: 'Minha Empresa',
       path: paths.cliente.empresa,
       icon: <Iconify icon="solar:buildings-2-bold-duotone" />,

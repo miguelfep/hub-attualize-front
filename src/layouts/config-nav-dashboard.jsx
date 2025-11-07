@@ -57,8 +57,10 @@ export const navData = [
         children: [
           { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
           { title: 'Serviços dos Clientes', path: paths.dashboard.servicos, icon: ICONS.product, roles: ['admin', 'operacional'] },
+          { title: 'Avaliações', path: paths.dashboard.avaliacoes.root, icon: ICONS.analytics, roles: ['admin'] },
         ],
       },
+     
       
      
       {

@@ -43,12 +43,9 @@ const ESTADOS_ATENDIDOS = [
   { sigla: 'RN', nome: 'Rio Grande do Norte', coordinates: [-35.2110, -5.7945] },
   { sigla: 'PB', nome: 'Paraíba', coordinates: [-34.8450, -7.1195] },
   { sigla: 'AL', nome: 'Alagoas', coordinates: [-35.7350, -9.6658] },
-  { sigla: 'SE', nome: 'Sergipe', coordinates: [-37.0731, -10.9472] },
-  { sigla: 'MA', nome: 'Maranhão', coordinates: [-44.2825, -2.5387] },
   { sigla: 'PI', nome: 'Piauí', coordinates: [-42.8016, -5.0892] },
   
   // Região Norte
-  { sigla: 'AM', nome: 'Amazonas', coordinates: [-60.0217, -3.1190] },
   { sigla: 'PA', nome: 'Pará', coordinates: [-48.4902, -1.4558] },
   { sigla: 'RO', nome: 'Rondônia', coordinates: [-63.9004, -8.7612] },
   { sigla: 'AC', nome: 'Acre', coordinates: [-67.8243, -9.9754] },
@@ -108,7 +105,7 @@ export function PsychologistCoverage() {
               mx: 'auto',
             }}
           >
-            Presença em <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>{ESTADOS_ATENDIDOS.length} estados</Box> com mais de <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>789+ psicólogos atendidos</Box>
+            Presença em <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>{ESTADOS_ATENDIDOS.length} estados</Box> com mais de <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>200+ psicólogos atendidos</Box>
           </Typography>
         </Stack>
 
@@ -125,7 +122,7 @@ export function PsychologistCoverage() {
         >
           <Stack spacing={1}>
             <Typography variant="h2" sx={{ fontWeight: 900 }}>
-              789+
+              200+
             </Typography>
             <Typography variant="h5" sx={{ opacity: 0.95, fontWeight: 600 }}>
               Psicólogos atendidos em todo o Brasil
