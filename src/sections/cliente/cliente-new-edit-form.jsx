@@ -28,7 +28,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { buscarCep } from 'src/actions/cep';
-import { criarCliente, updateCliente, getClienteById } from 'src/actions/clientes';
+import { criarCliente, updateCliente, getClienteById, atualizarDadosCliente } from 'src/actions/clientes';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
@@ -106,8 +106,8 @@ export const NewUClienteSchema = zod.object({
     .optional(),
   dataEntrada: zod.date().optional().nullable(),
   dataSaida: zod.date().optional().nullable(),
-  regimeTributario: zod.enum(['simples', 'presumido', 'real', 'pf']).optional(),
-  planoEmpresa: zod.enum(['carneleao', 'mei', 'start', 'pleno', 'premium', 'plus']).optional(),
+  regimeTributario: zod.enum(['simples', 'presumido', 'real', 'pf'], { message: 'Seleciona uma opção valida' }).optional(),
+  planoEmpresa: zod.enum(['carneleao', 'mei', 'start', 'pleno', 'premium', 'plus'], { message: 'Seleciona uma opção valida' }).optional(),
   tributacao: zod
     .array(zod.enum(['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'simei', 'autonomo']))
     .optional(),
@@ -321,7 +321,7 @@ export function ClienteNewEditForm({ currentCliente }) {
   });
 
 const onSubmit = handleSubmit(
-    async (data) => {
+  async (data) => {
       try {
 
         const formData = new FormData();
@@ -397,15 +397,13 @@ const onSubmit = handleSubmit(
   const handleAtualizarReceita = async () => {
     setLoadingReceita(true);
     try {
-      // Chame a API para atualizar os dados da Receita aqui
-
-       const newCLiente = await updateCliente(currentCliente._id);
-       reset(newCLiente);
+      const clienteAtualizado = await atualizarDadosCliente(currentCliente._id);
+      reset(clienteAtualizado);
 
       toast.success('Dados da Receita atualizados com sucesso!');
     } catch (error) {
-      console.error('Error updating data from Receita:', error);
-      toast.error('Erro ao atualizar dados da Receita');
+      // toast.info(error.message || 'Dados desatualizados');
+      toast.info('Dados desatualizados');
     } finally {
       setLoadingReceita(false);
     }
@@ -418,13 +416,15 @@ const onSubmit = handleSubmit(
       if (enderecoData) {
         setValue(`endereco.${index}.rua`, enderecoData.rua);
         setValue(`endereco.${index}.cidade`, enderecoData.cidade);
+        setValue(`endereco.${index}.bairro`, enderecoData.bairro);
         setValue(`endereco.${index}.estado`, enderecoData.estado);
       } else {
         toast.error('CEP não encontrado');
       }
     } catch (error) {
+      toast.error(error.message)
       console.error('Error fetching CEP data:', error);
-      toast.error('Erro ao buscar CEP');
+      // toast.error('Erro ao buscar CEP');
     } finally {
       setLoadingCep(false);
     }

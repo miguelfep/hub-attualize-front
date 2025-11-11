@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useMemo, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Modal from '@mui/material/Modal';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
@@ -102,9 +103,12 @@ export function OverviewBookingView() {
     const newErrors = {};
     if (!newLicense.nome) newErrors.nome = 'O tipo de licença é obrigatório.';
     if (!newLicense.clienteId) newErrors.clienteId = 'O cliente é obrigatório.';
-    if (!newLicense.dataInicio) newErrors.dataInicio = 'A data de início é obrigatória.';
-    if (!newLicense.dataVencimento)
-      newErrors.dataVencimento = 'A data de vencimento é obrigatória.';
+    if (newLicense.status !== 'dispensada') { 
+      if (!newLicense.dataInicio) newErrors.dataInicio = 'A data de início é obrigatória.';
+    }
+    if(newLicense.status !== 'dispensada') {
+      if (!newLicense.dataVencimento) newErrors.dataVencimento = 'A data de vencimento é obrigatória.';
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -116,6 +120,7 @@ export function OverviewBookingView() {
       setOpen(false);
       fetchLicencas();
     } catch (error) {
+      toast.error(error.message);
       console.error('Erro ao criar licença:', error);
     }
   };
@@ -226,14 +231,19 @@ export function OverviewBookingView() {
           />
 
           {groupedByCliente.map(({ cliente, itens }) => (
-            <Accordion key={cliente?._id} defaultExpanded sx={{ mb: 1 }}>
+            <Accordion key={cliente?._id} defaultExpanded sx={{ mb: 1, opacity: !cliente?.status ? 0.7 : 1 }}>
               <AccordionSummary expandIcon={<Iconify icon="eva:arrow-ios-downward-outline" />}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                   <Typography variant="subtitle1">{cliente?.razaoSocial}</Typography>
+                   {!cliente?.status &&
+                    <Chip label="Cliente Inativado" size="small" color="error" variant="soft" />
+                   }
+                  </Box>
                   <Typography variant="body2" color="text.secondary">{itens.length} licença(s)</Typography>
                 </Box>
               </AccordionSummary>
-              <AccordionDetails>
+              <AccordionDetails sx={{opacity: !cliente?.status ? 0.7 : 1 }}>
                 {itens.map((row) => (
                   <Box key={row.id} sx={{ display: 'grid', gridTemplateColumns: '1.2fr 0.9fr 0.9fr 0.9fr auto', gap: 2, py: 1, borderBottom: '1px dashed', borderColor: 'divider', alignItems: 'center' }}>
                     <Typography>{row.nome}</Typography>
@@ -352,32 +362,6 @@ export function OverviewBookingView() {
             onChange={(e) => setNewLicense({ ...newLicense, observacao: e.target.value })}
           />
 
-          <TextField
-            label="Data de Início"
-            fullWidth
-            margin="normal"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            value={newLicense.dataInicio}
-            onChange={(e) => setNewLicense({ ...newLicense, dataInicio: e.target.value })}
-            required
-            error={!!errors.dataInicio}
-            helperText={errors.dataInicio}
-          />
-
-          <TextField
-            label="Data de Vencimento"
-            fullWidth
-            margin="normal"
-            type="date"
-            InputLabelProps={{ shrink: true }}
-            value={newLicense.dataVencimento}
-            onChange={(e) => setNewLicense({ ...newLicense, dataVencimento: e.target.value })}
-            required
-            error={!!errors.dataVencimento}
-            helperText={errors.dataVencimento}
-          />
-
           <FormControl fullWidth margin="normal" required>
             <InputLabel>Status</InputLabel>
             <Select
@@ -392,6 +376,31 @@ export function OverviewBookingView() {
               <MenuItem value="a_expirar">A Expirar</MenuItem>
             </Select>
           </FormControl>
+
+          <TextField
+            label="Data de Início"
+            fullWidth
+            margin="normal"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={newLicense.dataInicio}
+            onChange={(e) => setNewLicense({ ...newLicense, dataInicio: e.target.value })}
+            error={!!errors.dataInicio}
+            helperText={errors.dataInicio}
+          />
+
+          <TextField
+            label="Data de Vencimento"
+            fullWidth
+            margin="normal"
+            type="date"
+            InputLabelProps={{ shrink: true }}
+            value={newLicense.dataVencimento}
+            onChange={(e) => setNewLicense({ ...newLicense, dataVencimento: e.target.value })}
+            error={!!errors.dataVencimento}
+            helperText={errors.dataVencimento}
+          />
+
 
           <Button variant="contained" color="primary" onClick={handleCreateLicense} fullWidth>
             Criar

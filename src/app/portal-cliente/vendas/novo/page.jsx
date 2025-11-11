@@ -36,7 +36,8 @@ export default function NovoOrcamentoPage() {
   const router = useRouter();
   
   const emiteNotaRetroativa = settings?.eNotasConfig?.emiteNotaRetroativa === true;
-
+  
+  const [naoTemTomador, setNaoTemTomador] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [filtersCli, setFiltersCli] = React.useState({ status: 'true', search: '' });
   const { data: clientes, mutate: mutateClientes } = usePortalClientes(clienteProprietarioId, filtersCli);
@@ -195,7 +196,7 @@ export default function NovoOrcamentoPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.clienteDoClienteId) { toast.error('É obritatório selecionar um cliente'); return; }
+    if (!naoTemTomador && !form.clienteDoClienteId) { toast.error('É obritatório selecionar um cliente'); return; }
     if (!form.dataValidade) { toast.error('É obrigatório selecionar uma data de validade'); return; }
     if (!itens.length) { toast.error('Adicione pelo menos um item de serviço ao orçamento.'); return; }
     if (!validateItens()) return;
@@ -218,7 +219,7 @@ export default function NovoOrcamentoPage() {
         router.replace(paths.cliente.orcamentos.root);
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Erro ao criar orçamento';
+      const errorMessage = err?.data?.message || 'Erro ao criar orçamento';
       toast.error(errorMessage);
     } finally {
       setSaving(false);
@@ -278,8 +279,9 @@ return (
                   Dados da Venda
                 </Typography>
                 <Grid container spacing={2}>
-                  <Grid xs={12} md={8}>
+                  <Grid xs={12} md={6}>
                     <Autocomplete
+                      disabled={naoTemTomador}
                       fullWidth
                       options={Array.isArray(clientes) ? clientes : []}
                       getOptionLabel={(option) => {
@@ -301,6 +303,24 @@ return (
                         />
                       )}
                       noOptionsText="Nenhum cliente encontrado"
+                    />
+                  </Grid>
+                  <Grid xs={12} md={2} sx={{ alignContent: 'end' }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={naoTemTomador}
+                          onChange={(e) => {
+                            setNaoTemTomador(e.target.checked);
+                            if (e.target.checked) {
+                              setForm((f) => ({ ...f, clienteDoClienteId: '' }));
+                            }
+                          }}
+                          size="small"
+                          sx={{ ml: 0 }}
+                        />
+                      }
+                      label="Não possui Tomador ?"
                     />
                   </Grid>
                   <Grid xs={12} md={4}>

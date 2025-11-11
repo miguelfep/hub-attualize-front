@@ -17,7 +17,6 @@ import {
   Dialog,
   TableBody,
   Typography,
-  IconButton,
   CardContent,
   DialogTitle,
   DialogContent,
@@ -86,22 +85,23 @@ function ServicoMobileCard({ servico, onToggle, onDelete, onEdit, isToggling }) 
           </Typography>
         </Stack>
 
-        <Stack direction="row" spacing={1} justifyContent="flex-end">
-          <IconButton color="error" size="small" onClick={onDelete}>
-            <Iconify icon="solar:trash-bin-trash-bold" />
-          </IconButton>
-          <IconButton color="primary" onClick={onEdit} size="small">
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
+        <Stack direction="row" spacing={1} justifyContent="space-between">
           <Button
             size="small"
             variant="contained"
-            color={isActive(servico.status) ? 'warning' : 'success'}
+            color={isActive(servico.status) ? 'error' : 'success'}
             disabled={isToggling}
-            onClick={onToggle}
-            sx={{ minWidth: 80 }}
+            onClick={onDelete}
           >
-            {isActive(servico.status) ? 'Inativar' : 'Ativar'}
+            Deletar
+          </Button>
+          <Button
+            size="small"
+            color="primary"
+            variant="contained"
+            onClick={onEdit} 
+          >
+            Editar
           </Button>
         </Stack>
       </CardContent>
@@ -186,11 +186,11 @@ export default function PortalServicosPage() {
   });
 
   const TABLE_HEAD = [
-    { id: 'nome', label: 'Nome' },
-    { id: 'categoria', label: 'Categoria', width: 160 },
-    { id: 'valor', label: 'Valor', width: 140 },
-    { id: 'unidade', label: 'Unid.', width: 100 },
-    { id: 'status', label: 'Status', width: 100 },
+    { id: 'nome', label: 'Nome', width: 300, align: 'left'},
+    { id: 'categoria', label: 'Categoria', width: 300, align: 'center' },
+    { id: 'valor', label: 'Valor', width: 300, align: 'center' },
+    { id: 'unidade', label: 'Unid.', width: 300, align: 'center' },
+    { id: 'status', label: 'Status', width: 300, align: 'center' },
     { id: '', label: '', align: 'right' },
   ];
 

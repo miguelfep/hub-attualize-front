@@ -343,8 +343,8 @@ export default function OrcamentoDetalhesPage({ params }) {
               <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
                 Venda {orcamento.numero}
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.7, pb: 0.5 }}>
-                Cliente: {orcamento?.clienteDoClienteId?.nome}
+              <Typography variant="body2" sx={{ opacity: 0.7, pb: 0.5, fontWeight: orcamento?.clienteDoClienteId ? 600 : 400 }}>
+                Cliente: {orcamento?.clienteDoClienteId?.nome || 'NÃO INFORMADO'}
               </Typography>
               <Chip
                 label={String(orcamento.status || '').toUpperCase()}
@@ -417,6 +417,11 @@ export default function OrcamentoDetalhesPage({ params }) {
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={8}>
                     <Typography variant="subtitle2">Cliente</Typography>
+                    {!orcamento?.clienteDoClienteId && (
+                      <Stack spacing={0.5} sx={{ mt: 1 }}>
+                        <Typography variant="body2" fontWeight='bold'>Não Informado</Typography>
+                      </Stack>
+                    )}
                     <Stack spacing={0.5} sx={{ mt: 1 }}>
                       <Typography variant="body2">{orcamento?.clienteDoClienteId?.nome}</Typography>
                       {orcamento?.clienteDoClienteId?.cpfCnpj && (

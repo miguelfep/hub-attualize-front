@@ -66,6 +66,7 @@ export const endpoints = {
     create: `${baseUrl}financeiro/invoice/create`,
     update: `${baseUrl}clientes`,
     historico: `${baseUrl}clientes/historico`,
+    atualizarDados: `${baseUrl}clientes/atualizar-dados`,
     servicos: {
       admin: `${baseUrl}clientes/servicos/admin/all`,
     },
