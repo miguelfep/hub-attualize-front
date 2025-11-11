@@ -119,6 +119,12 @@ export const navData = [
             title: 'Notas Fiscais por Cliente',
             path: paths.dashboard.fiscal.root,
           },
+          {
+            title: 'Apuração',
+            path: paths.dashboard.fiscal.apuracao,
+            icon: ICONS.analytics,
+            roles: ['admin', 'operacional'],
+          },
         ],
       },
       {

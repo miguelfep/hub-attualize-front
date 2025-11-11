@@ -22,6 +22,7 @@ import {
   Typography,
   CircularProgress,
   FormControlLabel,
+  Alert,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -117,6 +118,9 @@ export const NewUClienteSchema = zod.object({
   dadosContabil: zod.string().optional(),
   possuiFuncionario: zod.boolean().optional(),
   dadosDepartamentoPessoal: zod.string().optional(),
+  apurarHub: zod.boolean().optional(),
+  habilitarFatorR: zod.boolean().optional(),
+  gerarDasAutomatico: zod.boolean().optional(),
   status: zod.boolean().optional(),
   tipoContato: zod.enum(['cliente', 'lead']).optional(),
   tipoNegocio: zod.array(zod.string()).optional(),
@@ -265,6 +269,9 @@ export function ClienteNewEditForm({ currentCliente }) {
       dadosContabil: currentCliente?.dadosContabil || '',
       possuiFuncionario: currentCliente?.possuiFuncionario || false,
       dadosDepartamentoPessoal: currentCliente?.dadosDepartamentoPessoal || '',
+      apurarHub: currentCliente?.apurarHub || false,
+      habilitarFatorR: currentCliente?.habilitarFatorR || false,
+      gerarDasAutomatico: currentCliente?.gerarDasAutomatico || false,
       planoEmpresa: currentCliente?.planoEmpresa || '',
       status: currentCliente?.status || true,
       tipoContato: currentCliente?.tipoContato || 'cliente',
@@ -310,6 +317,8 @@ export function ClienteNewEditForm({ currentCliente }) {
   const { isSubmitting, errors } = formState;
 
   const clienteVip = watch('clienteVip'); // Observar o valor de clienteVip
+  const apurarHub = watch('apurarHub');
+  const habilitarFatorR = watch('habilitarFatorR');
 
   const {
     fields: enderecoFields,
@@ -873,6 +882,59 @@ const onSubmit = handleSubmit(
                 </Grid>
                 <Grid xs={12}>
                   <Divider sx={{ my: 1 }} />
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Apuração Hub
+                  </Typography>
+                  <Controller
+                    name="apurarHub"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={<Switch {...field} checked={field.value} />}
+                        label="Habilitar apuração de impostos pelo Hub"
+                      />
+                    )}
+                  />
+                  {apurarHub && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      Certifique-se de que o cliente está no regime Simples Nacional e possui CNAE principal
+                      cadastrado. O período padrão será o mês selecionado durante a apuração.
+                    </Alert>
+                  )}
+                </Grid>
+                <Grid xs={12}>
+                  <Controller
+                    name="habilitarFatorR"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={<Switch {...field} checked={field.value} />}
+                        label="Permitir simulações e otimização de Fator R"
+                      />
+                    )}
+                  />
+                  {habilitarFatorR && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                      O simulador utilizará os valores informados na folha de pagamento dos últimos 12 meses.
+                    </Typography>
+                  )}
+                </Grid>
+                <Grid xs={12}>
+                  <Controller
+                    name="gerarDasAutomatico"
+                    control={control}
+                    render={({ field }) => (
+                      <FormControlLabel
+                        control={<Switch {...field} checked={field.value} />}
+                        label="Permitir geração de DAS direto pela apuração"
+                      />
+                    )}
+                  />
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2 }}>
+                    Ao habilitar, o Hub poderá gerar DAS automaticamente após a validação da apuração.
+                  </Typography>
                 </Grid>
                 <Grid xs={12}>
                   <Field.Editor name="dadosFiscal" label="Dados Fiscais" fullWidth />

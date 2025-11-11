@@ -121,6 +121,7 @@ export const paths = {
     permission: `${ROOTS.DASHBOARD}/permission`,
     fiscal: {
       root: `${ROOTS.DASHBOARD}/fiscal/nfse`,
+      apuracao: `${ROOTS.DASHBOARD}/fiscal/apuracao`,
     },
     certificados: {
       root: `${ROOTS.DASHBOARD}/certificados`,
@@ -129,6 +130,7 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/cliente/list`,
       new: `${ROOTS.DASHBOARD}/cliente/new`,
       edit: (id) => `${ROOTS.DASHBOARD}/cliente/${id}/edit`,
+      apuracao: (id) => `${ROOTS.DASHBOARD}/cliente/${id}/apuracao`,
     },
     general: {
       app: `${ROOTS.DASHBOARD}/app`,
@@ -250,6 +252,9 @@ export const paths = {
     avaliacoes: {
       root: `${ROOTS.DASHBOARD}/avaliacoes`,
       detalhes: (id) => `${ROOTS.DASHBOARD}/avaliacoes/${id}`,
+    },
+    apuracao: {
+      detalhes: (id) => `${ROOTS.DASHBOARD}/apuracao/${id}`,
     },
   },
   // CLIENTE AREA

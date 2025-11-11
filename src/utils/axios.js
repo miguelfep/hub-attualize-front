@@ -169,6 +169,27 @@ export const endpoints = {
     status: (id) => `${baseUrl}avaliacoes/${id}/status`,
     delete: (id) => `${baseUrl}avaliacoes/${id}`,
   },
+  apuracao: {
+    calcular: (empresaId) => `${baseUrl}apuracao/${empresaId}/calcular`,
+    listar: (empresaId) => `${baseUrl}apuracao/${empresaId}/apuracoes`,
+    detalhes: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}`,
+    cancelar: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}/cancelar`,
+    gerarDas: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}/gerar-das`,
+    gerarDasDireto: (empresaId) => `${baseUrl}apuracao/${empresaId}/gerar-das`,
+    listarDas: (empresaId) => `${baseUrl}apuracao/${empresaId}/das`,
+    dasDetalhes: (dasId) => `${baseUrl}apuracao/das/${dasId}`,
+    dasPdf: (dasId) => `${baseUrl}apuracao/das/${dasId}/pdf`,
+    dasPagar: (dasId) => `${baseUrl}apuracao/das/${dasId}/pagar`,
+    dasCancelar: (dasId) => `${baseUrl}apuracao/das/${dasId}/cancelar`,
+    recalcular: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}/recalcular`,
+  },
+  fatorR: {
+    totais12Meses: (clienteId) => `${baseUrl}fator-r/${clienteId}/totais-12-meses`,
+    simular: (clienteId) => `${baseUrl}fator-r/${clienteId}/simular`,
+    proLaboreIdeal: (clienteId) => `${baseUrl}fator-r/${clienteId}/prolabore-ideal`,
+    registrarFolha: (clienteId) => `${baseUrl}fator-r/${clienteId}/registrar-folha`,
+    importarHistorico: (clienteId) => `${baseUrl}fator-r/${clienteId}/importar-historico`,
+  },
   // Mercado Pago
   mercadoPago: {
     pagamentoUnico: `${baseUrl}mercado-pago/pagamento-unico`,
