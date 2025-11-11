@@ -439,7 +439,7 @@ export default function PortalOrcamentosPage() {
                                         size="small"
                                         color="default"
                                       >
-                                        <Iconify icon="solar:document-text-bool" />
+                                        <Iconify icon="solar:document-text-bold" />
                                       </IconButton>
                                     </Tooltip>
                                   )}
