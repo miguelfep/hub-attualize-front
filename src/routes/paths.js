@@ -283,6 +283,12 @@ export const paths = {
     licencas: `${ROOTS.CLIENTE}/licencas`,
     profile: `${ROOTS.CLIENTE}/profile`,
     settings: `${ROOTS.CLIENTE}/settings`,
-    aulaoReforma: `${ROOTS.CLIENTE}/aulao-reforma`,
+    conteudos: {
+      root: `${ROOTS.CLIENTE}/conteudos`,
+      aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
+      guiaIRPF2026: `${ROOTS.CLIENTE}/conteudos/guia-irpf-2026`,
+      reformaTributaria: `${ROOTS.CLIENTE}/conteudos/reforma-tributaria`,
+    },
+    aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
   },
 };
