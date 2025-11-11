@@ -123,7 +123,7 @@ export default function PortalFaturamentoPage() {
           <Grid xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Status da Nota</InputLabel>
-              <Select label="Status da Nota" value={status} onChange={(e) => { setStatus(e.target.value); }}  >
+              <Select label="Status da Nota" value={status} onChange={(e) => { setStatus(e.target.value); }} disabled={!!filtroNumeroNota} >
                 <MenuItem value="">Todos</MenuItem>
                 <MenuItem value="emitida">Emitida</MenuItem>
                 <MenuItem value="autorizada">Autorizada</MenuItem>
@@ -135,12 +135,17 @@ export default function PortalFaturamentoPage() {
           <Grid xs={12} md={3}>
             <TextField 
               label="Número da Nota"
-              type="text"
+              type="number"
               fullWidth
               value={filtroNumeroNota}
               onChange={(e) => setFiltroNumeroNota(e.target.value)}
               InputLabelProps={{ shrink: true }}
               placeholder="Digite para buscar..."
+              InputProps={{
+                endAdornment: (
+                  <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                )
+              }}
             />
           </Grid>
           <Grid xs={12} sm={6} md={3}>
@@ -151,6 +156,7 @@ export default function PortalFaturamentoPage() {
               value={startDate} 
               onChange={(e) => setStartDate(e.target.value)} 
               InputLabelProps={{ shrink: true }}
+              disabled={!!filtroNumeroNota}
             />
           </Grid>
           <Grid xs={12} sm={6} md={3}>
@@ -161,6 +167,7 @@ export default function PortalFaturamentoPage() {
               value={endDate} 
               onChange={(e) => setEndDate(e.target.value)} 
               InputLabelProps={{ shrink: true }}
+              disabled={!!filtroNumeroNota}
             />
           </Grid>
         </Grid>

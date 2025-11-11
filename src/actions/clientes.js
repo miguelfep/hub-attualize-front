@@ -87,7 +87,16 @@ export async function criarCliente(clienteDta) {
   return response;
 }
 
+// ----------------------------------------------------------------------
+
 export async function historicoCliente(id) {
   const res = await axios.get(`${endpoints.clientes.historico}/${id}`);
+  return res.data;
+}
+
+// ----------------------------------------------------------------------
+
+export async function atualizarDadosCliente(id) {
+  const res = await axios.put(`${endpoints.clientes.atualizarDados}/${id}`);
   return res.data;
 }

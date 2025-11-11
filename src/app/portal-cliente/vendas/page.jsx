@@ -40,6 +40,7 @@ import {
 } from 'src/actions/portal';
 
 import { Iconify } from 'src/components/iconify';
+import { formatToCurrency } from 'src/components/animate';
 import { useTable, getComparator } from 'src/components/table';
 import { VendasPageSkeleton } from 'src/components/skeleton/PortalVendasPageSkeleton';
 import { VendaTableRowSkeleton } from 'src/components/skeleton/VendasTableRowSkeleton';
@@ -193,11 +194,12 @@ export default function PortalOrcamentosPage() {
   };
 
   const TABLE_HEAD = [
-    { id: 'numero', label: 'Número', width: 160 },
+    { id: 'numero', label: 'Número', width: 200, align: 'left' },
     { id: 'cliente', label: 'Cliente' },
-    { id: 'status', label: 'Status', width: 140 },
-    { id: 'data', label: 'Validade', width: 140 },
-    { id: 'acoes', label: 'Ações', width: 120, align: 'right' },
+    { id: 'status', label: 'Status', width: 250, align: 'center' },
+    { id: 'valor', label: 'Valor', width: 200, align: 'center' },
+    { id: 'data', label: 'Validade', width: 200, align: 'center' },
+    { id: 'acoes', label: 'Ações', width: 200, align: 'right' },
   ];
 
   if (loadingEmpresas || !clienteProprietarioId) return <VendasPageSkeleton />;
@@ -376,7 +378,7 @@ export default function PortalOrcamentosPage() {
                           )
                           .map((o) => (
                             <TableRow key={o._id} hover>
-                              <TableCell>
+                              <TableCell align="left" >
                                 <Button
                                   href={`./${o._id}`}
                                   variant="text"
@@ -391,26 +393,36 @@ export default function PortalOrcamentosPage() {
                                   {o.numero}
                                 </Button>
                               </TableCell>
-                              <TableCell>
-                                <Typography variant="body2" noWrap sx={{ maxWidth: 360 }}>
-                                  {o?.clienteDoClienteId?.nome}
+                              
+                              <TableCell align="left">
+                                <Typography variant="body2" noWrap sx={{ width: 200 }}>
+                                  {o?.clienteDoClienteId?.nome || '-'}
                                 </Typography>
                               </TableCell>
-                              <TableCell>
+                              
+                              <TableCell align="center" sx={{ width: 250 }}>
                                 <Chip
                                   size="small"
                                   label={toTitleCase(o?.status)}
                                   color={getStatusColor(o.status)}
                                 />
                               </TableCell>
-                              <TableCell>
+
+                              <TableCell align='center' sx={{ width: 200 }}>
+                                <Typography variant="body2">
+                                  {o?.valorTotal ? formatToCurrency(o?.valorTotal) : '-'}
+                                </Typography>
+                              </TableCell>
+
+                              <TableCell align="center" sx={{ width: 200 }}>
                                 <Typography variant="body2">
                                   {o?.dataValidade
                                     ? new Date(o.dataValidade).toLocaleDateString()
                                     : '-'}
                                 </Typography>
                               </TableCell>
-                              <TableCell align="right">
+                              
+                              <TableCell align="center" sx={{ width: 200 }}>
                                 <Stack direction="row" spacing={0.5} justifyContent="flex-end">
                                   <Tooltip title="Ver venda">
                                     <IconButton href={`./${o._id}`} size="small" color="primary">

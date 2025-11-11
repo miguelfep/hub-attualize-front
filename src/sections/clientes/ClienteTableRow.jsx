@@ -1,6 +1,7 @@
 import {
   Chip,
   Stack,
+  Divider,
   TableRow,
   MenuList,
   MenuItem,
@@ -70,6 +71,8 @@ export function ClienteTableRow({ row, onEdit, onToggle, isToggling }) {
             <Iconify icon="solar:pen-bold" />
             Editar
           </MenuItem>
+
+          <Divider sx={{ borderStyle: 'dashed' }} />
 
           <MenuItem
             onClick={handleToggle}

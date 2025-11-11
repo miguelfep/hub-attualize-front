@@ -116,7 +116,7 @@ export function OrcamentoPDF({ orcamento, settings }) {
       </View>
       <View style={{ width: '50%' }}>
         <Text style={[styles.subtitle2, styles.mb4]}>Contratante</Text>
-        <Text style={styles.body2}>{orcamento?.clienteDoClienteId?.nome || orcamento?.cliente?.nome || ''}</Text>
+        <Text style={styles.body2}>{orcamento?.clienteDoClienteId?.nome || orcamento?.cliente?.nome || 'Tomador não informado'}</Text>
         {orcamento?.clienteDoClienteId?.email ? <Text style={styles.body2}>{orcamento?.clienteDoClienteId?.email}</Text> : null}
         {orcamento?.clienteDoClienteId?.whatsapp ? <Text style={styles.body2}>{orcamento?.clienteDoClienteId?.whatsapp}</Text> : null}
       </View>
