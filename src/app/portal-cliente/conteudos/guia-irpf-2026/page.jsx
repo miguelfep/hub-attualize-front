@@ -2,8 +2,8 @@
 
 import { useMemo } from 'react';
 
-import ReactApexChart from 'react-apexcharts';
 import NextLink from 'next/link';
+import dynamic from 'next/dynamic';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import {
@@ -24,6 +24,8 @@ import {
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
+
+const ReactApexChart = dynamic(() => import('react-apexcharts'), { ssr: false });
 
 const HIGHLIGHTS = [
   {
