@@ -9,7 +9,7 @@ export async function criarLead(leadData) {
   return res.data;
 }
 
-export async function buscarDadosDashboard(params = {}  ) {
+export async function buscarDadosDashboard(params = {}) {
   const res = await axios.get(endpoints.marketing.dashboard, {
     params
   });
@@ -77,10 +77,10 @@ export async function saveLeadProgress(leadData) {
   } catch (error) {
     console.error('❌ Erro ao salvar lead:', error);
     console.error('🔍 Endpoint usado:', endpoints.marketing.progress);
-    
+
     // Axios coloca a resposta de erro em error.response
     const errorMessage = error.response?.data?.message || error.message || 'Erro ao salvar progresso do lead';
-    
+
     return {
       success: false,
       error: errorMessage,
@@ -153,9 +153,9 @@ export async function addLeadContact(leadId, contato) {
     };
   } catch (error) {
     console.error('❌ Erro ao adicionar contato:', error);
-    
+
     const errorMessage = error.response?.data?.message || error.message || 'Erro ao adicionar contato';
-    
+
     return {
       success: false,
       error: errorMessage,
@@ -185,9 +185,9 @@ export async function updateLeadStatus(leadId, updates) {
     };
   } catch (error) {
     console.error('❌ Erro ao atualizar status:', error);
-    
+
     const errorMessage = error.response?.data?.message || error.message || 'Erro ao atualizar status';
-    
+
     return {
       success: false,
       error: errorMessage,
@@ -216,9 +216,9 @@ export async function getLeadContacts(leadId) {
     };
   } catch (error) {
     console.error('❌ Erro ao buscar contatos:', error);
-    
+
     const errorMessage = error.response?.data?.message || error.message || 'Erro ao buscar contatos';
-    
+
     return {
       success: false,
       error: errorMessage,
@@ -237,5 +237,19 @@ export async function getLeadById(id) {
   } catch (error) {
     console.error('❌ Erro ao buscar lead:', error);
     return error;
+  }
+}
+
+export async function getAllLeadsOrigens() {
+  try {
+    const res = await axios.get(endpoints.marketing.getLeadOrigens);
+    const { data } = res;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    return data?.data || data?.origens || data?.items || [];
+  } catch (error) {
+    console.error('❌ Erro ao buscar origens:', error);
+    return [];
   }
 }

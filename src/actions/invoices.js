@@ -45,3 +45,10 @@ export async function crirarPedidoOrcamento(id, invoiceData) {
 export async function enviarPedidoOrcamento(id) {
   return axios.post(`${endpoints.invoices.checkout}/enviar/${id}`);
 }
+
+// ----------------------------------------------------------------------
+
+export async function getInvoicesByLeadId(leadId) {
+  const res = await axios.get(`${endpoints.invoices.list}/lead/${leadId}`);
+  return res.data;
+}

@@ -7,20 +7,20 @@ export function SearchNotFound({ query, sx, ...other }) {
   if (!query) {
     return (
       <Typography variant="body2" sx={sx}>
-        Please enter keywords
+        Digite algo para pesquisar
       </Typography>
     );
   }
 
   return (
     <Box sx={{ textAlign: 'center', borderRadius: 1.5, ...sx }} {...other}>
-      <Box sx={{ mb: 1, typography: 'h6' }}>Not found</Box>
+      <Box sx={{ mb: 1, typography: 'h6' }}>Nenhuma pesquisa encontrada</Box>
 
       <Typography variant="body2">
-        No results found for &nbsp;
+        Sem resultados para &nbsp;
         <strong>{`"${query}"`}</strong>
         .
-        <br /> Try checking for typos or using complete words.
+        <br /> Tente buscar por outras palavras.
       </Typography>
     </Box>
   );

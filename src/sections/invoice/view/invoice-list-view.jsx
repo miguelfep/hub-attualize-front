@@ -410,7 +410,8 @@ function applyFilter({ inputData, comparator, filters, dateError }) {
   // Filtro de nome
   if (name) {
     inputData = inputData.filter((invoice) =>
-      invoice.cliente.name.toLowerCase().includes(name.toLowerCase())
+      invoice?.cliente?.nome?.toLowerCase().includes(name.toLowerCase()) ||
+      invoice?.lead?.nome?.toLowerCase().includes(name.toLowerCase())
     );
   }
 

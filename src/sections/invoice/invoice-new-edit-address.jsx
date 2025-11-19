@@ -10,12 +10,14 @@ import Typography from '@mui/material/Typography';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
+import { getLeads } from 'src/actions/lead';
 import { getClientes } from 'src/actions/clientes';
 
 import { Iconify } from 'src/components/iconify';
 
-import { AddressListDialog } from '../address';
-import { NewClientDialog } from './view/invoice-new-client';
+import { ClienteLeadDialog } from 'src/sections/cliente/view/cliente-lead-dialog';
+
+import { NewLeadDialog } from './view/invoice-new-client';
 // ----------------------------------------------------------------------
 
 export function InvoiceNewEditAddress() {
@@ -29,29 +31,61 @@ export function InvoiceNewEditAddress() {
 
   const values = watch();
 
-  const { cliente: clienteValue } = values;
+  const { cliente: clienteValue, lead: leadValue } = values;
+  const selectedPerson = clienteValue || leadValue;
+  
+  console.log('InvoiceNewEditAddress selected:', selectedPerson);
 
   const to = useBoolean();
   const newClientDialog = useBoolean();
 
   const [clientes, setClientes] = useState([]);
+  const [leads, setLeads] = useState([]);
 
   useEffect(() => {
-    const fetchClientes = async () => {
+    const fetchData = async () => {
       try {
-        const clientesData = await getClientes();
-        setClientes(clientesData);
+        const [clientesData, leadsData] = await Promise.all([
+          getClientes(),
+          getLeads(),
+        ]);
+        const clientesArray = Array.isArray(clientesData)
+          ? clientesData
+          : clientesData?.data || clientesData?.clientes || [];
+
+        const leadsArray = Array.isArray(leadsData)
+          ? leadsData
+          : leadsData?.leads || leadsData?.data || [];
+
+        setClientes(clientesArray);
+        setLeads(leadsArray);
       } catch (error) {
-        console.error('Erro ao buscar clientes:', error);
+        console.error('Erro ao buscar dados:', error);
       }
     };
 
-    fetchClientes();
+    fetchData();
   }, []);
 
   const handleAddClient = (newClient) => {
     setClientes((prev) => [...prev, newClient]);
     setValue('cliente', newClient);
+    setValue('lead', null);
+  };
+
+  const handleAddLead = (newLead) => {
+    setLeads((prev) => {
+      const exists = prev.find((lead) => lead._id === newLead._id);
+
+      if (exists) {
+        return prev.map(item => item._id === newLead._id ? newLead : item);
+      }
+      return [...prev, newLead];
+    });
+
+    setValue('lead', newLead);
+    setValue('cliente', null);
+    to.onTrue();
   };
 
   return (
@@ -89,30 +123,40 @@ export function InvoiceNewEditAddress() {
             </Typography>
 
             <IconButton onClick={to.onTrue}>
-              <Iconify icon={clienteValue ? 'solar:pen-bold' : 'mingcute:add-line'} />
+              <Iconify icon={selectedPerson ? 'solar:pen-bold' : 'mingcute:add-line'} />
             </IconButton>
           </Stack>
 
-          {clienteValue ? (
+          {selectedPerson ? (
             <Stack spacing={1}>
-              <Typography variant="subtitle2">{clienteValue.razaoSocial}</Typography>
-              <Typography variant="body2">{clienteValue.nome}</Typography>
-              <Typography variant="body2"> {clienteValue.whatsapp}</Typography>
+              <Typography variant="subtitle2">{selectedPerson.razaoSocial || selectedPerson.nome}</Typography>
+              <Typography variant="body2">{selectedPerson.nome}</Typography>
+              <Typography variant="body2"> {selectedPerson.whatsapp || selectedPerson.telefone || '-'}</Typography>
             </Stack>
           ) : (
             <Typography typography="caption" sx={{ color: 'error.main' }}>
-              {errors.clienteValue?.message}
+              {errors.cliente?.message || errors.lead?.message}
             </Typography>
           )}
         </Stack>
       </Stack>
-      <AddressListDialog
-        title="Clientes"
+      <ClienteLeadDialog
+        key={`dialog-${leads.length}-${clientes.length}`}
+        title="Clientes e Leads"
         open={to.value}
         onClose={to.onFalse}
-        selected={(selectedId) => clienteValue?.id === selectedId}
-        onSelect={(cliente) => setValue('cliente', cliente)}
-        list={clientes}
+        selected={(selectedId) => selectedPerson?._id === selectedId || selectedPerson?.id === selectedId}
+        onSelect={(item) => {
+          if (item.__type === 'lead') {
+            setValue('lead', item);
+            setValue('cliente', null);
+          } else {
+            setValue('cliente', item);
+            setValue('lead', null);
+          }
+        }}
+        clientes={clientes}
+        leads={leads}
         action={
           <Button
             size="small"
@@ -123,14 +167,14 @@ export function InvoiceNewEditAddress() {
               newClientDialog.onTrue();
             }}
           >
-            Novo Cliente
+            Novo Lead
           </Button>
         }
       />
-      <NewClientDialog
+      <NewLeadDialog
         open={newClientDialog.value}
         onClose={newClientDialog.onFalse}
-        onAddClient={handleAddClient}
+        onAddLead={handleAddLead}
       />
     </>
   );

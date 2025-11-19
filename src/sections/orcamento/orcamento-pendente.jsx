@@ -67,11 +67,11 @@ export function OrcamentoPendente({ invoice }) {
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Contratante
             </Typography>
-            {invoice?.cliente.nome}
+            {invoice?.cliente?.nome || invoice?.lead.nome}
             <br />
-            {invoice?.cliente.email}
+            {invoice?.cliente?.email || invoice?.lead.email}
             <br />
-            Telefone: {invoice?.cliente.whatsapp}
+            Telefone: {invoice?.cliente?.whatsapp || invoice?.lead.telefone}
           </Stack>
         </Grid>
         <Grid item xs={12} sm={6} md={4}>

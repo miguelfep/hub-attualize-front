@@ -32,3 +32,16 @@ export const formatCNPJ = (cnpj) => {
   if (!cnpj) return '';
   return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
 };
+
+/**
+ * Converte uma string para camelCase.
+ * @param {string} str A string a ser convertida.
+ * @returns {string} A string em camelCase.
+ */
+export const formatToCamelCase = (str) => {
+  if (!str) return '';
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+(.)/g, (_, char) => char.toUpperCase())
+    .replace(/^./, (char) => char.toLowerCase());
+};

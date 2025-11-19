@@ -116,9 +116,9 @@ export function InvoicePDF({ invoice, currentStatus }) {
 
       <View style={{ width: '50%' }}>
         <Text style={[styles.subtitle2, styles.mb4]}>Contratante</Text>
-        <Text style={styles.body2}>{invoice.cliente.nome}</Text>
-        <Text style={styles.body2}>{invoice.cliente.email}</Text>
-        <Text style={styles.body2}>{invoice.cliente.whatsapp}</Text>
+        <Text style={styles.body2}>{invoice?.cliente?.nome || invoice?.lead?.nome}</Text>
+        <Text style={styles.body2}>{invoice?.cliente?.email || invoice?.lead?.email}</Text>
+        <Text style={styles.body2}>{invoice?.cliente?.whatsapp || invoice?.cliente?.telefone || invoice?.lead?.telefone || '-'}</Text>
       </View>
     </View>
   );
