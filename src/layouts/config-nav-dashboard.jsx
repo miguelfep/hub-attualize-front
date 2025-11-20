@@ -107,6 +107,11 @@ export const navData = [
             roles: ['admin', 'financeiro'],
             path: paths.dashboard.financeiro.pagar,
           },
+          {
+            title: 'Conciliação bancária',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.financeiro.conciliacao,
+          },
         ],
       },
       {
