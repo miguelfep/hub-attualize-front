@@ -28,7 +28,8 @@ import { InvoiceNewEditStatusDate } from './invoice-new-edit-status-date';
 
 export const NewInvoiceSchema = zod
   .object({
-    cliente: zod.custom().refine((data) => data !== null, { message: 'Cliente é obrigatório!' }),
+    cliente: zod.any().nullable(),
+    lead: zod.any().nullable(),
     createdDate: schemaHelper.date({ message: { required_error: 'Data criação é obrigatória!' } }),
     dataVencimento: schemaHelper.date({
       message: { required_error: 'Data vencimento é obrigatória!' },
@@ -49,6 +50,10 @@ export const NewInvoiceSchema = zod
     totalAmount: zod.number(),
     formaPagamento: zod.string().optional(),
   })
+  .refine((data) => data.cliente || data.lead, {
+    message: 'Selecione um Cliente ou Lead!',
+    path: ['cliente'],
+  })
   .refine((data) => !fIsAfter(data.createdDate, data.dataVencimento), {
     message: 'Data de vencimento não pode ser anterior à data de criação!',
     path: ['dataVencimento'],
@@ -56,7 +61,8 @@ export const NewInvoiceSchema = zod
 
 // ----------------------------------------------------------------------
 
-export function InvoiceNewEditForm({ currentInvoice }) {
+export function InvoiceNewEditForm({ currentInvoice: currentInvoiceProps }) {
+  const currentInvoice = currentInvoiceProps?.invoice || currentInvoiceProps;
   const router = useRouter();
   const user = getUser();
   const loadingSave = useBoolean();
@@ -71,6 +77,7 @@ export function InvoiceNewEditForm({ currentInvoice }) {
       desconto: currentInvoice?.desconto || 0,
       totalAmount: currentInvoice?.total || 0,
       cliente: currentInvoice?.cliente || null,
+      lead: currentInvoice?.lead || null,
       motivoPerda: currentInvoice?.motivoPerda || ' ',
       items: currentInvoice?.items || [
         {

@@ -114,6 +114,7 @@ export const endpoints = {
   },
   marketing: {
     getLeads: `${baseUrl}marketing/leads`,
+    getLeadOrigens: `${baseUrl}marketing/lead/origens`,
     create: `${baseUrl}marketing/criar/lead`,
     update: (leadId) => `${baseUrl}marketing/atualizar/lead/${leadId}`,
     progress: `${baseUrl}marketing/lead/progress`,

@@ -55,10 +55,20 @@ export function CobrancaExistente({ invoice }) {
   };
 
   const handleCopy = async (text, successMessage) => {
-    const result = await copy(text);
-    if (result) {
-      toast.success(successMessage);
-    } else {
+    if (!text || text === 'null' || text === 'undefined') {
+      toast.error('Dados de pagamento não disponíveis. Tente novamente em alguns instantes.');
+      return;
+    }
+
+    try {
+      const result = await copy(text);
+      if (result) {
+        toast.success(successMessage);
+      } else {
+        toast.error('Erro ao copiar para a área de transferência.');
+      }
+    } catch (error) {
+      console.error('Erro ao copiar:', error);
       toast.error('Erro ao copiar para a área de transferência.');
     }
   };
@@ -103,19 +113,36 @@ export function CobrancaExistente({ invoice }) {
                   <>
                     <Divider sx={{ mb: 2 }} />
                     <Stack spacing={2} sx={{ mt: 3 }}>
-                      <Button
-                        variant="contained"
-                        startIcon={<Iconify width={16} icon="eva:copy-outline" />}
-                        onClick={() =>
-                          handleCopy(
-                            JSON.parse(cobranca.boleto).pixCopiaECola,
-                            'Chave pix copiada!'
-                          )
+                      {(() => {
+                        try {
+                          const boletoData = typeof cobranca.boleto === 'string'
+                            ? JSON.parse(cobranca.boleto)
+                            : cobranca.boleto;
+                          const pixCopiaECola = boletoData?.pixCopiaECola;
+
+                          if (pixCopiaECola && pixCopiaECola !== 'null' && pixCopiaECola !== null) {
+                            return (
+                              <Button
+                                variant="contained"
+                                startIcon={<Iconify width={16} icon="eva:copy-outline" />}
+                                onClick={() =>
+                                  handleCopy(
+                                    pixCopiaECola,
+                                    'Chave pix copiada!'
+                                  )
+                                }
+                                fullWidth
+                              >
+                                Pagar com Pix Copia e cola
+                              </Button>
+                            );
+                          }
+                          return null;
+                        } catch (error) {
+                          console.error('Erro ao processar boleto:', error);
+                          return null;
                         }
-                        fullWidth
-                      >
-                        Pagar com Pix Copia e cola
-                      </Button>
+                      })()}
 
                       <Button
                         variant="contained"

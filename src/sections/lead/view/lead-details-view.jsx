@@ -25,6 +25,7 @@ import { fCurrency } from 'src/utils/format-number';
 import { fDate, fDateTime } from 'src/utils/format-time';
 
 import { DashboardContent } from 'src/layouts/dashboard';
+import { getInvoicesByLeadId } from 'src/actions/invoices';
 import { getLeadById, addLeadContact, getLeadContacts, updateLeadStatus } from 'src/actions/lead';
 
 import { Label } from 'src/components/label';
@@ -39,12 +40,12 @@ export function LeadDetailsView({ id }) {
   const theme = useTheme();
   const router = useRouter();
   const user = getUser();
-  
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
   const [contatos, setContatos] = useState([]);
+  const [orcamentos, setOrcamentos] = useState([]);
   const [currentTab, setCurrentTab] = useState('geral');
-  
+
   // Form de adicionar contato
   const [novoContato, setNovoContato] = useState({
     channel: 'whatsapp',
@@ -64,9 +65,10 @@ export function LeadDetailsView({ id }) {
   const carregarDados = useCallback(async () => {
     setLoading(true);
     try {
-      const [leadResult, contatosResult] = await Promise.all([
+      const [leadResult, contatosResult, orcamentosResult] = await Promise.all([
         getLeadById(id),
         getLeadContacts(id),
+        getInvoicesByLeadId(id),
       ]);
 
       if (leadResult.success) {
@@ -74,14 +76,18 @@ export function LeadDetailsView({ id }) {
         setCrmForm({
           statusLead: leadResult.lead.statusLead || '',
           owner: leadResult.lead.owner || user?.name || '',
-          nextFollowUpAt: leadResult.lead.nextFollowUpAt 
-            ? leadResult.lead.nextFollowUpAt.split('T')[0] 
+          nextFollowUpAt: leadResult.lead.nextFollowUpAt
+            ? leadResult.lead.nextFollowUpAt.split('T')[0]
             : '',
         });
       }
 
       if (contatosResult.success) {
         setContatos(contatosResult.contatos || []);
+      }
+
+      if (orcamentosResult?.invoices) {
+        setOrcamentos(orcamentosResult.invoices || []);
       }
     } catch (error) {
       console.error('Erro ao carregar lead:', error);
@@ -257,9 +263,9 @@ export function LeadDetailsView({ id }) {
           <Grid xs={12} md={6}>
             <InfoCard title="🏢 Dados da Empresa" icon="solar:buildings-bold-duotone">
               <InfoRow label="Nome da Empresa" value={lead.additionalInfo?.nomeEmpresa || '-'} />
-              <InfoRow 
-                label="Faturamento Mensal" 
-                value={lead.additionalInfo?.faturamentoMensal ? fCurrency(lead.additionalInfo.faturamentoMensal) : '-'} 
+              <InfoRow
+                label="Faturamento Mensal"
+                value={lead.additionalInfo?.faturamentoMensal ? fCurrency(lead.additionalInfo.faturamentoMensal) : '-'}
               />
               <InfoRow label="Número de Sócios" value={lead.additionalInfo?.numeroSocios || '-'} />
               <InfoRow label="Etapa" value={lead.additionalInfo?.etapa || '-'} />
@@ -294,9 +300,9 @@ export function LeadDetailsView({ id }) {
             <InfoCard title="💼 Atividades" icon="solar:case-bold-duotone">
               <InfoRow label="Atividade Principal" value={lead.additionalInfo?.atividades?.atividadePrincipal || '-'} />
               <InfoRow label="Descrição" value={lead.additionalInfo?.atividades?.descricaoAtividade || '-'} />
-              <InfoRow 
-                label="Possui Funcionários" 
-                value={lead.additionalInfo?.atividades?.possuiFuncionarios ? 'Sim' : 'Não'} 
+              <InfoRow
+                label="Possui Funcionários"
+                value={lead.additionalInfo?.atividades?.possuiFuncionarios ? 'Sim' : 'Não'}
               />
               <InfoRow label="Número de Funcionários" value={lead.additionalInfo?.atividades?.numeroFuncionarios || '0'} />
               <InfoRow label="Forma de Atuação" value={lead.additionalInfo?.formaAtuacao || '-'} />
@@ -306,35 +312,35 @@ export function LeadDetailsView({ id }) {
           {/* Orçamento */}
           <Grid xs={12} md={6}>
             <InfoCard title="💰 Orçamento" icon="solar:bill-list-bold-duotone">
-              <InfoRow 
-                label="Plano" 
+              <InfoRow
+                label="Plano"
                 value={
-                  <Chip 
-                    label={lead.additionalInfo?.orcamento?.plano || '-'} 
+                  <Chip
+                    label={lead.additionalInfo?.orcamento?.plano || '-'}
                     color={lead.additionalInfo?.orcamento?.plano === 'ANÁLISE_COMERCIAL' ? 'warning' : 'primary'}
                     size="small"
                   />
                 }
               />
-              <InfoRow 
-                label="Valor Mensal" 
-                value={lead.additionalInfo?.orcamento?.valor ? fCurrency(lead.additionalInfo.orcamento.valor) : '-'} 
+              <InfoRow
+                label="Valor Mensal"
+                value={lead.additionalInfo?.orcamento?.valor ? fCurrency(lead.additionalInfo.orcamento.valor) : '-'}
               />
-              <InfoRow 
-                label="Valor Base" 
-                value={lead.additionalInfo?.orcamento?.detalhes?.valorBase ? fCurrency(lead.additionalInfo.orcamento.detalhes.valorBase) : '-'} 
+              <InfoRow
+                label="Valor Base"
+                value={lead.additionalInfo?.orcamento?.detalhes?.valorBase ? fCurrency(lead.additionalInfo.orcamento.detalhes.valorBase) : '-'}
               />
-              <InfoRow 
-                label="Adicional Funcionários" 
-                value={lead.additionalInfo?.orcamento?.detalhes?.adicionalFuncionarios ? fCurrency(lead.additionalInfo.orcamento.detalhes.adicionalFuncionarios) : '-'} 
+              <InfoRow
+                label="Adicional Funcionários"
+                value={lead.additionalInfo?.orcamento?.detalhes?.adicionalFuncionarios ? fCurrency(lead.additionalInfo.orcamento.detalhes.adicionalFuncionarios) : '-'}
               />
-              <InfoRow 
-                label="Adicional Endereço Fiscal" 
-                value={lead.additionalInfo?.orcamento?.detalhes?.adicionalEnderecoFiscal ? fCurrency(lead.additionalInfo.orcamento.detalhes.adicionalEnderecoFiscal) : '-'} 
+              <InfoRow
+                label="Adicional Endereço Fiscal"
+                value={lead.additionalInfo?.orcamento?.detalhes?.adicionalEnderecoFiscal ? fCurrency(lead.additionalInfo.orcamento.detalhes.adicionalEnderecoFiscal) : '-'}
               />
-              <InfoRow 
-                label="Abertura Gratuita" 
-                value={lead.additionalInfo?.orcamento?.temAberturaGratuita ? '✅ Sim' : '❌ Não'} 
+              <InfoRow
+                label="Abertura Gratuita"
+                value={lead.additionalInfo?.orcamento?.temAberturaGratuita ? '✅ Sim' : '❌ Não'}
               />
             </InfoCard>
           </Grid>
@@ -346,38 +352,38 @@ export function LeadDetailsView({ id }) {
                 <>
                   <InfoRow label="Periodicidade" value={lead.additionalInfo.pagamento.periodicidade || '-'} />
                   <InfoRow label="Método" value={lead.additionalInfo.pagamento.metodoPagamento || '-'} />
-                  <InfoRow 
-                    label="Valor Mensal" 
-                    value={lead.additionalInfo.pagamento.valorMensal ? fCurrency(lead.additionalInfo.pagamento.valorMensal) : '-'} 
+                  <InfoRow
+                    label="Valor Mensal"
+                    value={lead.additionalInfo.pagamento.valorMensal ? fCurrency(lead.additionalInfo.pagamento.valorMensal) : '-'}
                   />
-                  <InfoRow 
-                    label="Valor Total" 
-                    value={lead.additionalInfo.pagamento.valorTotal ? fCurrency(lead.additionalInfo.pagamento.valorTotal) : '-'} 
+                  <InfoRow
+                    label="Valor Total"
+                    value={lead.additionalInfo.pagamento.valorTotal ? fCurrency(lead.additionalInfo.pagamento.valorTotal) : '-'}
                   />
-                  <InfoRow 
-                    label="Custo Abertura" 
-                    value={lead.additionalInfo.pagamento.custoAbertura ? fCurrency(lead.additionalInfo.pagamento.custoAbertura) : '-'} 
+                  <InfoRow
+                    label="Custo Abertura"
+                    value={lead.additionalInfo.pagamento.custoAbertura ? fCurrency(lead.additionalInfo.pagamento.custoAbertura) : '-'}
                   />
-                  <InfoRow 
-                    label="Valor Total + Abertura" 
-                    value={lead.additionalInfo.pagamento.valorTotalComAbertura ? fCurrency(lead.additionalInfo.pagamento.valorTotalComAbertura) : '-'} 
+                  <InfoRow
+                    label="Valor Total + Abertura"
+                    value={lead.additionalInfo.pagamento.valorTotalComAbertura ? fCurrency(lead.additionalInfo.pagamento.valorTotalComAbertura) : '-'}
                   />
                   <InfoRow label="Tipo" value={lead.additionalInfo.pagamento.tipo || '-'} />
-                  <InfoRow 
-                    label="Status" 
+                  <InfoRow
+                    label="Status"
                     value={
-                      <Chip 
-                        label={lead.additionalInfo.pagamento.status || '-'} 
+                      <Chip
+                        label={lead.additionalInfo.pagamento.status || '-'}
                         size="small"
                         color="warning"
                       />
                     }
                   />
-                  <InfoRow 
-                    label="Finalizado em" 
-                    value={lead.additionalInfo.pagamento.finalizadoEm ? fDateTime(lead.additionalInfo.pagamento.finalizadoEm) : '-'} 
+                  <InfoRow
+                    label="Finalizado em"
+                    value={lead.additionalInfo.pagamento.finalizadoEm ? fDateTime(lead.additionalInfo.pagamento.finalizadoEm) : '-'}
                   />
-                </> 
+                </>
               ) : (
                 <Typography variant="body2" color="text.secondary">
                   Sem informações de pagamento
@@ -401,11 +407,11 @@ export function LeadDetailsView({ id }) {
                   <InfoRow label="Motivo" value={lead.additionalInfo.analiseComercial.motivo || '-'} />
                   <InfoRow label="Plano Detectado" value={lead.additionalInfo.analiseComercial.planoDetectado || '-'} />
                   <InfoRow label="Solicitado em" value={fDateTime(lead.additionalInfo.analiseComercial.solicitadoEm)} />
-                  <InfoRow 
-                    label="Status" 
+                  <InfoRow
+                    label="Status"
                     value={
-                      <Chip 
-                        label={lead.additionalInfo.analiseComercial.status || '-'} 
+                      <Chip
+                        label={lead.additionalInfo.analiseComercial.status || '-'}
                         color="warning"
                         size="small"
                       />
@@ -522,9 +528,9 @@ export function LeadDetailsView({ id }) {
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
                   ➕ Adicionar Contato
                 </Typography>
-                <Chip 
-                  label={`Você: ${user?.name || 'Sistema'}`} 
-                  size="small" 
+                <Chip
+                  label={`Você: ${user?.name || 'Sistema'}`}
+                  size="small"
                   sx={{ bgcolor: alpha('#0096D9', 0.1), color: '#0096D9', fontWeight: 600 }}
                 />
               </Stack>
@@ -592,10 +598,10 @@ export function LeadDetailsView({ id }) {
 
               {contatos.length === 0 ? (
                 <Box sx={{ textAlign: 'center', py: 5 }}>
-                  <Iconify 
-                    icon="solar:chat-line-bold-duotone" 
-                    width={64} 
-                    sx={{ color: 'text.disabled', mb: 2 }} 
+                  <Iconify
+                    icon="solar:chat-line-bold-duotone"
+                    width={64}
+                    sx={{ color: 'text.disabled', mb: 2 }}
                   />
                   <Typography variant="body2" color="text.secondary">
                     Nenhum contato registrado ainda
@@ -608,9 +614,9 @@ export function LeadDetailsView({ id }) {
                       <Stack spacing={1.5}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                           <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify 
-                              icon={getChannelIcon(contato.channel)} 
-                              width={24} 
+                            <Iconify
+                              icon={getChannelIcon(contato.channel)}
+                              width={24}
                               sx={{ color: getChannelColor(contato.channel) }}
                             />
                             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
@@ -649,6 +655,116 @@ export function LeadDetailsView({ id }) {
               )}
             </Card>
           </Grid>
+
+          {/* Histórico de Orçamentos */}
+          {orcamentos.length > 0 && (
+            <Grid xs={12}>
+              <Card sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+                  💰 Histórico de Orçamentos ({orcamentos.length})
+                </Typography>
+
+                <Stack spacing={2}>
+                  {orcamentos.map((orcamento) => (
+                    <Card key={orcamento._id} variant="outlined" sx={{ p: 2.5 }}>
+                      <Stack spacing={1.5}>
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                          <Stack direction="row" spacing={1} alignItems="center">
+                            <Iconify
+                              icon="solar:document-text-bold-duotone"
+                              width={24}
+                              sx={{ color: getOrcamentoColor(orcamento.status) }}
+                            />
+                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                              Orçamento #{orcamento.invoiceNumber}
+                            </Typography>
+                            <Chip
+                              label={getOrcamentoLabel(orcamento.status)}
+                              color={getOrcamentoChipColor(orcamento.status)}
+                              size="small"
+                            />
+                          </Stack>
+                          <Typography variant="caption" color="text.secondary">
+                            {fDateTime(orcamento.createdAt)}
+                          </Typography>
+                        </Stack>
+
+                        <Divider />
+
+                        <Stack direction="row" spacing={3} flexWrap="wrap">
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              Valor Total
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
+                              {fCurrency(orcamento.total)}
+                            </Typography>
+                          </Box>
+
+                          <Box>
+                            <Typography variant="caption" color="text.secondary">
+                              Itens
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {orcamento.items?.length || 0} {orcamento.items?.length === 1 ? 'item' : 'itens'}
+                            </Typography>
+                          </Box>
+
+                          {orcamento.desconto > 0 && (
+                            <Box>
+                              <Typography variant="caption" color="text.secondary">
+                                Desconto
+                              </Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 500, color: 'error.main' }}>
+                                - {fCurrency(orcamento.desconto)}
+                              </Typography>
+                            </Box>
+                          )}
+
+                          {orcamento.formaPagamento && (
+                            <Box>
+                              <Typography variant="caption" color="text.secondary">
+                                Pagamento
+                              </Typography>
+                              <Typography variant="body2" sx={{ fontWeight: 500, textTransform: 'capitalize' }}>
+                                {orcamento.formaPagamento}
+                              </Typography>
+                            </Box>
+                          )}
+                        </Stack>
+
+                        {/* Footer */}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify icon="solar:user-bold" width={16} sx={{ color: 'text.disabled' }} />
+                          <Typography variant="caption" color="text.secondary">
+                            Responsável: {orcamento.proprietarioVenda || '-'}
+                          </Typography>
+                          {orcamento.cobrancas && orcamento.cobrancas.length > 0 && (
+                            <>
+                              <Divider orientation="vertical" flexItem />
+                              <Label size="small" color={getCobrancaChipColor(orcamento.cobrancas[0].status)}>
+                                {getCobrancaLabel(orcamento.cobrancas[0].status)}
+                              </Label>
+                            </>
+                          )}
+                          <Box sx={{ flex: 1 }} />
+                          <Button
+                            size="small"
+                            variant="text"
+                            endIcon={<Iconify icon="solar:arrow-right-bold" />}
+                            onClick={() => router.push(paths.dashboard.invoice.details(orcamento._id))}
+                            sx={{ minWidth: 'auto' }}
+                          >
+                            Ver detalhes
+                          </Button>
+                        </Stack>
+                      </Stack>
+                    </Card>
+                  ))}
+                </Stack>
+              </Card>
+            </Grid>
+          )}
         </Grid>
       )}
     </DashboardContent>
@@ -773,5 +889,67 @@ function getOutcomeColor(outcome) {
     proposta: 'primary',
   };
   return colors[outcome] || 'default';
+}
+
+// ----------------------------------------------------------------------
+// Helper Functions para Orçamentos
+// ----------------------------------------------------------------------
+
+function getOrcamentoLabel(status) {
+  const labels = {
+    'orcamento': 'Orçamento',
+    'pendente': 'Pendente',
+    'aprovada': 'Aprovado',
+    'pago': 'Pago',
+    'perdida': 'Perdido',
+    'cancelado': 'Cancelado',
+  };
+  return labels[status] || status;
+}
+
+function getOrcamentoColor(status) {
+  const colors = {
+    'orcamento': '#FFA726',
+    'pendente': '#FFA726',
+    'aprovada': '#66BB6A',
+    'pago': '#4CAF50',
+    'perdida': '#EF5350',
+    'cancelado': '#9E9E9E',
+  };
+  return colors[status] || '#9E9E9E';
+}
+
+function getOrcamentoChipColor(status) {
+  const colors = {
+    'orcamento': 'warning',
+    'pendente': 'warning',
+    'aprovada': 'success',
+    'pago': 'success',
+    'perdida': 'error',
+    'cancelado': 'default',
+  };
+  return colors[status] || 'default';
+}
+
+function getCobrancaLabel(status) {
+  const labels = {
+    'EMABERTO': 'Em Aberto',
+    'VENCIDO': 'Vencido',
+    'RECEBIDO': 'Recebido',
+    'CANCELADO': 'Cancelado',
+    'PAGO': 'Pago',
+  };
+  return labels[status] || status;
+}
+
+function getCobrancaChipColor(status) {
+  const colors = {
+    'EMABERTO': 'warning',
+    'VENCIDO': 'error',
+    'RECEBIDO': 'success',
+    'CANCELADO': 'default',
+    'PAGO': 'success',
+  };
+  return colors[status] || 'default';
 }
 

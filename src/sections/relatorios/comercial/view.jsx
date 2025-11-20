@@ -92,7 +92,7 @@ export function RelatorioComercialView() {
         return {
           id: invoice._id,
           invoiceNumber: invoice.invoiceNumber,
-          cliente: invoice.cliente?.nome || 'Não informado',
+          cliente: invoice?.cliente?.nome || invoice?.lead?.nome || 'Não informado',
           total,
           status: invoice.status || 'Não informado',
           proprietario: formatProprietario(invoice.proprietarioVenda),

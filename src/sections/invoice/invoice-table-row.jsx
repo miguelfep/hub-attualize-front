@@ -61,12 +61,14 @@ export function InvoiceTableRow({ row, selected, onSelectRow, onViewRow, onEditR
 
         <TableCell onClick={onViewRow} sx={{ cursor: 'pointer' }}>
           <Stack spacing={2} direction="row" alignItems="center">
-            <Avatar alt={row.cliente.nome}>{row.cliente.nome.charAt(0).toUpperCase()}</Avatar>
+            <Avatar alt={row?.cliente?.nome || row?.lead?.nome}>
+              {(row?.cliente?.nome || row?.lead?.nome)?.charAt(0)?.toUpperCase() || 'N/A'}
+            </Avatar>
             <ListItemText
               disableTypography
               primary={
                 <Typography variant="body2" noWrap>
-                  {row.cliente.nome}
+                  {row?.cliente?.nome || row?.lead?.nome || 'Sem nome'}
                 </Typography>
               }
               secondary={

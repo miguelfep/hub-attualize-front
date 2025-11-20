@@ -153,7 +153,7 @@ export function InvoiceDetails({ invoice, nfses }) {
               onClick={async () => {
                 try {
                   setGeneratingNf(true);
-                  const res = await criarNFSeInvoice({invoiceId: invoice._id});
+                  const res = await criarNFSeInvoice({ invoiceId: invoice._id });
                   if (res.status === 200) {
                     toast.success('Processando emissão da nota fiscal...');
                     const placeholder = { status: 'emitindo', numeroNota: 'Processando...', serie: 'Processando...', codigoVerificacao: 'Processando...', linkNota: 'Processando...' };
@@ -477,14 +477,26 @@ export function InvoiceDetails({ invoice, nfses }) {
             Vendedor: {invoice?.proprietarioVenda}
           </Stack>
           <Stack sx={{ typography: 'body2' }}>
-            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-              Contratante
-            </Typography>
-            {invoice?.cliente.nome}
+            <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
+              <Typography variant="subtitle2">Contratante</Typography>
+              <Chip
+                label={invoice?.cliente ? 'Cliente' : 'Lead'}
+                color={invoice?.cliente ? 'info' : 'primary'}
+                size="small"
+                variant="soft"
+              />
+            </Stack>
+            {invoice?.cliente?.nome || invoice?.lead?.nome}
             <br />
-            {invoice?.cliente.email}
+            {invoice?.cliente?.email || invoice?.lead?.email}
             <br />
-            Telefone: {invoice?.cliente.whatsapp}
+            Telefone: {invoice?.cliente?.whatsapp || invoice?.cliente?.telefone || invoice?.lead?.telefone || '-'}
+            {(invoice?.cliente?.origem || invoice?.lead?.origem) && (
+              <>
+                <br />
+                Origem: {invoice?.cliente?.origem || invoice?.lead?.origem}
+              </>
+            )}
           </Stack>
           <Stack sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -498,7 +510,7 @@ export function InvoiceDetails({ invoice, nfses }) {
             </Typography>
             {fDate(invoice?.dataVencimento)}
           </Stack>
-          {invoice?.approvalDate && ( // Apenas exibir se approvalDate existir
+          {invoice?.approvalDate && (
             <Stack sx={{ typography: 'body2' }}>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
                 Data de Aprovação
@@ -545,7 +557,7 @@ export function InvoiceDetails({ invoice, nfses }) {
             )}
           </Box>
         )}
-      </Card>
+      </Card >
     </>
   );
 }

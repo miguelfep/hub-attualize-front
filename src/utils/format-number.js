@@ -110,3 +110,37 @@ export function formatCpfCnpj(value) {
     }
     return fPercent(value);
   }
+
+// ----------------------------------------------------------------
+
+export const onlyDigits = (v) => v.replace(/\D/g, '');
+
+// ----------------------------------------------------------------
+
+export const formatCPF = (v) => {
+  const d = onlyDigits(v).slice(0, 11);
+  return d
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+};
+
+// ----------------------------------------------------------------
+
+export const formatCNPJ = (v) => {
+  const d = onlyDigits(v).slice(0, 14);
+  return d
+    .replace(/(\d{2})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1.$2')
+    .replace(/(\d{3})(\d)/, '$1/$2')
+    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+};
+
+// ----------------------------------------------------------------
+
+export const formatCPFOrCNPJ = (v) => {
+  const d = onlyDigits(v);
+  // Se passou de 11 dígitos, assume máscara de CNPJ, senão CPF
+  return d.length > 11 ? formatCNPJ(d) : formatCPF(d);
+};
+

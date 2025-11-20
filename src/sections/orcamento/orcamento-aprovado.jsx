@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import axios from 'axios';
 import { toast } from 'sonner';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import {
   Box,
@@ -73,27 +73,31 @@ export function OrcamentoAprovado({
   loading,
   updateInvoiceData, // Nova prop para atualizar a invoice
 }) {
-  const enderecoInicial = invoice?.cliente.endereco?.[0] || {};
+  const enderecoInicial = invoice?.cliente?.endereco?.[0] || invoice?.endereco || {};
   const [method, setMethod] = useState(paymentMethod);
   const [errors, setErrors] = useState({});
   const [loadingCep, setLoadingCep] = useState(false);
   const [cepNotFound, setCepNotFound] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [formData, setFormData] = useState({
-    nome: invoice?.cliente.nome || '',
-    email: invoice?.cliente.email || '',
-    telefone: invoice?.cliente.whatsapp || '',
-    cpfCnpj: invoice?.cliente.cnpj || '',
-    cep: enderecoInicial.cep || '',
-    endereco: enderecoInicial.rua || '',
-    numero: enderecoInicial.numero || '',
-    complemento: enderecoInicial.complemento || '',
-    cidade: enderecoInicial.cidade || '',
-    estado: enderecoInicial.estado || '',
+    nome: invoice?.cliente?.nome || invoice?.lead?.nome || '',
+    email: invoice?.cliente?.email || invoice?.lead?.email || '',
+    telefone: invoice?.cliente?.whatsapp || invoice?.cliente?.telefone || invoice?.lead?.telefone || '',
+    cpfCnpj: invoice?.cliente?.cnpj || invoice?.lead?.cpf || '',
+    cep: enderecoInicial?.cep || '',
+    endereco: enderecoInicial?.rua || enderecoInicial?.endereco || '',
+    numero: enderecoInicial?.numero || '',
+    complemento: enderecoInicial?.complemento || '',
+    cidade: enderecoInicial?.cidade || '',
+    estado: enderecoInicial?.estado || '',
   });
 
-  // Verificar se a invoice tem cobranças
-  if (invoice.cobrancas && invoice.cobrancas.length > 0) {
+  const hasCobrancas = invoice?.cobrancas && Array.isArray(invoice.cobrancas) && invoice.cobrancas.length > 0;
+
+  useEffect(() => {
+  }, [invoice?.cobrancas?.length, invoice?._id]);
+
+  if (hasCobrancas) {
     return <CobrancaExistente invoice={invoice} />;
   }
 

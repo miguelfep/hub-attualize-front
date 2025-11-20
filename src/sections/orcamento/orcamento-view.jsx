@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import { toast } from 'sonner';
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -36,22 +36,63 @@ export function OrcamentoView({ invoice, nfses }) {
   const [loading, setLoading] = useState(false);
   const [rejectionReason, setRejectionReason] = useState(''); // Estado para o motivo da recusa
   const [showRejectionInput, setShowRejectionInput] = useState(false); // Controle para mostrar input
+  const timeoutRef = useRef(null); // Ref para armazenar o timeout
 
   useEffect(() => {
     if (status !== 'orcamento') {
       setActiveStep(1);
     }
+
+    // Cleanup: limpar timeout se o componente desmontar
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, [status]);
 
   const updateInvoiceData = async () => {
     setLoading(true);
     try {
-      const updatedInvoice = await getInvoiceById(currentInvoice._id);
-      setCurrentInvoice(updatedInvoice);
-      setStatus(updatedInvoice.status);
+      // Aguardar um pouco para garantir que o backend processou completamente
+      // Usar Promise com timeout controlado
+      await new Promise((resolve) => {
+        timeoutRef.current = setTimeout(() => {
+          resolve();
+        }, 800);
+      });
+
+      const response = await getInvoiceById(currentInvoice._id);
+      // A API retorna { invoice, nfses }, então precisamos extrair o invoice
+      const updatedInvoice = response.invoice || response;
+
+      // Criar um novo objeto para garantir que o React detecte a mudança
+      const newInvoice = {
+        ...updatedInvoice,
+        cobrancas: updatedInvoice.cobrancas || [],
+      };
+
+      // Atualizar o estado do invoice (isso vai forçar o re-render)
+      setCurrentInvoice(newInvoice);
+
+      // Atualizar status se necessário
+      if (newInvoice.status) {
+        setStatus(newInvoice.status);
+      }
+
+      // Se tem cobrancas, atualizar o activeStep para mostrar a cobrança
+      if (newInvoice.cobrancas && Array.isArray(newInvoice.cobrancas) && newInvoice.cobrancas.length > 0) {
+        setActiveStep(1); // Garantir que está no step de pagamento
+      }
     } catch (error) {
+      console.error('Erro ao atualizar invoice:', error);
       toast.error('Erro ao atualizar invoice');
     } finally {
+      // Limpar o timeout ref
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
       setLoading(false);
     }
   };
@@ -191,6 +232,7 @@ export function OrcamentoView({ invoice, nfses }) {
         {status === 'orcamento' && <OrcamentoPendente invoice={currentInvoice} />}
         {status === 'aprovada' && (
           <OrcamentoAprovado
+            key={currentInvoice?._id || currentInvoice?.cobrancas?.length || 'aprovada'} // Force re-render quando cobrancas mudarem
             invoice={currentInvoice}
             paymentMethod={paymentMethod}
             handlePaymentMethodChange={handlePaymentMethodChange}
@@ -252,7 +294,7 @@ export function OrcamentoView({ invoice, nfses }) {
         )}
 
         {activeStep === 2 && (
-          <CheckoutOrderComplete open onReset={() => setActiveStep(0)} onDownloadPDF={() => {}} />
+          <CheckoutOrderComplete open onReset={() => setActiveStep(0)} onDownloadPDF={() => { }} />
         )}
 
         {status === 'perdida' && (

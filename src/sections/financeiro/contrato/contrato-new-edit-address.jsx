@@ -9,11 +9,12 @@ import Typography from '@mui/material/Typography';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useResponsive } from 'src/hooks/use-responsive';
 
+import { getLeads } from 'src/actions/lead';
 import { getClientes } from 'src/actions/clientes';
 
 import { Iconify } from 'src/components/iconify';
 
-import { AddressListDialog } from 'src/sections/address';
+import { ClienteLeadDialog } from 'src/sections/cliente/view/cliente-lead-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -31,27 +32,36 @@ export function ContratoNewEditAddress() {
   const { cliente: clienteValue } = values;
 
   const to = useBoolean();
-  const newClientDialog = useBoolean();
 
   const [clientes, setClientes] = useState([]);
+  const [leads, setLeads] = useState([]);
 
   useEffect(() => {
-    const fetchClientes = async () => {
+    const fetchData = async () => {
       try {
-        const clientesData = await getClientes();
-        setClientes(clientesData);
+        const [clientesData, leadsData] = await Promise.all([
+          getClientes(),
+          getLeads(),
+        ]);
+        // Garantir que clientes seja um array
+        const clientesArray = Array.isArray(clientesData)
+          ? clientesData
+          : clientesData?.data || clientesData?.clientes || [];
+
+        // Garantir que leads seja um array
+        const leadsArray = Array.isArray(leadsData)
+          ? leadsData
+          : leadsData?.leads || leadsData?.data || [];
+
+        setClientes(clientesArray);
+        setLeads(leadsArray);
       } catch (error) {
-        console.error('Erro ao buscar clientes:', error);
+        console.error('Erro ao buscar dados:', error);
       }
     };
 
-    fetchClientes();
+    fetchData();
   }, []);
-
-  const handleAddClient = (newClient) => {
-    setClientes((prev) => [...prev, newClient]);
-    setValue('cliente', newClient);
-  };
 
   return (
     <>
@@ -105,13 +115,14 @@ export function ContratoNewEditAddress() {
           )}
         </Stack>
       </Stack>
-      <AddressListDialog
-        title="Clientes"
+      <ClienteLeadDialog
+        title="Clientes e Leads"
         open={to.value}
         onClose={to.onFalse}
-        selected={(selectedId) => clienteValue?.id === selectedId}
-        onSelect={(cliente) => setValue('cliente', cliente)}
-        list={clientes}
+        selected={(selectedId) => clienteValue?._id === selectedId || clienteValue?.id === selectedId}
+        onSelect={(item) => setValue('cliente', item)}
+        clientes={clientes}
+        leads={leads}
       />
     </>
   );
