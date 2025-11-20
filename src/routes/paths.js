@@ -170,6 +170,7 @@ export const paths = {
       receber: `${ROOTS.DASHBOARD}/financeiro/receber`,
       pagar: `${ROOTS.DASHBOARD}/financeiro/pagar`,
       pagarnovo: `${ROOTS.DASHBOARD}/financeiro/pagar/new`,
+      conciliacao: `${ROOTS.DASHBOARD}/financeiro/conciliacao`,
     },
     aberturas: {
       root: `${ROOTS.DASHBOARD}/societario/abertura`,
