@@ -122,6 +122,14 @@ export const paths = {
     fiscal: {
       root: `${ROOTS.DASHBOARD}/fiscal/nfse`,
       apuracao: `${ROOTS.DASHBOARD}/fiscal/apuracao`,
+      apuracaoClientes: `${ROOTS.DASHBOARD}/fiscal/apuracao/clientes`,
+      apuracaoCliente: (id) => `${ROOTS.DASHBOARD}/fiscal/apuracao/cliente/${id}`,
+      apuracaoClienteDetalhes: (id) => `${ROOTS.DASHBOARD}/fiscal/apuracao/cliente/${id}/detalhes`,
+      apuracaoList: `${ROOTS.DASHBOARD}/fiscal/apuracao/list`,
+      historicoFolha: `${ROOTS.DASHBOARD}/fiscal/apuracao/historico`,
+      calcular: `${ROOTS.DASHBOARD}/fiscal/apuracao/calcular`,
+      uploadDas: `${ROOTS.DASHBOARD}/fiscal/apuracao/upload-das`,
+      dasDetalhes: (id) => `${ROOTS.DASHBOARD}/fiscal/apuracao/das/${id}`,
     },
     certificados: {
       root: `${ROOTS.DASHBOARD}/certificados`,
@@ -289,5 +297,16 @@ export const paths = {
     profile: `${ROOTS.CLIENTE}/profile`,
     settings: `${ROOTS.CLIENTE}/settings`,
     aulaoReforma: `${ROOTS.CLIENTE}/aulao-reforma`,
+    conteudos: {
+      root: `${ROOTS.CLIENTE}/conteudos`,
+      aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
+      guiaIrpf2026: `${ROOTS.CLIENTE}/conteudos/guia-irpf-2026`,
+      reformaTributaria: `${ROOTS.CLIENTE}/conteudos/reforma-tributaria`,
+    },
+    // Impostos e Fator R (visualização apenas)
+    impostos: {
+      root: `${ROOTS.CLIENTE}/impostos`, // Lista de DAS para download
+      fatorR: `${ROOTS.CLIENTE}/impostos/fator-r`, // Acompanhamento Fator R
+    },
   },
 };

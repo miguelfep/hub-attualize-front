@@ -26,6 +26,7 @@ export function useGetAllClientes(params = {}) {
   
   const url = queryString ? `${endpoints.clientes.list}?${queryString}` : endpoints.clientes.list;
   
+  console.log(url)
   const { data, isLoading, error, mutate } = useSWR(
     url,
     fetcher,

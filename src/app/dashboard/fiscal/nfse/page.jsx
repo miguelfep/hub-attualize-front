@@ -30,10 +30,15 @@ import {
 import { fCurrency } from 'src/utils/format-number';
 
 import { getClientes } from 'src/actions/clientes';
-import { cancelarNotaFiscal, listarNotasFiscaisPorCliente } from 'src/actions/notafiscal';
+import {
+  cancelarNotaFiscal,
+  listarNotasFiscaisPorCliente,
+  importarXmlNotaFiscal,
+} from 'src/actions/notafiscal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+import { Upload } from 'src/components/upload';
 
 // Helper para formatar tipo de nota
 const formatTipoNota = (tipo) => {
@@ -82,6 +87,11 @@ export default function DashboardFiscalPage() {
   const [motivoCancelamento, setMotivoCancelamento] = useState('');
   const [dataCancelamento, setDataCancelamento] = useState(() => dayjs().format('YYYY-MM-DD'));
   const [canceling, setCanceling] = useState(false);
+
+  // Modal de importar XML
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [xmlFile, setXmlFile] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -193,6 +203,72 @@ export default function DashboardFiscalPage() {
     }
   };
 
+  // Funções para importar XML
+  const handleOpenImportDialog = () => {
+    if (!selectedCliente) {
+      toast.error('Selecione um cliente antes de importar XML');
+      return;
+    }
+    setXmlFile(null);
+    setImportDialogOpen(true);
+  };
+
+  const handleCloseImportDialog = () => {
+    setImportDialogOpen(false);
+    setXmlFile(null);
+  };
+
+  const handleDropXml = (acceptedFiles) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      if (!file.type.includes('xml') && !file.name.endsWith('.xml')) {
+        toast.error('Arquivo deve ser um XML (.xml)');
+        return;
+      }
+      setXmlFile(file);
+    }
+  };
+
+  const handleImportXml = async () => {
+    if (!selectedCliente) {
+      toast.error('Selecione um cliente');
+      return;
+    }
+
+    if (!xmlFile) {
+      toast.error('Selecione um arquivo XML');
+      return;
+    }
+
+    try {
+      setImporting(true);
+      const resultado = await importarXmlNotaFiscal(selectedCliente, xmlFile);
+
+      if (resultado.sucesso) {
+        const mensagem = resultado.criado
+          ? 'Nota fiscal importada com sucesso!'
+          : resultado.atualizado
+            ? 'Nota fiscal atualizada com sucesso!'
+            : 'Nota fiscal já existe no sistema.';
+        toast.success(mensagem);
+        handleCloseImportDialog();
+        await fetchNotas(); // Recarrega a lista
+      } else {
+        toast.error(resultado.erro || resultado.mensagem || 'Erro ao importar XML');
+      }
+    } catch (error) {
+      const msg =
+        error?.response?.data?.erro ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Erro ao importar XML';
+      toast.error(msg);
+      console.error('Erro ao importar XML:', error);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   return (
     <Card sx={{ borderRadius: 3 }}>
       <Box
@@ -260,6 +336,21 @@ export default function DashboardFiscalPage() {
             </FormControl>
           </Grid>
         </Grid>
+
+        {/* Botão de Importar XML */}
+        {selectedCliente && (
+          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+            <Button
+              variant="contained"
+              color="primary"
+              startIcon={<Iconify icon="solar:upload-bold-duotone" />}
+              onClick={handleOpenImportDialog}
+              disabled={loading}
+            >
+              Importar Nota Fiscal via XML
+            </Button>
+          </Stack>
+        )}
         
         {/* Filtros Ativos */}
         {(status || tipoNota) && (
@@ -536,6 +627,79 @@ export default function DashboardFiscalPage() {
             startIcon={<Iconify icon="solar:close-circle-bold" />}
           >
             Confirmar Cancelamento
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Importar XML */}
+      <Dialog open={importDialogOpen} onClose={handleCloseImportDialog} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="solar:upload-bold-duotone" width={24} sx={{ color: 'primary.main' }} />
+            <Typography variant="h6">Importar Nota Fiscal via XML</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Alert severity="info">
+              <Typography variant="body2">
+                Selecione um arquivo XML da nota fiscal para importar. O sistema detecta
+                automaticamente o tipo de XML (NFSe, NF-e, NFSe Nacional, etc.) e processa usando a
+                mesma lógica da SIEG.
+              </Typography>
+            </Alert>
+
+            {selectedCliente && (
+              <Box>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                  Cliente selecionado:
+                </Typography>
+                <Typography variant="body2">
+                  {(clientes || []).find((c) => c._id === selectedCliente)?.razaoSocial || '-'}
+                </Typography>
+              </Box>
+            )}
+
+            <Upload
+              file={xmlFile}
+              onDrop={handleDropXml}
+              onDelete={() => setXmlFile(null)}
+              accept={{ 'application/xml': ['.xml'], 'text/xml': ['.xml'] }}
+              placeholder={
+                <Stack spacing={0.5} alignItems="center" sx={{ py: 2 }}>
+                  <Iconify icon="solar:cloud-upload-bold-duotone" width={48} />
+                  <Typography variant="body2">Clique ou arraste o arquivo XML aqui</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Apenas arquivos .xml
+                  </Typography>
+                </Stack>
+              }
+            />
+
+            {xmlFile && (
+              <Alert severity="success">
+                <Typography variant="body2">
+                  Arquivo selecionado: <strong>{xmlFile.name}</strong>
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Tamanho: {(xmlFile.size / 1024).toFixed(2)} KB
+                </Typography>
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseImportDialog} variant="outlined" disabled={importing}>
+            Cancelar
+          </Button>
+          <LoadingButton
+            onClick={handleImportXml}
+            variant="contained"
+            loading={importing}
+            disabled={!xmlFile || !selectedCliente}
+            startIcon={<Iconify icon="solar:upload-bold-duotone" />}
+          >
+            {importing ? 'Importando...' : 'Importar XML'}
           </LoadingButton>
         </DialogActions>
       </Dialog>

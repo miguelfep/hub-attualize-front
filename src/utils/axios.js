@@ -169,19 +169,32 @@ export const endpoints = {
     status: (id) => `${baseUrl}avaliacoes/${id}/status`,
     delete: (id) => `${baseUrl}avaliacoes/${id}`,
   },
+  // Histórico de Folha e Faturamento
+  historicoFolha: {
+    listar: (clienteId) => `${baseUrl}historico-folha-faturamento/${clienteId}`,
+    criar: (clienteId) => `${baseUrl}historico-folha-faturamento/${clienteId}`,
+    uploadCsv: (clienteId) => `${baseUrl}historico-folha-faturamento/${clienteId}/upload-csv`,
+    totais12Meses: (clienteId) => `${baseUrl}historico-folha-faturamento/${clienteId}/12-meses`,
+    buscar: (historicoId) => `${baseUrl}historico-folha-faturamento/historico/${historicoId}`,
+    atualizar: (historicoId) => `${baseUrl}historico-folha-faturamento/historico/${historicoId}`,
+    cancelar: (historicoId) => `${baseUrl}historico-folha-faturamento/historico/${historicoId}/cancelar`,
+  },
+  // Apuração de Impostos
   apuracao: {
     calcular: (empresaId) => `${baseUrl}apuracao/${empresaId}/calcular`,
     listar: (empresaId) => `${baseUrl}apuracao/${empresaId}/apuracoes`,
+    listarTodas: `${baseUrl}apuracao/apuracoes`, // Lista todas as apurações
     detalhes: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}`,
     cancelar: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}/cancelar`,
+    recalcular: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}/recalcular`,
     gerarDas: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}/gerar-das`,
     gerarDasDireto: (empresaId) => `${baseUrl}apuracao/${empresaId}/gerar-das`,
+    uploadDas: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}/upload-das`,
     listarDas: (empresaId) => `${baseUrl}apuracao/${empresaId}/das`,
     dasDetalhes: (dasId) => `${baseUrl}apuracao/das/${dasId}`,
     dasPdf: (dasId) => `${baseUrl}apuracao/das/${dasId}/pdf`,
     dasPagar: (dasId) => `${baseUrl}apuracao/das/${dasId}/pagar`,
     dasCancelar: (dasId) => `${baseUrl}apuracao/das/${dasId}/cancelar`,
-    recalcular: (apuracaoId) => `${baseUrl}apuracao/apuracao/${apuracaoId}/recalcular`,
   },
   fatorR: {
     totais12Meses: (clienteId) => `${baseUrl}fator-r/${clienteId}/totais-12-meses`,

@@ -6,6 +6,12 @@ import useSWR from 'swr';
 import axios, { fetcher, endpoints } from 'src/utils/axios';
 import { STORAGE_KEY as JWT_STORAGE_KEY } from 'src/auth/context/jwt/constant';
 
+/**
+ * @typedef {import('src/types/apuracao').IHistoricoFolhaFaturamento} IHistoricoFolhaFaturamento
+ * @typedef {import('src/types/apuracao').IApuracao} IApuracao
+ * @typedef {import('src/types/apuracao').IDas} IDas
+ */
+
 // ----------------------------------------------------------------------
 
 const swrDefaultOptions = {
@@ -43,19 +49,30 @@ export function useApuracoes(empresaId, filtros = {}) {
     }
   });
 
-  const url = empresaId
+  // Se empresaId é null, busca todas as apurações (endpoint geral)
+  // Se empresaId é fornecido, busca apenas daquela empresa
+  const url = endpoints?.apuracao?.listar
+    ? empresaId
     ? `${endpoints.apuracao.listar(empresaId)}${params.toString() ? `?${params}` : ''}`
+      : endpoints.apuracao.listarTodas
+        ? `${endpoints.apuracao.listarTodas}${params.toString() ? `?${params}` : ''}`
+        : null
     : null;
 
   return useSWR(url, fetcher, swrDefaultOptions);
 }
 
 export function useApuracao(apuracaoId) {
-  const url = apuracaoId ? endpoints.apuracao.detalhes(apuracaoId) : null;
+  const url = apuracaoId && endpoints?.apuracao?.detalhes
+    ? endpoints.apuracao.detalhes(apuracaoId)
+    : null;
   return useSWR(url, fetcher, swrDefaultOptions);
 }
 
 export async function calcularApuracao(empresaId, payload) {
+  if (!endpoints?.apuracao?.calcular) {
+    throw new Error('Endpoint de cálculo de apuração não está disponível');
+  }
   const response = await axios.post(endpoints.apuracao.calcular(empresaId), payload, {
     headers: getAuthHeaders(),
   });
@@ -63,6 +80,9 @@ export async function calcularApuracao(empresaId, payload) {
 }
 
 export async function recalcularApuracao(apuracaoId, payload) {
+  if (!endpoints?.apuracao?.recalcular) {
+    throw new Error('Endpoint de recálculo de apuração não está disponível');
+  }
   const response = await axios.post(endpoints.apuracao.recalcular(apuracaoId), payload, {
     headers: getAuthHeaders(),
   });
@@ -70,6 +90,9 @@ export async function recalcularApuracao(apuracaoId, payload) {
 }
 
 export async function cancelarApuracao(apuracaoId, motivo) {
+  if (!endpoints?.apuracao?.cancelar) {
+    throw new Error('Endpoint de cancelamento de apuração não está disponível');
+  }
   const response = await axios.patch(
     endpoints.apuracao.cancelar(apuracaoId),
     { motivo },
@@ -79,6 +102,9 @@ export async function cancelarApuracao(apuracaoId, motivo) {
 }
 
 export async function gerarDasDeApuracao(apuracaoId, params) {
+  if (!endpoints?.apuracao?.gerarDas) {
+    throw new Error('Endpoint de geração de DAS não está disponível');
+  }
   const response = await axios.post(endpoints.apuracao.gerarDas(apuracaoId), params, {
     headers: getAuthHeaders(),
   });
@@ -86,6 +112,9 @@ export async function gerarDasDeApuracao(apuracaoId, params) {
 }
 
 export async function gerarDasDireto(empresaId, params) {
+  if (!endpoints?.apuracao?.gerarDasDireto) {
+    throw new Error('Endpoint de geração direta de DAS não está disponível');
+  }
   const response = await axios.post(endpoints.apuracao.gerarDasDireto(empresaId), params, {
     headers: getAuthHeaders(),
   });
@@ -105,7 +134,7 @@ export function useDas(empresaId, filtros = {}) {
     }
   });
 
-  const url = empresaId
+  const url = empresaId && endpoints?.apuracao?.listarDas
     ? `${endpoints.apuracao.listarDas(empresaId)}${params.toString() ? `?${params}` : ''}`
     : null;
 
@@ -113,7 +142,7 @@ export function useDas(empresaId, filtros = {}) {
 }
 
 export function useDasDetalhes(dasId, incluirPdf = false) {
-  const url = dasId
+  const url = dasId && endpoints?.apuracao?.dasDetalhes
     ? `${endpoints.apuracao.dasDetalhes(dasId)}${incluirPdf ? '?incluirPdf=true' : ''}`
     : null;
 
@@ -121,6 +150,9 @@ export function useDasDetalhes(dasId, incluirPdf = false) {
 }
 
 export async function baixarDasPdf(dasId) {
+  if (!endpoints?.apuracao?.dasPdf) {
+    throw new Error('Endpoint de download de PDF do DAS não está disponível');
+  }
   const response = await axios.get(endpoints.apuracao.dasPdf(dasId), {
     headers: getAuthHeaders(),
     responseType: 'blob',
@@ -130,6 +162,9 @@ export async function baixarDasPdf(dasId) {
 }
 
 export async function marcarDasComoPago(dasId, payload) {
+  if (!endpoints?.apuracao?.dasPagar) {
+    throw new Error('Endpoint de marcação de DAS como pago não está disponível');
+  }
   const response = await axios.patch(endpoints.apuracao.dasPagar(dasId), payload, {
     headers: getAuthHeaders(),
   });
@@ -137,6 +172,9 @@ export async function marcarDasComoPago(dasId, payload) {
 }
 
 export async function cancelarDas(dasId, motivo) {
+  if (!endpoints?.apuracao?.dasCancelar) {
+    throw new Error('Endpoint de cancelamento de DAS não está disponível');
+  }
   const response = await axios.patch(
     endpoints.apuracao.dasCancelar(dasId),
     { motivo },
@@ -145,4 +183,35 @@ export async function cancelarDas(dasId, motivo) {
   return response.data;
 }
 
+/**
+ * Faz upload do PDF do DAS para uma apuração (base64)
+ * @param {string} apuracaoId - ID da apuração
+ * @param {Object} dados - Dados do DAS com pdfBase64
+ * @param {string} dados.pdfBase64 - PDF em base64
+ * @param {string} dados.numeroDocumento - Número do documento
+ * @param {string} dados.dataVencimento - Data de vencimento (YYYYMMDD)
+ * @param {number} dados.valorTotal - Valor total
+ * @param {string} [dados.dataLimiteAcolhimento] - Data limite acolhimento (YYYYMMDD)
+ * @param {string} [dados.ambiente] - Ambiente (teste/producao)
+ * @param {string[]} [dados.observacoes] - Array de observações
+ * @returns {Promise<IDas>} DAS criado
+ */
+export async function uploadDasPdf(apuracaoId, dados) {
+  if (!endpoints?.apuracao?.uploadDas) {
+    throw new Error('Endpoint de upload de DAS não está disponível');
+  }
+  
+  const response = await axios.post(
+    endpoints.apuracao.uploadDas(apuracaoId),
+    dados,
+    {
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  
+  return response.data;
+}
 

@@ -1,7 +1,10 @@
-import ApuracaoClientesPage from 'src/sections/apuracao/view/apuracao-clientes-page';
+import { ApuracaoDashboardAdminView } from 'src/sections/apuracao-admin/view';
 
-export default function Page() {
-  return <ApuracaoClientesPage />;
+// ----------------------------------------------------------------------
+
+export const metadata = { title: 'Apuração de Impostos | Dashboard' };
+
+export default function ApuracaoAdminPage() {
+  return <ApuracaoDashboardAdminView />;
 }
-
 

@@ -47,3 +47,30 @@ export async function cancelarNotaFiscal(notaFiscalId, motivoCancelamento, dataC
     dataCancelamento,
   });
 }
+
+/**
+ * Importar nota fiscal via XML
+ * @param {string} clienteId - ID do cliente
+ * @param {File} xmlFile - Arquivo XML da nota fiscal
+ * @returns {Promise<{sucesso: boolean, mensagem: string, criado: boolean, atualizado: boolean, notaFiscalId?: string, arquivo?: string}>}
+ */
+export async function importarXmlNotaFiscal(clienteId, xmlFile) {
+  if (!xmlFile) {
+    throw new Error('Arquivo XML é obrigatório');
+  }
+
+  if (!xmlFile.type.includes('xml') && !xmlFile.name.endsWith('.xml')) {
+    throw new Error('Arquivo deve ser um XML (.xml)');
+  }
+
+  const formData = new FormData();
+  formData.append('xml', xmlFile);
+
+  const response = await axios.post(`${baseUrl}nota-fiscal/${clienteId}/importar-xml`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return response.data;
+}
