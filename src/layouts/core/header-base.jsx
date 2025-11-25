@@ -69,24 +69,70 @@ export function HeaderBase({
 
   ...other
 }) {
-  const theme = useTheme();
+   const theme = useTheme();
 
-  // UseEffect para adicionar o script do Digisac Web Chat
-  useEffect(() => {
-    // Configura o objeto global _digisac
-    window._digisac = { id: 'c0517922-0328-4ccf-8027-fa9f7b78f6e2' };
+  // // UseEffect para adicionar o script do Digisac Web Chat
+  // useEffect(() => {
+  //   // Configura o objeto global _digisac
+  //   window._digisac = { id: 'c0517922-0328-4ccf-8027-fa9f7b78f6e2' };
 
-    // Cria e adiciona o script externo ao DOM
-    const script = document.createElement('script');
-    script.src = 'https://webchat.digisac.app/embedded.js';
-    script.async = true;
-    document.head.appendChild(script);
+  //   // Adiciona estilos CSS para posicionar o widget à esquerda
+  //   const style = document.createElement('style');
+  //   style.id = 'digisac-custom-styles';
+  //   style.textContent = `
+  //     /* Posiciona o widget do Digisac à esquerda */
+  //     #digisac-widget,
+  //     [id*="digisac"],
+  //     iframe[src*="digisac"],
+  //     .digisac-widget,
+  //     .digisac-chat-widget,
+  //     [class*="digisac"] {
+  //       left: 20px !important;
+  //       right: auto !important;
+  //     }
+      
+  //     /* Ajusta o botão do widget se houver */
+  //     #digisac-widget-button,
+  //     [id*="digisac-button"],
+  //     .digisac-button,
+  //     [class*="digisac-button"] {
+  //       left: 20px !important;
+  //       right: auto !important;
+  //     }
+  //   `;
+  //   document.head.appendChild(style);
 
-    // Remove o script ao desmontar o componente (limpeza)
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
+  //   // Cria e adiciona o script externo ao DOM
+  //   const script = document.createElement('script');
+  //   script.src = 'https://webchat.digisac.app/embedded.js';
+  //   script.async = true;
+    
+  //   // Aplica estilos após o script carregar
+  //   script.onload = () => {
+  //     // Aguarda um pouco para o widget renderizar
+  //     setTimeout(() => {
+  //       const widgets = document.querySelectorAll('[id*="digisac"], [class*="digisac"], iframe[src*="digisac"]');
+  //       widgets.forEach((widget) => {
+  //         if (widget instanceof HTMLElement) {
+  //           widget.style.left = '20px';
+  //           widget.style.right = 'auto';
+  //         }
+  //       });
+  //     }, 1000);
+  //   };
+    
+  //   document.head.appendChild(script);
+
+  //   // Remove o script e estilo ao desmontar o componente (limpeza)
+  //   return () => {
+  //     if (document.head.contains(script)) {
+  //       document.head.removeChild(script);
+  //     }
+  //     if (document.head.contains(style)) {
+  //       document.head.removeChild(style);
+  //     }
+  //   };
+  // }, []);
 
   return (
     <HeaderSection

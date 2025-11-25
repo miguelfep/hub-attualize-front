@@ -1,29 +1,32 @@
 'use client';
 
+import { toast } from 'sonner';
 import { useState } from 'react';
 
-import { toast } from 'sonner';
+import { LoadingButton } from '@mui/lab';
 import Rating from '@mui/material/Rating';
 import {
-  Alert,
-  Avatar,
   Box,
   Card,
-  CardContent,
   Chip,
-  Container,
+  Alert,
+  Stack,
+  Avatar,
   Divider,
   Skeleton,
-  Stack,
+  Container,
   TextField,
   Typography,
+  CardContent,
 } from '@mui/material';
-import { LoadingButton } from '@mui/lab';
+
+import { useEmpresa } from 'src/hooks/use-empresa';
+
+import { useAvaliacoes, createAvaliacao } from 'src/actions/avaliacoes';
 
 import { Iconify } from 'src/components/iconify';
+
 import { useAuthContext } from 'src/auth/hooks';
-import { useEmpresa } from 'src/hooks/use-empresa';
-import { createAvaliacao, useAvaliacoes } from 'src/actions/avaliacoes';
 
 const HERO_DESCRIPTION =
   'Assista ao Aulão Reforma exclusivo para clientes Attualize, entenda os impactos da Reforma Tributária e compartilhe seu feedback com o nosso time.';

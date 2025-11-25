@@ -185,5 +185,10 @@ export const endpoints = {
     },
     conciliacao: {
       bankStatements: '/api/bank-statements',
+    clienteExtratos: '/api/bank-statements/cliente',
+    clienteExtratosStatus: (clienteId) => `/api/bank-statements/cliente/${clienteId}/status`,
+    clienteLancamentos: (clienteId, mesAno) => `/api/bank-statements/cliente/${clienteId}/lancamentos/${mesAno}`,
+    clienteLancamentosPorBanco: (clienteId, mesAno) => `/api/bank-statements/cliente/${clienteId}/lancamentos/${mesAno}/bancos`,
+    clientesExtratosStatus: '/api/bank-statements/clientes/status',
     },
 };

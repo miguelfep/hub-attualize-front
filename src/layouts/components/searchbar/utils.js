@@ -21,15 +21,20 @@ export function getAllItems({ data }) {
 // ----------------------------------------------------------------------
 
 export function applyFilter({ inputData, query }) {
+  // Filtrar itens sem path ou title válidos (excluir paths vazios, undefined ou '#')
+  let filtered = inputData.filter(
+    (item) => item.title && item.path && item.path !== '#' && item.path !== ''
+  );
+
   if (query) {
-    inputData = inputData.filter(
+    filtered = filtered.filter(
       (item) =>
         item.title.toLowerCase().indexOf(query.toLowerCase()) !== -1 ||
-        item.path.toLowerCase().indexOf(query.toLowerCase()) !== -1
+        (item.path && item.path.toLowerCase().indexOf(query.toLowerCase()) !== -1)
     );
   }
 
-  return inputData;
+  return filtered;
 }
 
 // ----------------------------------------------------------------------

@@ -2,25 +2,25 @@
 
 import { useMemo, useState, useEffect } from 'react';
 
-import Card from '@mui/material/Card';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
+import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
-import Switch from '@mui/material/Switch';
+import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
+import Paper from '@mui/material/Paper';
+import Switch from '@mui/material/Switch';
+import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
+import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
-import TableContainer from '@mui/material/TableContainer';
-import TablePagination from '@mui/material/TablePagination';
 import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import TableContainer from '@mui/material/TableContainer';
 import InputAdornment from '@mui/material/InputAdornment';
 import LinearProgress from '@mui/material/LinearProgress';
-import Tooltip from '@mui/material/Tooltip';
-import Paper from '@mui/material/Paper';
+import TablePagination from '@mui/material/TablePagination';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -75,7 +75,7 @@ export function BankStatementTable({
   }, [transactions, page, rowsPerPage]);
 
   const handleFilterChange = (field) => (event) => {
-    const value = event.target.value;
+    const {value} = event.target;
     onFiltersChange({ ...filters, [field]: value });
   };
 

@@ -20,6 +20,8 @@ import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/component
 
 import { CheckoutProvider } from 'src/sections/checkout/context';
 
+import { FlowiseChatbot } from 'src/components/chatbot/flowise-chatbot';
+
 import { AuthProvider as JwtAuthProvider } from 'src/auth/context/jwt';
 import { AuthProvider as Auth0AuthProvider } from 'src/auth/context/auth0';
 import { AuthProvider as AmplifyAuthProvider } from 'src/auth/context/amplify';
@@ -82,6 +84,7 @@ export default async function RootLayout({ children }) {
                         <SettingsDrawer />
                         <Analytics />
                         <ClientAnalytics />
+                        <FlowiseChatbot />
                         {children}
                       </CheckoutProvider>
                     </MercadoPagoProvider>

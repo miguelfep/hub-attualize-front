@@ -78,6 +78,11 @@ export function usePortalNavData() {
       icon: <Iconify icon="solar:money-bag-bold" />,
     },
     {
+      title: 'Extratos Bancários',
+      path: paths.cliente.financeiro.extratos,
+      icon: <Iconify icon="solar:document-text-bold-duotone" />,
+    },
+    {
       title: 'Meus Documentos',
       path: '#',
       icon: <Iconify icon="solar:documents-bold-duotone" />,

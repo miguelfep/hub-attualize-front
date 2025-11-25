@@ -5,98 +5,97 @@ import { NextResponse } from 'next/server';
 import { parse as parseOfx } from 'ofx-parser';
 
 import {
-  buildSummary,
   normalizeDate,
   normalizeAmount,
-  sortTransactions,
-  readBankTransactions,
-  writeBankTransactions,
   fingerprintTransaction,
 } from 'src/lib/bank-statements';
+
+import { clienteExtratosStatus } from 'src/lib/mock-cliente-extratos';
 
 export const runtime = 'nodejs';
 
 const SUPPORTED_FORMATS = ['pdf', 'csv', 'ofx', 'foz'];
 
-export async function GET() {
-  const transactions = await readBankTransactions();
-  return NextResponse.json(
-    {
-      transactions: sortTransactions(transactions),
-      summary: buildSummary(transactions),
-    },
-    { status: 200 }
-  );
-}
-
 export async function POST(request) {
   try {
     const formData = await request.formData();
     const files = formData.getAll('files').filter((file) => typeof file?.arrayBuffer === 'function');
+    const clienteId = formData.get('clienteId');
+
+    if (!clienteId) {
+      return NextResponse.json({ message: 'ID do cliente não fornecido.' }, { status: 400 });
+    }
 
     if (!files.length) {
       return NextResponse.json({ message: 'Nenhum arquivo enviado.' }, { status: 400 });
     }
 
-    const existingTransactions = await readBankTransactions();
-    const fingerprints = new Set(existingTransactions.map((tx) => tx.fingerprint));
-
+    // Mock: Simular processamento
     const batchId = randomUUID();
     const uploadedAt = new Date().toISOString();
+    const mesAno = new Date().toISOString().slice(0, 7); // YYYY-MM
 
+    // Atualizar status de envio do cliente
+    if (!clienteExtratosStatus.has(clienteId)) {
+      clienteExtratosStatus.set(clienteId, {});
+    }
+    const clienteStatus = clienteExtratosStatus.get(clienteId);
+    clienteStatus[mesAno] = {
+      enviado: true,
+      enviadoEm: uploadedAt,
+      batchId,
+      arquivos: files.map((f) => f.name),
+      quantidadeArquivos: files.length,
+    };
+
+    // Processar arquivos (mockado - em produção processaria e salvaria)
     let importedTransactions = [];
     const errors = [];
 
     // eslint-disable-next-line no-restricted-syntax
     for (const file of files) {
-      // eslint-disable-next-line no-await-in-loop
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const extension = getExtension(file);
-
-      if (!SUPPORTED_FORMATS.includes(extension)) {
-        errors.push(`${file.name}: formato não suportado.`);
-        // eslint-disable-next-line no-continue
-        continue;
-      }
-
-      const fileMeta = buildFileMetadata(file, extension, batchId, uploadedAt);
-
       try {
         // eslint-disable-next-line no-await-in-loop
+        const buffer = Buffer.from(await file.arrayBuffer());
+        let extension = getExtension(file);
+        
+        // Normalizar extensão .foz para .ofx (alguns bancos usam .foz)
+        if (extension === 'foz') {
+          extension = 'ofx';
+        }
+
+        if (!SUPPORTED_FORMATS.includes(extension)) {
+          errors.push(`${file.name}: formato não suportado. Formatos aceitos: PDF, CSV, OFX (FOZ).`);
+          // eslint-disable-next-line no-continue
+          continue;
+        }
+
+        const fileMeta = buildFileMetadata(file, extension, batchId, uploadedAt, clienteId);
+
+        // eslint-disable-next-line no-await-in-loop
         const parsed = await parseFileByType({ buffer, extension, fileMeta });
-        const uniqueTransactions = deduplicateTransactions(parsed, fingerprints);
-        importedTransactions = importedTransactions.concat(uniqueTransactions);
+        importedTransactions = importedTransactions.concat(parsed);
       } catch (error) {
         console.error(`Erro ao processar ${file.name}:`, error);
         errors.push(`${file.name}: ${(error && error.message) || 'Falha ao processar arquivo.'}`);
       }
     }
 
-    if (!importedTransactions.length) {
-      return NextResponse.json(
-        {
-          message: 'Nenhum lançamento válido foi encontrado.',
-          errors,
-        },
-        { status: 400 }
-      );
-    }
-
-    const updatedTransactions = sortTransactions(existingTransactions.concat(importedTransactions));
-    await writeBankTransactions(updatedTransactions);
+    // Mock: Em produção, salvaria os lançamentos associados ao cliente
+    // Por enquanto, apenas retornamos sucesso
 
     return NextResponse.json(
       {
-        message: 'Extratos importados com sucesso.',
+        message: 'Extratos enviados com sucesso. Os lançamentos serão processados em breve.',
         inserted: importedTransactions.length,
-        transactions: importedTransactions,
-        summary: buildSummary(updatedTransactions),
+        batchId,
+        mesAno,
         errors,
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error('Erro ao receber extratos bancários:', error);
+    console.error('Erro ao receber extratos do cliente:', error);
     return NextResponse.json(
       {
         message: 'Não foi possível processar os extratos enviados.',
@@ -107,50 +106,41 @@ export async function POST(request) {
   }
 }
 
-export async function PATCH(request) {
+// GET status de envio de extratos do cliente
+export async function GET(request) {
   try {
-    const body = await request.json();
-    const { transactionId, updates } = body || {};
+    const { searchParams } = new URL(request.url);
+    const clienteId = searchParams.get('clienteId');
 
-    if (!transactionId || !updates) {
-      return NextResponse.json({ message: 'Dados inválidos.' }, { status: 400 });
+    if (!clienteId) {
+      return NextResponse.json({ message: 'ID do cliente não fornecido.' }, { status: 400 });
     }
 
-    const transactions = await readBankTransactions();
-    const index = transactions.findIndex((tx) => tx.id === transactionId);
-
-    if (index === -1) {
-      return NextResponse.json({ message: 'Lançamento não encontrado.' }, { status: 404 });
-    }
-
-    const current = transactions[index];
-    const sanitizedUpdates = sanitizeUpdates(updates);
-
-    const updatedTransaction = {
-      ...current,
-      ...sanitizedUpdates,
-      updatedAt: new Date().toISOString(),
-    };
-
-    if (typeof sanitizedUpdates.conciliado === 'boolean') {
-      updatedTransaction.conciliadoEm = sanitizedUpdates.conciliado ? new Date().toISOString() : null;
-    }
-
-    transactions[index] = updatedTransaction;
-    await writeBankTransactions(transactions);
+    const status = clienteExtratosStatus.get(clienteId) || {};
+    const mesAno = new Date().toISOString().slice(0, 7);
+    const statusMesAtual = status[mesAno] || { enviado: false };
 
     return NextResponse.json(
       {
-        transaction: updatedTransaction,
-        summary: buildSummary(transactions),
+        clienteId,
+        mesAno,
+        enviado: statusMesAtual.enviado,
+        enviadoEm: statusMesAtual.enviadoEm,
+        batchId: statusMesAtual.batchId,
+        arquivos: statusMesAtual.arquivos || [],
+        quantidadeArquivos: statusMesAtual.quantidadeArquivos || 0,
+        historico: Object.keys(status).map((mes) => ({
+          mesAno: mes,
+          ...status[mes],
+        })),
       },
       { status: 200 }
     );
   } catch (error) {
-    console.error('Erro ao atualizar lançamento:', error);
+    console.error('Erro ao buscar status de extratos:', error);
     return NextResponse.json(
       {
-        message: 'Não foi possível atualizar o lançamento.',
+        message: 'Não foi possível buscar o status dos extratos.',
         details: error.message,
       },
       { status: 500 }
@@ -158,25 +148,7 @@ export async function PATCH(request) {
   }
 }
 
-function sanitizeUpdates(updates = {}) {
-  const sanitized = {};
-
-  if (typeof updates.conciliado === 'boolean') {
-    sanitized.conciliado = updates.conciliado;
-  }
-
-  if (typeof updates.categoria === 'string') {
-    sanitized.categoria = updates.categoria;
-  }
-
-  if (typeof updates.observacao === 'string') {
-    sanitized.observacao = updates.observacao;
-  }
-
-  return sanitized;
-}
-
-function buildFileMetadata(file, format, batchId, uploadedAt) {
+function buildFileMetadata(file, format, batchId, uploadedAt, clienteId) {
   return {
     name: file.name,
     size: file.size,
@@ -184,6 +156,7 @@ function buildFileMetadata(file, format, batchId, uploadedAt) {
     format,
     uploadedAt,
     batchId,
+    clienteId,
   };
 }
 
@@ -200,7 +173,6 @@ async function parseFileByType({ buffer, extension, fileMeta }) {
     return parsePdf(buffer, fileMeta);
   }
 
-  // Trata tanto ofx quanto o typo mencionado (foz)
   return parseOfxFile(buffer.toString('utf-8'), fileMeta);
 }
 
@@ -459,6 +431,7 @@ function buildTransaction({ date, description, amount, fileMeta, categoria }) {
     sourceFile: fileMeta,
     importadoEm: fileMeta.uploadedAt,
     batchId: fileMeta.batchId,
+    clienteId: fileMeta.clienteId,
     fingerprint: '',
   };
 
@@ -471,21 +444,3 @@ function buildTransaction({ date, description, amount, fileMeta, categoria }) {
   return transaction;
 }
 
-function deduplicateTransactions(transactions, fingerprints) {
-  return transactions.filter((tx) => {
-    if (!tx?.fingerprint) {
-      tx.fingerprint = fingerprintTransaction({
-        date: tx.date,
-        description: tx.description,
-        amount: tx.amount,
-      });
-    }
-
-    if (fingerprints.has(tx.fingerprint)) {
-      return false;
-    }
-
-    fingerprints.add(tx.fingerprint);
-    return true;
-  });
-}

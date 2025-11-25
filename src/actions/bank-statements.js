@@ -24,3 +24,30 @@ export async function updateBankStatement(transactionId, updates) {
 
   return response.data;
 }
+
+export async function uploadClienteExtratos(clienteId, files) {
+  const formData = new FormData();
+  Array.from(files).forEach((file) => formData.append('files', file));
+  formData.append('clienteId', clienteId);
+
+  const response = await axios.post(endpoints.conciliacao.clienteExtratos, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+
+  return response.data;
+}
+
+export async function getClienteExtratosStatus(clienteId) {
+  const response = await axios.get(endpoints.conciliacao.clienteExtratosStatus(clienteId));
+  return response.data;
+}
+
+export async function getClientesExtratosStatus() {
+  const response = await axios.get(endpoints.conciliacao.clientesExtratosStatus);
+  return response.data;
+}
+
+export async function getClienteLancamentos(clienteId, mesAno) {
+  const response = await axios.get(endpoints.conciliacao.clienteLancamentos(clienteId, mesAno));
+  return response.data;
+}

@@ -1,25 +1,24 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
-
 import useSWR from 'swr';
+import { useMemo, useState, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
-
-import { DashboardContent } from 'src/layouts/dashboard';
-
-import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { paths } from 'src/routes/paths';
 
 import { fetcher, endpoints } from 'src/utils/axios';
 
-import { uploadBankStatements, updateBankStatement } from 'src/actions/bank-statements';
+import { DashboardContent } from 'src/layouts/dashboard';
+import { updateBankStatement, uploadBankStatements } from 'src/actions/bank-statements';
 
-import { BankStatementUploader } from './bank-statement-uploader';
-import { BankStatementSummary } from './bank-statement-summary';
+import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+
 import { BankStatementTable } from './bank-statement-table';
+import { BankStatementSummary } from './bank-statement-summary';
+import { BankStatementUploader } from './bank-statement-uploader';
+import { ConciliacaoClientesView } from './conciliacao-clientes-view';
 
 const EMPTY_SUMMARY = {
   totalEntradas: 0,
@@ -40,7 +39,15 @@ export function ConciliacaoBancariaView() {
     revalidateOnFocus: false,
   });
 
-  const transactions = data?.transactions ?? [];
+  const {
+    data: clientesStatusData,
+    error: clientesStatusError,
+    isLoading: clientesStatusLoading,
+  } = useSWR(endpoints.conciliacao.clientesExtratosStatus, fetcher, {
+    revalidateOnFocus: false,
+  });
+
+  const transactions = useMemo(() => data?.transactions ?? [], [data?.transactions]);
   const summary = data?.summary ?? EMPTY_SUMMARY;
 
   const filteredTransactions = useMemo(() => {
@@ -131,6 +138,8 @@ export function ConciliacaoBancariaView() {
             Não foi possível carregar os extratos bancários. Recarregue a página ou tente novamente mais tarde.
           </Alert>
         )}
+
+        <ConciliacaoClientesView />
 
         <BankStatementUploader feedback={feedback} uploading={uploading} onUpload={handleUpload} />
 
