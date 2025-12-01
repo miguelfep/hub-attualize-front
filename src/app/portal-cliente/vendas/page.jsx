@@ -151,8 +151,9 @@ export default function PortalOrcamentosPage() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const [filters, setFilters] = React.useState({ status: '', dataInicio: '', dataFim: '' });
-  const { data: orcamentos, isLoading } = usePortalOrcamentos(clienteProprietarioId, filters);
+  const { data: orcamentos, isLoading, mutate: mutateOrcamentos } = usePortalOrcamentos(clienteProprietarioId, filters);
   const { data: stats } = usePortalOrcamentosStats(clienteProprietarioId);
+  const pollingIntervalsRef = React.useRef({});
 
   const table = useTable({ defaultOrderBy: 'numero', defaultRowsPerPage: 25 });
 
@@ -192,6 +193,90 @@ export default function PortalOrcamentosPage() {
       setSavingMap((m) => ({ ...m, [id]: false }));
     }
   };
+
+  // Função auxiliar para verificar se uma nota fiscal está em processamento
+  const isNotaProcessandoFn = (orcamento) => {
+    if (!orcamento?.notaFiscalId) return false;
+    const nota = orcamento.notaFiscalId;
+    if (typeof nota === 'object') {
+      const status = nota?.status?.toLowerCase();
+      return (
+        status === 'emitindo' || 
+        status === 'processando' ||
+        nota.linkNota === 'Processando...'
+      );
+    }
+    return false;
+  };
+
+  // Limpar polling quando componente desmontar
+  React.useEffect(
+    () => () => {
+      Object.values(pollingIntervalsRef.current).forEach((interval) => {
+        clearInterval(interval);
+      });
+      pollingIntervalsRef.current = {};
+    },
+    []
+  );
+
+  // Verificar orçamentos com notas em processamento e iniciar polling
+  React.useEffect(() => {
+    // Limpar intervalos para orçamentos que não existem mais
+    const orcamentosIdsAtuais = Array.isArray(orcamentos) 
+      ? orcamentos.map((o) => o._id).filter(Boolean)
+      : [];
+    
+    Object.keys(pollingIntervalsRef.current).forEach((orcamentoId) => {
+      if (!orcamentosIdsAtuais.includes(orcamentoId)) {
+        if (pollingIntervalsRef.current[orcamentoId]) {
+          clearInterval(pollingIntervalsRef.current[orcamentoId]);
+          delete pollingIntervalsRef.current[orcamentoId];
+        }
+      }
+    });
+
+    if (!Array.isArray(orcamentos) || orcamentos.length === 0) {
+      return () => {
+        // Cleanup vazio
+      };
+    }
+
+    const orcamentosProcessando = orcamentos.filter(isNotaProcessandoFn);
+    const idsProcessando = new Set(orcamentosProcessando.map((o) => o._id).filter(Boolean));
+    const idsComPolling = new Set(Object.keys(pollingIntervalsRef.current));
+
+    // Iniciar polling para orçamentos que têm notas processando mas não têm polling
+    orcamentosProcessando.forEach((orcamento) => {
+      const orcamentoId = orcamento._id;
+      if (!orcamentoId || idsComPolling.has(orcamentoId)) return;
+
+      // Iniciar polling a cada 3 segundos
+      pollingIntervalsRef.current[orcamentoId] = setInterval(async () => {
+        try {
+          // Refetch da lista de orçamentos usando mutate do SWR
+          await mutateOrcamentos();
+        } catch (error) {
+          console.error('Erro ao verificar status da nota fiscal:', error);
+        }
+      }, 3000);
+    });
+
+    // Parar polling para orçamentos que não estão mais processando
+    idsComPolling.forEach((orcamentoId) => {
+      if (!idsProcessando.has(orcamentoId)) {
+        if (pollingIntervalsRef.current[orcamentoId]) {
+          clearInterval(pollingIntervalsRef.current[orcamentoId]);
+          delete pollingIntervalsRef.current[orcamentoId];
+        }
+      }
+    });
+
+    // Cleanup: sempre retornar uma função
+    return () => {
+      // A limpeza completa é feita no outro useEffect de unmount
+    };
+  }, [orcamentos, mutateOrcamentos]);
 
   const TABLE_HEAD = [
     { id: 'numero', label: 'Número', width: 200, align: 'left' },

@@ -84,14 +84,21 @@ export default function PortalClienteDashboardView() {
 
   return (
     <LazyMotion features={domAnimation}>
-      <Container maxWidth="xl">
-        <Grid container spacing={3}>
+      <Container 
+        maxWidth="xl"
+        sx={{
+          width: '100%',
+          maxWidth: '100%',
+          overflow: 'hidden',
+        }}
+      >
+        <Grid container spacing={3} sx={{ width: '100%' }}>
           <Grid item xs={12} md={8}>
             <AnalyticsWelcome user={user} />
           </Grid>
 
           {!isMobile && (
-            <Grid item xs={12} md={4}>
+            <Grid item xs={12} md={4} sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
               <BannersSection banners={banners} />
             </Grid>
           )}
@@ -117,7 +124,7 @@ export default function PortalClienteDashboardView() {
               link={paths.cliente.faturamentos.root}
             />
         </Grid>
-          <Grid item xs={12}> 
+          <Grid item xs={12} sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}> 
             <VisaoGeralOrcamentos
               height={500} 
               data={dashboardData?.visaoGeralAnual || [] }

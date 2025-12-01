@@ -91,6 +91,30 @@ export default function OrcamentoDetalhesPage({ params }) {
     usePortalServicos(clienteProprietarioId);
   
   const emiteNotaRetroativa = settings?.eNotasConfig?.emiteNotaRetroativa === true;
+  const pollingIntervalsRef = React.useRef({});
+  
+  // Função para buscar e atualizar notas fiscais
+  const fetchNfses = React.useCallback(async () => {
+    if (!clienteProprietarioId || !id) return [];
+    try {
+      const res = await getNfsesByOrcamento(clienteProprietarioId, id);
+      const dataResp = res?.data ?? res;
+      const list = Array.isArray(dataResp?.notaFiscals)
+        ? dataResp.notaFiscals
+        : Array.isArray(dataResp?.notas)
+          ? dataResp.notas
+          : Array.isArray(dataResp)
+            ? dataResp
+            : dataResp?.notaFiscal
+              ? [dataResp.notaFiscal]
+              : [];
+      setNfseList(list);
+      return list;
+    } catch (e) {
+      console.error('Erro ao buscar notas fiscais:', e);
+      return [];
+    }
+  }, [clienteProprietarioId, id]);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -164,6 +188,155 @@ export default function OrcamentoDetalhesPage({ params }) {
       cancelled = true;
     };
   }, [clienteProprietarioId, id]);
+
+  // Função auxiliar para verificar se uma nota fiscal está em processamento
+  const isNotaProcessandoFn = React.useCallback((nota) => {
+    if (!nota) return false;
+    const notaStatus = String(nota.status || '').toLowerCase();
+    return (
+      notaStatus === 'emitindo' || 
+      notaStatus === 'processando' ||
+      nota.linkNota === 'Processando...' ||
+      String(nota.numeroNota || '').toLowerCase() === 'processando...'
+    );
+  }, []);
+
+  // Limpar polling quando componente desmontar
+  React.useEffect(
+    () => () => {
+      Object.values(pollingIntervalsRef.current).forEach((interval) => {
+        clearInterval(interval);
+      });
+      pollingIntervalsRef.current = {};
+    },
+    []
+  );
+
+  // Verificar notas em processamento e iniciar polling
+  React.useEffect(() => {
+    const currentPollingIntervals = pollingIntervalsRef.current;
+
+    // Se não há notas ou não é array, não fazer mais nada mas ainda retornar cleanup
+    if (!Array.isArray(nfseList) || nfseList.length === 0) {
+      // Limpar todos os intervalos se não há notas
+      Object.values(currentPollingIntervals).forEach((interval) => {
+        clearInterval(interval);
+      });
+      pollingIntervalsRef.current = {};
+      return () => {
+        // Cleanup vazio mas sempre retornado
+      };
+    }
+
+    // Limpar intervalos para notas que não existem mais
+    const notasIdsAtuais = nfseList.map((n) => n._id || n.id).filter(Boolean);
+    
+    Object.keys(currentPollingIntervals).forEach((notaId) => {
+      if (!notasIdsAtuais.includes(notaId)) {
+        if (currentPollingIntervals[notaId]) {
+          clearInterval(currentPollingIntervals[notaId]);
+          delete currentPollingIntervals[notaId];
+        }
+      }
+    });
+
+    const notasProcessando = nfseList.filter(isNotaProcessandoFn);
+    const idsProcessando = new Set(notasProcessando.map((n) => (n._id || n.id)).filter(Boolean));
+    const idsComPolling = new Set(Object.keys(currentPollingIntervals));
+
+    // Iniciar polling para notas que estão processando mas não têm polling
+    notasProcessando.forEach((nota, index) => {
+      const notaId = nota._id || nota.id;
+      // Se não tem ID, usar um ID temporário baseado no índice para rastrear placeholders
+      const trackingId = notaId || `placeholder-${index}`;
+      if (idsComPolling.has(trackingId)) return;
+
+      // Iniciar polling a cada 3 segundos
+      currentPollingIntervals[trackingId] = setInterval(async () => {
+        try {
+          // Buscar todas as notas atualizadas do backend
+          const res = await getNfsesByOrcamento(clienteProprietarioId, id);
+          const dataResp = res?.data ?? res;
+          const notasAtualizadas = Array.isArray(dataResp?.notaFiscals)
+            ? dataResp.notaFiscals
+            : Array.isArray(dataResp?.notas)
+              ? dataResp.notas
+              : Array.isArray(dataResp)
+                ? dataResp
+                : dataResp?.notaFiscal
+                  ? [dataResp.notaFiscal]
+                  : [];
+          
+          // Atualizar a lista de notas
+          setNfseList(notasAtualizadas);
+          
+          if (!Array.isArray(notasAtualizadas) || notasAtualizadas.length === 0) return;
+          
+          // Se tinha ID, buscar a nota específica. Se não tinha (placeholder), verificar todas
+          if (notaId) {
+            const notaAtualizada = notasAtualizadas.find((n) => (n._id || n.id) === notaId);
+            
+            // Verificar se a nota foi processada
+            if (notaAtualizada) {
+              const notaStatus = String(notaAtualizada.status || '').toLowerCase();
+              const aindaProcessando = (
+                notaStatus === 'emitindo' || 
+                notaStatus === 'processando' ||
+                notaAtualizada.linkNota === 'Processando...' ||
+                String(notaAtualizada.numeroNota || '').toLowerCase() === 'processando...'
+              );
+              
+              if (!aindaProcessando) {
+                // Nota foi processada pelo webhook, parar polling
+                if (currentPollingIntervals[trackingId]) {
+                  clearInterval(currentPollingIntervals[trackingId]);
+                  delete currentPollingIntervals[trackingId];
+                }
+              }
+            }
+          } else {
+            // Placeholder sem ID - verificar se ainda há notas processando
+            const aindaTemNotaProcessando = notasAtualizadas.some((n) => {
+              const notaStatus = String(n.status || '').toLowerCase();
+              return (
+                notaStatus === 'emitindo' || 
+                notaStatus === 'processando' ||
+                n.linkNota === 'Processando...' ||
+                String(n.numeroNota || '').toLowerCase() === 'processando...'
+              );
+            });
+            
+            if (!aindaTemNotaProcessando) {
+              // Não há mais notas processando, parar polling do placeholder
+              if (currentPollingIntervals[trackingId]) {
+                clearInterval(currentPollingIntervals[trackingId]);
+                delete currentPollingIntervals[trackingId];
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status da nota fiscal:', error);
+        }
+      }, 3000);
+    });
+
+    // Parar polling para notas que não estão mais processando
+    idsComPolling.forEach((notaId) => {
+      if (!idsProcessando.has(notaId)) {
+        if (currentPollingIntervals[notaId]) {
+          clearInterval(currentPollingIntervals[notaId]);
+          delete currentPollingIntervals[notaId];
+        }
+      }
+    });
+
+    // Cleanup: sempre retornar uma função
+    return () => {
+      // A limpeza completa é feita no outro useEffect de unmount
+      // Aqui apenas garantimos que sempre retornamos uma função
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nfseList]);
 
   if (loadingEmpresas || !clienteProprietarioId || loading) return <OrcamentoEditPageSkeleton />;
 
@@ -813,19 +986,19 @@ export default function OrcamentoDetalhesPage({ params }) {
                             <Stack direction="row" spacing={1} alignItems="center">
                               <Chip
                                 size="small"
-                                label={n.status}
+                                label={n.status || 'Pendente'}
                                 color={
                                   n.status === 'emitida'
                                     ? 'success'
-                                    : n.status === 'emitindo'
+                                    : isNotaProcessandoFn(n)
                                       ? 'warning'
                                       : n.status === 'cancelada' || n.status === 'negada'
                                         ? 'error'
                                         : 'default'
                                 }
-                                variant={n.status === 'emitindo' ? 'soft' : 'filled'}
+                                variant={isNotaProcessandoFn(n) ? 'soft' : 'filled'}
                                 icon={
-                                  n.status === 'emitindo' ? (
+                                  isNotaProcessandoFn(n) ? (
                                     <CircularProgress size={12} />
                                   ) : undefined
                                 }
