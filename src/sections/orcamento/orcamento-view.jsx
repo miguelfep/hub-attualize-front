@@ -261,10 +261,9 @@ export function OrcamentoView({ invoice, nfses }) {
               variant="contained"
               color="grey"
               startIcon={<Iconify width={16} icon="mingcute:thumb-down-2-fill" />}
-              onClick={() => setShowRejectionInput(true)} // Mostrar o campo de recusa
+              onClick={() => setShowRejectionInput(true)}
               disabled={loading}
             >
-              {loading && <CircularProgress size={20} sx={{ mr: 1 }} />}
               Reprovar
             </Button>
           </Box>

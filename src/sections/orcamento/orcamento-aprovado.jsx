@@ -21,7 +21,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { fCurrency } from 'src/utils/format-number';
+import { fCurrency, onlyDigits, formatTelefone, formatCPFOrCNPJ, validateCPFOrCNPJ } from 'src/utils/format-number';
 
 import { crirarPedidoOrcamento } from 'src/actions/invoices';
 
@@ -32,36 +32,22 @@ import { CobrancaExistente } from './orcamento-cobranca';
 // Função para remover formatação do CEP
 const sanitizeCep = (cep) => cep.replace(/\D/g, '');
 
-// Função para validar CPF ou CNPJ
-const validateCpfCnpj = (value) => {
-  const cpfCnpj = value.replace(/\D/g, '');
-  if (cpfCnpj.length === 11) {
-    return z
-      .string()
-      .length(11)
-      .regex(/^\d{11}$/)
-      .safeParse(cpfCnpj).success;
-  }
-  if (cpfCnpj.length === 14) {
-    return z
-      .string()
-      .length(14)
-      .regex(/^\d{14}$/)
-      .safeParse(cpfCnpj).success;
-  }
-  return false;
-};
+// Função para validar CPF ou CNPJ usando validação oficial
+const validateCpfCnpj = (value) => validateCPFOrCNPJ(value);
 
 // Schema de validação com Zod
 const formDataSchema = z.object({
   nome: z.string().nonempty('Nome é obrigatório'),
   email: z.string().email('Email inválido'),
   telefone: z.string().nonempty('Telefone é obrigatório'),
-  cpfCnpj: z.string().refine(validateCpfCnpj, 'CPF ou CNPJ inválido'),
+  cpfCnpj: z.string().refine(validateCpfCnpj, {
+    message: 'Use um CPF ou CNPJ válido',
+  }),
   cep: z.string().nonempty('CEP é obrigatório'),
   endereco: z.string().nonempty('Endereço é obrigatório'),
   numero: z.string().nonempty('Número é obrigatório'),
   complemento: z.string().optional(),
+  bairro: z.string().optional(),
   cidade: z.string().nonempty('Cidade é obrigatória'),
   estado: z.string().nonempty('Estado é obrigatório'),
 });
@@ -82,12 +68,13 @@ export function OrcamentoAprovado({
   const [formData, setFormData] = useState({
     nome: invoice?.cliente?.nome || invoice?.lead?.nome || '',
     email: invoice?.cliente?.email || invoice?.lead?.email || '',
-    telefone: invoice?.cliente?.whatsapp || invoice?.cliente?.telefone || invoice?.lead?.telefone || '',
-    cpfCnpj: invoice?.cliente?.cnpj || invoice?.lead?.cpf || '',
+    telefone: formatTelefone(invoice?.cliente?.whatsapp || invoice?.cliente?.telefone || invoice?.lead?.telefone || ''),
+    cpfCnpj: formatCPFOrCNPJ(invoice?.cliente?.cnpj || invoice?.lead?.cpf || ''),
     cep: enderecoInicial?.cep || '',
     endereco: enderecoInicial?.rua || enderecoInicial?.endereco || '',
     numero: enderecoInicial?.numero || '',
     complemento: enderecoInicial?.complemento || '',
+    bairro: enderecoInicial?.bairro || '',
     cidade: enderecoInicial?.cidade || '',
     estado: enderecoInicial?.estado || '',
   });
@@ -115,11 +102,12 @@ export function OrcamentoAprovado({
       setCepNotFound(false);
       try {
         const response = await axios.get(`https://viacep.com.br/ws/${cep}/json/`);
-        const { logradouro, localidade, uf, erro } = response.data;
+        const { logradouro, localidade, uf, bairro, erro } = response.data;
         if (!erro) {
           setFormData((prevData) => ({
             ...prevData,
             endereco: logradouro,
+            bairro: bairro || '',
             cidade: localidade,
             estado: uf,
           }));
@@ -142,6 +130,16 @@ export function OrcamentoAprovado({
     setFormData({ ...formData, [name]: value });
   };
 
+  const handleTelefoneChange = (event) => {
+    const formatted = formatTelefone(event.target.value);
+    setFormData({ ...formData, telefone: formatted });
+  };
+
+  const handleCpfCnpjChange = (event) => {
+    const formatted = formatCPFOrCNPJ(event.target.value);
+    setFormData({ ...formData, cpfCnpj: formatted });
+  };
+
   const handleFinalize = async () => {
     setIsCreating(true);
     const validationResult = formDataSchema.safeParse(formData);
@@ -162,9 +160,11 @@ export function OrcamentoAprovado({
         paymentMethod: method,
         ...formData,
         cep: sanitizeCep(formData.cep),
-        cpfCnpj: formData.cpfCnpj.replace(/\D/g, ''),
+        cpfCnpj: onlyDigits(formData.cpfCnpj),
+        telefone: onlyDigits(formData.telefone),
       };
 
+      console.log("DADOS DA INVOICE PARA CRIAR PEDIDO", dataInvoice);
       await crirarPedidoOrcamento(invoice._id, dataInvoice);
 
       // Chamar a função de atualização da invoice
@@ -204,6 +204,8 @@ export function OrcamentoAprovado({
               errors={errors}
               handleCepChange={handleCepChange}
               handleInputChange={handleInputChange}
+              handleTelefoneChange={handleTelefoneChange}
+              handleCpfCnpjChange={handleCpfCnpjChange}
               loadingCep={loadingCep}
               cepNotFound={cepNotFound}
             />
@@ -224,6 +226,8 @@ function PaymentBillingAddress({
   errors,
   handleCepChange,
   handleInputChange,
+  handleTelefoneChange,
+  handleCpfCnpjChange,
   loadingCep,
   cepNotFound,
 }) {
@@ -263,9 +267,10 @@ function PaymentBillingAddress({
             label="Telefone"
             name="telefone"
             value={formData.telefone}
-            onChange={handleInputChange}
+            onChange={handleTelefoneChange}
             error={!!errors.telefone}
             helperText={errors.telefone}
+            inputProps={{ maxLength: 15 }}
           />
         </Grid>
         <Grid item xs={12} sm={6}>
@@ -274,9 +279,10 @@ function PaymentBillingAddress({
             label="CPF/CNPJ"
             name="cpfCnpj"
             value={formData.cpfCnpj}
-            onChange={handleInputChange}
+            onChange={handleCpfCnpjChange}
             error={!!errors.cpfCnpj}
             helperText={errors.cpfCnpj}
+            inputProps={{ maxLength: 18 }}
           />
         </Grid>
         <Grid item xs={12} sm={6}>
@@ -291,6 +297,7 @@ function PaymentBillingAddress({
             }}
             error={!!errors.cep}
             helperText={errors.cep}
+            inputProps={{ maxLength: 8 }}
           />
         </Grid>
         <Grid item xs={12} sm={6}>
@@ -325,6 +332,18 @@ function PaymentBillingAddress({
             onChange={handleInputChange}
             error={!!errors.complemento}
             helperText={errors.complemento}
+          />
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <TextField
+            fullWidth
+            label="Bairro"
+            name="bairro"
+            value={formData.bairro}
+            onChange={handleInputChange}
+            disabled={isFieldDisabled}
+            error={!!errors.bairro}
+            helperText={errors.bairro}
           />
         </Grid>
         <Grid item xs={12} sm={6}>
