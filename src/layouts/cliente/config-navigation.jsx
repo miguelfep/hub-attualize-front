@@ -1,13 +1,24 @@
 import { paths } from 'src/routes/paths';
 
 import { useSettings } from 'src/hooks/useSettings';
+import { useAuthContext } from 'src/auth/hooks';
 
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
 export function usePortalNavData() {
-  const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos } = useSettings();
+  const { 
+    podeGerenciarClientes, 
+    podeGerenciarServicos, 
+    podeCriarOrcamentos, 
+    apurarHub 
+  } = useSettings();
+  const { empresa } = useAuthContext();
+  const empresaAtivaData = empresa?.empresaAtivaData;
+
+  // Compatibilidade: verificar tanto no hook quanto em empresaAtivaData
+  const podeVerImpostos = apurarHub || empresaAtivaData?.apurarHub || empresaAtivaData?.settings?.apuracao?.apurarHub;
 
   const vendasChildren = [
     podeGerenciarClientes && {
@@ -59,6 +70,11 @@ export function usePortalNavData() {
       title: 'Meu Plano',
       path: paths.cliente.financeiro.root,
       icon: <Iconify icon="solar:money-bag-bold" />,
+    },
+    podeVerImpostos && {
+      title: 'Meus Impostos',
+      path: paths.cliente.impostos.root,
+      icon: <Iconify icon="solar:bill-list-bold-duotone" />,
     },
     {
       title: 'Meus Documentos',

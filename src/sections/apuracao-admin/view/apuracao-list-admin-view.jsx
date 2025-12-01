@@ -218,66 +218,96 @@ export function ApuracaoListAdminView() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {filteredData.map((apuracao) => (
-                  console.log(apuracao),
-                  <TableRow key={apuracao._id || apuracao.id} hover>
-                    <TableCell>
-                      <Typography variant="subtitle2">
-                        {apuracao.clienteNome || apuracao.clienteId?.razaoSocial || 'Cliente não identificado'}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">
-                        {formatarPeriodo(apuracao.periodoApuracao)}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      R${' '}
-                      {apuracao.totalReceitaBruta.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                      })}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Typography variant="subtitle2" color="error.main">
+                {filteredData.map((apuracao) => {
+                  // Extrair o ID da apuração corretamente
+                  const apuracaoId = apuracao._id || apuracao.id;
+                  
+                  // Extrair o ID do cliente corretamente (pode ser string ou objeto)
+                  let clienteId = null;
+                  if (typeof apuracao.clienteId === 'string') {
+                    clienteId = apuracao.clienteId;
+                  } else if (apuracao.clienteId?._id) {
+                    clienteId = apuracao.clienteId._id;
+                  } else if (apuracao.clienteId?.id) {
+                    clienteId = apuracao.clienteId.id;
+                  } else if (apuracao.cliente?._id) {
+                    clienteId = apuracao.cliente._id;
+                  } else if (apuracao.cliente?.id) {
+                    clienteId = apuracao.cliente.id;
+                  }
+                  
+                  // Garantir que são strings
+                  clienteId = clienteId ? String(clienteId) : null;
+                  const apuracaoIdStr = apuracaoId ? String(apuracaoId) : null;
+                  
+                  return (
+                    <TableRow key={apuracaoId} hover>
+                      <TableCell>
+                        <Typography variant="subtitle2">
+                          {apuracao.clienteNome || apuracao.clienteId?.razaoSocial || 'Cliente não identificado'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography variant="body2">
+                          {formatarPeriodo(apuracao.periodoApuracao)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
                         R${' '}
-                        {apuracao.totalImpostos.toLocaleString('pt-BR', {
+                        {apuracao.totalReceitaBruta.toLocaleString('pt-BR', {
                           minimumFractionDigits: 2,
                         })}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="right">
-                      {apuracao.aliquotaEfetivaTotal.toFixed(2)}%
-                    </TableCell>
-                    <TableCell>
-                      {apuracao.fatorR && (
-                        <Chip
-                          label={`${apuracao.fatorR.percentual.toFixed(1)}%`}
-                          size="small"
-                          color={apuracao.fatorR.percentual >= 28 ? 'success' : 'warning'}
-                        />
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {apuracao.dasGerado ? (
-                        <Stack spacing={0.5}>
-                          <Chip label="Gerado" size="small" color="success" />
-                          {apuracao.dasNumeroDocumento && (
-                            <Typography variant="caption" color="text.secondary">
-                              {apuracao.dasNumeroDocumento}
-                            </Typography>
-                          )}
-                        </Stack>
-                      ) : (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<Iconify icon="solar:upload-bold-duotone" />}
-                          onClick={() => router.push(`${paths.dashboard.fiscal.apuracao}/upload-das?id=${apuracao.id}`)}
-                        >
-                          Upload DAS
-                        </Button>
-                      )}
-                    </TableCell>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="subtitle2" color="error.main">
+                          R${' '}
+                          {apuracao.totalImpostos.toLocaleString('pt-BR', {
+                            minimumFractionDigits: 2,
+                          })}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        {apuracao.aliquotaEfetivaTotal.toFixed(2)}%
+                      </TableCell>
+                      <TableCell>
+                        {apuracao.fatorR && (
+                          <Chip
+                            label={`${apuracao.fatorR.percentual.toFixed(1)}%`}
+                            size="small"
+                            color={apuracao.fatorR.percentual >= 28 ? 'success' : 'warning'}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {apuracao.dasGerado ? (
+                          <Stack spacing={0.5}>
+                            <Chip label="Gerado" size="small" color="success" />
+                            {apuracao.dasNumeroDocumento && (
+                              <Typography variant="caption" color="text.secondary">
+                                {apuracao.dasNumeroDocumento}
+                              </Typography>
+                            )}
+                          </Stack>
+                        ) : (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Iconify icon="solar:upload-bold-duotone" />}
+                            disabled={!clienteId || !apuracaoIdStr}
+                            onClick={() => {
+                              if (clienteId && apuracaoIdStr) {
+                                router.push(
+                                  `${paths.dashboard.fiscal.apuracao}/cliente/${clienteId}/${apuracaoIdStr}/upload-das`
+                                );
+                              } else {
+                                toast.error('ID do cliente ou apuração não encontrado');
+                              }
+                            }}
+                          >
+                            Upload DAS
+                          </Button>
+                        )}
+                      </TableCell>
                     <TableCell>
                       <Chip
                         label={getStatusLabel(apuracao.status)}
@@ -303,7 +333,8 @@ export function ApuracaoListAdminView() {
                       </IconButton>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
 
                 {filteredData.length === 0 && (
                   <TableRow>

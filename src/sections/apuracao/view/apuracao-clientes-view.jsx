@@ -61,7 +61,10 @@ export function ApuracaoClientesView() {
     const term = searchTerm.trim().toLowerCase();
 
     return clientes
-      .filter((cliente) => cliente.apurarHub)
+      .filter((cliente) => {
+        // Suportar tanto settings.apuracao.apurarHub quanto apurarHub direto (compatibilidade)
+        return cliente.settings?.apuracao?.apurarHub || cliente.apurarHub;
+      })
       .filter((cliente) => {
         if (!term) return true;
         return (
@@ -72,7 +75,8 @@ export function ApuracaoClientesView() {
       })
       .filter((cliente) => {
         if (filtroFatorR === 'todos') return true;
-        const habilitado = Boolean(cliente.habilitarFatorR);
+        // Suportar tanto settings.apuracao.habilitarFatorR quanto habilitarFatorR direto (compatibilidade)
+        const habilitado = Boolean(cliente.settings?.apuracao?.habilitarFatorR || cliente.habilitarFatorR);
         return filtroFatorR === 'sim' ? habilitado : !habilitado;
       })
       .sort((a, b) => a.nome?.localeCompare(b.nome || '') || 0);
@@ -168,15 +172,15 @@ export function ApuracaoClientesView() {
                           <TableCell>{getRegimeLabel(cliente.regimeTributario)}</TableCell>
                           <TableCell>
                             <Chip
-                              label={cliente.habilitarFatorR ? 'Habilitado' : 'Desabilitado'}
-                              color={cliente.habilitarFatorR ? 'success' : 'default'}
+                              label={(cliente.settings?.apuracao?.habilitarFatorR || cliente.habilitarFatorR) ? 'Habilitado' : 'Desabilitado'}
+                              color={(cliente.settings?.apuracao?.habilitarFatorR || cliente.habilitarFatorR) ? 'success' : 'default'}
                               size="small"
                             />
                           </TableCell>
                           <TableCell>
                             <Chip
-                              label={cliente.gerarDasAutomatico ? 'Automático' : 'Manual'}
-                              color={cliente.gerarDasAutomatico ? 'info' : 'default'}
+                              label={(cliente.settings?.apuracao?.gerarDasAutomatico || cliente.gerarDasAutomatico) ? 'Automático' : 'Manual'}
+                              color={(cliente.settings?.apuracao?.gerarDasAutomatico || cliente.gerarDasAutomatico) ? 'info' : 'default'}
                               size="small"
                             />
                           </TableCell>

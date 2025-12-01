@@ -29,8 +29,8 @@ export interface IHistoricoFolhaFaturamento {
   deducoes?: number; // Opcional
   faturamentoLiquido: number; // Calculado automaticamente
   
-  // Fator R
-  fatorRPercentual: number; // (folhaComEncargos / faturamentoBruto) * 100
+  // Nota: Fator R não é calculado no histórico mensal
+  // O cálculo do Fator R é feito apenas nas apurações, considerando os últimos 12 meses anteriores
   
   // Metadata
   origem: 'manual' | 'csv' | 'integracao' | 'apuracao';
@@ -172,13 +172,11 @@ export interface IApuracao {
 
 export interface IApuracaoCalcularPayload {
   periodoApuracao: string; // "AAAAMM"
-  calcularFatorR?: boolean;
-  folhaPagamentoMes?: number;
-  inssCppMes?: number;
+  // Nota: calcularFatorR foi removido - o Fator R é calculado automaticamente baseado na configuração da empresa
 }
 
 export interface IApuracaoRecalcularPayload {
-  calcularFatorR?: boolean;
+  // Nota: calcularFatorR foi removido - o Fator R é calculado automaticamente baseado na configuração da empresa
 }
 
 // ============================================================================

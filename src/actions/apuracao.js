@@ -215,3 +215,30 @@ export async function uploadDasPdf(apuracaoId, dados) {
   return response.data;
 }
 
+/**
+ * Calcula a folha ideal necessária para atingir o Fator R mínimo de 28%
+ * @param {string} empresaId - ID da empresa/cliente
+ * @param {string} periodoReferencia - Período de referência no formato AAAAMM (ex: "202410")
+ * @param {number} [percentualINSS=0.278] - Percentual de INSS sobre a folha (padrão: 27,8%)
+ * @returns {Promise<Object>} Dados da folha ideal calculada
+ */
+export async function calcularFolhaIdeal(empresaId, periodoReferencia, percentualINSS = 0.278) {
+  if (!endpoints?.apuracao?.folhaIdeal) {
+    throw new Error('Endpoint de cálculo de folha ideal não está disponível');
+  }
+
+  const params = new URLSearchParams({
+    periodoReferencia,
+    percentualINSS: String(percentualINSS),
+  });
+
+  const response = await axios.get(
+    `${endpoints.apuracao.folhaIdeal(empresaId)}?${params.toString()}`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  return response.data;
+}
+

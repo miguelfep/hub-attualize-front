@@ -38,6 +38,7 @@ import { useEmpresa } from 'src/hooks/use-empresa';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { Upload } from 'src/components/upload';
+import { MonthYearPicker } from 'src/components/month-year-picker/month-year-picker';
 
 import {
   useHistoricosFolha,
@@ -305,11 +306,15 @@ export function HistoricoFolhaView() {
                       })}
                     </TableCell>
                     <TableCell align="right">
-                      <Chip
-                        label={`${historico.fatorRPercentual.toFixed(2)}%`}
-                        color={historico.fatorRPercentual >= 28 ? 'success' : 'warning'}
-                        size="small"
-                      />
+                      {historico.folhaComEncargos && historico.faturamentoBruto && historico.faturamentoBruto > 0 ? (
+                        <Chip
+                          label={`${((historico.folhaComEncargos / historico.faturamentoBruto) * 100).toFixed(2)}%`}
+                          color={((historico.folhaComEncargos / historico.faturamentoBruto) * 100) >= 28 ? 'success' : 'warning'}
+                          size="small"
+                        />
+                      ) : (
+                        <Typography variant="body2" color="text.secondary">-</Typography>
+                      )}
                     </TableCell>
                     <TableCell>
                       <Chip label={historico.origem} size="small" variant="outlined" />
@@ -401,13 +406,12 @@ export function HistoricoFolhaView() {
         <DialogTitle>Novo Registro de Histórico</DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ pt: 2 }}>
-            <TextField
-              fullWidth
-              label="Período (AAAAMM)"
-              placeholder="202412"
+            <MonthYearPicker
+              label="Período (Mês/Ano)"
               value={formData.periodo}
-              onChange={(e) => setFormData({ ...formData, periodo: e.target.value })}
-              helperText="Formato: AAAAMM (exemplo: 202412 para Dezembro/2024)"
+              onChange={(periodo) => setFormData({ ...formData, periodo })}
+              helperText="Selecione o mês e ano de referência"
+              required
             />
             <Grid container spacing={2}>
               <Grid item xs={12} sm={6}>

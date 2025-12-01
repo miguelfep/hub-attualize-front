@@ -9,4 +9,5 @@ export { ApuracoesClienteListView } from './apuracoes-cliente-list-view';
 export { NovaApuracaoView } from './nova-apuracao-view';
 export { DetalhesApuracaoView } from './detalhes-apuracao-view';
 export { DetalhesDasView } from './detalhes-das-view';
+export { FolhaIdealView } from './folha-ideal-view';
 

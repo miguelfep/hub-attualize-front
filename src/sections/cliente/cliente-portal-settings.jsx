@@ -6,6 +6,7 @@ import { LoadingButton } from '@mui/lab';
 import Grid from '@mui/material/Unstable_Grid2';
 import {
   Box,
+  Card,
   Chip,
   Stack,
   Alert,
@@ -32,6 +33,8 @@ import {
   DialogActions,
   TableContainer,
   FormControlLabel,
+  Tabs,
+  Tab,
 } from '@mui/material';
 
 import { useGetSettings, updateSettings } from 'src/actions/settings';
@@ -76,6 +79,15 @@ export function ClientePortalSettings({ clienteId }) {
     [settings]
   );
 
+  const apuracao = useMemo(
+    () => ({
+      apurarHub: Boolean(settings?.apuracao?.apurarHub),
+      habilitarFatorR: Boolean(settings?.apuracao?.habilitarFatorR),
+      gerarDasAutomatico: Boolean(settings?.apuracao?.gerarDasAutomatico),
+    }),
+    [settings]
+  );
+
   const eNotas = useMemo(
     () => ({
       empresaId: settings?.eNotasConfig?.empresaId ?? '',
@@ -101,16 +113,18 @@ export function ClientePortalSettings({ clienteId }) {
     [settings]
   );
 
-  const [localState, setLocalState] = useState({ funcionalidades, configuracoes, eNotas });
+  const [localState, setLocalState] = useState({ funcionalidades, configuracoes, apuracao, eNotas });
 
   // Atualiza local state quando settings carregar
-  const syncLocal = () => setLocalState({ funcionalidades, configuracoes, eNotas });
+  const syncLocal = () => setLocalState({ funcionalidades, configuracoes, apuracao, eNotas });
 
   useEffect(() => {
     if (settings) {
-      setLocalState({ funcionalidades, configuracoes, eNotas });
+      setLocalState({ funcionalidades, configuracoes, apuracao, eNotas });
     }
-  }, [settings, funcionalidades, configuracoes, eNotas]);
+  }, [settings, funcionalidades, configuracoes, apuracao, eNotas]);
+
+  const [currentTab, setCurrentTab] = useState(0);
 
   const handleToggle = (key) => (event) => {
     setLocalState((prev) => {
@@ -129,6 +143,13 @@ export function ClientePortalSettings({ clienteId }) {
       
       return newState;
     });
+  };
+
+  const handleApuracaoToggle = (key) => (event) => {
+    setLocalState((prev) => ({
+      ...prev,
+      apuracao: { ...prev.apuracao, [key]: event.target.checked },
+    }));
   };
 
   const handleEnotasToggle = (key) => (event) => {
@@ -198,6 +219,7 @@ export function ClientePortalSettings({ clienteId }) {
       const response = await updateSettings(clienteId, {
         funcionalidades: { ...localState.funcionalidades },
         configuracoes: { ...localState.configuracoes },
+        apuracao: { ...localState.apuracao },
         eNotasConfig: eNotasPayload,
       });
       toast.success('Configurações atualizadas com sucesso');
@@ -216,6 +238,11 @@ export function ClientePortalSettings({ clienteId }) {
             limiteClientes: updated?.configuracoes?.limiteClientes ?? '',
             limiteServicos: updated?.configuracoes?.limiteServicos ?? '',
             limiteOrcamentos: updated?.configuracoes?.limiteOrcamentos ?? '',
+          },
+          apuracao: {
+            apurarHub: Boolean(updated?.apuracao?.apurarHub),
+            habilitarFatorR: Boolean(updated?.apuracao?.habilitarFatorR),
+            gerarDasAutomatico: Boolean(updated?.apuracao?.gerarDasAutomatico),
           },
           eNotas: {
             empresaId: updated?.eNotasConfig?.empresaId ?? '',
@@ -415,12 +442,20 @@ export function ClientePortalSettings({ clienteId }) {
 
   return (
     <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h6">Funcionalidades do Portal</Typography>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+        <Typography variant="h5">Configurações do Portal</Typography>
         <LoadingButton loading={saving} variant="contained" onClick={handleSave}>
           Salvar Configurações
         </LoadingButton>
       </Box>
+
+      <Tabs value={currentTab} onChange={(e, newValue) => setCurrentTab(newValue)} sx={{ mb: 3 }}>
+        <Tab label="Funcionalidades" icon={<Iconify icon="solar:settings-bold-duotone" />} iconPosition="start" />
+        <Tab label="Apuração e Notas Fiscais" icon={<Iconify icon="solar:document-text-bold-duotone" />} iconPosition="start" />
+      </Tabs>
+
+      {currentTab === 0 && (
+        <Box>
 
       <Grid container spacing={2}>
         <Grid xs={12} md={6}>
@@ -509,110 +544,123 @@ export function ClientePortalSettings({ clienteId }) {
           />
         </Grid>
       </Grid>
-
-      {localState.funcionalidades.emissaoNFSe && (
-        <>
-          <Divider sx={{ my: 3 }} />
-          <Typography variant="h6" sx={{ mb: 2 }}>Integração eNotas (NFSe)</Typography>
-          <Grid container spacing={2}>
-            <Grid xs={12} md={4}>
-              <FormControl fullWidth sx={{ mb: { xs: 2, md: 0 } }}>
-                <InputLabel id="enotas-status-label">Status</InputLabel>
-                <Select
-                  labelId="enotas-status-label"
-                  label="Status"
-                  value={localState.eNotas.status}
-                  onChange={handleEnotasRootChange('status')}
-                >
-                  <MenuItem value="ativa">Ativa</MenuItem>
-                  <MenuItem value="inativa">Inativa</MenuItem>
-                  <MenuItem value="suspensa">Suspensa</MenuItem>
-                  <MenuItem value="bloqueada">Bloqueada</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            {localState.eNotas.status === 'ativa' && (
-              <>
-                <Grid xs={12} md={4}>
-                  <FormControl fullWidth>
-                    <InputLabel id="enotas-ambiente-label">Ambiente</InputLabel>
-                    <Select
-                      labelId="enotas-ambiente-label"
-                      label="Ambiente"
-                      value={localState.eNotas.ambiente}
-                      onChange={handleEnotasRootChange('ambiente')}
-                    >
-                      <MenuItem value="homologacao">Homologação</MenuItem>
-                      <MenuItem value="producao">Produção</MenuItem>
-                    </Select>
-                  </FormControl>
-                </Grid>
-                <Grid xs={12} md={4}>
-                  <TextField
-                    fullWidth
-                    label="Empresa ID (eNotas)"
-                    value={localState.eNotas.empresaId}
-                    onChange={handleEnotasRootChange('empresaId')}
-                  />
-                </Grid>
-
-                {localState.eNotas?.configuracaoEmpresa?.certificadoVinculado && (
-                  <Grid xs={12}>
-                    <Alert severity="success" sx={{ mb: 1 }}>
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Iconify icon="solar:shield-check-bold" />
-                        <Typography variant="body2">
-                          Certificado vinculado ao eNotas
-                        </Typography>
-                      </Stack>
-                    </Alert>
-                  </Grid>
-                )}
-
-                <Grid xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    label="Código do Município"
-                    value={localState.eNotas.configuracaoNFSe.codigoMunicipio}
-                    onChange={handleEnotasNFSeChange('codigoMunicipio')}
-                  />
-                </Grid>
-                <Grid xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    label="Código do Serviço"
-                    value={localState.eNotas.configuracaoNFSe.codigoServico}
-                    onChange={handleEnotasNFSeChange('codigoServico')}
-                  />
-                </Grid>
-                <Grid xs={12} md={3}>
-                  <TextField
-                    fullWidth
-                    type="number"
-                    label="Alíquota ISS (%)"
-                    value={localState.eNotas.configuracaoNFSe.aliquotaIss}
-                    onChange={handleEnotasNFSeChange('aliquotaIss')}
-                  />
-                </Grid>
-                <Grid xs={12} md={12}>
-                  <TextField
-                    fullWidth
-                    multiline
-                    minRows={2}
-                    label="Discriminação"
-                    value={localState.eNotas.configuracaoNFSe.discriminacao}
-                    onChange={handleEnotasNFSeChange('discriminacao')}
-                  />
-                </Grid>
-              </>
-            )}
-          </Grid>
-        </>
+        </Box>
       )}
 
-      <Divider sx={{ my: 3 }} />
+      {currentTab === 1 && (
+        <Box>
+          <Stack spacing={3}>
+            {/* eNotas e NFSe */}
+            <Card variant="outlined" sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>
+                Integração eNotas (NFSe)
+              </Typography>
+              {localState.funcionalidades.emissaoNFSe ? (
+                <Grid container spacing={2}>
+                  <Grid xs={12} md={4}>
+                    <FormControl fullWidth sx={{ mb: { xs: 2, md: 0 } }}>
+                      <InputLabel id="enotas-status-label">Status</InputLabel>
+                      <Select
+                        labelId="enotas-status-label"
+                        label="Status"
+                        value={localState.eNotas.status}
+                        onChange={handleEnotasRootChange('status')}
+                      >
+                        <MenuItem value="ativa">Ativa</MenuItem>
+                        <MenuItem value="inativa">Inativa</MenuItem>
+                        <MenuItem value="suspensa">Suspensa</MenuItem>
+                        <MenuItem value="bloqueada">Bloqueada</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  {localState.eNotas.status === 'ativa' && (
+                    <>
+                      <Grid xs={12} md={4}>
+                        <FormControl fullWidth>
+                          <InputLabel id="enotas-ambiente-label">Ambiente</InputLabel>
+                          <Select
+                            labelId="enotas-ambiente-label"
+                            label="Ambiente"
+                            value={localState.eNotas.ambiente}
+                            onChange={handleEnotasRootChange('ambiente')}
+                          >
+                            <MenuItem value="homologacao">Homologação</MenuItem>
+                            <MenuItem value="producao">Produção</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Grid>
+                      <Grid xs={12} md={4}>
+                        <TextField
+                          fullWidth
+                          label="Empresa ID (eNotas)"
+                          value={localState.eNotas.empresaId}
+                          onChange={handleEnotasRootChange('empresaId')}
+                        />
+                      </Grid>
 
-      <Typography variant="h6" sx={{ mb: 2 }}>Certificados Digitais</Typography>
+                      {localState.eNotas?.configuracaoEmpresa?.certificadoVinculado && (
+                        <Grid xs={12}>
+                          <Alert severity="success" sx={{ mb: 1 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                              <Iconify icon="solar:shield-check-bold" />
+                              <Typography variant="body2">
+                                Certificado vinculado ao eNotas
+                              </Typography>
+                            </Stack>
+                          </Alert>
+                        </Grid>
+                      )}
+
+                      <Grid xs={12} md={3}>
+                        <TextField
+                          fullWidth
+                          label="Código do Município"
+                          value={localState.eNotas.configuracaoNFSe.codigoMunicipio}
+                          onChange={handleEnotasNFSeChange('codigoMunicipio')}
+                        />
+                      </Grid>
+                      <Grid xs={12} md={3}>
+                        <TextField
+                          fullWidth
+                          label="Código do Serviço"
+                          value={localState.eNotas.configuracaoNFSe.codigoServico}
+                          onChange={handleEnotasNFSeChange('codigoServico')}
+                        />
+                      </Grid>
+                      <Grid xs={12} md={3}>
+                        <TextField
+                          fullWidth
+                          type="number"
+                          label="Alíquota ISS (%)"
+                          value={localState.eNotas.configuracaoNFSe.aliquotaIss}
+                          onChange={handleEnotasNFSeChange('aliquotaIss')}
+                        />
+                      </Grid>
+                      <Grid xs={12} md={12}>
+                        <TextField
+                          fullWidth
+                          multiline
+                          minRows={2}
+                          label="Discriminação"
+                          value={localState.eNotas.configuracaoNFSe.discriminacao}
+                          onChange={handleEnotasNFSeChange('discriminacao')}
+                        />
+                      </Grid>
+                    </>
+                  )}
+                </Grid>
+              ) : (
+                <Alert severity="warning">
+                  <Typography variant="body2">
+                    Para configurar o eNotas, é necessário habilitar a funcionalidade "Emissão de NFSe" na aba Funcionalidades.
+                  </Typography>
+                </Alert>
+              )}
+            </Card>
+
+            {/* Certificados Digitais */}
+            <Card variant="outlined" sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 2 }}>Certificados Digitais</Typography>
       <Stack spacing={2}>
         <Box>
           <input
@@ -730,7 +778,11 @@ export function ClientePortalSettings({ clienteId }) {
             </TableContainer>
           </>
         )}
-      </Stack>
+              </Stack>
+            </Card>
+          </Stack>
+        </Box>
+      )}
 
       <Dialog open={certificateDialogOpen} onClose={() => setCertificateDialogOpen(false)} maxWidth="sm" fullWidth>
         <DialogTitle>

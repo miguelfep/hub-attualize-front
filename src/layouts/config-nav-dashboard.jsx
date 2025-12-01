@@ -118,6 +118,7 @@ export const navData = [
           {
             title: 'Notas Fiscais por Cliente',
             path: paths.dashboard.fiscal.root,
+            icon: ICONS.invoice,
           },
           {
             title: 'Apuração',

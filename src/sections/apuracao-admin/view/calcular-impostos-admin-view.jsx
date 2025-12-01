@@ -35,6 +35,7 @@ import { useRouter } from 'src/routes/hooks';
 
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import { MonthYearPicker } from 'src/components/month-year-picker/month-year-picker';
 
 import { calcularApuracao } from 'src/actions/apuracao';
 import { useHistorico12Meses } from 'src/actions/historico-folha';
@@ -78,9 +79,6 @@ export function CalcularImpostosAdminView() {
       setCalculando(true);
       const apuracao = await calcularApuracao(clienteSelecionado, {
         periodoApuracao: periodo,
-        calcularFatorR: true,
-        folhaPagamentoMes: historico12Meses?.historicos?.[0]?.folhaPagamento,
-        inssCppMes: historico12Meses?.historicos?.[0]?.inssCpp,
       });
 
       setResultado(apuracao);
@@ -95,7 +93,7 @@ export function CalcularImpostosAdminView() {
 
   const handleGerarDAS = useCallback(() => {
     if (!resultado) return;
-    router.push(`${paths.dashboard.fiscal.apuracaoList}?apuracaoId=${resultado._id}`);
+    router.push(`${paths.dashboard.fiscal.apuracao}?apuracaoId=${resultado._id}`);
   }, [resultado, router]);
 
   return (
@@ -153,20 +151,12 @@ export function CalcularImpostosAdminView() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
+              <MonthYearPicker
                 label="Período de Apuração"
-                placeholder="202412"
                 value={periodo}
-                onChange={(e) => setPeriodo(e.target.value)}
-                helperText="Formato: AAAAMM (ex: 202412 para Dezembro/2024)"
-                InputProps={{
-                  endAdornment: periodo && (
-                    <Typography variant="caption" color="text.secondary">
-                      {formatarPeriodo(periodo)}
-                    </Typography>
-                  ),
-                }}
+                onChange={setPeriodo}
+                helperText="Selecione o mês e ano de referência"
+                required
               />
             </Grid>
           </Grid>
@@ -449,7 +439,7 @@ export function CalcularImpostosAdminView() {
                   <Button
                     variant="outlined"
                     size="large"
-                    onClick={() => router.push(paths.dashboard.fiscal.apuracaoList)}
+                    onClick={() => router.push(paths.dashboard.fiscal.apuracao)}
                   >
                     Ver Todas Apurações
                   </Button>

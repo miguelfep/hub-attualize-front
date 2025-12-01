@@ -21,6 +21,14 @@ export function HistoricoChart({ historicos }) {
 
   const categories = historicosSorted.map((h) => formatarPeriodo(h.periodoApuracao));
 
+  // Calcular Fator R dinamicamente para cada histórico
+  const calcularFatorR = (historico) => {
+    if (!historico.folhaComEncargos || !historico.faturamentoBruto || historico.faturamentoBruto === 0) {
+      return 0;
+    }
+    return (historico.folhaComEncargos / historico.faturamentoBruto) * 100;
+  };
+
   const series = [
     {
       name: 'Faturamento Bruto',
@@ -35,7 +43,7 @@ export function HistoricoChart({ historicos }) {
     {
       name: 'Fator R (%)',
       type: 'line',
-      data: historicosSorted.map((h) => h.fatorRPercentual),
+      data: historicosSorted.map(calcularFatorR),
     },
   ];
 
@@ -99,7 +107,7 @@ export function HistoricoChart({ historicos }) {
           text: 'Fator R (%)',
         },
         min: 0,
-        max: Math.max(...historicosSorted.map((h) => h.fatorRPercentual), FATOR_R_MINIMO) + 5,
+        max: Math.max(...historicosSorted.map(calcularFatorR), FATOR_R_MINIMO) + 5,
         labels: {
           formatter: (value) => `${value.toFixed(1)}%`,
         },

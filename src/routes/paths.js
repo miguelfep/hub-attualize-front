@@ -125,10 +125,9 @@ export const paths = {
       apuracaoClientes: `${ROOTS.DASHBOARD}/fiscal/apuracao/clientes`,
       apuracaoCliente: (id) => `${ROOTS.DASHBOARD}/fiscal/apuracao/cliente/${id}`,
       apuracaoClienteDetalhes: (id) => `${ROOTS.DASHBOARD}/fiscal/apuracao/cliente/${id}/detalhes`,
-      apuracaoList: `${ROOTS.DASHBOARD}/fiscal/apuracao/list`,
+      apuracaoClienteFolhaIdeal: (id) => `${ROOTS.DASHBOARD}/fiscal/apuracao/cliente/${id}/folha-ideal`,
       historicoFolha: `${ROOTS.DASHBOARD}/fiscal/apuracao/historico`,
       calcular: `${ROOTS.DASHBOARD}/fiscal/apuracao/calcular`,
-      uploadDas: `${ROOTS.DASHBOARD}/fiscal/apuracao/upload-das`,
       dasDetalhes: (id) => `${ROOTS.DASHBOARD}/fiscal/apuracao/das/${id}`,
     },
     certificados: {
@@ -260,9 +259,6 @@ export const paths = {
     avaliacoes: {
       root: `${ROOTS.DASHBOARD}/avaliacoes`,
       detalhes: (id) => `${ROOTS.DASHBOARD}/avaliacoes/${id}`,
-    },
-    apuracao: {
-      detalhes: (id) => `${ROOTS.DASHBOARD}/apuracao/${id}`,
     },
   },
   // CLIENTE AREA

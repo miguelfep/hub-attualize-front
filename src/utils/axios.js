@@ -195,6 +195,7 @@ export const endpoints = {
     dasPdf: (dasId) => `${baseUrl}apuracao/das/${dasId}/pdf`,
     dasPagar: (dasId) => `${baseUrl}apuracao/das/${dasId}/pagar`,
     dasCancelar: (dasId) => `${baseUrl}apuracao/das/${dasId}/cancelar`,
+    folhaIdeal: (empresaId) => `${baseUrl}apuracao/${empresaId}/folha-ideal`,
   },
   fatorR: {
     totais12Meses: (clienteId) => `${baseUrl}fator-r/${clienteId}/totais-12-meses`,

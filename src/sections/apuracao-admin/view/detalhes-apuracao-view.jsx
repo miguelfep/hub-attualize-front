@@ -93,9 +93,7 @@ export function DetalhesApuracaoView({ clienteId, apuracaoId }) {
 
     try {
       setLoading(true);
-      await recalcularApuracao(apuracaoId, {
-        calcularFatorR: !!apuracao?.fatorR,
-      });
+      await recalcularApuracao(apuracaoId, {});
       toast.success('Apuração recalculada com sucesso!');
       mutate();
     } catch (error) {
@@ -198,7 +196,30 @@ export function DetalhesApuracaoView({ clienteId, apuracaoId }) {
                 variant="outlined"
                 size="small"
                 startIcon={<Iconify icon="solar:document-text-bold-duotone" />}
-                onClick={() => router.push(paths.dashboard.fiscal.dasDetalhes(apuracao.dasId))}
+                onClick={() => {
+                  // Extrair o ID do DAS corretamente (pode ser string ou objeto)
+                  let dasId = null;
+                  if (typeof apuracao.dasId === 'string') {
+                    dasId = apuracao.dasId;
+                  } else if (apuracao.dasId?._id) {
+                    dasId = apuracao.dasId._id;
+                  } else if (apuracao.dasId?.id) {
+                    dasId = apuracao.dasId.id;
+                  } else if (apuracao.das?._id) {
+                    dasId = apuracao.das._id;
+                  } else if (apuracao.das?.id) {
+                    dasId = apuracao.das.id;
+                  }
+                  
+                  // Garantir que é string
+                  dasId = dasId ? String(dasId) : null;
+                  
+                  if (dasId) {
+                    router.push(paths.dashboard.fiscal.dasDetalhes(dasId));
+                  } else {
+                    toast.error('ID do DAS não encontrado');
+                  }
+                }}
               >
                 Ver DAS
               </Button>
@@ -422,71 +443,7 @@ export function DetalhesApuracaoView({ clienteId, apuracaoId }) {
                 </AccordionDetails>
               </Accordion>
 
-              {/* Histórico de Folha */}
-              {apuracao.memoriaCalculo.historicoFolha && (
-                <Accordion>
-                  <AccordionSummary expandIcon={<Iconify icon="solar:alt-arrow-down-bold-duotone" />}>
-                    <Typography variant="subtitle1">Histórico de Folha Utilizado</Typography>
-                  </AccordionSummary>
-                  <AccordionDetails>
-                    <Grid container spacing={2}>
-                      <Grid item xs={12} sm={4}>
-                        <Typography variant="caption" color="text.secondary">
-                          Período
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold">
-                          {(() => {
-                            const periodo = apuracao.memoriaCalculo.historicoFolha.periodo;
-                            if (!periodo) return '-';
-                            if (typeof periodo === 'string') return formatarPeriodo(periodo);
-                            if (typeof periodo === 'object' && periodo.inicio && periodo.fim) {
-                              return `${formatarPeriodo(String(periodo.inicio))} a ${formatarPeriodo(String(periodo.fim))}`;
-                            }
-                            return String(periodo);
-                          })()}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Typography variant="caption" color="text.secondary">
-                          Folha de Pagamento
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold">
-                          R${' '}
-                          {Number(apuracao.memoriaCalculo.historicoFolha.folhaPagamento || 0).toLocaleString(
-                            'pt-BR',
-                            { minimumFractionDigits: 2 }
-                          )}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={12} sm={4}>
-                        <Typography variant="caption" color="text.secondary">
-                          INSS/CPP
-                        </Typography>
-                        <Typography variant="body2" fontWeight="bold">
-                          R${' '}
-                          {Number(apuracao.memoriaCalculo.historicoFolha.inssCpp || 0).toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                          })}
-                        </Typography>
-                      </Grid>
-                      {apuracao.memoriaCalculo.historicoFolha.origem && (
-                        <Grid item xs={12}>
-                          <Chip
-                            size="small"
-                            label={`Origem: ${
-                              typeof apuracao.memoriaCalculo.historicoFolha.origem === 'string'
-                                ? apuracao.memoriaCalculo.historicoFolha.origem
-                                : String(apuracao.memoriaCalculo.historicoFolha.origem)
-                            }`}
-                            variant="outlined"
-                          />
-                        </Grid>
-                      )}
-                    </Grid>
-                  </AccordionDetails>
-                </Accordion>
-              )}
-
+             
               {/* Notas Processadas */}
               {apuracao.memoriaCalculo.notasProcessadas && (
                 <Accordion>

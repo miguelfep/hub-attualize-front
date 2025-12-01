@@ -30,7 +30,7 @@ import { formatCNAE } from 'src/utils/formatter';
 import { fCurrency } from 'src/utils/format-number';
 
 import { getClienteById } from 'src/actions/clientes';
-import { portalGetServico, portalUpdateServico } from 'src/actions/portal';
+import { portalGetServico, portalUpdateServico, usePortalCategorias } from 'src/actions/portal';
 
 import { Iconify } from 'src/components/iconify';
 import { EditarServicoPageSkeleton } from 'src/components/skeleton/EditarServicoPageSkeleton';
@@ -79,6 +79,9 @@ export default function EditarServicoPage() {
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
   const { podeGerenciarServicos, podeEmitirNFSe, settings } = useSettings();
+  const { data: categorias, isLoading: loadingCategorias } = usePortalCategorias(
+    podeGerenciarServicos ? clienteProprietarioId : null
+  );
 
   const router = useRouter();
   const params = useParams();
@@ -312,10 +315,28 @@ const handleSubmit = useCallback(async (e) => {
                 <Grid item xs={12} sm={4}>
                   <TextField
                     fullWidth
+                    select
                     label="Categoria (Opcional)"
                     value={form.categoria}
                     onChange={(e) => setForm((f) => ({ ...f, categoria: e.target.value }))}
-                  />
+                    disabled={loadingCategorias}
+                    SelectProps={{ displayEmpty: true }}
+                  >
+                    <MenuItem value="">Nenhuma</MenuItem>
+                    {Array.isArray(categorias) && categorias.length > 0 ? (
+                      categorias.map((categoria) => (
+                        <MenuItem key={categoria} value={categoria}>
+                          {categoria}
+                        </MenuItem>
+                      ))
+                    ) : (
+                      !loadingCategorias && (
+                        <MenuItem value="" disabled>
+                          Nenhuma categoria disponível
+                        </MenuItem>
+                      )
+                    )}
+                  </TextField>
                 </Grid>
               </Grid>
 

@@ -8,6 +8,7 @@ export function useSettings() {
     funcionalidades: {},
     configuracoes: {},
     eNotasConfig: {},
+    apuracao: {},
   };
 
   return {
@@ -19,6 +20,10 @@ export function useSettings() {
     limiteClientes: settingsSafe.configuracoes?.limiteClientes,
     limiteServicos: settingsSafe.configuracoes?.limiteServicos,
     limiteOrcamentos: settingsSafe.configuracoes?.limiteOrcamentos,
+    // Configurações de apuração
+    apurarHub: Boolean(settingsSafe.apuracao?.apurarHub),
+    habilitarFatorR: Boolean(settingsSafe.apuracao?.habilitarFatorR),
+    gerarDasAutomatico: Boolean(settingsSafe.apuracao?.gerarDasAutomatico),
     settings: settingsSafe,
   };
 }

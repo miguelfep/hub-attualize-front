@@ -42,10 +42,12 @@ import { useRouter } from 'src/routes/hooks';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { Upload } from 'src/components/upload';
+import { MonthYearPicker } from 'src/components/month-year-picker/month-year-picker';
 
 import { useGetAllClientes } from 'src/actions/clientes';
 import {
   useHistorico12Meses,
+  useHistoricosFolha,
   uploadCSVHistorico,
   criarHistoricoFolha,
   atualizarHistoricoFolha,
@@ -65,6 +67,7 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
   const [currentTab, setCurrentTab] = useState('resumo');
   const [csvFile, setCsvFile] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [anoFiltro, setAnoFiltro] = useState(new Date().getFullYear());
 
   // Estados para cadastro manual
   const [dialogAberto, setDialogAberto] = useState(false);
@@ -89,6 +92,35 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
     clienteId,
     periodoAtual
   );
+
+  // Buscar todos os históricos para filtrar por ano
+  const { data: todosHistoricosData } = useHistoricosFolha(clienteId, {});
+  const todosHistoricos = todosHistoricosData?.historicos || [];
+
+  // Extrair anos únicos dos históricos
+  const anosDisponiveis = [
+    ...new Set(
+      todosHistoricos
+        .map((h) => {
+          const periodo = h.periodo || h.periodoApuracao || '';
+          return periodo.length >= 4 ? parseInt(periodo.substring(0, 4), 10) : null;
+        })
+        .filter((ano) => ano !== null)
+    ),
+  ].sort((a, b) => b - a);
+
+  // Filtrar históricos por ano selecionado
+  const historicosFiltrados = todosHistoricos.filter((h) => {
+    const periodo = h.periodo || h.periodoApuracao || '';
+    const anoHistorico = periodo.length >= 4 ? parseInt(periodo.substring(0, 4), 10) : null;
+    return anoHistorico === anoFiltro;
+  });
+
+  // Se anoFiltro for o ano atual, mostrar apenas os últimos 12 meses
+  const historicosParaExibir =
+    anoFiltro === new Date().getFullYear() && historico12Meses?.historicos
+      ? historico12Meses.historicos
+      : historicosFiltrados;
 
   // Buscar apurações
   const { data: apuracoesData, mutate: mutateApuracoes } = useApuracoes(clienteId, {});
@@ -211,7 +243,7 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
   }, []);
 
   const abrirDialogEditar = useCallback((historico) => {
-    const periodo = historico.periodo || historico.periodo_referencia || '';
+    const periodo = historico.periodo || historico.periodo_referencia || historico.periodoApuracao || '';
     const folha = historico.folhaPagamento || historico.folha_pagamento || historico.folha || '';
     const inssCpp = historico.inssCpp || historico.inss_cpp || historico.inss || '';
     const faturamento =
@@ -255,18 +287,19 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
       return;
     }
 
-    if (!formHistorico.folhaPagamento || parseFloat(formHistorico.folhaPagamento) <= 0) {
-      toast.error('Informe a folha de pagamento');
-      return;
-    }
-
-    if (!formHistorico.inssCpp || parseFloat(formHistorico.inssCpp) < 0) {
-      toast.error('Informe o INSS/CPP');
-      return;
-    }
-
     if (!formHistorico.faturamentoBruto || parseFloat(formHistorico.faturamentoBruto) <= 0) {
       toast.error('Informe o faturamento bruto');
+      return;
+    }
+
+    // Folha e INSS são opcionais - podem ser adicionados depois
+    if (formHistorico.folhaPagamento && parseFloat(formHistorico.folhaPagamento) < 0) {
+      toast.error('Folha de pagamento não pode ser negativa');
+      return;
+    }
+
+    if (formHistorico.inssCpp && parseFloat(formHistorico.inssCpp) < 0) {
+      toast.error('INSS/CPP não pode ser negativo');
       return;
     }
 
@@ -275,9 +308,13 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
 
       const payload = {
         periodo: formHistorico.periodo,
-        folhaPagamento: parseFloat(formHistorico.folhaPagamento),
-        inssCpp: parseFloat(formHistorico.inssCpp),
         faturamentoBruto: parseFloat(formHistorico.faturamentoBruto),
+        ...(formHistorico.folhaPagamento && parseFloat(formHistorico.folhaPagamento) > 0
+          ? { folhaPagamento: parseFloat(formHistorico.folhaPagamento) }
+          : { folhaPagamento: 0 }),
+        ...(formHistorico.inssCpp && parseFloat(formHistorico.inssCpp) > 0
+          ? { inssCpp: parseFloat(formHistorico.inssCpp) }
+          : { inssCpp: 0 }),
         ...(formHistorico.deducoes && parseFloat(formHistorico.deducoes) > 0
           ? { deducoes: parseFloat(formHistorico.deducoes) }
           : {}),
@@ -376,10 +413,10 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                   label={cliente.cnpj}
                   size="small"
                 />
-                {cliente.regime_tributario && (
+                {cliente.regimeTributario && (
                   <Chip
                     icon={<Iconify icon="solar:calculator-bold-duotone" />}
-                    label={cliente.regime_tributario}
+                    label={cliente.regimeTributario}
                     size="small"
                     color="info"
                   />
@@ -388,9 +425,9 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                   <Chip
                     icon={<Iconify icon="solar:case-bold-duotone" />}
                     label={
-                      typeof cliente.atividade_principal === 'string'
-                        ? cliente.atividade_principal
-                        : String(cliente.atividade_principal)
+                      typeof cliente.atividade_principal[0] === 'string'
+                        ? cliente.atividade_principal[0]?.text
+                        : String(cliente.atividade_principal[0]?.text)
                     }
                     size="small"
                     variant="outlined"
@@ -436,24 +473,7 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
               <Stack spacing={3}>
                 {/* Cards de métricas */}
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={3}>
-                    <Paper variant="outlined" sx={{ p: 2 }}>
-                      <Stack spacing={1}>
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Iconify icon="solar:history-bold-duotone" width={24} color="info.main" />
-                          <Typography variant="caption" color="text.secondary">
-                            Histórico
-                          </Typography>
-                        </Stack>
-                        <Typography variant="h4">
-                          {historico12Meses?.mesesEncontrados || 0}/12
-                        </Typography>
-                        <Typography variant="caption">Meses cadastrados</Typography>
-                      </Stack>
-                    </Paper>
-                  </Grid>
-
-                  <Grid item xs={12} md={3}>
+                  <Grid item xs={12} md={4}>
                     <Paper variant="outlined" sx={{ p: 2 }}>
                       <Stack spacing={1}>
                         <Stack direction="row" alignItems="center" spacing={1}>
@@ -491,7 +511,7 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                     </Paper>
                   </Grid>
 
-                  <Grid item xs={12} md={3}>
+                  <Grid item xs={12} md={4}>
                     <Paper variant="outlined" sx={{ p: 2 }}>
                       <Stack spacing={1}>
                         <Stack direction="row" alignItems="center" spacing={1}>
@@ -554,19 +574,30 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
 
                 {/* Status do Fator R */}
                 {historico12Meses && (
-                  <Alert
-                    severity={historico12Meses.totais?.atingeFatorRMinimo ? 'success' : 'info'}
-                    icon={<Iconify icon="solar:chart-bold-duotone" width={24} />}
-                  >
-                    <AlertTitle>
-                      Fator R: {historico12Meses.totais?.fatorRMedio?.toFixed(2)}%
-                    </AlertTitle>
-                    {historico12Meses.totais?.atingeFatorRMinimo ? (
-                      <>Cliente <strong>atinge</strong> o fator R mínimo de {FATOR_R_MINIMO}%. Anexo III será aplicado com alíquotas reduzidas.</>
-                    ) : (
-                      <>Cliente <strong>não atinge</strong> o fator R mínimo de {FATOR_R_MINIMO}%. Anexo V será aplicado.</>
-                    )}
-                  </Alert>
+                  <Stack spacing={2}>
+                    <Alert
+                      severity={historico12Meses.totais?.atingeFatorRMinimo ? 'success' : 'info'}
+                      icon={<Iconify icon="solar:chart-bold-duotone" width={24} />}
+                    >
+                      <AlertTitle>
+                        Fator R: {historico12Meses.totais?.fatorRMedio?.toFixed(2)}%
+                      </AlertTitle>
+                      {historico12Meses.totais?.atingeFatorRMinimo ? (
+                        <>Cliente <strong>atinge</strong> o fator R mínimo de {FATOR_R_MINIMO}%. Anexo III será aplicado com alíquotas reduzidas.</>
+                      ) : (
+                        <>Cliente <strong>não atinge</strong> o fator R mínimo de {FATOR_R_MINIMO}%. Anexo V será aplicado.</>
+                      )}
+                    </Alert>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      startIcon={<Iconify icon="solar:calculator-bold-duotone" />}
+                      onClick={() => router.push(paths.dashboard.fiscal.apuracaoClienteFolhaIdeal(clienteId))}
+                    >
+                      Simular Folha Ideal para Fator R
+                    </Button>
+                  </Stack>
                 )}
               </Stack>
             )}
@@ -694,13 +725,38 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
 
                 {loadingHistorico && <LinearProgress />}
 
+                {/* Filtro de Ano */}
+                {anosDisponiveis.length > 0 && (
+                  <Card variant="outlined" sx={{ p: 2 }}>
+                    <Stack direction="row" spacing={2} alignItems="center">
+                      <Typography variant="body2" color="text.secondary">
+                        Filtrar por ano:
+                      </Typography>
+                      <TextField
+                        select
+                        size="small"
+                        value={anoFiltro}
+                        onChange={(e) => setAnoFiltro(parseInt(e.target.value, 10))}
+                        sx={{ minWidth: 120 }}
+                      >
+                        {anosDisponiveis.map((ano) => (
+                          <MenuItem key={ano} value={ano}>
+                            {ano}
+                            {ano === new Date().getFullYear() ? ' (Últimos 12 meses)' : ''}
+                          </MenuItem>
+                        ))}
+                      </TextField>
+                    </Stack>
+                  </Card>
+                )}
+
                 {/* Tabela de Histórico */}
-                {historico12Meses && historico12Meses.historicos && historico12Meses.historicos.length > 0 && (
+                {historicosParaExibir && historicosParaExibir.length > 0 && (
                   <Card variant="outlined">
                     <Box sx={{ p: 2 }}>
                       <Stack direction="row" justifyContent="space-between" alignItems="center">
                         <Typography variant="subtitle1">
-                          Histórico dos Últimos 12 Meses ({historico12Meses.historicos.length} mês(es)
+                          Histórico {anoFiltro === new Date().getFullYear() ? 'dos Últimos 12 Meses' : `de ${anoFiltro}`} ({historicosParaExibir.length} mês(es)
                           cadastrado(s))
                         </Typography>
                         <Button
@@ -722,12 +778,11 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                             <TableCell align="right">Folha</TableCell>
                             <TableCell align="right">INSS/CPP</TableCell>
                             <TableCell align="right">Faturamento</TableCell>
-                            <TableCell align="right">Fator R</TableCell>
                             <TableCell align="center">Ações</TableCell>
                           </TableRow>
                         </TableHead>
                         <TableBody>
-                          {historico12Meses.historicos.map((hist) => {
+                          {historicosParaExibir.map((hist) => {
                             // Suporte para camelCase e snake_case
                             const periodo = hist.periodo || hist.periodoApuracao || hist.periodo_referencia || '';
                             const folha =
@@ -747,20 +802,6 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                               hist.receitaBruta ||
                               hist.receita_bruta ||
                               0;
-                            const fatorR =
-                              hist.fatorR ||
-                              hist.fator_r ||
-                              hist.fatorRPercentual ||
-                              hist.fator_r_percentual ||
-                              null;
-
-                            // Calcular Fator R se não existir
-                            const fatorRCalculado =
-                              fatorR != null && !isNaN(fatorR)
-                                ? Number(fatorR)
-                                : folha && inssCpp && faturamento && Number(folha) > 0 && Number(faturamento) > 0
-                                  ? ((Number(folha) + Number(inssCpp)) / Number(faturamento)) * 100
-                                  : null;
 
                             return (
                               <TableRow key={hist._id || hist.id || periodo}>
@@ -784,11 +825,6 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                                   {Number(faturamento).toLocaleString('pt-BR', {
                                     minimumFractionDigits: 2,
                                   })}
-                                </TableCell>
-                                <TableCell align="right">
-                                  {fatorRCalculado != null && !isNaN(fatorRCalculado)
-                                    ? `${Number(fatorRCalculado).toFixed(2)}%`
-                                    : '-'}
                                 </TableCell>
                                 <TableCell align="center">
                                   <Stack direction="row" spacing={1} justifyContent="center">
@@ -817,7 +853,7 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                   </Card>
                 )}
 
-                {historico12Meses && (!historico12Meses.historicos || historico12Meses.historicos.length === 0) && (
+                {(!historicosParaExibir || historicosParaExibir.length === 0) && (
                   <Card variant="outlined" sx={{ p: 5, textAlign: 'center' }}>
                     <Iconify
                       icon="solar:history-bold-duotone"
@@ -1008,7 +1044,7 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                               startIcon={<Iconify icon="solar:upload-bold-duotone" />}
                               onClick={() =>
                                 router.push(
-                                  `${paths.dashboard.fiscal.apuracao}/upload-das?id=${apuracao._id}`
+                                  `${paths.dashboard.fiscal.apuracao}/cliente/${clienteId}/${apuracao._id || apuracao.id}/upload-das`
                                 )
                               }
                             >
@@ -1019,6 +1055,11 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
                             variant="outlined"
                             size="small"
                             startIcon={<Iconify icon="solar:eye-bold-duotone" />}
+                            onClick={() =>
+                              router.push(
+                                `${paths.dashboard.fiscal.apuracao}/cliente/${clienteId}/${apuracao._id || apuracao.id}`
+                              )
+                            }
                           >
                             Ver Detalhes
                           </Button>
@@ -1040,52 +1081,37 @@ export function ClienteApuracaoDetalheView({ clienteId }) {
         </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
-            <TextField
-              fullWidth
+            <MonthYearPicker
               label="Período de Referência"
-              placeholder={historicoEditando ? '' : '202412'}
-              value={
-                historicoEditando
-                  ? formatarPeriodo(formHistorico.periodo) || formHistorico.periodo
-                  : formHistorico.periodo
-              }
-              onChange={(e) => {
-                if (historicoEditando) return; // Não permite editar quando está editando
-                const value = e.target.value.replace(/\D/g, '');
-                if (value.length <= 6) {
-                  setFormHistorico({ ...formHistorico, periodo: value });
-                }
+              value={formHistorico.periodo}
+              onChange={(periodo) => {
+                setFormHistorico({ ...formHistorico, periodo });
               }}
+              disabled={!!historicoEditando}
+              required
               helperText={
                 historicoEditando
                   ? 'O período não pode ser alterado'
-                  : 'Formato: AAAAMM (ex: 202412 para Dezembro/2024)'
+                  : 'Selecione o mês e ano de referência'
               }
-              required
-              InputProps={{
-                readOnly: !!historicoEditando,
-              }}
-              disabled={!!historicoEditando}
             />
 
             <TextField
               fullWidth
-              label="Folha de Pagamento"
+              label="Folha de Pagamento (Opcional)"
               placeholder="R$ 10.500,00"
               value={formHistorico.folhaPagamento ? formatCurrencyInput(formHistorico.folhaPagamento) : ''}
               onChange={(e) => handleCurrencyChange('folhaPagamento', e.target.value)}
-              helperText="Valor da folha SEM encargos (salários + pró-labore)"
-              required
+              helperText="Valor da folha SEM encargos (salários + pró-labore). Pode ser preenchido depois."
             />
 
             <TextField
               fullWidth
-              label="INSS/CPP"
+              label="INSS/CPP (Opcional)"
               placeholder="R$ 2.310,00"
               value={formHistorico.inssCpp ? formatCurrencyInput(formHistorico.inssCpp) : ''}
               onChange={(e) => handleCurrencyChange('inssCpp', e.target.value)}
-              helperText="Valor do INSS/CPP (contribuição patronal + funcionários)"
-              required
+              helperText="Valor do INSS/CPP (contribuição patronal + funcionários). Pode ser preenchido depois."
             />
 
             <TextField
