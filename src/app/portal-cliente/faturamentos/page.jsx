@@ -1,7 +1,7 @@
 'use client';
 
 import dayjs from 'dayjs';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useRef, useEffect, useCallback } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -19,6 +19,8 @@ import {
   InputLabel,
   CardContent,
   FormControl,
+  Tooltip,
+  CircularProgress,
 } from '@mui/material';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
@@ -52,6 +54,8 @@ export default function PortalFaturamentoPage() {
 
   const [filtroNumeroNota, setFiltroNumeroNota] = useState('');
   const numeroNotaDebounce = useDebounce(filtroNumeroNota, 500);
+  
+  const pollingIntervalsRef = useRef({});
 
   const { totalValorNotas, totalNotas } = useMemo(() => {
     const arr = Array.isArray(notas) ? notas : [];
@@ -59,11 +63,25 @@ export default function PortalFaturamentoPage() {
     return { totalValorNotas: total, totalNotas: arr.length };
   }, [notas]);
 
-  const fetchNotas = async () => {
-    if (!clienteId) return; 
+  // Função auxiliar para verificar se uma nota fiscal está em processamento
+  const isNotaProcessando = useCallback((nota) => {
+    if (!nota) return false;
+    const statusNota = String(nota.status || '').toLowerCase();
+    const eNotasStatus = String(nota.eNotasStatus || '').toLowerCase();
+    return (
+      statusNota === 'emitindo' || 
+      statusNota === 'processando' ||
+      eNotasStatus === 'emitindo' ||
+      eNotasStatus === 'processando' ||
+      nota.linkNota === 'Processando...' ||
+      String(nota.numeroNota).toLowerCase() === 'processando...'
+    );
+  }, []);
+
+  const fetchNotas = useCallback(async () => {
+    if (!clienteId) return []; 
     
     try {
-      setLoading(true);
       const numeroNota = numeroNotaDebounce || undefined;
       const res = await listarNotasFiscaisPorCliente({
         clienteId,
@@ -74,18 +92,87 @@ export default function PortalFaturamentoPage() {
       });
 
       const { data } = res;
-      setNotas(data?.notasFiscais || []);
+      const notasList = data?.notasFiscais || [];
+      setNotas(notasList);
+      return notasList;
     } catch (e) {
       setNotas([]);
-    } finally {
-      setLoading(false);
+      return [];
     }
-  };
-
-  useEffect(() => {
-    fetchNotas();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clienteId, status, startDate, endDate, numeroNotaDebounce]);
+
+  // Fetch inicial com loading
+  useEffect(() => {
+    const loadNotas = async () => {
+      setLoading(true);
+      await fetchNotas();
+      setLoading(false);
+    };
+    loadNotas();
+  }, [fetchNotas]);
+
+  // Limpar polling quando componente desmontar
+  useEffect(
+    () => () => {
+      Object.values(pollingIntervalsRef.current).forEach((interval) => {
+        clearInterval(interval);
+      });
+      pollingIntervalsRef.current = {};
+    },
+    []
+  );
+
+  // Verificar notas em processamento e iniciar polling
+  useEffect(() => {
+    if (!Array.isArray(notas) || notas.length === 0) {
+      return () => {
+        // Cleanup vazio
+      };
+    }
+
+    const notasProcessando = notas.filter(isNotaProcessando);
+    const idsProcessando = new Set(notasProcessando.map((n) => n._id || n.id).filter(Boolean));
+    const idsComPolling = new Set(Object.keys(pollingIntervalsRef.current));
+
+    // Iniciar polling para notas que estão processando mas não têm polling
+    notasProcessando.forEach((nota) => {
+      const notaId = nota._id || nota.id;
+      if (!notaId || idsComPolling.has(notaId)) return;
+
+      // Iniciar polling a cada 3 segundos
+      pollingIntervalsRef.current[notaId] = setInterval(async () => {
+        try {
+          const notasAtualizadas = await fetchNotas();
+          const notaAtualizada = notasAtualizadas?.find((n) => (n._id || n.id) === notaId);
+          
+          if (notaAtualizada && !isNotaProcessando(notaAtualizada)) {
+            // Nota foi processada, parar polling
+            if (pollingIntervalsRef.current[notaId]) {
+              clearInterval(pollingIntervalsRef.current[notaId]);
+              delete pollingIntervalsRef.current[notaId];
+            }
+          }
+        } catch (error) {
+          console.error('Erro ao verificar status da nota fiscal:', error);
+        }
+      }, 3000);
+    });
+
+    // Parar polling para notas que não estão mais processando
+    idsComPolling.forEach((notaId) => {
+      if (!idsProcessando.has(notaId)) {
+        if (pollingIntervalsRef.current[notaId]) {
+          clearInterval(pollingIntervalsRef.current[notaId]);
+          delete pollingIntervalsRef.current[notaId];
+        }
+      }
+    });
+
+    // Cleanup: sempre retornar uma função
+    return () => {
+      // A limpeza completa é feita no outro useEffect de unmount
+    };
+  }, [notas, clienteId, fetchNotas, isNotaProcessando]);
   
   const handlePrevMonth = () => {
     const newStart = dayjs(startDate).subtract(1, 'month').startOf('month').format('YYYY-MM-DD');
@@ -220,9 +307,26 @@ export default function PortalFaturamentoPage() {
                     {n.serie && (
                       <Chip size="small" variant="outlined" label={`Série ${n.serie}`} />
                     )}
-                    <Chip size="small" label={toTitleCase(statusLabel)} color={color} />
+                    {isNotaProcessando(n) ? (
+                      <Tooltip title="Nota fiscal em processamento...">
+                        <Chip 
+                          size="small" 
+                          label={toTitleCase(statusLabel)} 
+                          color="warning" 
+                          variant="soft"
+                          icon={<CircularProgress size={12} />}
+                        />
+                      </Tooltip>
+                    ) : (
+                      <Chip size="small" label={toTitleCase(statusLabel)} color={color} />
+                    )}
                     {isEnotas && (
-                      <Chip size="small" label={`Status: ${eNotasLabel}`} color={colorEnotas} />
+                      <Chip 
+                        size="small" 
+                        label={`Status: ${eNotasLabel}`} 
+                        color={isNotaProcessando(n) ? 'warning' : colorEnotas}
+                        variant={isNotaProcessando(n) ? 'soft' : 'filled'}
+                      />
                     )}
                   </Stack>
                   <Typography variant="caption" color="text.secondary">{dataEmissao ? dayjs(dataEmissao).format('DD/MM/YYYY HH:mm') : '-'}</Typography>
@@ -253,11 +357,26 @@ export default function PortalFaturamentoPage() {
                 )}
 
                 <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} flexWrap="wrap">
-                  {!!n.linkNota && n.linkNota !== 'Processando...' && (
-                    <Button size="small" variant="contained" href={n.linkNota} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:document-text-bold" />}>Baixar PDF</Button>
-                  )}
-                  {!!n.linkXml && (
-                    <Button size="small" variant="outlined" href={n.linkXml} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:code-square-bold" />}>Baixar XML</Button>
+                  {isNotaProcessando(n) ? (
+                    <Tooltip title="Nota fiscal em processamento, aguarde...">
+                      <Button 
+                        size="small" 
+                        variant="outlined" 
+                        disabled 
+                        startIcon={<CircularProgress size={14} />}
+                      >
+                        Processando...
+                      </Button>
+                    </Tooltip>
+                  ) : (
+                    <>
+                      {!!n.linkNota && n.linkNota !== 'Processando...' && (
+                        <Button size="small" variant="contained" href={n.linkNota} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:document-text-bold" />}>Baixar PDF</Button>
+                      )}
+                      {!!n.linkXml && (
+                        <Button size="small" variant="outlined" href={n.linkXml} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:code-square-bold" />}>Baixar XML</Button>
+                      )}
+                    </>
                   )}
                   {isSieg && n.siegXmlBase64 && (
                     <Button 

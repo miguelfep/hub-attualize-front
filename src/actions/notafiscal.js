@@ -10,6 +10,10 @@ export async function cancelarNFSeInvoice({ nfseId, motivo }) {
   return axios.post(`${baseUrl}nota-fiscal/${nfseId}/cancelar`, { nfseId, motivo });
 }
 
+export async function gerarNotaCobrancaContratos({ cobrancaId}) {
+  return axios.post(`${baseUrl}nota-fiscal/cobranca/${cobrancaId}/emitir`);
+} 
+
 export async function getNfsesByInvoice(invoiceId) {
   return axios.get(`${baseUrl}nota-fiscal/invoice/${invoiceId}`);
 }
