@@ -101,7 +101,7 @@ export const getBannersForUser = (user) => {
 
   // Exemplo: banners sazonais ou promocionais
   const currentMonth = new Date().getMonth();
-  if (currentMonth === 11) { // Dezembro
+  if (currentMonth === 13) { // Dezembro
     filteredBanners.unshift({
       id: 'banner-natal',
       title: 'Promoção de Natal',

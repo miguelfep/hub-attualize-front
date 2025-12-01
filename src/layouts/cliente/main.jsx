@@ -273,6 +273,9 @@ export function ClienteLayout({ children }) {
             flexGrow: 1,
             p: { xs: 2, sm: 3 },
             backgroundColor: theme.palette.background.default,
+            width: '100%',
+            maxWidth: '100%',
+            overflowX: 'hidden',
           }}
         >
           {children}

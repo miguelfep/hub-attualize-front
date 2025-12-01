@@ -283,13 +283,34 @@ export function LeadDetailsView({ id }) {
                 </Box>
               ) : (
                 <>
-                  <InfoRow label="CEP" value={lead.additionalInfo?.endereco?.cep || lead.cep || '-'} />
-                  <InfoRow label="Endereço" value={lead.additionalInfo?.endereco?.endereco || '-'} />
-                  <InfoRow label="Número" value={lead.additionalInfo?.endereco?.numero || '-'} />
-                  <InfoRow label="Complemento" value={lead.additionalInfo?.endereco?.complemento || '-'} />
-                  <InfoRow label="Bairro" value={lead.additionalInfo?.endereco?.bairro || '-'} />
-                  <InfoRow label="Cidade" value={lead.cidade || '-'} />
-                  <InfoRow label="Estado" value={lead.estado || '-'} />
+                  <InfoRow
+                    label="CEP"
+                    value={lead.endereco?.cep || lead.additionalInfo?.endereco?.cep || lead.cep || '-'}
+                  />
+                  <InfoRow
+                    label="Endereço"
+                    value={lead.endereco?.rua || lead.additionalInfo?.endereco?.endereco || '-'}
+                  />
+                  <InfoRow
+                    label="Número"
+                    value={lead.endereco?.numero || lead.additionalInfo?.endereco?.numero || '-'}
+                  />
+                  <InfoRow
+                    label="Complemento"
+                    value={lead.endereco?.complemento || lead.additionalInfo?.endereco?.complemento || '-'}
+                  />
+                  <InfoRow
+                    label="Bairro"
+                    value={lead.endereco?.bairro || lead.additionalInfo?.endereco?.bairro || '-'}
+                  />
+                  <InfoRow
+                    label="Cidade"
+                    value={lead.endereco?.cidade || lead.cidade || '-'}
+                  />
+                  <InfoRow
+                    label="Estado"
+                    value={lead.endereco?.estado || lead.estado || '-'}
+                  />
                 </>
               )}
             </InfoCard>

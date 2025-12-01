@@ -129,10 +129,18 @@ export default function VisaoGeralOrcamentos({
   });
 
   return (
-    <Card {...other}>
+    <Card 
+      {...other} 
+      sx={{ 
+        width: '100%', 
+        maxWidth: '100%', 
+        overflow: 'hidden',
+        ...(other?.sx || {}),
+      }}
+    >
       <CardHeader title={title} subheader={subheader} />
 
-      <Box sx={{ p: 3, pb: 1 }}>
+      <Box sx={{ p: 3, pb: 1, width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
         <Chart dir="ltr" type="area" series={series} options={chartOptions} height={height} />
       </Box>
     </Card>

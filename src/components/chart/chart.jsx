@@ -38,6 +38,8 @@ export function Chart({
         flexShrink: 0,
         borderRadius: 1.5,
         position: 'relative',
+        maxWidth: '100%',
+        overflow: 'hidden',
         ...sx,
       }}
       {...other}

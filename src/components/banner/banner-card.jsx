@@ -25,7 +25,7 @@ export function BannerCard({ banner }) {
   const { title, description, icon, color, buttonText, link, badge } = banner;
 
   return (
-    <Card sx={{ height: '100%', position: 'relative' }}>
+    <Card sx={{ height: '100%', width: '100%', maxWidth: '100%', position: 'relative', overflow: 'hidden' }}>
       <Iconify
         icon={icon}
         sx={{

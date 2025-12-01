@@ -17,7 +17,7 @@ import {
 
 import { Iconify } from 'src/components/iconify';
 import { varFade } from 'src/components/animate';
-import { MercadoPagoStatusDialog, MercadoPagoCheckoutDialog } from 'src/components/mercado-pago';
+// import { MercadoPagoStatusDialog, MercadoPagoCheckoutDialog } from 'src/components/mercado-pago'; // Removido temporariamente - será implementado depois
 
 // ----------------------------------------------------------------------
 
@@ -36,8 +36,9 @@ export function StepPagamento({ formData, orcamento, onClose, temAberturaGratuit
     setFormaPagamento(forma);
     
     if (forma === 'cartao') {
-      // Abre modal de checkout do Mercado Pago
-      setCheckoutOpen(true);
+      // TODO: Implementar checkout - Mercado Pago removido temporariamente
+      alert('Pagamento por cartão de crédito em desenvolvimento');
+      // setCheckoutOpen(true); // Removido temporariamente
     } else if (forma === 'boleto') {
       // TODO: Implementar geração de boleto
       alert('Boleto em desenvolvimento');
@@ -314,8 +315,8 @@ export function StepPagamento({ formData, orcamento, onClose, temAberturaGratuit
         </Stack>
       </Stack>
 
-      {/* Checkout Dialog - Mercado Pago */}
-      <MercadoPagoCheckoutDialog
+      {/* Checkout Dialog - Mercado Pago - Removido temporariamente */}
+      {/* <MercadoPagoCheckoutDialog
         open={checkoutOpen}
         onClose={() => {
           setCheckoutOpen(false);
@@ -337,17 +338,17 @@ export function StepPagamento({ formData, orcamento, onClose, temAberturaGratuit
           leadId: leadId || formData.leadId,
           orcamentoValor: valorTotal,
         }}
-      />
+      /> */}
 
-      {/* Status Screen Dialog - Resultado do Pagamento */}
-      {paymentResult?.mercadoPagoId && (
+      {/* Status Screen Dialog - Resultado do Pagamento - Removido temporariamente */}
+      {/* {paymentResult?.mercadoPagoId && (
         <MercadoPagoStatusDialog
           open={statusScreenOpen}
           onClose={handleStatusScreenClose}
           paymentId={paymentResult.mercadoPagoId}
           externalReference={paymentResult.pagamentoId}
         />
-      )}
+      )} */}
     </Container>
   );
 }

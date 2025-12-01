@@ -1,17 +1,28 @@
 import { toast } from 'sonner';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
-import Table from '@mui/material/Table';
-import Paper from '@mui/material/Paper';
-import Button from '@mui/material/Button';
-import TableRow from '@mui/material/TableRow';
-import MenuItem from '@mui/material/MenuItem';
-import MenuList from '@mui/material/MenuList';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
-import IconButton from '@mui/material/IconButton';
-import TableContainer from '@mui/material/TableContainer';
+import LoadingButton from '@mui/lab/LoadingButton';
+import {
+  Stack,
+  Table,
+  Paper,
+  Button,
+  Dialog,
+  TableRow,
+  MenuItem,
+  MenuList,
+  TableBody,
+  TableCell,
+  TableHead,
+  TextField,
+  IconButton,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  TableContainer,
+  Tooltip,
+  CircularProgress,
+} from '@mui/material';
 
 import {
   cancelarBoleto,
@@ -19,6 +30,7 @@ import {
   enviarBoletoDigisac,
   buscarCobrancasContratoId,
 } from 'src/actions/financeiro';
+import { cancelarNFSeInvoice, gerarNotaCobrancaContratos } from 'src/actions/notafiscal';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -36,6 +48,12 @@ export function ContratoCobrancas({ contratoId, contrato }) {
   const [popoverAnchor, setPopoverAnchor] = useState(null); // Controla o popover individualmente
   const [popoverIndex, setPopoverIndex] = useState(null); // Guarda o índice da cobrança aberta
   const [loadingBoleto, setLoadingBoleto] = useState(false);
+  const [loadingNotaFiscal, setLoadingNotaFiscal] = useState({}); // Estado para loading de cada nota fiscal
+  const pollingIntervalsRef = useRef({}); // Referência para os intervalos de polling
+  const [cancelNotaOpen, setCancelNotaOpen] = useState(false);
+  const [notaToCancel, setNotaToCancel] = useState(null);
+  const [cancelReason, setCancelReason] = useState('');
+  const [cancelingNota, setCancelingNota] = useState(false);
 
   const cobrancaStatusTexts = {
     EMABERTO: 'Aguardando pagamento',
@@ -126,13 +144,130 @@ export function ContratoCobrancas({ contratoId, contrato }) {
   };
 
   const podeEmitirNotaManual = Boolean(contrato?.emitirNotaFiscal) && (contrato?.momentoEmissaoNota === 'manual');
+  
+  // Função para verificar se uma cobrança tem nota fiscal em processamento
+  const isNotaFiscalProcessando = (cobranca) => {
+    if (!cobranca?.notaFiscalId) return false;
+    
+    // Se notaFiscalId é um objeto, verificar o status
+    if (typeof cobranca.notaFiscalId === 'object') {
+      const status = cobranca.notaFiscalId?.status?.toLowerCase();
+      return status === 'emitindo' || status === 'processando' || cobranca.notaFiscalId?.linkNota === 'Processando...';
+    }
+    
+    // Se é string (ID), assumir que está processando se não tiver linkNota válido
+    return !cobranca.notaFiscalId?.linkNota || cobranca.notaFiscalId?.linkNota === 'Processando...';
+  };
+
+  // Função para parar polling de uma cobrança
+  const pararPollingNotaFiscal = useCallback((cobrancaId) => {
+    if (pollingIntervalsRef.current[cobrancaId]) {
+      clearInterval(pollingIntervalsRef.current[cobrancaId]);
+      delete pollingIntervalsRef.current[cobrancaId];
+    }
+    setLoadingNotaFiscal((prev) => {
+      const newState = { ...prev };
+      delete newState[cobrancaId];
+      return newState;
+    });
+  }, []);
+
+  // Função para iniciar polling de uma cobrança específica
+  const iniciarPollingNotaFiscal = useCallback((cobrancaId) => {
+    // Limpar polling anterior se existir
+    pararPollingNotaFiscal(cobrancaId);
+
+    // Iniciar polling a cada 3 segundos
+    pollingIntervalsRef.current[cobrancaId] = setInterval(async () => {
+      try {
+        // Verificar se a cobrança ainda está processando
+        const response = await buscarCobrancasContratoId(contratoId);
+        const cobrancaAtualizada = response.data?.find((c) => c._id === cobrancaId);
+        
+        if (cobrancaAtualizada) {
+          // Atualizar lista de cobranças
+          setCobrancas(response.data);
+          
+          // Verificar se ainda está processando
+          if (!isNotaFiscalProcessando(cobrancaAtualizada)) {
+            // Nota fiscal foi processada, parar polling
+            pararPollingNotaFiscal(cobrancaId);
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao verificar status da nota fiscal:', error);
+      }
+    }, 3000);
+  }, [contratoId, pararPollingNotaFiscal]);
+
+  // Limpar polling quando componente desmontar
+  useEffect(
+    () => () => {
+      Object.values(pollingIntervalsRef.current).forEach((interval) => {
+        clearInterval(interval);
+      });
+      pollingIntervalsRef.current = {};
+    },
+    []
+  );
+
+  // Verificar cobranças em processamento e iniciar polling
+  useEffect(() => {
+    const cobrancasProcessando = cobrancas.filter((c) => isNotaFiscalProcessando(c));
+    const idsProcessando = new Set(cobrancasProcessando.map((c) => c._id));
+    const idsComPolling = new Set(Object.keys(pollingIntervalsRef.current));
+
+    // Iniciar polling para cobranças que estão processando mas não têm polling
+    cobrancasProcessando.forEach((cobranca) => {
+      if (!idsComPolling.has(cobranca._id)) {
+        setLoadingNotaFiscal((prev) => ({ ...prev, [cobranca._id]: true }));
+        iniciarPollingNotaFiscal(cobranca._id);
+      }
+    });
+
+    // Parar polling para cobranças que não estão mais processando
+    idsComPolling.forEach((cobrancaId) => {
+      if (!idsProcessando.has(cobrancaId)) {
+        pararPollingNotaFiscal(cobrancaId);
+      }
+    });
+  }, [cobrancas, iniciarPollingNotaFiscal, pararPollingNotaFiscal]);
+
   const handleGerarNotaFiscal = async (cobranca) => {
     try {
-      // TODO: integrar com endpoint real quando disponível
-      await new Promise((r) => setTimeout(r, 800));
-      toast.success('Nota fiscal gerada para a cobrança');
+      setLoadingNotaFiscal((prev) => ({ ...prev, [cobranca._id]: true }));
+      
+      const response = await gerarNotaCobrancaContratos({ cobrancaId: cobranca._id });
+      
+      if (response?.status === 200 || response?.data) {
+        toast.success('Processando emissão da nota fiscal...');
+        
+        // Recarregar cobranças para pegar o notaFiscalId
+        await fetchCobrancas();
+        
+        // Aguardar um pouco e recarregar novamente para garantir que o backend atualizou
+        setTimeout(async () => {
+          await fetchCobrancas();
+          
+          // Iniciar polling para verificar quando a nota for processada
+          iniciarPollingNotaFiscal(cobranca._id);
+        }, 1000);
+      } else {
+        toast.error('Erro ao gerar nota fiscal');
+        setLoadingNotaFiscal((prev) => {
+          const newState = { ...prev };
+          delete newState[cobranca._id];
+          return newState;
+        });
+      }
     } catch (error) {
+      console.error('Erro ao gerar nota fiscal:', error);
       toast.error('Erro ao gerar nota fiscal');
+      setLoadingNotaFiscal((prev) => {
+        const newState = { ...prev };
+        delete newState[cobranca._id];
+        return newState;
+      });
     }
   };
 
@@ -145,6 +280,62 @@ export function ContratoCobrancas({ contratoId, contrato }) {
   const handleClosePopover = () => {
     setPopoverAnchor(null); // Fecha o popover
     setPopoverIndex(null); // Reseta o índice
+  };
+
+  // Função para obter o ID da nota fiscal de uma cobrança
+  const getNotaFiscalId = (cobranca) => {
+    if (!cobranca?.notaFiscalId) return null;
+    if (typeof cobranca.notaFiscalId === 'string') return cobranca.notaFiscalId;
+    return cobranca.notaFiscalId._id || cobranca.notaFiscalId.id || null;
+  };
+
+  // Função para verificar se a nota fiscal pode ser cancelada
+  const podeCancelarNotaFiscal = (cobranca) => {
+    if (!cobranca?.notaFiscalId) return false;
+    const status = typeof cobranca.notaFiscalId === 'object' 
+      ? cobranca.notaFiscalId?.status?.toLowerCase() 
+      : null;
+    return status === 'emitida' || status === 'autorizada';
+  };
+
+  // Função para cancelar nota fiscal
+  const handleCancelarNotaFiscal = async () => {
+    if (!notaToCancel || !cancelReason) {
+      toast.error('Informe o motivo do cancelamento');
+      return;
+    }
+
+    try {
+      setCancelingNota(true);
+      const notaFiscalId = getNotaFiscalId(notaToCancel);
+      if (!notaFiscalId) {
+        toast.error('ID da nota fiscal não encontrado');
+        return;
+      }
+
+      // Usar a mesma função do portal que faz POST para /cancelar
+      const res = await cancelarNFSeInvoice({ 
+        nfseId: notaFiscalId, 
+        motivo: cancelReason 
+      });
+      
+      if (res?.status === 200) {
+        toast.success('Nota fiscal cancelada com sucesso');
+        setCancelNotaOpen(false);
+        setCancelReason('');
+        setNotaToCancel(null);
+        
+        // Recarregar cobranças para atualizar o status
+        await fetchCobrancas();
+      } else {
+        toast.error('Falha ao cancelar nota fiscal');
+      }
+    } catch (error) {
+      console.error('Erro ao cancelar nota fiscal:', error);
+      toast.error('Erro ao cancelar nota fiscal');
+    } finally {
+      setCancelingNota(false);
+    }
   };
 
   if (loading) {
@@ -169,11 +360,12 @@ export function ContratoCobrancas({ contratoId, contrato }) {
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table aria-label="cobranças do contrato">
           <TableHead>
-            <TableRow>
+              <TableRow>
               <TableCell>Data de Vencimento</TableCell>
               <TableCell>Valor</TableCell>
               <TableCell>Status</TableCell>
-              <TableCell>Emitido</TableCell> {/* Nova coluna "Emitido" */}
+              <TableCell>Emitido</TableCell>
+              <TableCell>Nota Fiscal</TableCell>
               <TableCell>Ações</TableCell>
             </TableRow>
           </TableHead>
@@ -194,6 +386,50 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                 <TableCell align="center">
                   {/* Verifica se o boleto foi emitido e exibe o ícone */}
                   {cobranca.boleto && <Iconify color="green" icon="eva:checkmark-fill" />}
+                </TableCell>
+                <TableCell align="center">
+                  {/* Status da Nota Fiscal */}
+                  {cobranca?.notaFiscalId ? (
+                    isNotaFiscalProcessando(cobranca) || loadingNotaFiscal[cobranca._id] ? (
+                      <Tooltip title="Nota fiscal em processamento...">
+                        <CircularProgress size={20} />
+                      </Tooltip>
+                    ) : (
+                      <Stack direction="row" spacing={0.5} justifyContent="center" alignItems="center">
+                        <Tooltip title="Baixar nota fiscal">
+                          <IconButton
+                            size="small"
+                            color="success"
+                            onClick={() => {
+                              const linkNota = cobranca.notaFiscalId?.linkNota || cobranca.notaFiscalId?.link;
+                              if (linkNota && linkNota !== 'Processando...') {
+                                window.open(linkNota, '_blank', 'noopener,noreferrer');
+                              } else {
+                                toast.error('Link da nota fiscal não disponível');
+                              }
+                            }}
+                          >
+                            <Iconify icon="solar:download-bold-duotone" />
+                          </IconButton>
+                        </Tooltip>
+                        {podeCancelarNotaFiscal(cobranca) && (
+                          <Tooltip title="Cancelar nota fiscal">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => {
+                                setNotaToCancel(cobranca);
+                                setCancelNotaOpen(true);
+                                handleClosePopover();
+                              }}
+                            >
+                              <Iconify icon="solar:trash-bin-trash-bold-duotone" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Stack>
+                    )
+                  ) : null}
                 </TableCell>
                 <TableCell align="right">
                   <IconButton
@@ -272,9 +508,12 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                             handleGerarNotaFiscal(cobranca);
                             handleClosePopover();
                           }}
+                          disabled={loadingNotaFiscal[cobranca._id] || isNotaFiscalProcessando(cobranca)}
                         >
                           <Iconify icon="solar:bill-check-bold" />
-                          Gerar Nota Fiscal
+                          {loadingNotaFiscal[cobranca._id] || isNotaFiscalProcessando(cobranca)
+                            ? 'Processando Nota Fiscal...'
+                            : 'Gerar Nota Fiscal'}
                         </MenuItem>
                       )}
                     </MenuList>
@@ -305,6 +544,42 @@ export function ContratoCobrancas({ contratoId, contrato }) {
           </Button>
         }
       />
+
+      {/* Dialog de Cancelamento de Nota Fiscal */}
+      <Dialog open={cancelNotaOpen} onClose={() => setCancelNotaOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Cancelar Nota Fiscal</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <TextField
+              fullWidth
+              label="Motivo do cancelamento"
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              multiline
+              minRows={3}
+              helperText="Descreva o motivo do cancelamento da nota fiscal"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => {
+            setCancelNotaOpen(false);
+            setCancelReason('');
+            setNotaToCancel(null);
+          }}>
+            Cancelar
+          </Button>
+          <LoadingButton
+            color="error"
+            variant="contained"
+            loading={cancelingNota}
+            disabled={!cancelReason.trim()}
+            onClick={handleCancelarNotaFiscal}
+          >
+            Confirmar Cancelamento
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }

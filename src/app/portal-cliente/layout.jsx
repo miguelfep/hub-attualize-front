@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
@@ -19,12 +20,30 @@ export default function Layout({ children }) {
   const router = useRouter();
 
   // Se não estiver autenticado, redireciona para login
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace(paths.auth.jwt.signIn);
+    }
+  }, [loading, user, router]);
+
+  // Verifica se o usuário é do tipo cliente e redireciona se necessário
+  useEffect(() => {
+    if (!loading && user) {
+      const currentUser = getUser();
+      const userType = currentUser?.userType ?? (currentUser?.role === 'cliente' ? 'cliente' : 'interno');
+      
+      if (userType !== 'cliente') {
+        router.replace(paths.dashboard.root);
+      }
+    }
+  }, [loading, user, router]);
+
+  // Se não estiver autenticado, redireciona para login
   if (loading) {
     return <SplashScreen />;
   }
 
   if (!user) {
-    router.replace(paths.auth.jwt.signIn);
     return <SplashScreen />;
   }
 
@@ -33,7 +52,6 @@ export default function Layout({ children }) {
   const userType = currentUser?.userType ?? (currentUser?.role === 'cliente' ? 'cliente' : 'interno');
   
   if (userType !== 'cliente') {
-    router.replace(paths.dashboard.root);
     return <SplashScreen />;
   }
 

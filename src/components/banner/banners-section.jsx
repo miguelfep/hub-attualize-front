@@ -21,6 +21,22 @@ export function BannersSection({ banners = [] }) {
     <Box
       sx={{
         height: '100%',
+        width: '100%',
+        maxWidth: '100%',
+        overflow: 'hidden',
+        '& .swiper': {
+          width: '100%',
+          maxWidth: '100%',
+          overflow: 'hidden',
+        },
+        '& .swiper-wrapper': {
+          width: '100%',
+          maxWidth: '100%',
+        },
+        '& .swiper-slide': {
+          width: '100%',
+          maxWidth: '100%',
+        },
         '& .swiper-pagination-bullet': {
           bgcolor: 'rgba(255, 255, 255, 0.48)',
         },
@@ -38,10 +54,16 @@ export function BannersSection({ banners = [] }) {
           disableOnInteraction: false,
         }}
         loop
-        style={{ height: '100%', borderRadius: theme.shape.borderRadius * 2 }}
+        style={{ 
+          height: '100%', 
+          width: '100%',
+          maxWidth: '100%',
+          borderRadius: theme.shape.borderRadius * 2,
+          overflow: 'hidden',
+        }}
       >
         {banners.map((banner) => (
-          <SwiperSlide key={banner.id}>
+          <SwiperSlide key={banner.id} style={{ width: '100%', maxWidth: '100%' }}>
             <BannerCard banner={banner} />
           </SwiperSlide>
         ))}
