@@ -49,6 +49,7 @@ const cobrancaStatusColors = {
   VENCIDO: 'error',
   CANCELADO: 'info',
   RECEBIDO: 'success',
+  PROCESSANDO: 'info',
 };
 
 const cobrancaStatusTexts = {
@@ -56,6 +57,7 @@ const cobrancaStatusTexts = {
   VENCIDO: 'Vencida',
   CANCELADO: 'Cancelado',
   RECEBIDO: 'Pago',
+  PROCESSANDO: 'Processando cobrança',
 };
 
 export function InvoiceDetails({ invoice, nfses }) {
@@ -330,10 +332,10 @@ export function InvoiceDetails({ invoice, nfses }) {
                   <CardContent>
                     <Label
                       variant="soft"
-                      color={cobrancaStatusColors[invoice.cobrancas[0].status] || 'default'}
+                      color={cobrancaStatusColors[invoice?.cobrancas?.[0]?.status] || 'default'}
                       sx={{ mb: 3 }}
                     >
-                      {cobrancaStatusTexts[invoice.cobrancas[0].status] ||
+                      {cobrancaStatusTexts[invoice?.cobrancas?.[0]?.status] ||
                         invoice.cobrancas[0].status}
                     </Label>
                     <Stack spacing={2.5} sx={{ mb: 3 }}>
