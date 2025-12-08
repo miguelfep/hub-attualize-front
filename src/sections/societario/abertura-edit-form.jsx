@@ -2,7 +2,7 @@
 
 import { z as zod } from 'zod';
 import { toast } from 'sonner';
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -10,6 +10,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -22,7 +23,9 @@ import { Form, schemaHelper } from 'src/components/hook-form';
 import AberturaIniciadoForm from './abertura-iniciado-form';
 // Importação dos componentes específicos para cada status
 import { AberturaValidacaoForm } from './abertura-validacao-form';
-import { AberturaConstituicaoForm } from './abertura-constituicao-form';
+import { AberturaKickoffForm } from './abertura-kickoff-form';
+import { AberturaConstituicaoFormNew } from './abertura-constituicao-form-new';
+import { AberturaOnboardingForm } from './abertura-onboarding-form';
 
 // Definir o esquema de validação usando Zod
 const AberturaSchema = zod.object({
@@ -39,6 +42,7 @@ const AberturaSchema = zod.object({
 });
 
 // Mapeamento dos status para facilitar navegação
+// Ordem: Iniciado -> em_validacao -> kickoff -> em_constituicao -> onboarding -> finalizado
 const statusMap = {
   Iniciado: 'em_validacao',
   em_validacao: 'kickoff',
@@ -70,6 +74,9 @@ const statusDisplayMap = {
 
 export function AberturaEditForm({ currentAbertura }) {
   const loading = useBoolean();
+  const [etapasCompletadas, setEtapasCompletadas] = useState(
+    currentAbertura?.etapasCompletadas || []
+  );
 
   const defaultValues = useMemo(
     () => ({
@@ -89,12 +96,33 @@ export function AberturaEditForm({ currentAbertura }) {
   const { watch, setValue } = methods;
   const statusAbertura = watch('statusAbertura');
 
+  // Sincroniza as etapas completadas quando currentAbertura mudar
+  useEffect(() => {
+    if (currentAbertura?.etapasCompletadas) {
+      setEtapasCompletadas(currentAbertura.etapasCompletadas);
+    }
+  }, [currentAbertura?.etapasCompletadas]);
+
+  // Verifica se todas as etapas estão completas (0 a 10)
+  // Se a situação atual for 10 (Abertura concluída), considera todas completas
+  const todasEtapasCompletas = () => {
+    if (currentAbertura?.situacaoAbertura === 10) return true;
+    const todasEtapas = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    return todasEtapas.every((etapa) => etapasCompletadas.includes(etapa));
+  };
+
+  // Verifica se pode avançar do status em_constituicao
+  const podeAvancarDeConstituicao = () => {
+    if (statusAbertura !== 'em_constituicao') return true;
+    return todasEtapasCompletas();
+  };
+
   const handleAdvanceStatus = async (customStatus) => {
     const nextStatus = customStatus || statusMap[statusAbertura];
     if (nextStatus) {
       loading.onTrue();
       try {
-        updateAbertura(currentAbertura._id, {
+        await updateAbertura(currentAbertura._id, {
           statusAbertura: nextStatus,
           somenteAtualizar: false,
         });
@@ -126,6 +154,20 @@ export function AberturaEditForm({ currentAbertura }) {
     }
   };
 
+  const handleArquivar = async () => {
+    loading.onTrue();
+    try {
+      await updateAbertura(currentAbertura._id, { statusAbertura: 'Inativo' });
+      setValue('statusAbertura', 'Inativo');
+      toast.success('Abertura arquivada com sucesso!');
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao arquivar abertura');
+    } finally {
+      loading.onFalse();
+    }
+  };
+
   const renderStatusComponent = () => {
     switch (statusAbertura) {
       case 'Iniciado':
@@ -137,10 +179,45 @@ export function AberturaEditForm({ currentAbertura }) {
         );
       case 'em_validacao':
         return <AberturaValidacaoForm currentAbertura={currentAbertura} setValue={setValue} />;
+      case 'kickoff':
+        return <AberturaKickoffForm currentAbertura={currentAbertura} />;
+      case 'em_constituicao':
+        return (
+          <AberturaConstituicaoFormNew
+            currentAbertura={currentAbertura}
+            onEtapasChange={setEtapasCompletadas}
+          />
+        );
       case 'onboarding':
-        return <div>Usuário gerado, clique em avançar</div>;
+        return <AberturaOnboardingForm currentAbertura={currentAbertura} />;
+      case 'finalizado':
+        return (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Abertura Finalizada
+            </Typography>
+            <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleGoBackStatus}
+                disabled={loading.value}
+              >
+                Voltar
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleArquivar}
+                disabled={loading.value}
+              >
+                Arquivar Abertura
+              </Button>
+            </Stack>
+          </Box>
+        );
       default:
-        return <AberturaConstituicaoForm currentAbertura={currentAbertura} />;
+        return <AberturaConstituicaoFormNew currentAbertura={currentAbertura} />;
     }
   };
 
@@ -159,27 +236,33 @@ export function AberturaEditForm({ currentAbertura }) {
       </Box>
       <>{renderStatusComponent()}</>
 
-      <Stack justifyContent="space-between" direction="row" spacing={2} sx={{ mt: 3 }}>
-        {shouldShowAdvanceButton && (
-          <Button
-            variant="outlined"
-            disabled={!reverseStatusMap[statusAbertura]}
-            onClick={handleGoBackStatus}
-            loading={loading.value}
-          >
-            Voltar
-          </Button>
-        )}
-        {shouldShowAdvanceButton && (
-          <Button
-            variant="contained"
-            onClick={() => handleAdvanceStatus(statusMap[statusAbertura])}
-            loading={loading.value}
-          >
-            Avançar
-          </Button>
-        )}
-      </Stack>
+      {statusAbertura !== 'finalizado' && (
+        <Stack justifyContent="space-between" direction="row" spacing={2} sx={{ mt: 3 }}>
+          {shouldShowAdvanceButton && (
+            <Button
+              variant="outlined"
+              disabled={!reverseStatusMap[statusAbertura] || loading.value}
+              onClick={handleGoBackStatus}
+            >
+              Voltar
+            </Button>
+          )}
+          {shouldShowAdvanceButton && (
+            <Button
+              variant="contained"
+              onClick={() => handleAdvanceStatus(statusMap[statusAbertura])}
+              disabled={loading.value || !podeAvancarDeConstituicao()}
+              title={
+                !podeAvancarDeConstituicao()
+                  ? 'Complete todas as etapas da abertura para avançar'
+                  : ''
+              }
+            >
+              Avançar
+            </Button>
+          )}
+        </Stack>
+      )}
     </Form>
   );
 }
