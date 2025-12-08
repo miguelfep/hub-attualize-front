@@ -9,6 +9,7 @@ import {
   Card,
   Button,
   Switch,
+  Stack,
   TextField,
   CardContent,
   CardActions,
@@ -21,7 +22,7 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
   const { control, register, handleSubmit, getValues } = useFormContext({});
 
   // Função para lidar com o envio do formulário
-  const onSave = async (data) => {
+  const onSave = async (data, shouldAdvance = false) => {
     try {
       // Adiciona o ID da abertura no payload
       const editedData = getValues();
@@ -34,6 +35,9 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
       const res = await updateAbertura(currentAbertura._id, preparedData);
       if (res.status === 200) {
         toast.success('Dados salvos com sucesso!');
+        if (shouldAdvance && handleAdvanceStatus) {
+          handleAdvanceStatus('em_validacao');
+        }
       } else {
         const errorMessage = res.data?.message || 'Erro ao salvar os dados';
         toast.error(`Erro: ${errorMessage}`);
@@ -135,9 +139,20 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
             <Button variant="contained" color="primary" onClick={onReenviarLink}>
               Reenviar Link
             </Button>
-            <Button color="success" variant="contained" onClick={onSave}>
-              Salvar
-            </Button>
+            <Stack direction="row" spacing={2}>
+              <Button color="success" variant="contained" onClick={() => onSave(null, false)}>
+                Salvar
+              </Button>
+              {handleAdvanceStatus && (
+                <Button
+                  color="primary"
+                  variant="contained"
+                  onClick={() => onSave(null, true)}
+                >
+                  Salvar e Avançar
+                </Button>
+              )}
+            </Stack>
           </CardActions>
         </form>
       </CardContent>

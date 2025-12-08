@@ -28,16 +28,15 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
 
-import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/societario';
+import { updateAbertura } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
 
 import DocumentsManager from '../abertura/empresa/DocumentsManager';
 
-export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
+export function AberturaKickoffForm({ currentAbertura }) {
   const [formData, setFormData] = useState({
     nomeEmpresarial: '',
-    dataCriacao: '',
     nomeFantasia: '',
     nome: '',
     cpf: '',
@@ -49,21 +48,12 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     metragemUtilizada: '',
     senhaGOV: '',
     capitalSocial: 0,
-    valorMensalidade: currentAbertura.valorMensalidade,
+    valorMensalidade: 0,
     observacoes: '',
-    notificarWhats: false,
-    marcaRegistrada: false,
-    interesseRegistroMarca: false,
-    possuiRT: false,
-    iptuAnexo: currentAbertura.iptuAnexo || null,
-    rgAnexo: currentAbertura.rgAnexo || null,
-    documentoRT: currentAbertura.documentoRT || null,
-    situacaoAbertura: 0,
-    somenteAtualizar: true,
-    numSocios: 1, // Valor padrão para número de sócios
-    previsaoFaturamento: currentAbertura.previsaoFaturamento,
-    proLabore: currentAbertura.proLabore,
-    regimeTributario: currentAbertura.regimeTributario,
+    descricaoAtividades: '',
+    responsavelReceitaFederal: '',
+    formaAtuacao: '',
+    numSocios: 1,
     socios: [
       {
         nome: '',
@@ -74,6 +64,9 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
         porcentagem: 0,
         administrador: false,
         regimeBens: '',
+        endereco: '',
+        profissao: '',
+        cnh: '',
       },
     ],
     enderecoComercial: {
@@ -85,20 +78,26 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
       cidade: '',
       estado: '',
     },
-    responsavelReceitaFederal: '',
-    formaAtuacao: '',
+    historiaNegocio: '',
+    possuiAtividadeServico: false,
+    atividadeServico: '',
+    possuiAtividadeComercio: false,
+    atividadeComercio: '',
+    possuiMaquinas: false,
+    maquinas: '',
+    possuiSistema: false,
+    sistemaUtilizado: '',
+    urlMeetKickoff: '',
+    proLabore: 0,
+    previsaoFaturamento: 0,
+    regimeTributario: '',
+    ...currentAbertura,
   });
 
   const loading = useBoolean();
   const [loadingCep, setLoadingCep] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
   const [numSocios, setNumSocios] = useState(1);
-
-  const documentFieldMapping = {
-    RG: 'rgAnexo',
-    IPTU: 'iptuAnexo',
-    RT: 'documentoRT',
-  };
 
   const [values, setValues] = useState({
     showPassword: false,
@@ -112,70 +111,24 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     event.preventDefault();
   }, []);
 
-  const handleFileUploaded = (documentType, updatedData) => {
-    const fieldName = documentFieldMapping[documentType]; // Mapeia o documentType para o campo correto
-
-    setFormData((prevState) => ({
-      ...prevState,
-      [fieldName]: updatedData[fieldName], // Atualiza o campo correspondente
-    }));
-    toast.success('Arquivo enviado com sucesso!');
-  };
-
-  const handleDownload = async (clientId, documentType, filename) => {
-    try {
-      const response = await downloadArquivo(clientId, documentType, filename);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', filename);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (error) {
-      toast.error('Erro ao baixar o arquivo');
-    }
-  };
-
-  const handleDelete = async (clientId, documentType) => {
-    const fieldName = documentFieldMapping[documentType]; // Mapeia o documentType para o campo correto
-    try {
-      await deletarArquivo(clientId, documentType);
-      setFormData((prevData) => ({
-        ...prevData,
-        [fieldName]: null, // Define o campo do documento correspondente como null
-      }));
-      toast.success('Arquivo deletado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao deletar o arquivo');
-    }
-  };
-
   useEffect(() => {
     if (currentAbertura) {
-      setFormData((prevFormData) => ({
-        ...prevFormData,
+      setFormData((prev) => ({
+        ...prev,
         ...currentAbertura,
         capitalSocial: currentAbertura.capitalSocial || 0,
         valorMensalidade: currentAbertura.valorMensalidade || 0,
-        socios: currentAbertura.socios || prevFormData.socios,
+        proLabore: currentAbertura.proLabore || 0,
+        previsaoFaturamento: currentAbertura.previsaoFaturamento || 0,
+        socios: currentAbertura.socios || prev.socios,
         enderecoComercial: {
-          ...prevFormData.enderecoComercial,
+          ...prev.enderecoComercial,
           ...currentAbertura.enderecoComercial,
         },
       }));
       setNumSocios(currentAbertura.socios?.length || 1);
     }
   }, [currentAbertura]);
-
-  useEffect(() => {
-    if (formData.situacaoAbertura !== (currentAbertura?.situacaoAbertura || 0)) {
-      setFormData((prevData) => ({
-        ...prevData,
-        somenteAtualizar: false, // Atualizar para `false` quando `situacaoAbertura` for alterado
-      }));
-    }
-  }, [formData.situacaoAbertura, currentAbertura]);
 
   const handleChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -201,13 +154,11 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     }
   };
 
-  // Função para alterar o número de sócios dinamicamente
   const handleNumSociosChange = (event) => {
     const value = parseInt(event.target.value, 10);
     const newSocios = [...formData.socios];
 
     if (value > numSocios) {
-      // Adiciona novos sócios se o número aumentar
       for (let i = numSocios; i < value; i += 1) {
         newSocios.push({
           nome: '',
@@ -218,10 +169,12 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           porcentagem: 0,
           administrador: false,
           regimeBens: '',
+          endereco: '',
+          profissao: '',
+          cnh: '',
         });
       }
     } else {
-      // Remove sócios se o número diminuir
       newSocios.splice(value);
     }
 
@@ -230,18 +183,18 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   };
 
   const handleCapitalSocialChange = (currencyValues) => {
-    const { floatValue } = currencyValues; // Número sem formatação
+    const { floatValue } = currencyValues;
     setFormData((prevData) => ({
       ...prevData,
-      capitalSocial: floatValue, // Salva o valor como número
+      capitalSocial: floatValue,
     }));
   };
 
   const handleValorMensalidadeChange = (currencyValues) => {
-    const { floatValue } = currencyValues; // Número sem formatação
+    const { floatValue } = currencyValues;
     setFormData((prevData) => ({
       ...prevData,
-      valorMensalidade: floatValue, // Salva o valor como número
+      valorMensalidade: floatValue,
     }));
   };
 
@@ -274,14 +227,12 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     }
   };
 
+  const handleTabChange = (event, newValue) => setActiveTab(newValue);
+
   const handleSave = async () => {
     loading.onTrue();
     try {
-      const dataToSave = {
-        ...formData,
-        capitalSocial: formData.capitalSocial, // já está como número
-      };
-      await updateAbertura(currentAbertura._id, dataToSave);
+      await updateAbertura(currentAbertura._id, formData);
       toast.success('Dados salvos com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar os dados');
@@ -289,8 +240,6 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
       loading.onFalse();
     }
   };
-
-  const handleTabChange = (event, newValue) => setActiveTab(newValue);
 
   return (
     <Card sx={{ p: 3, mb: 3 }}>
@@ -348,7 +297,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid item xs={12} sm={6} md={3}>
             <TextField
-              label="Email  Financeiro"
+              label="Email Financeiro"
               name="emailFinanceiro"
               fullWidth
               value={formData.emailFinanceiro || ''}
@@ -443,12 +392,12 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
             <InputMask
               mask="99999-999"
               value={formData.enderecoComercial.cep}
-              onChange={(e) => handleChange(e)} // Garante que o handleChange seja chamado corretamente
-              onBlur={handleCepBlur} // A função que busca o CEP
+              onChange={(e) => handleChange(e)}
+              onBlur={handleCepBlur}
             >
               {(inputProps) => (
                 <TextField
-                  {...inputProps} // Passa as propriedades do InputMask para o TextField
+                  {...inputProps}
                   label="CEP"
                   name="enderecoComercial.cep"
                   fullWidth
@@ -478,7 +427,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           <Grid item xs={12} sm={6} md={3}>
             <TextField
               label="Número"
-              name="enderecoComercial.numero" // Nome correto para alterar dentro do objeto enderecoComercial
+              name="enderecoComercial.numero"
               fullWidth
               value={formData.enderecoComercial.numero || ''}
               onChange={handleChange}
@@ -487,7 +436,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           <Grid item xs={12} sm={6} md={3}>
             <TextField
               label="Complemento"
-              name="enderecoComercial.complemento" // Nome correto para alterar dentro do objeto enderecoComercial
+              name="enderecoComercial.complemento"
               fullWidth
               value={formData.enderecoComercial.complemento || ''}
               onChange={handleChange}
@@ -550,7 +499,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               <Grid item xs={12} sm={4}>
                 <TextField
                   label={`Nome Sócio ${i + 1}`}
-                  name={`socios.${i}.nome`} // Nome ajustado para incluir o índice do sócio
+                  name={`socios.${i}.nome`}
                   fullWidth
                   value={formData.socios[i]?.nome || ''}
                   onChange={handleChange}
@@ -559,7 +508,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               <Grid item xs={12} sm={4}>
                 <TextField
                   label={`CPF Sócio ${i + 1}`}
-                  name={`socios.${i}.cpf`} // Nome ajustado para incluir o índice do sócio
+                  name={`socios.${i}.cpf`}
                   fullWidth
                   value={formData.socios[i]?.cpf || ''}
                   onChange={handleChange}
@@ -568,7 +517,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               <Grid item xs={12} sm={4}>
                 <TextField
                   label={`RG Sócio ${i + 1}`}
-                  name={`socios.${i}.rg`} // Nome ajustado para incluir o índice do sócio
+                  name={`socios.${i}.rg`}
                   fullWidth
                   value={formData.socios[i]?.rg || ''}
                   onChange={handleChange}
@@ -577,7 +526,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               <Grid item xs={12} sm={4}>
                 <TextField
                   label={`CNH Sócio ${i + 1}`}
-                  name={`socios.${i}.cnh`} // Nome ajustado para incluir o índice do sócio
+                  name={`socios.${i}.cnh`}
                   fullWidth
                   value={formData.socios[i]?.cnh || ''}
                   onChange={handleChange}
@@ -586,7 +535,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               <Grid item xs={12} sm={4}>
                 <TextField
                   label={`Endereço Sócio ${i + 1}`}
-                  name={`socios.${i}.endereco`} // Nome ajustado para incluir o índice do sócio
+                  name={`socios.${i}.endereco`}
                   fullWidth
                   value={formData.socios[i]?.endereco || ''}
                   onChange={handleChange}
@@ -595,7 +544,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               <Grid item xs={12} sm={4}>
                 <TextField
                   label={`Profissão Sócio ${i + 1}`}
-                  name={`socios.${i}.profissao`} // Nome ajustado para incluir o índice do sócio
+                  name={`socios.${i}.profissao`}
                   fullWidth
                   value={formData.socios[i]?.profissao || ''}
                   onChange={handleChange}
@@ -605,7 +554,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 <TextField
                   select
                   label={`Estado Civil Sócio ${i + 1}`}
-                  name={`socios.${i}.estadoCivil`} // Nome ajustado para incluir o índice do sócio
+                  name={`socios.${i}.estadoCivil`}
                   fullWidth
                   value={formData.socios[i]?.estadoCivil || ''}
                   onChange={handleChange}
@@ -623,7 +572,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   <TextField
                     select
                     label={`Regime de Bens Sócio ${i + 1}`}
-                    name={`socios.${i}.regimeBens`} // Nome ajustado para incluir o índice do sócio
+                    name={`socios.${i}.regimeBens`}
                     fullWidth
                     value={formData.socios[i]?.regimeBens || ''}
                     onChange={handleChange}
@@ -641,7 +590,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               <Grid item xs={12} sm={6}>
                 <TextField
                   label={`Porcentagem Sócio ${i + 1}`}
-                  name={`socios.${i}.porcentagem`} // Nome ajustado para incluir o índice do sócio
+                  name={`socios.${i}.porcentagem`}
                   fullWidth
                   value={formData.socios[i]?.porcentagem || ''}
                   onChange={handleChange}
@@ -680,7 +629,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
             </React.Fragment>
           ))}
           <Grid item xs={12} sm={6} md={6}>
-            <TextField
+            <NumericFormat
               label="Capital Social"
               customInput={TextField}
               value={formData.capitalSocial}
@@ -734,7 +683,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid item xs={12} sm={6}>
             <NumericFormat
-              label="Valor Mensalidadel"
+              label="Valor Mensalidade"
               name="valorMensalidade"
               customInput={TextField}
               value={formData.valorMensalidade}
@@ -746,29 +695,6 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onValueChange={handleValorMensalidadeChange}
               fullWidth
             />
-          </Grid>
-          <Grid item xs={12} sm={12} md={12}>
-            <TextField
-              select
-              label="Situação da Abertura"
-              name="situacaoAbertura"
-              value={formData.situacaoAbertura || 0}
-              onChange={handleChange}
-              fullWidth
-              required
-            >
-              <MenuItem value={0}>Solicitando Viabilidade</MenuItem>
-              <MenuItem value={1}>Aprovação da Viabilidade</MenuItem>
-              <MenuItem value={2}>Pagamento taxas de registro</MenuItem>
-              <MenuItem value={3}>Assinatura do processo</MenuItem>
-              <MenuItem value={4}>Protocolo do processo</MenuItem>
-              <MenuItem value={5}>Aguardando deferimento</MenuItem>
-              <MenuItem value={6}>Processo deferido</MenuItem>
-              <MenuItem value={7}>Emissão de certificado Digital</MenuItem>
-              <MenuItem value={8}>Início de licenças e alvarás</MenuItem>
-              <MenuItem value={9}>Autorização de NF e Regime de tributação</MenuItem>
-              <MenuItem value={10}>Abertura concluída</MenuItem>
-            </TextField>
           </Grid>
 
           {/* Descrição das Atividades */}
@@ -804,202 +730,193 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               aberturaId={currentAbertura._id}
             />
           </Grid>
-
-          {/* Upload de Documentos */}
         </Grid>
       )}
 
       {activeTab === 1 && (
         <Grid container spacing={2} mt={2}>
           <Grid item xs={12}>
-            <Typography variant="h6">Kickoff</Typography>
+          <TextField
+            multiline
+            rows={4}
+            label="História do Negócio"
+            name="historiaNegocio"
+            fullWidth
+            value={formData.historiaNegocio || ''}
+            onChange={handleChange}
+          />
+        </Grid>
+        <Grid item xs={12} sm={12}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.possuiAtividadeServico || false}
+                onChange={handleChange}
+                name="possuiAtividadeServico"
+              />
+            }
+            label="Possui Atividade de Serviço?"
+          />
+        </Grid>
+        {formData.possuiAtividadeServico && (
+          <Grid item xs={12}>
+            <TextField
+              multiline
+              rows={4}
+              label="Atividade de Serviço"
+              name="atividadeServico"
+              fullWidth
+              value={formData.atividadeServico || ''}
+              onChange={handleChange}
+            />
           </Grid>
-          <Grid item xs={12} sm={12}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  multiline
-                  rows={4}
-                  label="História do Negócio"
-                  name="historiaNegocio"
-                  fullWidth
-                  value={formData.historiaNegocio || ''}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid item xs={12} sm={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.possuiAtividadeServico || false}
-                      onChange={handleChange}
-                      name="possuiAtividadeServico"
-                    />
-                  }
-                  label="Possui Atividade de Serviço?"
-                />
-              </Grid>
-              {formData.possuiAtividadeServico && (
-                <Grid item xs={12}>
-                  <TextField
-                    multiline
-                    rows={4}
-                    label="Atividade de Serviço"
-                    name="atividadeServico"
-                    fullWidth
-                    value={formData.atividadeServico || ''}
-                    onChange={handleChange}
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12} sm={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.possuiAtividadeComercio || false}
-                      onChange={handleChange}
-                      name="possuiAtividadeComercio"
-                    />
-                  }
-                  label="Possui Atividade de Comércio?"
-                />
-              </Grid>
-              {formData.possuiAtividadeComercio && (
-                <Grid item xs={12}>
-                  <TextField
-                    multiline
-                    rows={4}
-                    label="Atividade de Comércio"
-                    name="atividadeComercio"
-                    fullWidth
-                    value={formData.atividadeComercio || ''}
-                    onChange={handleChange}
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12} sm={12}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.possuiMaquinas || false}
-                      onChange={handleChange}
-                      name="possuiMaquinas"
-                    />
-                  }
-                  label="Possui Maquinas no local?"
-                />
-              </Grid>
-              {formData.possuiMaquinas && (
-                <Grid item xs={12}>
-                  <TextField
-                    multiline
-                    rows={4}
-                    label="Quais Maquinas?"
-                    name="maquinas"
-                    fullWidth
-                    value={formData.maquinas || ''}
-                    onChange={handleChange}
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12} sm={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={formData.possuiSistema || false}
-                      onChange={handleChange}
-                      name="possuiSistema"
-                    />
-                  }
-                  label="Possui Sistema?"
-                />
-              </Grid>
-              {formData.possuiSistema && (
-                <Grid item xs={12}>
-                  <TextField
-                    multiline
-                    rows={3}
-                    label="Sistemas Utilizado"
-                    name="sistemaUtilizado"
-                    fullWidth
-                    value={formData.sistemaUtilizado || ''}
-                    onChange={handleChange}
-                  />
-                </Grid>
-              )}
-              <Grid item xs={12}>
-                <TextField
-                  label="URL da Meet Kickoff"
-                  name="urlMeetKickoff"
-                  fullWidth
-                  value={formData.urlMeetKickoff || ''}
-                  onChange={handleChange}
-                />
-              </Grid>
-              {/* Pro Labore */}
-              <Grid item xs={12} sm={6} md={4}>
-                <NumericFormat
-                  label="Pro Labore"
-                  customInput={TextField}
-                  value={formData.proLabore}
-                  thousandSeparator="."
-                  decimalSeparator=","
-                  prefix="R$ "
-                  decimalScale={2}
-                  fixedDecimalScale
-                  onValueChange={({ floatValue }) =>
-                    setFormData((prevData) => ({
-                      ...prevData,
-                      proLabore: floatValue || 0, // Salva como número
-                    }))
-                  }
-                  fullWidth
-                />
-              </Grid>
-
-              {/* Previsão de Faturamento */}
-              <Grid item xs={12} sm={6} md={4}>
-                <NumericFormat
-                  label="Previsão de Faturamento"
-                  customInput={TextField}
-                  value={formData.previsaoFaturamento}
-                  thousandSeparator="."
-                  decimalSeparator=","
-                  prefix="R$ "
-                  decimalScale={2}
-                  fixedDecimalScale
-                  onValueChange={({ floatValue }) =>
-                    setFormData((prevData) => ({
-                      ...prevData,
-                      previsaoFaturamento: floatValue || 0, // Salva como número
-                    }))
-                  }
-                  fullWidth
-                />
-              </Grid>
-
-              {/* Regime Tributário */}
-              <Grid item xs={12} sm={6} md={4}>
-                <TextField
-                  select
-                  label="Regime Tributário"
-                  name="regimeTributario"
-                  fullWidth
-                  value={formData.regimeTributario || ''}
-                  onChange={handleChange}
-                >
-                  <MenuItem value="Simples">Simples</MenuItem>
-                  <MenuItem value="Real">Real</MenuItem>
-                  <MenuItem value="Presumido">Presumido</MenuItem>
-                  <MenuItem value="Simei">Simei</MenuItem>
-                </TextField>
-              </Grid>
-            </Grid>
+        )}
+        <Grid item xs={12} sm={12}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.possuiAtividadeComercio || false}
+                onChange={handleChange}
+                name="possuiAtividadeComercio"
+              />
+            }
+            label="Possui Atividade de Comércio?"
+          />
+        </Grid>
+        {formData.possuiAtividadeComercio && (
+          <Grid item xs={12}>
+            <TextField
+              multiline
+              rows={4}
+              label="Atividade de Comércio"
+              name="atividadeComercio"
+              fullWidth
+              value={formData.atividadeComercio || ''}
+              onChange={handleChange}
+            />
           </Grid>
+        )}
+        <Grid item xs={12} sm={12}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.possuiMaquinas || false}
+                onChange={handleChange}
+                name="possuiMaquinas"
+              />
+            }
+            label="Possui Máquinas no local?"
+          />
+        </Grid>
+        {formData.possuiMaquinas && (
+          <Grid item xs={12}>
+            <TextField
+              multiline
+              rows={4}
+              label="Quais Máquinas?"
+              name="maquinas"
+              fullWidth
+              value={formData.maquinas || ''}
+              onChange={handleChange}
+            />
+          </Grid>
+        )}
+        <Grid item xs={12} sm={12}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.possuiSistema || false}
+                onChange={handleChange}
+                name="possuiSistema"
+              />
+            }
+            label="Possui Sistema?"
+          />
+        </Grid>
+        {formData.possuiSistema && (
+          <Grid item xs={12}>
+            <TextField
+              multiline
+              rows={3}
+              label="Sistemas Utilizado"
+              name="sistemaUtilizado"
+              fullWidth
+              value={formData.sistemaUtilizado || ''}
+              onChange={handleChange}
+            />
+          </Grid>
+        )}
+        <Grid item xs={12}>
+          <TextField
+            label="URL da Meet Kickoff"
+            name="urlMeetKickoff"
+            fullWidth
+            value={formData.urlMeetKickoff || ''}
+            onChange={handleChange}
+          />
+        </Grid>
+        {/* Pro Labore */}
+        <Grid item xs={12} sm={6} md={4}>
+          <NumericFormat
+            label="Pro Labore"
+            customInput={TextField}
+            value={formData.proLabore}
+            thousandSeparator="."
+            decimalSeparator=","
+            prefix="R$ "
+            decimalScale={2}
+            fixedDecimalScale
+            onValueChange={({ floatValue }) =>
+              setFormData((prevData) => ({
+                ...prevData,
+                proLabore: floatValue || 0,
+              }))
+            }
+            fullWidth
+          />
+        </Grid>
+
+        {/* Previsão de Faturamento */}
+        <Grid item xs={12} sm={6} md={4}>
+          <NumericFormat
+            label="Previsão de Faturamento"
+            customInput={TextField}
+            value={formData.previsaoFaturamento}
+            thousandSeparator="."
+            decimalSeparator=","
+            prefix="R$ "
+            decimalScale={2}
+            fixedDecimalScale
+            onValueChange={({ floatValue }) =>
+              setFormData((prevData) => ({
+                ...prevData,
+                previsaoFaturamento: floatValue || 0,
+              }))
+            }
+            fullWidth
+          />
+        </Grid>
+
+        {/* Regime Tributário */}
+        <Grid item xs={12} sm={6} md={4}>
+          <TextField
+            select
+            label="Regime Tributário"
+            name="regimeTributario"
+            fullWidth
+            value={formData.regimeTributario || ''}
+            onChange={handleChange}
+          >
+            <MenuItem value="Simples">Simples</MenuItem>
+            <MenuItem value="Real">Real</MenuItem>
+            <MenuItem value="Presumido">Presumido</MenuItem>
+            <MenuItem value="Simei">Simei</MenuItem>
+          </TextField>
+        </Grid>
         </Grid>
       )}
 
-      <Stack direction="row" spacing={2} sx={{ mt: 3, mb: 3 }} justifyContent="center">
+      <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
         <Button variant="contained" onClick={handleSave} disabled={loading.value}>
           Salvar
         </Button>
@@ -1007,3 +924,4 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
     </Card>
   );
 }
+

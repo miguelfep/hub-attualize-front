@@ -66,8 +66,8 @@ export const ABERTURA_STATUS_OPTIONS = [
   { value: 'Iniciado', label: 'Iniciado' },
   { value: 'em_validacao', label: 'Validação' },
   { value: 'kickoff', label: 'Kickoff' },
-  { value: 'onboarding', label: 'Onboarding' },
   { value: 'em_constituicao', label: 'Em Constituição' },
+  { value: 'onboarding', label: 'Onboarding' },
   { value: 'finalizado', label: 'Finalizado' },
 ];
 

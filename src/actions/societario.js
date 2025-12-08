@@ -332,3 +332,32 @@ export async function aprovarAlteracaoPorId(id, config = {}) {
     throw error;
   }
 }
+
+// Função para enviar mensagem quando mudar a situação da abertura
+export async function enviarMensagemSituacaoAbertura(id, situacaoAbertura, config = {}) {
+  try {
+    const response = await axios.post(
+      `${baseUrl}societario/abertura/situacao/mensagem/${id}`,
+      { situacaoAbertura },
+      config
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao enviar mensagem da situação:", error);
+    throw error;
+  }
+}
+
+// Função para gerar/reenviar acesso do usuário no onboarding
+export async function gerarAcessoUsuario(id, config = {}) {
+  try {
+    const response = await axios.post(
+      `${baseUrl}societario/abertura/gerar-acesso/${id}`,
+      config
+    );
+    return response;
+  } catch (error) {
+    console.error("Erro ao gerar acesso do usuário:", error);
+    throw error;
+  }
+}
