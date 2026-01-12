@@ -290,5 +290,19 @@ export const paths = {
       reformaTributaria: `${ROOTS.CLIENTE}/conteudos/reforma-tributaria`,
     },
     aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
+    onboarding: `${ROOTS.CLIENTE}/onboarding`,
+  },
+  // ONBOARDING ADMIN
+  onboarding: {
+    root: `${ROOTS.DASHBOARD}/onboarding`,
+    new: `${ROOTS.DASHBOARD}/onboarding/new`,
+    edit: (id) => `${ROOTS.DASHBOARD}/onboarding/${id}/edit`,
+    vincular: `${ROOTS.DASHBOARD}/onboarding/vincular`,
+  },
+  // AULAS ADMIN
+  aulas: {
+    root: `${ROOTS.DASHBOARD}/aulas`,
+    new: `${ROOTS.DASHBOARD}/aulas/new`,
+    edit: (id) => `${ROOTS.DASHBOARD}/aulas/${id}/edit`,
   },
 };

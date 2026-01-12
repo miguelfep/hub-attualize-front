@@ -33,22 +33,36 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
   const { updateSettings } = useSettingsContext();
 
   const fetchEmpresas = useCallback(async () => {
+    if (!userId) {
+      setLoadingEmpresas(false);
+      return;
+    }
+
     try {
       setLoadingEmpresas(true);
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/empresas/${userId}`);
       
-      if (response.data.success) {
-        const { empresas: empresasData, empresaAtiva: empresaAtivaData, settings } = response.data.data;
+      if (response?.data?.success) {
+        const { empresas: empresasData, empresaAtiva: empresaAtivaData, settings } = response.data.data || {};
 
         setEmpresas(empresasData || []);
         setEmpresaAtiva(empresaAtivaData);
         if (settings) {
           updateSettings(settings);
         }
+      } else {
+        // Se não tiver success, tenta usar os dados diretamente
+        const empresasData = response?.data?.empresas || [];
+        if (Array.isArray(empresasData) && empresasData.length > 0) {
+          setEmpresas(empresasData);
+        }
       }
     } catch (error) {
-      console.error('Detalhes do erro:', error.response?.data);
-      toast.error('Erro ao carregar empresas');
+      console.error('Erro ao carregar empresas:', error);
+      // Só mostra erro se não for um erro de autenticação ou se o userId estiver disponível
+      if (error.response?.status !== 401 && error.response?.status !== 403) {
+        toast.error('Erro ao carregar empresas');
+      }
     } finally {
       setLoadingEmpresas(false);
     }
@@ -77,13 +91,33 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
       });
 
       if (response.data.success) {
-        const { empresaAtiva: novaAtiva, settings } = response.data.data || {};
+        const { empresaAtiva: novaAtiva, settings, onboarding } = response.data.data || {};
         setEmpresaAtiva(novaAtiva || novaEmpresaId);
         toast.success('Empresa alterada com sucesso!');
         if (settings) {
           updateSettings(settings);
         }
-        if (onEmpresaChange) onEmpresaChange(response.data.data.empresaAtiva);
+        
+        // Trata dados de onboarding se presentes na resposta
+        if (onboarding) {
+          // Se há onboarding pendente na nova empresa, redireciona para onboarding
+          // A API agora retorna precisaFazer e proximoOnboarding
+          if (onboarding.precisaFazer) {
+            console.log('🔄 [TROCAR EMPRESA] Onboarding pendente na nova empresa:', {
+              proximoOnboarding: onboarding.proximoOnboarding,
+              progressoAtual: onboarding.progressoAtual,
+            });
+            
+            // Aguarda um pouco para garantir que o estado foi atualizado
+            setTimeout(() => {
+              router.push('/portal-cliente/onboarding');
+            }, 100);
+            if (onEmpresaChange) onEmpresaChange(response.data.data);
+            return;
+          }
+        }
+        
+        if (onEmpresaChange) onEmpresaChange(response.data.data);
         // Navegação suave mantendo o header
         const currentPath = window.location.pathname;
         if (currentPath.includes('/portal-cliente/clientes/') && !currentPath.endsWith('/clientes')) {

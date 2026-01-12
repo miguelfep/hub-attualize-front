@@ -150,6 +150,32 @@ export const navData = [
         ],
       },
       {
+        title: 'Onboarding',
+        path: paths.onboarding.root,
+        icon: ICONS.course,
+        roles: ['admin', 'operacional'],
+        children: [
+          {
+            title: 'Aulas',
+            path: paths.aulas.root,
+            icon: ICONS.course,
+            roles: ['admin', 'operacional'],
+          },
+          {
+            title: 'Onboardings',
+            path: paths.onboarding.root,
+            icon: ICONS.course,
+            roles: ['admin', 'operacional'],
+          },
+          {
+            title: 'Vincular Cliente',
+            path: paths.onboarding.vincular,
+            icon: ICONS.user,
+            roles: ['admin', 'operacional'],
+          },
+        ],
+      },
+      {
         title: 'Usuários',
         path: paths.dashboard.usuarios.root,
         icon: ICONS.user,

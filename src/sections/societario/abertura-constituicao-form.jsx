@@ -747,29 +747,29 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               fullWidth
             />
           </Grid>
-          <Grid item xs={12} sm={12} md={12}>
-            <TextField
-              select
-              label="Situação da Abertura"
-              name="situacaoAbertura"
+            <Grid item xs={12} sm={12} md={12}>
+              <TextField
+                select
+                label="Situação da Abertura"
+                name="situacaoAbertura"
               value={formData.situacaoAbertura || 0}
-              onChange={handleChange}
-              fullWidth
+                onChange={handleChange}
+                fullWidth
               required
-            >
-              <MenuItem value={0}>Solicitando Viabilidade</MenuItem>
-              <MenuItem value={1}>Aprovação da Viabilidade</MenuItem>
-              <MenuItem value={2}>Pagamento taxas de registro</MenuItem>
-              <MenuItem value={3}>Assinatura do processo</MenuItem>
-              <MenuItem value={4}>Protocolo do processo</MenuItem>
-              <MenuItem value={5}>Aguardando deferimento</MenuItem>
-              <MenuItem value={6}>Processo deferido</MenuItem>
-              <MenuItem value={7}>Emissão de certificado Digital</MenuItem>
+              >
+                <MenuItem value={0}>Solicitando Viabilidade</MenuItem>
+                <MenuItem value={1}>Aprovação da Viabilidade</MenuItem>
+                <MenuItem value={2}>Pagamento taxas de registro</MenuItem>
+                <MenuItem value={3}>Assinatura do processo</MenuItem>
+                <MenuItem value={4}>Protocolo do processo</MenuItem>
+                <MenuItem value={5}>Aguardando deferimento</MenuItem>
+                <MenuItem value={6}>Processo deferido</MenuItem>
+                <MenuItem value={7}>Emissão de certificado Digital</MenuItem>
               <MenuItem value={8}>Início de licenças e alvarás</MenuItem>
-              <MenuItem value={9}>Autorização de NF e Regime de tributação</MenuItem>
+                <MenuItem value={9}>Autorização de NF e Regime de tributação</MenuItem>
               <MenuItem value={10}>Abertura concluída</MenuItem>
-            </TextField>
-          </Grid>
+              </TextField>
+            </Grid>
 
           {/* Descrição das Atividades */}
           <Grid item xs={12} sm={6} md={12}>
