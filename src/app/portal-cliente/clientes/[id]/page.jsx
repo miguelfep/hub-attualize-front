@@ -112,7 +112,7 @@ export default function PortalClienteEditPage({ params }) {
   const router = useRouter();
   const [errors, setErrors] = useState({});
 
-useEffect(() => {
+  useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
@@ -150,7 +150,7 @@ useEffect(() => {
       load();
     }
   }, [clienteProprietarioId, id, router]);
-  
+
   useEffect(() => {
     if (loadedEmpresaId && clienteProprietarioId && loadedEmpresaId !== clienteProprietarioId) {
       router.replace('../../clientes');
@@ -174,7 +174,7 @@ useEffect(() => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       toast.warning('Por favor, preencha os dados corretamente.');
       return;
@@ -192,10 +192,10 @@ useEffect(() => {
       toast.success('Cliente atualizado com sucesso');
       const baseUrlLista = endpoints.portal.clientes.list(clienteProprietarioId);
       mutate(
-      (key) => typeof key === 'string' && key.startsWith(baseUrlLista),
-      undefined,
-      { revalidate: true } 
-    );
+        (key) => typeof key === 'string' && key.startsWith(baseUrlLista),
+        undefined,
+        { revalidate: true }
+      );
       router.push('../../clientes');
     } catch (error) {
       toast.error(error.message || 'Erro ao atualizar cliente');
@@ -234,6 +234,7 @@ useEffect(() => {
   const validateForm = () => {
     const newErrors = {};
     const docDigits = onlyDigits(formData.cpfCnpj);
+    const complemento = formData.endereco?.complemento?.trim() || '';
 
     if (!formData.nome.trim()) newErrors.nome = 'Nome / Nome Fantasia é obrigatório';
     if (formData.tipoPessoa === 'juridica' && !formData.razaoSocial.trim()) {
@@ -250,6 +251,10 @@ useEffect(() => {
       newErrors.email = 'Email é obrigatório';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Formato de email inválido';
+    }
+
+    if (complemento.length > 30) {
+      newErrors.complemento = 'Complemento deve possuir no máximo 30 caracteres';
     }
 
     setErrors(newErrors);
@@ -458,6 +463,8 @@ useEffect(() => {
                         endereco: { ...f.endereco, complemento: e.target.value },
                       }))
                     }
+                    error={!!errors.complemento}
+                    helperText={errors.complemento}
                   />
                 </Grid>
                 <Grid item xs={12} sm={4}>

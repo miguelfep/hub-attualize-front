@@ -8,7 +8,7 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
-import Tooltip from '@mui/material/Tooltip';
+import MenuList from '@mui/material/MenuList';
 import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
@@ -30,6 +30,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { useServicosAdmin } from 'src/actions/servicos-admin';
 
 import { Iconify } from 'src/components/iconify';
+import { usePopover, CustomPopover } from 'src/components/custom-popover';
 import { useTable, TableNoData, TableHeadCustom } from 'src/components/table';
 
 // ----------------------------------------------------------------------
@@ -45,8 +46,14 @@ const TABLE_HEAD = [
 
 // ----------------------------------------------------------------------
 
-function ServicoTableRow({ row, onEdit }) {
+function ServicoTableRow({ row, onEdit, onToggle }) {
   const isActive = row.status === true || row.status === 'true' || row.status === 1;
+  const popover = usePopover();
+
+  const handleEdit = () => {
+    popover.onClose();
+    onEdit();
+  };
 
   return (
     <tr>
@@ -86,11 +93,22 @@ function ServicoTableRow({ row, onEdit }) {
         </Box>
       </td>
       <td style={{ padding: 16, textAlign: 'right' }}>
-        <Tooltip title="Editar">
-          <IconButton onClick={onEdit} color="primary">
-            <Iconify icon="solar:pen-bold" />
-          </IconButton>
-        </Tooltip>
+        <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+          <Iconify icon="eva:more-vertical-fill" />
+        </IconButton>
+        <CustomPopover
+          open={popover.open}
+          anchorEl={popover.anchorEl}
+          onClose={popover.onClose}
+          slotProps={{ arrow: { placement: 'right-top' } }}
+        >
+          <MenuList>
+            <MenuItem onClick={handleEdit}>
+              <Iconify icon="solar:pen-bold" />
+              Editar
+            </MenuItem>
+          </MenuList>
+        </CustomPopover>
       </td>
     </tr>
   );

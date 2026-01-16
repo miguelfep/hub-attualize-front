@@ -13,6 +13,8 @@ import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
 import { alpha, useTheme } from '@mui/material/styles';
 
+import { useResponsive } from 'src/hooks/use-responsive';
+
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { PlanCardSkeleton } from 'src/components/skeleton/PlanSkeleton';
@@ -35,12 +37,13 @@ const PLAN_COLORS = {
 
 function PlanCard({ plan, isCurrent, isUpgrading, onUpgrade }) {
   const theme = useTheme();
+  const isDesktop = useResponsive('up', 'md');
   const color = PLAN_COLORS[plan.subscription] || 'default';
 
   return (
     <Card
       sx={{
-        p: 3,
+        p: isDesktop ? 3 : 2,
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -57,24 +60,31 @@ function PlanCard({ plan, isCurrent, isUpgrading, onUpgrade }) {
       }}
     >
       {isCurrent && (
-        <Label color="success" startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />} sx={{ position: 'absolute', top: 16, right: 16 }}>
+        <Label
+          color="success"
+          startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+          sx={{
+            position: 'absolute',
+            top: isDesktop ? 16 : 12,
+            right: isDesktop ? 16 : 12
+          }}
+        >
           Plano Atual
         </Label>
       )}
 
       <Box sx={{ width: 48, height: 48, mb: 2, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: `${color}.main`, bgcolor: alpha(theme.palette[color].main, 0.08) }}>
-        <Iconify icon={PLAN_ICONS[plan.subscription]} width={28} />
+        <Iconify icon={PLAN_ICONS[plan.subscription]} width={isDesktop ? 28 : 24} />
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-        <Typography variant="h5" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+      <Box sx={{ display: 'flex', alignItems: isDesktop ? 'center' : 'flex-start', gap: 1.5, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', width: '100%' }}>
+        <Typography variant={isDesktop ? 'h5' : 'h6'} sx={{ fontWeight: 'bold', color: 'text.primary', minWidth: 0, wordBreak: 'break-word' }}>
           {plan.name}
         </Typography>
         <Chip
           label={plan.subtitle}
           size="small"
           sx={{
-            ml: 'auto',
             bgcolor: 'action.selected',
             color: 'text.secondary',
             fontWeight: 'medium',
@@ -95,20 +105,22 @@ function PlanCard({ plan, isCurrent, isUpgrading, onUpgrade }) {
       <Stack spacing={1.5} sx={{ flexGrow: 1, mb: 2.5 }}>
         {plan.features.map((feature) => (
           <Stack key={feature} direction="row" alignItems="center" spacing={1.5}>
-            <Iconify icon="eva:checkmark-circle-2-fill" width={16} sx={{ color: 'success.main' }} />
+            <Iconify icon="eva:checkmark-circle-2-fill" width={16} sx={{ color: 'success.main', flexShrink: 0 }} />
             <Typography variant="body2">{feature}</Typography>
           </Stack>
         ))}
       </Stack>
 
-      {!isCurrent ? (
-        <Button variant="contained" color={color} onClick={() => onUpgrade(plan.subscription)} disabled={isUpgrading} startIcon={isUpgrading ? <Iconify icon="eos-icons:loading" /> : null} size="large" fullWidth>
-          {isUpgrading ? 'Redirecionando...' : 'Fazer Upgrade'}
-        </Button>
-      ) : (
-        <Button variant="outlined" color="inherit" size="large" fullWidth disabled>Seu Plano Atual</Button>
-      )}
-    </Card>
+      {
+        !isCurrent ? (
+          <Button variant="contained" color={color} onClick={() => onUpgrade(plan.subscription)} disabled={isUpgrading} startIcon={isUpgrading ? <Iconify icon="eos-icons:loading" /> : null} size="large" fullWidth>
+            {isUpgrading ? 'Redirecionando...' : 'Fazer Upgrade'}
+          </Button>
+        ) : (
+          <Button variant="outlined" color="inherit" size="large" fullWidth disabled>Seu Plano Atual</Button>
+        )
+      }
+    </Card >
   );
 }
 
@@ -120,9 +132,9 @@ export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
 
   const availablePlans = useMemo(() => {
     if (!currentPlan || !planData) return [];
-    
+
     const currentIndex = planOrder.indexOf(currentPlan.subscription);
-    
+
     if (currentIndex === -1) return [];
 
     return planOrder.slice(currentIndex).map((sub) => planData[sub]).filter(Boolean);
@@ -130,30 +142,30 @@ export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
 
   // ALTERAÇÃO PRINCIPAL: A lógica da função foi atualizada
   const handleUpgradePlan = useCallback((planSubscription) => {
-      // Garante que temos os dados necessários
-      if (!currentPlan || planSubscription === currentPlan.subscription) return;
+    // Garante que temos os dados necessários
+    if (!currentPlan || planSubscription === currentPlan.subscription) return;
 
-      setIsUpgrading(true);
+    setIsUpgrading(true);
 
-      const planoAtual = currentPlan.name;
-      const novoPlano = planData[planSubscription]?.name;
+    const planoAtual = currentPlan.name;
+    const novoPlano = planData[planSubscription]?.name;
 
-      if (!novoPlano) {
-          console.error("Dados do novo plano não encontrados!");
-          setIsUpgrading(false);
-          return;
-      }
+    if (!novoPlano) {
+      console.error("Dados do novo plano não encontrados!");
+      setIsUpgrading(false);
+      return;
+    }
 
-      const textoMensagem = `Olá! Vim pelo Portal do Cliente e gostaria de migrar do meu plano "${planoAtual}" para o plano "${novoPlano}".`;
-      
-      const whatsappUrl = `https://wa.me/5541996982267?text=${encodeURIComponent(textoMensagem)}`;
-      
-      window.open(whatsappUrl, '_blank');
+    const textoMensagem = `Olá! Vim pelo Portal do Cliente e gostaria de migrar do meu plano "${planoAtual}" para o plano "${novoPlano}".`;
 
-      setTimeout(() => {
-        setIsUpgrading(false);
-      }, 2500);
-    },
+    const whatsappUrl = `https://wa.me/5541996982267?text=${encodeURIComponent(textoMensagem)}`;
+
+    window.open(whatsappUrl, '_blank');
+
+    setTimeout(() => {
+      setIsUpgrading(false);
+    }, 2500);
+  },
     [currentPlan, planData]
   );
 
@@ -165,16 +177,17 @@ export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
       </Grid>
     ))
   );
-  
+
   return (
     <Card>
       <CardHeader
         title="Seu Plano e Upgrades"
-        titleTypographyProps={{ variant: "h4", fontWeight: 700, color: 'text.primary' }} 
+        titleTypographyProps={{ variant: "h4", fontWeight: 700, color: 'text.primary' }}
         subheader="Confira seu plano atual e as opções disponíveis para crescer"
         sx={{
           p: 4,
           bgcolor: 'background.neutral',
+          width: '100%',
           borderRadius: '16px 16px 0 0',
           background: `linear-gradient(135deg, ${alpha(
             theme.palette.primary.main,
@@ -182,29 +195,29 @@ export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
           )}, ${alpha(theme.palette.secondary.main, 0.1)})`,
         }}
       />
-      <CardContent>
-        <Grid container spacing={3} sx={{ flexWrap: ''}}>
+      <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+        <Grid container spacing={3}>
           {loading
             ? renderSkeletons()
             : availablePlans.map((plan, index) => (
-                <MotionGrid
-                  item
-                  key={plan.subscription}
-                  xs={12}
-                  sm={6}
-                  md={3}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: index * 0.1 }}
-                >
-                  <PlanCard
-                    plan={plan}
-                    isCurrent={plan.subscription === currentPlan?.subscription}
-                    isUpgrading={isUpgrading}
-                    onUpgrade={handleUpgradePlan}
-                  />
-                </MotionGrid>
-              ))}
+              <MotionGrid
+                item
+                key={plan.subscription}
+                xs={12}
+                sm={12}
+                md={4}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+              >
+                <PlanCard
+                  plan={plan}
+                  isCurrent={plan.subscription === currentPlan?.subscription}
+                  isUpgrading={isUpgrading}
+                  onUpgrade={handleUpgradePlan}
+                />
+              </MotionGrid>
+            ))}
         </Grid>
       </CardContent>
     </Card>

@@ -130,6 +130,7 @@ export default function PortalClienteNovoPage() {
   const validateForm = () => {
     const newErrors = {};
     const docDigits = onlyDigits(formData.cpfCnpj);
+    const complemento = formData.endereco?.complemento?.trim() || '';
 
     if (!formData.nome.trim()) newErrors.nome = 'Nome / Nome Fantasia é obrigatório';
     if (formData.tipoPessoa === 'juridica' && !formData.razaoSocial.trim()) {
@@ -146,6 +147,10 @@ export default function PortalClienteNovoPage() {
       newErrors.email = 'Email é obrigatório';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Formato de email inválido';
+    }
+
+    if (complemento.length > 30) {
+      newErrors.complemento = 'Complemento deve possuir no máximo 30 caracteres';
     }
 
     setErrors(newErrors);
@@ -185,19 +190,19 @@ export default function PortalClienteNovoPage() {
         whatsapp: onlyDigits(formData.whatsapp),
         endereco: { ...formData.endereco, cep: onlyDigits(formData.endereco.cep) },
       });
-      
+
       // Verificar se o cliente já existia
       if (res?.jaExistia === true) {
         const existingCliente = res?.cliente;
         const nomeCliente = existingCliente?.nome || existingCliente?.razaoSocial || 'Cliente';
-        
+
         toast.warning(
           `Cliente já existente: ${nomeCliente}. Redirecionando...`,
           {
             duration: 3000,
           }
         );
-        
+
         // Revalidar lista de clientes
         const baseUrlLista = endpoints.portal.clientes.list(clienteProprietarioId);
         mutate(
@@ -205,7 +210,7 @@ export default function PortalClienteNovoPage() {
           undefined,
           { revalidate: true }
         );
-        
+
         // Redirecionar para o cadastro do cliente existente
         setTimeout(() => {
           router.push(`/portal-cliente/clientes/${existingCliente._id}`);
@@ -452,6 +457,8 @@ export default function PortalClienteNovoPage() {
                     fullWidth
                     label="Complemento"
                     value={formData.endereco.complemento}
+                    error={!!errors.complemento}
+                    helperText={errors.complemento}
                     onChange={(e) =>
                       setFormData((f) => ({
                         ...f,
