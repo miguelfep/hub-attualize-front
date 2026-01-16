@@ -183,4 +183,13 @@ export const endpoints = {
     pagamento: (pagamentoId) => `${baseUrl}mercado-pago/pagamento/${pagamentoId}`,
     pagamentosCliente: (clienteId) => `${baseUrl}mercado-pago/cliente/${clienteId}/pagamentos`,
   },
+  // Conciliação Bancária
+  conciliacao: {
+    upload: `${baseUrl}reconciliation/upload`,
+    listar: (clienteId) => `${baseUrl}reconciliation/cliente/${clienteId}`,
+    detalhes: (conciliacaoId) => `${baseUrl}reconciliation/${conciliacaoId}`,
+    confirmar: (conciliacaoId) => `${baseUrl}reconciliation/${conciliacaoId}/confirm`,
+    exportar: (conciliacaoId) => `${baseUrl}reconciliation/${conciliacaoId}/export`,
+    download: (fileName) => `${baseUrl}reconciliation/download/${fileName}`,
+  },
 };

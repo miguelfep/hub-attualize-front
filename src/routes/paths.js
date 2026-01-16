@@ -283,6 +283,7 @@ export const paths = {
     licencas: `${ROOTS.CLIENTE}/licencas`,
     profile: `${ROOTS.CLIENTE}/profile`,
     settings: `${ROOTS.CLIENTE}/settings`,
+    conciliacaoBancaria: `${ROOTS.CLIENTE}/conciliacao-bancaria`,
     conteudos: {
       root: `${ROOTS.CLIENTE}/conteudos`,
       aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
