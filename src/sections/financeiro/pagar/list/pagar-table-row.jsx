@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useState } from 'react';
 import { format } from 'date-fns';
 
@@ -13,21 +14,23 @@ import MenuItem from '@mui/material/MenuItem';
 import TableCell from '@mui/material/TableCell';
 import IconButton from '@mui/material/IconButton';
 
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify'; // Para formatação de datas
-import { fCurrency } from 'src/utils/format-number'; // Formatação de moeda
-import { toast } from 'sonner';
-
-import { usePopover, CustomPopover } from 'src/components/custom-popover'; // Biblioteca de toast para feedback visual
+import { fCurrency } from 'src/utils/format-number';
 import { getCategoriaNome } from 'src/utils/constants/categorias';
 
 import { deletarContaPagarPorId } from 'src/actions/contas';
+
+import { Label } from 'src/components/label';
+import { Iconify } from 'src/components/iconify';
+import { usePopover, CustomPopover } from 'src/components/custom-popover';
+
+import { PagarModalDetails } from '../view/pagar-modal-details';
 
 // ----------------------------------------------------------------------
 
 export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) {
   const popover = usePopover();
   const [confirm, setConfirm] = useState({ open: false, action: null });
+  const [detailsOpen, setDetailsOpen] = useState(false);
 
   // Função para deletar ou outra ação que precise ser realizada na conta
   const handleDeleteConta = async (id) => {
@@ -81,10 +84,14 @@ export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) 
         <Label
           variant="soft"
           color={
-            row.status === 'PAGO' ? 'success' : row.status === 'PENDENTE' ? 'warning' : 'default' // Cor padrão para outros status
+            row.status === 'PAGO' ? 'success' : row.status === 'PENDENTE' ? 'warning' : row.status === 'AGENDADO' ? 'info' : 'default' // Cor padrão para outros status
           }
         >
-          {row.status === 'PAGO' ? 'Pago' : row.status === 'PENDENTE' ? 'Pendente' : row.status}{' '}
+          {row.status === 'PAGO' ? 'Pago' :
+            row.status === 'PENDENTE' ? 'Pendente' :
+              row.status === 'AGENDADO' ? 'Agendado' :
+                row.status === 'CANCELADO' ? 'Cancelado' :
+                  row.status}{' '}
           {/* Exibe o status como está para status desconhecidos */}
         </Label>
       </TableCell>
@@ -114,6 +121,15 @@ export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) 
           {/* Popover para ações adicionais */}
           <CustomPopover open={popover.open} anchorEl={popover.anchorEl} onClose={popover.onClose}>
             <MenuList>
+              <MenuItem
+                onClick={() => {
+                  popover.onClose();
+                  setDetailsOpen(true);
+                }}
+              >
+                <Iconify icon="solar:eye-bold" />
+                Ver Detalhes
+              </MenuItem>
               {/* Ação para deletar conta */}
               <MenuItem
                 onClick={async () => {
@@ -128,6 +144,13 @@ export function ContaPagarTableRow({ row, selected, onSelectRow, fetchContas }) 
           </CustomPopover>
         </Stack>
       </TableCell>
+
+      {/* Modal de Detalhes */}
+      <PagarModalDetails
+        open={detailsOpen}
+        onClose={() => setDetailsOpen(false)}
+        conta={row}
+      />
     </TableRow>
   );
 }
