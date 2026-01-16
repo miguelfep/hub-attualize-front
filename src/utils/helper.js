@@ -133,6 +133,9 @@ export function getMonthName(monthIndex) {
   }
 
 export function toTitleCase(name) {
+  if (!name || typeof name !== 'string') {
+    return '';
+  }
   return name
     .toLowerCase()
     .split(' ')

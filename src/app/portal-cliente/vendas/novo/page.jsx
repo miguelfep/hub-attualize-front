@@ -6,7 +6,7 @@ import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Box, Card, Stack, Button, Dialog, Divider, MenuItem, Checkbox, TextField, Typography, CardContent, DialogTitle, Autocomplete, DialogContent, DialogActions, CircularProgress, FormControlLabel } from '@mui/material';
+import { Box, Card, Stack, Button, Dialog, Tooltip, Divider, MenuItem, Checkbox, TextField, Typography, IconButton, CardContent, DialogTitle, Autocomplete, DialogContent, DialogActions, CircularProgress, FormControlLabel } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -34,9 +34,9 @@ export default function NovoOrcamentoPage() {
   const clienteProprietarioId = empresaAtiva;
   const { podeCriarOrcamentos, settings } = useSettings();
   const router = useRouter();
-  
+
   const emiteNotaRetroativa = settings?.eNotasConfig?.emiteNotaRetroativa === true;
-  
+
   const [naoTemTomador, setNaoTemTomador] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
   const [filtersCli, setFiltersCli] = React.useState({ status: 'true', search: '' });
@@ -226,389 +226,409 @@ export default function NovoOrcamentoPage() {
     }
   };
 
-return (
-  <LazyMotion features={domAnimation}>
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.7 }}
-    >
-      <form onSubmit={handleSubmit}>
-        <Card sx={{ borderRadius: 3 }}>
-          <Box
-            sx={{
-              p: 3,
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: { sm: 'center' },
-              justifyContent: 'space-between',
-              gap: 2,
-              background: `linear-gradient(135deg, ${alpha(
-                theme.palette.primary.main,
-                0.1
-              )}, ${alpha(theme.palette.secondary.main, 0.1)})`,
-            }}
-          >
-            <Stack spacing={0.5}>
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-                Nova Venda
-              </Typography>
-              <Typography variant="body2" sx={{ opacity: 0. }}>
-                Preencha os dados da venda e adicione o item de serviço.
-              </Typography>
-            </Stack>
-            <Stack
-              direction="row"
-              spacing={1.5}
-              alignItems="center"
-              sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}
+  return (
+    <LazyMotion features={domAnimation}>
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7 }}
+      >
+        <form onSubmit={handleSubmit}>
+          <Card sx={{ borderRadius: 3 }}>
+            <Box
+              sx={{
+                p: 3,
+                display: 'flex',
+                flexDirection: { xs: 'column', sm: 'row' },
+                alignItems: { sm: 'center' },
+                justifyContent: 'space-between',
+                gap: 2,
+                background: `linear-gradient(135deg, ${alpha(
+                  theme.palette.primary.main,
+                  0.1
+                )}, ${alpha(theme.palette.secondary.main, 0.1)})`,
+              }}
             >
-              <Button href="../vendas" variant="outlined" color="inherit">
-                Cancelar
-              </Button>
-              <LoadingButton type="submit" variant="contained" loading={saving}>
-                Salvar
-              </LoadingButton>
-            </Stack>
-          </Box>
-
-          <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-            <Stack spacing={3}>
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Dados da Venda
+              <Stack spacing={0.5}>
+                <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                  Nova Venda
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid xs={12} md={6}>
-                    <Autocomplete
-                      disabled={naoTemTomador}
-                      fullWidth
-                      options={Array.isArray(clientes) ? clientes : []}
-                      getOptionLabel={(option) => {
-                        if (!option) return '';
-                        const nome = option.nome || '';
-                        const doc = option.cpfCnpj ? ` - ${option.cpfCnpj}` : '';
-                        return `${nome}${doc}`;
-                      }}
-                      value={clientes?.find((c) => c._id === form.clienteDoClienteId) || null}
-                      onChange={(event, newValue) => {
-                        setForm((f) => ({ ...f, clienteDoClienteId: newValue?._id || '' }));
-                      }}
-                      isOptionEqualToValue={(option, value) => option._id === value._id}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label="Cliente"
-                          placeholder="Digite para buscar o cliente..."
-                        />
-                      )}
-                      noOptionsText="Nenhum cliente encontrado"
-                    />
-                  </Grid>
-                  <Grid xs={12} md={2} sx={{ alignContent: 'end' }}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={naoTemTomador}
-                          onChange={(e) => {
-                            setNaoTemTomador(e.target.checked);
-                            if (e.target.checked) {
-                              setForm((f) => ({ ...f, clienteDoClienteId: '' }));
-                            }
-                          }}
-                          size="small"
-                          sx={{ ml: 0 }}
-                        />
-                      }
-                      label="Não possui Tomador ?"
-                    />
-                  </Grid>
-                  <Grid xs={12} md={4}>
-                    <Button
-                      onClick={() => setOpenNovoCliente(true)}
-                      fullWidth
-                      startIcon={<Iconify icon="solar:user-plus-bold" />}
-                      variant="outlined"
-                      sx={{ height: '100%' }}
-                    >
-                      Novo Cliente
-                    </Button>
-                  </Grid>
-                  <Grid xs={12} md={6}>
-                    <TextField
-                      fullWidth
-                      type="date"
-                      label="Validade"
-                      value={form.dataValidade}
-                      onChange={(e) => setForm((f) => ({ ...f, dataValidade: e.target.value }))}
-                      InputLabelProps={{ shrink: true }}
-                    />
-                  </Grid>
-                  {emiteNotaRetroativa && (
+                <Typography variant="body2" sx={{ opacity: 0. }}>
+                  Preencha os dados da venda e adicione o item de serviço.
+                </Typography>
+              </Stack>
+              <Stack
+                direction="row"
+                spacing={1.5}
+                alignItems="center"
+                sx={{ alignSelf: { xs: 'flex-end', sm: 'center' } }}
+              >
+                <Button href="../vendas" variant="outlined" color="inherit">
+                  Cancelar
+                </Button>
+                <LoadingButton type="submit" variant="contained" loading={saving}>
+                  Salvar
+                </LoadingButton>
+              </Stack>
+            </Box>
+
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Stack spacing={3}>
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Dados da Venda
+                  </Typography>
+                  <Grid container spacing={2}>
                     <Grid xs={12} md={6}>
+                      <Autocomplete
+                        disabled={naoTemTomador}
+                        fullWidth
+                        options={Array.isArray(clientes) ? clientes : []}
+                        getOptionLabel={(option) => {
+                          if (!option) return '';
+                          const nome = option.nome || '';
+                          const doc = option.cpfCnpj ? ` - ${option.cpfCnpj}` : '';
+                          return `${nome}${doc}`;
+                        }}
+                        value={clientes?.find((c) => c._id === form.clienteDoClienteId) || null}
+                        onChange={(event, newValue) => {
+                          setForm((f) => ({ ...f, clienteDoClienteId: newValue?._id || '' }));
+                        }}
+                        isOptionEqualToValue={(option, value) => option._id === value._id}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Cliente"
+                            placeholder="Digite para buscar o cliente..."
+                          />
+                        )}
+                        noOptionsText="Nenhum cliente encontrado"
+                      />
+                    </Grid>
+                    <Grid xs={12} md={2} sx={{ alignContent: 'end' }}>
                       <FormControlLabel
                         control={
                           <Checkbox
-                            checked={notaRetroativa}
+                            checked={naoTemTomador}
                             onChange={(e) => {
-                              setNotaRetroativa(e.target.checked);
-                              // Se desmarcar, reseta para data atual
-                              if (!e.target.checked) {
-                                setDataCompetenciaNota(new Date().toISOString().split('T')[0]);
+                              setNaoTemTomador(e.target.checked);
+                              if (e.target.checked) {
+                                setForm((f) => ({ ...f, clienteDoClienteId: '' }));
                               }
                             }}
+                            size="small"
+                            sx={{ ml: 0 }}
                           />
                         }
-                        label="Nota Retroativa?"
+                        label="Não possui Tomador ?"
                       />
-                      {notaRetroativa && (
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Button
+                        onClick={() => setOpenNovoCliente(true)}
+                        fullWidth
+                        startIcon={<Iconify icon="solar:user-plus-bold" />}
+                        variant="outlined"
+                        sx={{ height: '100%' }}
+                      >
+                        Novo Cliente
+                      </Button>
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <TextField
+                        fullWidth
+                        type="date"
+                        label={
+                          <span style={{ display: 'flex', alignItems: 'center' }}>
+                            Validade
+                            <Tooltip title="Data de validade do orçamento para controle de suas vendas. Não é usada durante a emissão da NFSe.">
+                              <IconButton size="small" sx={{ ml: 1, p: 0.5 }}>
+                                <Iconify width={16} icon="solar:info-circle-linear" />
+                              </IconButton>
+                            </Tooltip>
+                          </span>
+                        }
+                        value={form.dataValidade}
+                        onChange={(e) => setForm((f) => ({ ...f, dataValidade: e.target.value }))}
+                        InputLabelProps={{
+                          shrink: true,
+                        }}
+                      />
+                    </Grid>
+                    {emiteNotaRetroativa && (
+                      <Grid xs={12} md={2} sx={{ display: 'flex', alignItems: 'end', justifyContent: 'flex-start' }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={notaRetroativa}
+                              onChange={(e) => {
+                                setNotaRetroativa(e.target.checked);
+                                // Se desmarcar, reseta para data atual
+                                if (!e.target.checked) {
+                                  setDataCompetenciaNota(new Date().toISOString().split('T')[0]);
+                                }
+                              }}
+                            />
+                          }
+                          label="Nota Retroativa ?"
+                        />
+                      </Grid>
+                    )}
+                    {emiteNotaRetroativa && notaRetroativa && (
+                      <Grid xs={12} md={4}>
                         <TextField
                           fullWidth
                           type="date"
-                          label="Data Competência da Nota"
+                          label={
+                            <span style={{ display: 'flex', alignItems: 'center' }}>
+                              Data Competência da Nota
+                              <Tooltip title="Data de competência para emissão da nota fiscal retroativa">
+                                <IconButton size="small" sx={{ ml: 1, p: 0.5 }}>
+                                  <Iconify width={16} icon="solar:info-circle-linear" />
+                                </IconButton>
+                              </Tooltip>
+                            </span>
+                          }
                           value={dataCompetenciaNota}
                           onChange={(e) => setDataCompetenciaNota(e.target.value)}
                           InputLabelProps={{ shrink: true }}
-                          helperText="Data de competência para emissão da NFSe retroativa"
-                          sx={{ mt: 1 }}
                         />
-                      )}
-                    </Grid>
-                  )}
-                </Grid>
-              </Box>
-
-              <Divider />
-
-              <Box>
-                <Stack
-                  direction="row"
-                  alignItems="center"
-                  justifyContent="space-between"
-                  sx={{ mb: 2 }}
-                >
-                  <Typography variant="h6">Item do Serviço</Typography>
-                  <Button
-                    onClick={addItem}
-                    startIcon={<Iconify icon="solar:add-circle-bold" />}
-                    disabled={itens.length >= 1}
-                  >
-                    Adicionar Item
-                  </Button>
-                </Stack>
-                <Stack spacing={3}>
-                  {itens.map((it, i) => (
-                    <Box key={i} >
-                      <Grid container spacing={2}>
-                        <Grid xs={12}>
-                          <TextField fullWidth select label="Serviço" value={it.servicoId} onChange={(e) => handleServicoChange(i, e.target.value)}>
-                            <MenuItem value=""><em>Selecione</em></MenuItem>
-                            {(servicos || []).map((s) => (<MenuItem key={s._id} value={s._id}>{s.nome}</MenuItem>))}
-                          </TextField>
-                        </Grid>
-                        <Grid xs={12}>
-                          <TextField fullWidth label="Descrição" value={it.descricao} onChange={(e) => setItemField(i, 'descricao', e.target.value)} />
-                        </Grid>
-                        <Grid xs={6} sm={4} md={3}>
-                          <TextField fullWidth type="number" label="Qtd" value={it.quantidade} onChange={(e) => setItemField(i, 'quantidade', Number(e.target.value))} />
-                        </Grid>
-                        <Grid xs={6} sm={4} md={3}>
-                          <TextField fullWidth label="Vlr Unit" value={it.valorUnitarioText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, valorUnitario: value, valorUnitarioText: text } : item))); }} />
-                        </Grid>
-                        <Grid xs={12} sm={4} md={3}>
-                          <TextField fullWidth label="Desconto" value={it.descontoText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, desconto: value, descontoText: text } : item))); }} />
-                        </Grid>
-                        <Grid xs={12} md={3} sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Button color="error" onClick={() => rmItem(i)} startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}>Remover</Button>
-                        </Grid>
                       </Grid>
-                    </Box>
-                  ))}
-                  {itens.length === 0 && (
-                     <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>Nenhum item adicionado.</Typography>
-                  )}
-                </Stack>
-              </Box>
-              
-              <Divider />
+                    )}
+                  </Grid>
+                </Box>
 
-              <Box>
-                <Typography variant="h6" sx={{ mb: 2 }}>
-                  Observações e Totais
-                </Typography>
-                <Grid container spacing={2}>
-                  <Grid xs={12} md={6}>
-                    <TextField fullWidth multiline minRows={3} label="Observações" value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} />
-                  </Grid>
-                  <Grid xs={12} md={6}>
-                    <TextField fullWidth multiline minRows={3} label="Condições de Pagamento" value={form.condicoesPagamento} onChange={(e) => setForm((f) => ({ ...f, condicoesPagamento: e.target.value }))} />
-                  </Grid>
-                  <Grid xs={12}>
-                    <Stack spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-end' }} sx={{ mt: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
-                      <Typography variant="body1">Subtotal: <strong>{fCurrency(subtotal)}</strong></Typography>
-                      <Typography variant="h6">Total: <strong>{fCurrency(total)}</strong></Typography>
-                    </Stack>
-                  </Grid>
-                </Grid>
-              </Box>
-            </Stack>
-          </CardContent>
-        </Card>
-      </form>
+                <Divider />
 
-      <Dialog open={openNovoCliente} onClose={() => setOpenNovoCliente(false)} fullWidth maxWidth="md">
-        <DialogTitle>Novo Cliente</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid xs={12}>
-              <TextField fullWidth label="Nome" value={quickCli.nome} onChange={(e) => setQuickCli((q) => ({ ...q, nome: e.target.value }))} error={!!errors.nome} helperText={errors.nome} />
+                <Box>
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    justifyContent="space-between"
+                    sx={{ mb: 2 }}
+                  >
+                    <Typography variant="h6">Item do Serviço</Typography>
+                    <Button
+                      onClick={addItem}
+                      startIcon={<Iconify icon="solar:add-circle-bold" />}
+                      disabled={itens.length >= 1}
+                    >
+                      Adicionar Item
+                    </Button>
+                  </Stack>
+                  <Stack spacing={3}>
+                    {itens.map((it, i) => (
+                      <Box key={i} >
+                        <Grid container spacing={2}>
+                          <Grid xs={12}>
+                            <TextField fullWidth select label="Serviço" value={it.servicoId} onChange={(e) => handleServicoChange(i, e.target.value)}>
+                              <MenuItem value=""><em>Selecione</em></MenuItem>
+                              {(servicos || []).map((s) => (<MenuItem key={s._id} value={s._id}>{s.nome}</MenuItem>))}
+                            </TextField>
+                          </Grid>
+                          <Grid xs={12}>
+                            <TextField fullWidth label="Descrição" value={it.descricao} onChange={(e) => setItemField(i, 'descricao', e.target.value)} />
+                          </Grid>
+                          <Grid xs={6} sm={4} md={3}>
+                            <TextField fullWidth type="number" label="Qtd" value={it.quantidade} onChange={(e) => setItemField(i, 'quantidade', Number(e.target.value))} />
+                          </Grid>
+                          <Grid xs={6} sm={4} md={3}>
+                            <TextField fullWidth label="Vlr Unit" value={it.valorUnitarioText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, valorUnitario: value, valorUnitarioText: text } : item))); }} />
+                          </Grid>
+                          <Grid xs={12} sm={4} md={3}>
+                            <TextField fullWidth label="Desconto" value={it.descontoText} onChange={(e) => { const { value, text } = formatBRLInput(e.target.value); setItens((arr) => arr.map((item, idx) => (idx === i ? { ...item, desconto: value, descontoText: text } : item))); }} />
+                          </Grid>
+                          <Grid xs={12} md={3} sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Button color="error" onClick={() => rmItem(i)} startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}>Remover</Button>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    ))}
+                    {itens.length === 0 && (
+                      <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', py: 2 }}>Nenhum item adicionado.</Typography>
+                    )}
+                  </Stack>
+                </Box>
+
+                <Divider />
+
+                <Box>
+                  <Typography variant="h6" sx={{ mb: 2 }}>
+                    Observações e Totais
+                  </Typography>
+                  <Grid container spacing={2}>
+                    <Grid xs={12} md={6}>
+                      <TextField fullWidth multiline minRows={3} label="Observações" value={form.observacoes} onChange={(e) => setForm((f) => ({ ...f, observacoes: e.target.value }))} />
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <TextField fullWidth multiline minRows={3} label="Condições de Pagamento" value={form.condicoesPagamento} onChange={(e) => setForm((f) => ({ ...f, condicoesPagamento: e.target.value }))} />
+                    </Grid>
+                    <Grid xs={12}>
+                      <Stack spacing={1} alignItems={{ xs: 'stretch', sm: 'flex-end' }} sx={{ mt: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
+                        <Typography variant="body1">Subtotal: <strong>{fCurrency(subtotal)}</strong></Typography>
+                        <Typography variant="h6">Total: <strong>{fCurrency(total)}</strong></Typography>
+                      </Stack>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </Stack>
+            </CardContent>
+          </Card>
+        </form>
+
+        <Dialog open={openNovoCliente} onClose={() => setOpenNovoCliente(false)} fullWidth maxWidth="md">
+          <DialogTitle>Novo Cliente</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid xs={12}>
+                <TextField fullWidth label="Nome" value={quickCli.nome} onChange={(e) => setQuickCli((q) => ({ ...q, nome: e.target.value }))} error={!!errors.nome} helperText={errors.nome} />
+              </Grid>
+              <Grid xs={12}>
+                <TextField fullWidth label="CPF/CNPJ" value={quickCli.doc} onChange={(e) => setQuickCli((q) => ({ ...q, doc: formatCPFOrCNPJ(e.target.value) }))} error={!!errors.doc} helperText={errors.doc} />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField fullWidth label="Email" value={quickCli.email} onChange={(e) => setQuickCli((q) => ({ ...q, email: e.target.value }))} error={!!errors.email} helperText={errors.email} />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField fullWidth label="Telefone" value={quickCli.telefone} onChange={(e) => setQuickCli((q) => ({ ...q, telefone: formatPhone(e.target.value) }))} />
+              </Grid>
+              <Grid xs={12} sm={4}>
+                <TextField fullWidth label="CEP" value={quickCli.endereco.cep} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cep: formatCEP(e.target.value) } }))} onBlur={handleQuickCepBlur} InputProps={{ endAdornment: fetchingCep ? <CircularProgress size={20} /> : null }} />
+              </Grid>
+              <Grid xs={12} sm={8}>
+                <TextField fullWidth disabled={fetchingCep} label="Rua" value={quickCli.endereco.rua} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, rua: e.target.value } }))} />
+              </Grid>
+              <Grid xs={12} sm={3}>
+                <TextField fullWidth label="Número" value={quickCli.endereco.numero} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, numero: e.target.value } }))} />
+              </Grid>
+              <Grid xs={12} sm={5}>
+                <TextField fullWidth label="Complemento" value={quickCli.endereco.complemento} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, complemento: e.target.value } }))} />
+              </Grid>
+              <Grid xs={12} sm={4}>
+                <TextField fullWidth disabled={fetchingCep} label="Bairro" value={quickCli.endereco.bairro} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, bairro: e.target.value } }))} />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField fullWidth disabled={fetchingCep} label="Cidade" value={quickCli.endereco.cidade} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cidade: e.target.value } }))} />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField fullWidth disabled={fetchingCep} label="Estado" value={quickCli.endereco.estado} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, estado: e.target.value } }))} />
+              </Grid>
             </Grid>
-            <Grid xs={12}>
-              <TextField fullWidth label="CPF/CNPJ" value={quickCli.doc} onChange={(e) => setQuickCli((q) => ({ ...q, doc: formatCPFOrCNPJ(e.target.value) }))} error={!!errors.doc} helperText={errors.doc} />
-            </Grid>
-            <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Email" value={quickCli.email} onChange={(e) => setQuickCli((q) => ({ ...q, email: e.target.value }))} error={!!errors.email} helperText={errors.email} />
-            </Grid>
-            <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Telefone" value={quickCli.telefone} onChange={(e) => setQuickCli((q) => ({ ...q, telefone: formatPhone(e.target.value) }))} />
-            </Grid>
-            <Grid xs={12} sm={4}>
-              <TextField fullWidth label="CEP" value={quickCli.endereco.cep} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cep: formatCEP(e.target.value) } }))} onBlur={handleQuickCepBlur} InputProps={{ endAdornment: fetchingCep ? <CircularProgress size={20} /> : null }}/>
-            </Grid>
-            <Grid xs={12} sm={8}>
-              <TextField fullWidth disabled={fetchingCep}label="Rua" value={quickCli.endereco.rua} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, rua: e.target.value } }))} />
-            </Grid>
-            <Grid xs={12} sm={3}>
-              <TextField fullWidth label="Número" value={quickCli.endereco.numero} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, numero: e.target.value } }))} />
-            </Grid>
-            <Grid xs={12} sm={5}>
-              <TextField fullWidth label="Complemento" value={quickCli.endereco.complemento} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, complemento: e.target.value } }))} />
-            </Grid>
-            <Grid xs={12} sm={4}>
-              <TextField fullWidth disabled={fetchingCep} label="Bairro" value={quickCli.endereco.bairro} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, bairro: e.target.value } }))} />
-            </Grid>
-            <Grid xs={12} sm={6}>
-              <TextField fullWidth disabled={fetchingCep} label="Cidade" value={quickCli.endereco.cidade} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cidade: e.target.value } }))} />
-            </Grid>
-            <Grid xs={12} sm={6}>
-              <TextField fullWidth disabled={fetchingCep} label="Estado" value={quickCli.endereco.estado} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, estado: e.target.value } }))} />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal}>Cancelar</Button>
-          <Button onClick={async () => {
-            if (!validateForm()) {
-              toast.warning('Preencha todos os campos');
-              return;
-            }
-            try {
-              const docDigits = onlyDigits(quickCli.doc);
-              const payload = {
-                clienteProprietarioId,
-                tipoPessoa: docDigits.length > 11 ? 'juridica' : 'fisica',
-                nome: quickCli.nome,
-                cpfCnpj: docDigits,
-                email: quickCli.email,
-                telefone: onlyDigits(quickCli.telefone),
-                endereco: {
-                  ...quickCli.endereco,
-                  cep: onlyDigits(quickCli.endereco.cep),
-                },
-              };
-              const res = await portalCreateCliente(payload);
-              
-              // Verificar se o cliente já existia
-              if (res?.jaExistia === true) {
-                toast.info('Cliente já existe! Selecionado automaticamente na venda.');
-                const existingCliente = res?.cliente;
-                const clienteId = existingCliente?._id;
-                
-                if (clienteId) {
-                  // Atualizar lista de clientes para incluir o existente se não estiver
-                  await mutateClientes();
-                  // Setar automaticamente na venda
-                  setForm((f) => ({ ...f, clienteDoClienteId: clienteId }));
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={handleCloseModal}>Cancelar</Button>
+            <Button onClick={async () => {
+              if (!validateForm()) {
+                toast.warning('Preencha todos os campos');
+                return;
+              }
+              try {
+                const docDigits = onlyDigits(quickCli.doc);
+                const payload = {
+                  clienteProprietarioId,
+                  tipoPessoa: docDigits.length > 11 ? 'juridica' : 'fisica',
+                  nome: quickCli.nome,
+                  cpfCnpj: docDigits,
+                  email: quickCli.email,
+                  telefone: onlyDigits(quickCli.telefone),
+                  endereco: {
+                    ...quickCli.endereco,
+                    cep: onlyDigits(quickCli.endereco.cep),
+                  },
+                };
+                const res = await portalCreateCliente(payload);
+
+                // Verificar se o cliente já existia
+                if (res?.jaExistia === true) {
+                  toast.info('Cliente já existe! Selecionado automaticamente na venda.');
+                  const existingCliente = res?.cliente;
+                  const clienteId = existingCliente?._id;
+
+                  if (clienteId) {
+                    // Atualizar lista de clientes para incluir o existente se não estiver
+                    await mutateClientes();
+                    // Setar automaticamente na venda
+                    setForm((f) => ({ ...f, clienteDoClienteId: clienteId }));
+                  }
+                } else {
+                  // Cliente criado com sucesso
+                  toast.success('Cliente criado com sucesso!');
+                  const newId = res?._id || res?.data?._id;
+
+                  if (newId) {
+                    // otimista: adiciona novo cliente na lista
+                    const optimistic = {
+                      _id: newId,
+                      nome: payload.nome,
+                      cpfCnpj: quickCli.doc,
+                      email: payload.email,
+                      telefone: quickCli.telefone
+                    };
+                    await mutateClientes((prev) => (Array.isArray(prev) ? [...prev, optimistic] : [optimistic]), false);
+                    setForm((f) => ({ ...f, clienteDoClienteId: newId }));
+                  }
+                  mutateClientes();
                 }
-              } else {
-                // Cliente criado com sucesso
-                toast.success('Cliente criado com sucesso!');
-                const newId = res?._id || res?.data?._id;
-                
-                if (newId) {
-                  // otimista: adiciona novo cliente na lista
-                  const optimistic = { 
-                    _id: newId, 
-                    nome: payload.nome, 
-                    cpfCnpj: quickCli.doc, 
-                    email: payload.email, 
-                    telefone: quickCli.telefone 
-                  };
-                  await mutateClientes((prev) => (Array.isArray(prev) ? [...prev, optimistic] : [optimistic]), false);
-                  setForm((f) => ({ ...f, clienteDoClienteId: newId }));
-                }
-                mutateClientes();
-              }
-              
-              setQuickCli(initialState);
-              setOpenNovoCliente(false);
-            } catch (err) {
-              const errorMessage = err.response?.data?.message || 'Erro ao criar cliente. Tente novamente.';
-              toast.error(errorMessage);
-            }
-          }} variant="contained">Salvar</Button>
-        </DialogActions>
-      </Dialog>
 
-      <Dialog open={openNovoServico} onClose={() => setOpenNovoServico(false)} fullWidth maxWidth="sm">
-        <DialogTitle>Novo Serviço</DialogTitle>
-        <DialogContent>
-          <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid xs={12}>
-              <TextField fullWidth label="Nome" id="qs-nome"/>
-            </Grid>
-            <Grid xs={12}>
-              <TextField fullWidth label="Descrição" id="qs-descricao" />
-            </Grid>
-            <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Valor" id="qs-valor" />
-            </Grid>
-            <Grid xs={12} sm={6}>
-              <TextField fullWidth label="Unidade" id="qs-unidade" defaultValue="UN" />
-            </Grid>
-          </Grid>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenNovoServico(false)}>Cancelar</Button>
-          <Button onClick={async () => {
-            try {
-              const nome = document.getElementById('qs-nome').value;
-              const descricao = document.getElementById('qs-descricao').value;
-              const valorMask = document.getElementById('qs-valor').value;
-              const { value: valor } = formatBRLInput(valorMask);
-              const unidade = document.getElementById('qs-unidade').value;
-              const payload = { clienteProprietarioId, nome, descricao, valor, unidade };
-              const res = await portalCreateServico(payload);
-              toast.success('Serviço criado');
-              setOpenNovoServico(false);
-              const novoId = res?._id || res?.data?._id;
-              if (novoId) {
-                // otimista: adiciona na lista de serviços
-                const optimistic = { _id: novoId, nome, descricao, valor, unidade };
-                await mutateServicos((prev) => (Array.isArray(prev) ? [...prev, optimistic] : [optimistic]), false);
+                setQuickCli(initialState);
+                setOpenNovoCliente(false);
+              } catch (err) {
+                const errorMessage = err.response?.data?.message || 'Erro ao criar cliente. Tente novamente.';
+                toast.error(errorMessage);
               }
-              mutateServicos();
-              if (novoId) {
-                setItens((arr) => [...arr, { servicoId: novoId, quantidade: 1, valorUnitario: valor, valorUnitarioText: fCurrency(valor), desconto: 0, descontoText: fCurrency(0), descricao }]);
+            }} variant="contained">Salvar</Button>
+          </DialogActions>
+        </Dialog>
+
+        <Dialog open={openNovoServico} onClose={() => setOpenNovoServico(false)} fullWidth maxWidth="sm">
+          <DialogTitle>Novo Serviço</DialogTitle>
+          <DialogContent>
+            <Grid container spacing={2} sx={{ mt: 1 }}>
+              <Grid xs={12}>
+                <TextField fullWidth label="Nome" id="qs-nome" />
+              </Grid>
+              <Grid xs={12}>
+                <TextField fullWidth label="Descrição" id="qs-descricao" />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField fullWidth label="Valor" id="qs-valor" />
+              </Grid>
+              <Grid xs={12} sm={6}>
+                <TextField fullWidth label="Unidade" id="qs-unidade" defaultValue="UN" />
+              </Grid>
+            </Grid>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setOpenNovoServico(false)}>Cancelar</Button>
+            <Button onClick={async () => {
+              try {
+                const nome = document.getElementById('qs-nome').value;
+                const descricao = document.getElementById('qs-descricao').value;
+                const valorMask = document.getElementById('qs-valor').value;
+                const { value: valor } = formatBRLInput(valorMask);
+                const unidade = document.getElementById('qs-unidade').value;
+                const payload = { clienteProprietarioId, nome, descricao, valor, unidade };
+                const res = await portalCreateServico(payload);
+                toast.success('Serviço criado');
+                setOpenNovoServico(false);
+                const novoId = res?._id || res?.data?._id;
+                if (novoId) {
+                  // otimista: adiciona na lista de serviços
+                  const optimistic = { _id: novoId, nome, descricao, valor, unidade };
+                  await mutateServicos((prev) => (Array.isArray(prev) ? [...prev, optimistic] : [optimistic]), false);
+                }
+                mutateServicos();
+                if (novoId) {
+                  setItens((arr) => [...arr, { servicoId: novoId, quantidade: 1, valorUnitario: valor, valorUnitarioText: fCurrency(valor), desconto: 0, descontoText: fCurrency(0), descricao }]);
+                }
+              } catch (err) {
+                toast.error('Erro ao criar serviço');
               }
-            } catch (err) {
-              toast.error('Erro ao criar serviço');
-            }
-          }} variant="contained">Salvar</Button>
-        </DialogActions>
-      </Dialog>
-     </motion.div>
-    </LazyMotion>
+            }} variant="contained">Salvar</Button>
+          </DialogActions>
+        </Dialog>
+      </motion.div>
+    </LazyMotion >
   );
 }
 

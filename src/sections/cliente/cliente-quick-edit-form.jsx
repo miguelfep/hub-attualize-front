@@ -230,7 +230,7 @@ export function ClienteQuickEditForm({ currentUser, open, onClose, onUpdate }) {
             </Field.Select>
             <Field.Text name="nome" label="Nome Completo" />
             <Field.Text name="email" label="Email" />
-            <Field.Text name="whatsapp" label="Telefone" />
+            <Field.Phone name="whatsapp" label="Telefone" />
             <Field.Text name="cnpj" label="CNPJ" />
             <Field.Text name="cep" label="CEP" value={cepValue} onChange={handleCepChange} />
             <Field.Text

@@ -55,14 +55,25 @@ export function ClienteTableRow({
         <TableCell padding="checkbox">
           <Checkbox id={row.id} checked={selected} onClick={onSelectRow} />
         </TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.codigo}</TableCell>
+        <TableCell sx={{ whiteSpace: 'nowrap', minWidth: 80 }}>{row.codigo}</TableCell>
 
-        <TableCell>
+        <TableCell sx={{ minWidth: 200, maxWidth: 300 }}>
           <Stack spacing={2} direction="row" alignItems="center">
             <Avatar alt={row.nome} src={row.avatarUrl} />
 
-            <Stack sx={{ typography: 'body2', flex: '1 1 auto', alignItems: 'flex-start' }}>
-              <Link color="inherit" onClick={onEditRow} sx={{ cursor: 'pointer' }}>
+            <Stack sx={{ typography: 'body2', flex: '1 1 auto', alignItems: 'flex-start', minWidth: 0 }}>
+              <Link
+                color="inherit"
+                onClick={onEditRow}
+                sx={{
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
+                  display: 'block'
+                }}
+              >
                 {row.nome}
                 {row.clienteVip && (
                   <Iconify
@@ -73,13 +84,34 @@ export function ClienteTableRow({
                   />
                 )}
               </Link>
-              <Box component="span" sx={{ color: 'text.disabled' }}>
+              <Box
+                component="span"
+                sx={{
+                  color: 'text.disabled',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  maxWidth: '100%',
+                  display: 'block'
+                }}
+              >
                 {row.email}
               </Box>
             </Stack>
           </Stack>
         </TableCell>
-        <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.razaoSocial}</TableCell>
+        <TableCell sx={{ minWidth: 200, maxWidth: 300 }}>
+          <Box
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              maxWidth: '100%',
+            }}
+          >
+            {row.razaoSocial}
+          </Box>
+        </TableCell>
         <TableCell>
           <Label
             variant="soft"

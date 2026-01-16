@@ -153,7 +153,12 @@ export function ClienteListView() {
   const handleFilterStatus = useCallback(
     (event, newValue) => {
       table.onResetPage();
-      filters.setState({ status: newValue });
+
+      let statusValue = newValue;
+      if (newValue === 'active' || newValue === true) statusValue = true;
+      if (newValue === 'inactive' || newValue === false) statusValue = false;
+
+      filters.setState({ status: statusValue });
     },
     [filters, table]
   );
@@ -183,7 +188,11 @@ export function ClienteListView() {
 
         <Card>
           <Tabs
-            value={filters.state.status}
+            value={
+              filters.state.status === true ? 'active' :
+                filters.state.status === false ? 'inactive' :
+                  filters.state.status
+            }
             onChange={handleFilterStatus}
             sx={{
               px: 2.5,
@@ -191,38 +200,42 @@ export function ClienteListView() {
                 `inset 0 -2px 0 0 ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}`,
             }}
           >
-            {CLIENTE_STATUS_OPTIONS.map((tab) => (
-              <Tab
-                key={tab.value}
-                iconPosition="end"
-                value={tab.value}
-                label={tab.label}
-                icon={
-                  <Label
-                    variant={
-                      ((tab.value === 'all' || tab.value === filters.state.status) && 'filled') ||
-                      'soft'
-                    }
-                    color={
-                      (tab.value === true && 'success') ||
-                      (tab.value === false && 'warning') ||
-                      (tab.value === 'lead' && 'info') ||
-                      'default'
-                    }
-                  >
-                    {tab.value === 'all'
-                      ? tableData.length
-                      : tab.value === 'lead'
-                        ? tableData.filter((user) => user.tipoContato === 'lead').length
-                        : tab.value === true
-                          ? tableData.filter(
-                              (user) => user.status === true && user.tipoContato !== 'lead'
-                            ).length // Contagem correta para Ativos
-                          : tableData.filter((user) => user.status === false).length}
-                  </Label>
-                }
-              />
-            ))}
+            {CLIENTE_STATUS_OPTIONS.map((tab) => {
+              const currentStatus =
+                filters.state.status === true ? 'active' :
+                  filters.state.status === false ? 'inactive' :
+                    filters.state.status;
+
+              const isSelected = tab.value === currentStatus;
+
+              return (
+                <Tab
+                  key={tab.value}
+                  iconPosition="end"
+                  value={tab.value}
+                  label={tab.label}
+                  icon={
+                    <Label
+                      variant={isSelected ? 'filled' : 'soft'}
+                      color={
+                        (tab.value === 'active' && 'success') ||
+                        (tab.value === 'inactive' && 'warning') ||
+                        (tab.value === 'lead' && 'info') ||
+                        'default'
+                      }
+                    >
+                      {tab.value === 'all'
+                        ? tableData.length
+                        : tab.value === 'lead'
+                          ? tableData.filter((user) => user.tipoContato === 'lead').length
+                          : tab.value === 'active'
+                            ? tableData.filter((user) => user.status === true && user.tipoContato !== 'lead').length
+                            : tableData.filter((user) => user.status === false).length}
+                    </Label>
+                  }
+                />
+              );
+            })}
           </Tabs>
           <ClienteTableToolbar
             filters={filters}
@@ -238,7 +251,17 @@ export function ClienteListView() {
             />
           )}
 
-          <Box sx={{ position: 'relative' }}>
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              overflow: 'hidden',
+              minHeight: 600,
+              height: 600,
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+          >
             <TableSelectedAction
               dense={table.dense}
               numSelected={table.selected.length}
@@ -258,51 +281,60 @@ export function ClienteListView() {
               }
             />
 
-            <Scrollbar>
-              <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-                <TableHeadCustom
-                  order={table.order}
-                  orderBy={table.orderBy}
-                  headLabel={TABLE_HEAD}
-                  rowCount={dataFiltered.length}
-                  numSelected={table.selected.length}
-                  onSort={table.onSort}
-                  onSelectAllRows={(checked) =>
-                    table.onSelectAllRows(
-                      checked,
-                      dataFiltered.map((row) => row.id)
-                    )
-                  }
-                />
-
-                <TableBody>
-                  {dataFiltered
-                    .slice(
-                      table.page * table.rowsPerPage,
-                      table.page * table.rowsPerPage + table.rowsPerPage
-                    )
-                    .map((row) => (
-                      <ClienteTableRow
-                        key={row._id}
-                        row={row}
-                        selected={table.selected.includes(row._id)}
-                        onSelectRow={() => table.onSelectRow(row._id)}
-                        onDeleteRow={() => handleDeleteRow(row._id)}
-                        onActivateRow={() => handleActivateRow(row._id)}
-                        onEditRow={() => handleEditRow(row._id)}
-                        onUpdate={fetchClientes}
-                      />
-                    ))}
-
-                  <TableEmptyRows
-                    height={table.dense ? 56 : 56 + 20}
-                    emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+              <Scrollbar sx={{ width: '100%', maxWidth: '100%', height: '100%' }}>
+                <Table
+                  size={table.dense ? 'small' : 'medium'}
+                  sx={{
+                    minWidth: 960,
+                    tableLayout: 'auto',
+                    width: '100%',
+                  }}
+                >
+                  <TableHeadCustom
+                    order={table.order}
+                    orderBy={table.orderBy}
+                    headLabel={TABLE_HEAD}
+                    rowCount={dataFiltered.length}
+                    numSelected={table.selected.length}
+                    onSort={table.onSort}
+                    onSelectAllRows={(checked) =>
+                      table.onSelectAllRows(
+                        checked,
+                        dataFiltered.map((row) => row.id)
+                      )
+                    }
                   />
 
-                  <TableNoData notFound={notFound} />
-                </TableBody>
-              </Table>
-            </Scrollbar>
+                  <TableBody>
+                    {dataFiltered
+                      .slice(
+                        table.page * table.rowsPerPage,
+                        table.page * table.rowsPerPage + table.rowsPerPage
+                      )
+                      .map((row) => (
+                        <ClienteTableRow
+                          key={row._id}
+                          row={row}
+                          selected={table.selected.includes(row._id)}
+                          onSelectRow={() => table.onSelectRow(row._id)}
+                          onDeleteRow={() => handleDeleteRow(row._id)}
+                          onActivateRow={() => handleActivateRow(row._id)}
+                          onEditRow={() => handleEditRow(row._id)}
+                          onUpdate={fetchClientes}
+                        />
+                      ))}
+
+                    <TableEmptyRows
+                      height={table.dense ? 56 : 56 + 20}
+                      emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
+                    />
+
+                    <TableNoData notFound={notFound} />
+                  </TableBody>
+                </Table>
+              </Scrollbar>
+            </Box>
           </Box>
 
           <TablePaginationCustom
@@ -371,11 +403,10 @@ function applyFilter({ inputData, comparator, filters }) {
   if (status !== 'all') {
     if (status === 'lead') {
       inputData = inputData.filter((user) => user.tipoContato === 'lead');
-    } else if (status === true) {
+    } else if (status === true || status === 'active') {
       inputData = inputData.filter((user) => user.status === true && user.tipoContato !== 'lead');
-    } else {
-      const isActive = status === true;
-      inputData = inputData.filter((user) => user.status === isActive);
+    } else if (status === false || status === 'inactive') {
+      inputData = inputData.filter((user) => user.status === false);
     }
   }
 

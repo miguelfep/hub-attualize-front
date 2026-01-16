@@ -5,8 +5,6 @@ import 'dayjs/locale/pt-br';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Tab from '@mui/material/Tab';
-import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
@@ -14,8 +12,8 @@ import Button from '@mui/material/Button';
 import { IconButton } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import TableBody from '@mui/material/TableBody';
-import { useTheme } from '@mui/material/styles';
-import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { alpha, useTheme } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -61,6 +59,21 @@ const TABLE_HEAD = [
   { id: '', label: '' },
 ];
 
+const STATUS_OPTIONS = [
+  { value: 'all', label: 'Todos', color: 'default' },
+  { value: 'PAGO', label: 'Pagos', color: 'success' },
+  { value: 'PENDENTE', label: 'Pendentes', color: 'warning' },
+  { value: 'AGENDADO', label: 'Agendados', color: 'info' },
+  { value: 'CANCELADO', label: 'Cancelados', color: 'text.secondary' },
+  { value: 'a_pagar', label: 'A Pagar', color: 'error' },
+];
+
+const TIPO_OPTIONS = [
+  { value: 'all', label: 'Todos', color: 'default' },
+  { value: 'AVULSA', label: 'Avulsas', color: 'primary' },
+  { value: 'RECORRENTE', label: 'Recorrentes', color: 'secondary' },
+];
+
 // ----------------------------------------------------------------------
 
 export function ContasPagarListView() {
@@ -74,6 +87,7 @@ export function ContasPagarListView() {
   const [filters, setFilters] = useState({
     descricao: '',
     status: 'all',
+    tipo: 'all',
     startDate: dayjs().startOf('month'),
     endDate: dayjs().endOf('month'),
   });
@@ -152,9 +166,27 @@ export function ContasPagarListView() {
     setFilters({ ...filters, [field]: newValue });
   };
 
-  const handleFilterStatus = (event, newValue) => {
+  const handleFilterStatus = (newValue) => {
     table.onResetPage();
     setFilters({ ...filters, status: newValue });
+  };
+
+  const handleFilterTipo = (newValue) => {
+    table.onResetPage();
+    setFilters({ ...filters, tipo: newValue });
+  };
+
+  const getStatusCount = (status) => {
+    if (status === 'all') return tableData.length;
+    if (status === 'a_pagar') {
+      return tableData.filter((d) => d.status === 'PENDENTE' || d.status === 'AGENDADO').length;
+    }
+    return tableData.filter((d) => d.status === status).length;
+  };
+
+  const getTipoCount = (tipo) => {
+    if (tipo === 'all') return tableData.length;
+    return tableData.filter((d) => d.tipo === tipo).length;
   };
 
   const handleChangePage = (event, newPage) => {
@@ -167,13 +199,36 @@ export function ContasPagarListView() {
   };
 
   const dataFiltered = tableData
-    .filter((row) => row.descricao.toLowerCase().includes(filters.descricao.toLowerCase()))
+    .filter((row) => {
+      const searchTerm = filters.descricao.toLowerCase().trim();
+      if (!searchTerm) return true;
+
+      const matchDescricao = row.descricao?.toLowerCase().includes(searchTerm);
+
+      const matchNome = row.nome?.toLowerCase().includes(searchTerm);
+
+      let matchValor = false;
+      if (row.valor !== undefined && row.valor !== null) {
+        const valorStr = String(row.valor).replace(/[.,\s]/g, '');
+
+        const searchTermNumeric = searchTerm.replace(/[^\d]/g, '');
+
+        if (searchTermNumeric) {
+          matchValor = valorStr.includes(searchTermNumeric);
+        }
+      }
+
+      return matchDescricao || matchNome || matchValor;
+    })
     .filter((row) =>
       filters.status === 'all'
         ? true
         : filters.status === 'a_pagar'
           ? ['PENDENTE', 'AGENDADO'].includes(row.status)
           : row.status === filters.status
+    )
+    .filter((row) =>
+      filters.tipo === 'all' ? true : row.tipo === filters.tipo
     );
 
   const dataInPage = rowInPage(dataFiltered, page, rowsPerPage);
@@ -254,39 +309,126 @@ export function ContasPagarListView() {
         </Scrollbar>
       </Card>
 
+      {/* Card de Filtros */}
       <Card sx={{ mb: 3 }}>
-        <Tabs value={filters.status} onChange={handleFilterStatus} sx={{ px: 2.5 }}>
-          <Tab value="all" label="Todos" />
-          <Tab value="PAGO" label="Pagos" />
-          <Tab value="PENDENTE" label="Pendentes" />
-          <Tab value="AGENDADO" label="Agendado" />
-          <Tab value="a_pagar" label="A Pagar" /> {/* Novo filtro */}
-        </Tabs>
-      </Card>
+        <Stack spacing={2.5} sx={{ p: 2.5 }}>
+          {/* Filtro de Período - Compacto */}
+          <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+            <IconButton
+              onClick={handlePreviousMonth}
+              size="small"
+              sx={{
+                border: `1px solid ${alpha(theme.palette.grey[500], 0.32)}`,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.grey[500], 0.08),
+                }
+              }}
+            >
+              <Iconify icon="mingcute:arrow-left-fill" width={18} />
+            </IconButton>
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+              <DatePicker
+                label="Data Inicial"
+                value={filters.startDate}
+                onChange={handleDateChange('startDate')}
+                slotProps={{ textField: { size: 'small', sx: { width: 160 } } }}
+              />
+              <DatePicker
+                label="Data Final"
+                value={filters.endDate}
+                onChange={handleDateChange('endDate')}
+                slotProps={{ textField: { size: 'small', sx: { width: 160 } } }}
+              />
+            </LocalizationProvider>
+            <IconButton
+              onClick={handleNextMonth}
+              size="small"
+              sx={{
+                border: `1px solid ${alpha(theme.palette.grey[500], 0.32)}`,
+                '&:hover': {
+                  bgcolor: alpha(theme.palette.grey[500], 0.08),
+                }
+              }}
+            >
+              <Iconify icon="mingcute:arrow-right-fill" width={18} />
+            </IconButton>
+          </Stack>
 
-      {/* Adicionando botões de avanço e retrocesso */}
-      <Stack direction="row" spacing={2} sx={{ p: 2.5 }}>
-        <IconButton onClick={handlePreviousMonth}>
-          <Iconify icon="mingcute:arrow-left-fill" />
-        </IconButton>
-        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-          <DatePicker
-            label="Data Inicial"
-            value={filters.startDate}
-            onChange={handleDateChange('startDate')}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-          />
-          <DatePicker
-            label="Data Final"
-            value={filters.endDate}
-            onChange={handleDateChange('endDate')}
-            renderInput={(params) => <TextField {...params} fullWidth />}
-          />
-        </LocalizationProvider>
-        <IconButton onClick={handleNextMonth}>
-          <Iconify icon="mingcute:arrow-right-fill" />
-        </IconButton>
-      </Stack>
+          <Divider sx={{ borderStyle: 'dashed' }} />
+
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }}>
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="caption" sx={{ mb: 1, fontSize: '13px', display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                Filtrar por Status:
+              </Typography>
+              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                {STATUS_OPTIONS.map((option) => {
+                  const count = getStatusCount(option.value);
+                  const isActive = filters.status === option.value;
+
+                  return (
+                    <Button
+                      key={option.value}
+                      size="small"
+                      variant={isActive ? 'contained' : 'outlined'}
+                      onClick={() => handleFilterStatus(option.value)}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1.5,
+                        py: 0.5,
+                        fontSize: '0.75rem',
+                        borderColor: isActive ? undefined : alpha(theme.palette.grey[500], 0.32),
+                        color: isActive ? 'white' : 'text.secondary',
+                        bgcolor: isActive ? `${option.color}.main` : 'transparent',
+                        '&:hover': {
+                          bgcolor: isActive ? `${option.color}.dark` : alpha(theme.palette.grey[500], 0.08),
+                        },
+                      }}
+                    >
+                      {option.label} <Box component="span" sx={{ ml: 0.5, opacity: 0.9 }}>({count})</Box>
+                    </Button>
+                  );
+                })}
+              </Stack>
+            </Box>
+
+            <Box sx={{ flex: { xs: 1, md: '0 0 auto' }, minWidth: { xs: 0, md: 200 } }}>
+              <Typography variant="caption" sx={{ mb: 1, fontSize: '13px', display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                Filtrar por Tipo:
+              </Typography>
+              <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+                {TIPO_OPTIONS.map((option) => {
+                  const count = getTipoCount(option.value);
+                  const isActive = filters.tipo === option.value;
+
+                  return (
+                    <Button
+                      key={option.value}
+                      size="small"
+                      variant={isActive ? 'contained' : 'outlined'}
+                      onClick={() => handleFilterTipo(option.value)}
+                      sx={{
+                        minWidth: 'auto',
+                        px: 1.5,
+                        py: 0.5,
+                        fontSize: '0.75rem',
+                        borderColor: isActive ? undefined : alpha(theme.palette.grey[500], 0.32),
+                        color: isActive ? 'white' : 'text.secondary',
+                        bgcolor: isActive ? `${option.color}.main` : 'transparent',
+                        '&:hover': {
+                          bgcolor: isActive ? `${option.color}.dark` : alpha(theme.palette.grey[500], 0.08),
+                        },
+                      }}
+                    >
+                      {option.label} <Box component="span" sx={{ ml: 0.5, opacity: 0.9 }}>({count})</Box>
+                    </Button>
+                  );
+                })}
+              </Stack>
+            </Box>
+          </Stack>
+        </Stack>
+      </Card>
       <ReceberTableToolbar
         filters={filters}
         setFilters={setFilters}

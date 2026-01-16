@@ -5,17 +5,27 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
+import Chip from '@mui/material/Chip';
 import Card from '@mui/material/Card';
+import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
+import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
+import Checkbox from '@mui/material/Checkbox';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
+import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CardContent from '@mui/material/CardContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import FormControl from '@mui/material/FormControl';
+import ListItemText from '@mui/material/ListItemText';
 import { alpha, useTheme } from '@mui/material/styles';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -24,9 +34,9 @@ import { paths } from 'src/routes/paths';
 import { formatCNAE } from 'src/utils/formatter';
 import { fCurrency } from 'src/utils/format-number';
 
-import { getClienteById } from 'src/actions/clientes';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { updateServicoAdmin, getServicoAdminById } from 'src/actions/servicos-admin';
+import { getClienteById, useGetAllClientes } from 'src/actions/clientes';
+import { createServicoAdmin, updateServicoAdmin, getServicoAdminById } from 'src/actions/servicos-admin';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -88,7 +98,18 @@ export default function EditarServicoAdminPage() {
     status: true,
   });
 
-  // Carregar dados do serviço e cliente
+  // Estados para duplicação
+  const [duplicarModalOpen, setDuplicarModalOpen] = useState(false);
+  const [empresasSelecionadas, setEmpresasSelecionadas] = useState([]);
+  const [duplicando, setDuplicando] = useState(false);
+
+  const { data: todasEmpresas, isLoading: loadingEmpresas } = useGetAllClientes({
+    status: true,
+    tipoContato: 'cliente',
+  });
+
+  const empresasDisponiveis = todasEmpresas?.filter((empresa) => empresa._id !== clienteId) || [];
+
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -145,12 +166,12 @@ export default function EditarServicoAdminPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!form.nome?.trim()) {
       toast.warning('O nome do serviço é obrigatório');
       return;
     }
-    
+
     if (form.valor <= 0) {
       toast.warning('O valor deve ser maior que zero');
       return;
@@ -173,24 +194,79 @@ export default function EditarServicoAdminPage() {
       };
 
       await updateServicoAdmin(servicoId, payload);
-      
+
       toast.success('Serviço atualizado com sucesso!');
-      
+
       // Voltar para a página de serviços com o cliente selecionado
       const returnClienteId = searchParams.get('returnClienteId') || clienteId;
       router.push(`${paths.dashboard.servicos}?clienteId=${returnClienteId}`);
     } catch (error) {
       console.error('Erro ao salvar:', error);
-      
+
       // Extrair mensagem de erro da resposta da API
-      const errorMessage = 
-        error?.response?.data?.message || 
-        error?.message || 
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
         'Erro ao atualizar serviço';
-      
+
       toast.error(errorMessage);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAbrirModalDuplicar = () => {
+    setDuplicarModalOpen(true);
+    setEmpresasSelecionadas([]);
+  };
+
+  const handleFecharModalDuplicar = () => {
+    setDuplicarModalOpen(false);
+    setEmpresasSelecionadas([]);
+  };
+
+  const handleDuplicarServico = async () => {
+    if (empresasSelecionadas.length === 0) {
+      toast.warning('Selecione pelo menos uma empresa');
+      return;
+    }
+
+    try {
+      setDuplicando(true);
+
+      const payload = {
+        nome: form.nome.trim(),
+        descricao: form.descricao?.trim() || '',
+        valor: form.valor,
+        unidade: form.unidade,
+        categoria: form.categoria?.trim() || '',
+        cnae: form.cnae?.trim() || '',
+        codigoServicoMunicipio: form.codigoServicoMunicipio?.trim() || '',
+        itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
+        status: form.status,
+      };
+
+      // Criar serviço para cada empresa selecionada
+      const promises = empresasSelecionadas.map((empresaId) =>
+        createServicoAdmin({
+          ...payload,
+          clienteProprietarioId: empresaId,
+        })
+      );
+
+      await Promise.all(promises);
+
+      toast.success(`Serviço duplicado com sucesso para ${empresasSelecionadas.length} empresa(s)!`);
+      handleFecharModalDuplicar();
+    } catch (error) {
+      console.error('Erro ao duplicar serviço:', error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Erro ao duplicar serviço';
+      toast.error(errorMessage);
+    } finally {
+      setDuplicando(false);
     }
   };
 
@@ -215,7 +291,7 @@ export default function EditarServicoAdminPage() {
             Voltar
           </Button>
         </Stack>
-        
+
         <Typography variant="h4" sx={{ mb: 0.5 }}>
           Editar Serviço
         </Typography>
@@ -341,7 +417,7 @@ export default function EditarServicoAdminPage() {
                     icon="solar:settings-bold-duotone"
                     title="Status"
                   />
-                  
+
                   <TextField
                     select
                     fullWidth
@@ -380,10 +456,275 @@ export default function EditarServicoAdminPage() {
                   </Stack>
                 </CardContent>
               </Card>
+
+              <Card
+                sx={{
+                  background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(theme.palette.primary.dark, 0.04)} 100%)`,
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Stack spacing={2}>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Box
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '50%',
+                          bgcolor: alpha(theme.palette.primary.main, 0.12),
+                        }}
+                      >
+                        <Iconify icon="solar:copy-bold-duotone" width={24} color="primary.main" />
+                      </Box>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                          Duplicar Serviço
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          Copiar para outras empresas
+                        </Typography>
+                      </Box>
+                    </Stack>
+
+                    <Typography variant="body2" color="text.secondary">
+                      Selecione uma ou mais empresas para criar uma cópia deste serviço
+                    </Typography>
+
+                    <Button
+                      fullWidth
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      startIcon={<Iconify icon="solar:copy-bold" />}
+                      onClick={handleAbrirModalDuplicar}
+                      sx={{
+                        mt: 1,
+                        boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.24)}`,
+                        '&:hover': {
+                          boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.32)}`,
+                        },
+                      }}
+                    >
+                      Duplicar Serviço
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
             </Stack>
           </Grid>
         </Grid>
       </form>
+
+      <Dialog
+        open={duplicarModalOpen}
+        onClose={handleFecharModalDuplicar}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+          },
+        }}
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                borderRadius: '50%',
+                bgcolor: alpha(theme.palette.primary.main, 0.12),
+              }}
+            >
+              <Iconify icon="solar:copy-bold-duotone" width={24} color="primary.main" />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Duplicar Serviço
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Selecione as empresas para criar uma cópia deste serviço
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent dividers sx={{ pt: 3 }}>
+          <Stack spacing={3}>
+            <Box
+              sx={{
+                p: 2,
+                borderRadius: 1,
+                bgcolor: alpha(theme.palette.info.main, 0.08),
+                border: `1px solid ${alpha(theme.palette.info.main, 0.16)}`,
+              }}
+            >
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <Iconify icon="solar:info-circle-bold" width={20} sx={{ color: 'info.main', mt: 0.25 }} />
+                <Typography variant="body2" color="text.secondary">
+                  O serviço <strong>&quot;{form.nome}&quot;</strong> será duplicado com todas as informações para as empresas selecionadas.
+                </Typography>
+              </Stack>
+            </Box>
+
+            {loadingEmpresas ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', py: 6 }}>
+                <Stack spacing={2} alignItems="center">
+                  <CircularProgress />
+                  <Typography variant="body2" color="text.secondary">
+                    Carregando empresas...
+                  </Typography>
+                </Stack>
+              </Box>
+            ) : empresasDisponiveis.length === 0 ? (
+              <Box sx={{ py: 4, textAlign: 'center' }}>
+                <Iconify icon="solar:buildings-bold-duotone" width={64} sx={{ color: 'text.disabled', mb: 2 }} />
+                <Typography variant="h6" color="text.secondary" gutterBottom>
+                  Nenhuma empresa disponível
+                </Typography>
+                <Typography variant="body2" color="text.disabled">
+                  Não há outras empresas cadastradas no sistema
+                </Typography>
+              </Box>
+            ) : (
+              <FormControl fullWidth>
+                <InputLabel id="empresas-select-label">Selecione as empresas</InputLabel>
+                <Select
+                  labelId="empresas-select-label"
+                  multiple
+                  label="Selecione as empresas"
+                  value={empresasSelecionadas}
+                  onChange={(e) => setEmpresasSelecionadas(e.target.value)}
+                  renderValue={(selected) => {
+                    if (selected.length === 0) {
+                      return (
+                        <Typography variant="body2" color="text.disabled">
+                          Selecione uma ou mais empresas
+                        </Typography>
+                      );
+                    }
+                    if (selected.length === 1) {
+                      const empresa = empresasDisponiveis.find((e) => e._id === selected[0]);
+                      return empresa?.razaoSocial || empresa?.nomeFantasia || empresa?.email || selected[0];
+                    }
+                    return (
+                      <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                        <Typography variant="body2" color="primary.main" fontWeight={600}>
+                          {selected.length} empresa{selected.length > 1 ? 's' : ''} selecionada{selected.length > 1 ? 's' : ''}
+                        </Typography>
+                      </Box>
+                    );
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      sx: {
+                        maxHeight: 400,
+                        '& .MuiMenuItem-root': {
+                          py: 1.5,
+                        },
+                      },
+                    },
+                  }}
+                >
+                  {empresasDisponiveis.map((empresa) => (
+                    <MenuItem key={empresa._id} value={empresa._id}>
+                      <Checkbox
+                        checked={empresasSelecionadas.indexOf(empresa._id) > -1}
+                        sx={{ mr: 1.5 }}
+                      />
+                      <ListItemText
+                        primary={
+                          <Typography variant="subtitle2" fontWeight={600}>
+                            {empresa.razaoSocial || empresa.nomeFantasia || empresa.email || 'Sem nome'}
+                          </Typography>
+                        }
+                        secondary={
+                          empresa.cnpj ? (
+                            <Typography variant="caption" color="text.secondary">
+                              CNPJ: {empresa.cnpj}
+                            </Typography>
+                          ) : null
+                        }
+                      />
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            )}
+
+            {empresasSelecionadas.length > 0 && !loadingEmpresas && (
+              <Box
+                sx={{
+                  mt: 1,
+                  p: 2,
+                  borderRadius: 1,
+                  bgcolor: alpha(theme.palette.primary.main, 0.04),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                }}
+              >
+                <Stack spacing={1.5}>
+                  <Typography variant="subtitle2" fontWeight={600} color="primary.main">
+                    Empresas selecionadas ({empresasSelecionadas.length}):
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 1,
+                    }}
+                  >
+                    {empresasSelecionadas.map((empresaId) => {
+                      const empresa = empresasDisponiveis.find((e) => e._id === empresaId);
+                      if (!empresa) return null;
+                      const nomeEmpresa = empresa.razaoSocial || empresa.nomeFantasia || empresa.email || 'Sem nome';
+                      return (
+                        <Chip
+                          key={empresaId}
+                          label={nomeEmpresa}
+                          size="small"
+                          sx={{
+                            bgcolor: alpha(theme.palette.primary.main, 0.12),
+                            color: 'primary.darker',
+                            fontWeight: 500,
+                            '& .MuiChip-label': {
+                              px: 1.5,
+                            },
+                          }}
+                        />
+                      );
+                    })}
+                  </Box>
+                </Stack>
+              </Box>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 2.5, pt: 2 }}>
+          <Button onClick={handleFecharModalDuplicar} color="inherit" size="large">
+            Cancelar
+          </Button>
+          <LoadingButton
+            variant="contained"
+            onClick={handleDuplicarServico}
+            loading={duplicando}
+            disabled={empresasSelecionadas.length === 0 || loadingEmpresas}
+            startIcon={<Iconify icon="solar:check-circle-bold" />}
+            size="large"
+            sx={{
+              minWidth: 140,
+            }}
+          >
+            {duplicando ? 'Duplicando...' : `Duplicar${empresasSelecionadas.length > 0 ? ` (${empresasSelecionadas.length})` : ''}`}
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
     </DashboardContent>
   );
 }

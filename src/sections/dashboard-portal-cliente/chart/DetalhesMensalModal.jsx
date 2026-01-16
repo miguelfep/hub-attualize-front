@@ -53,13 +53,16 @@ function GraficoAreaNotas({ notas, onDayClick }) {
     }
 
     const dailyData = notas.reduce((acc, nota) => {
+      if (!nota?.dataEmissao) return acc;
+
       const day = dayjs(nota.dataEmissao).date();
+      if (!day || Number.isNaN(day)) return acc;
 
       if (!acc[day]) {
         acc[day] = { total: 0, count: 0 };
       }
 
-      acc[day].total += nota.valorTotal;
+      acc[day].total += Number(nota.valorTotal) || 0;
       acc[day].count += 1;
       return acc;
     }, {});
@@ -80,8 +83,8 @@ function GraficoAreaNotas({ notas, onDayClick }) {
     chart: {
       events: {
         markerClick: (event, chartContext, { dataPointIndex }) => {
-          const data = chartData.seriesData; 
-          
+          const data = chartData.seriesData;
+
           if (dataPointIndex >= 0 && data[dataPointIndex] && onDayClick) {
             const day = data[dataPointIndex].x;
             onDayClick(day);
@@ -306,22 +309,22 @@ function ModalLoadingState() {
 function ErrorState({ onRetry }) {
   return (
     <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-      <Box 
-        display="flex" 
-        flexDirection="column" 
-        justifyContent="center" 
-        alignItems="center" 
+      <Box
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
         sx={{ height: 400, textAlign: 'center', p: 3 }}
       >
-        <Iconify icon="solar:danger-triangle-bold-duotone" width={80} sx={{ color: 'error.main', mb: 2 }}/>
+        <Iconify icon="solar:danger-triangle-bold-duotone" width={80} sx={{ color: 'error.main', mb: 2 }} />
         <Typography variant="h6">Falha ao carregar</Typography>
         <Typography color="text.secondary" sx={{ mb: 3 }}>
           Ocorreu um erro ao tentar buscar os dados.
         </Typography>
         <Button
-          variant="contained" 
+          variant="contained"
           color="primary"
-          onClick={onRetry} 
+          onClick={onRetry}
           startIcon={<Iconify icon="solar:refresh-circle-bold" />}
         >
           Tentar Novamente
@@ -333,7 +336,7 @@ function ErrorState({ onRetry }) {
 
 function NotaRow({ nota }) {
   const theme = useTheme();
-  
+
   return (
     <m.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
       <Paper
@@ -360,7 +363,7 @@ function NotaRow({ nota }) {
             top: 0,
             bottom: 0,
             width: 4,
-            backgroundColor: getStatusColor(nota.status, theme),
+            backgroundColor: getStatusColor(nota?.status, theme),
           },
         }}
       >
@@ -368,13 +371,13 @@ function NotaRow({ nota }) {
           <Iconify
             icon="solar:document-bold-duotone"
             width={24}
-            sx={{ 
-              color: 'primary.main', 
+            sx={{
+              color: 'primary.main',
               flexShrink: 0,
-              mt: 0.5 
+              mt: 0.5
             }}
           />
-          
+
           <Stack spacing={1.5} sx={{ flexGrow: 1, minWidth: 0 }}>
             <Stack direction="row" alignItems="center" spacing={1.5}>
               <Iconify
@@ -382,12 +385,12 @@ function NotaRow({ nota }) {
                 width={18}
                 sx={{ color: 'text.secondary', flexShrink: 0 }}
               />
-              <Typography 
-                variant="subtitle1" 
-                sx={{ 
+              <Typography
+                variant="subtitle1"
+                sx={{
                   fontWeight: 600,
                   color: 'text.primary'
-                }} 
+                }}
                 noWrap
               >
                 {toTitleCase(nota?.tomador?.nome) || 'N/A'}
@@ -396,20 +399,20 @@ function NotaRow({ nota }) {
 
             <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} spacing={1}>
               <Chip
-                label={`NF: ${nota.numeroNota || 'N/A'}`}
+                label={`NF: ${nota?.numeroNota || 'N/A'}`}
                 variant="outlined"
                 size="small"
-                sx={{ 
+                sx={{
                   height: 24,
                   fontSize: '0.75rem',
-                  fontWeight: 600 
+                  fontWeight: 600
                 }}
               />
-              
+
               <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
                 <Iconify icon="solar:calendar-bold-duotone" width={14} />
                 <Typography variant="caption" fontWeight={500}>
-                  {dayjs(nota.dataEmissao).format('DD/MM/YYYY')}
+                  {nota?.dataEmissao ? dayjs(nota.dataEmissao).format('DD/MM/YYYY') : 'N/A'}
                 </Typography>
               </Stack>
             </Stack>
@@ -418,10 +421,10 @@ function NotaRow({ nota }) {
               <Typography variant="caption" color="text.secondary" fontWeight={500}>
                 SERVIÇOS:
               </Typography>
-              <Typography 
-                variant="body2" 
+              <Typography
+                variant="body2"
                 color="text.primary"
-                sx={{ 
+                sx={{
                   mt: 0.5,
                   display: '-webkit-box',
                   WebkitLineClamp: 2,
@@ -430,33 +433,33 @@ function NotaRow({ nota }) {
                   lineHeight: 1.4
                 }}
               >
-                {nota.servicos.map((s) => s.descricao).join(', ')}
+                {(nota.servicos || []).map((s) => s?.descricao || '').filter(Boolean).join(', ') || 'N/A'}
               </Typography>
             </Box>
           </Stack>
         </Box>
 
-        <Stack 
-          direction="column" 
-          alignItems="flex-end" 
-          sx={{ 
+        <Stack
+          direction="column"
+          alignItems="flex-end"
+          sx={{
             flexShrink: 0,
             textAlign: 'right'
-          }} 
+          }}
           spacing={1}
         >
-          <Typography 
-            variant="h6" 
-            fontWeight={800} 
+          <Typography
+            variant="h6"
+            fontWeight={800}
             color="primary.main"
-            sx={{ 
+            sx={{
               fontSize: { xs: '1rem', sm: '1.25rem' },
               lineHeight: 1.2
             }}
           >
-            {formatToCurrency(nota.valorTotal)}
+            {formatToCurrency(nota?.valorTotal || 0)}
           </Typography>
-          <StatusChip status={nota.status} />
+          <StatusChip status={nota?.status} />
         </Stack>
       </Paper>
     </m.div>
@@ -465,7 +468,7 @@ function NotaRow({ nota }) {
 
 function NotaRowMobile({ nota }) {
   const theme = useTheme();
-  
+
   return (
     <m.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
       <Paper
@@ -491,7 +494,7 @@ function NotaRowMobile({ nota }) {
             top: 0,
             bottom: 0,
             width: 3,
-            backgroundColor: getStatusColor(nota.status, theme),
+            backgroundColor: getStatusColor(nota?.status, theme),
           },
         }}
       >
@@ -500,46 +503,46 @@ function NotaRowMobile({ nota }) {
             <Iconify
               icon="solar:document-bold-duotone"
               width={20}
-              sx={{ 
-                color: 'primary.main', 
+              sx={{
+                color: 'primary.main',
                 flexShrink: 0,
                 mt: 0.25
               }}
             />
             <Stack spacing={0.5} sx={{ minWidth: 0 }}>
-              <Typography 
-                variant="subtitle2" 
-                sx={{ 
+              <Typography
+                variant="subtitle2"
+                sx={{
                   fontWeight: 600,
                   color: 'text.primary'
-                }} 
+                }}
                 noWrap
               >
                 {toTitleCase(nota?.tomador?.nome) || 'N/A'}
               </Typography>
-              
+
               <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
                 <Iconify icon="solar:calendar-bold-duotone" width={14} />
                 <Typography variant="caption" fontWeight={500}>
-                  {dayjs(nota.dataEmissao).format('DD/MM/YYYY')}
+                  {nota?.dataEmissao ? dayjs(nota.dataEmissao).format('DD/MM/YYYY') : 'N/A'}
                 </Typography>
               </Stack>
             </Stack>
           </Stack>
-          
+
           <Stack alignItems="flex-end" spacing={0.5}>
-            <Typography 
-              variant="h6" 
-              fontWeight={800} 
+            <Typography
+              variant="h6"
+              fontWeight={800}
               color="primary.main"
-              sx={{ 
+              sx={{
                 fontSize: '1.1rem',
                 lineHeight: 1.2
               }}
             >
-              {formatToCurrency(nota.valorTotal)}
+              {formatToCurrency(nota?.valorTotal || 0)}
             </Typography>
-            <StatusChip status={nota.status} />
+            <StatusChip status={nota?.status} />
           </Stack>
         </Stack>
 
@@ -548,22 +551,22 @@ function NotaRowMobile({ nota }) {
             label={`NF: ${nota.numeroNota || 'N/A'}`}
             variant="outlined"
             size="small"
-            sx={{ 
+            sx={{
               height: 24,
               fontSize: '0.75rem',
               fontWeight: 600,
               alignSelf: 'flex-start'
             }}
           />
-          
+
           <Box>
             <Typography variant="caption" color="text.secondary" fontWeight={500}>
               SERVIÇOS:
             </Typography>
-            <Typography 
-              variant="body2" 
+            <Typography
+              variant="body2"
               color="text.primary"
-              sx={{ 
+              sx={{
                 mt: 0.5,
                 display: '-webkit-box',
                 WebkitLineClamp: 2,
@@ -577,16 +580,16 @@ function NotaRowMobile({ nota }) {
           </Box>
         </Stack>
 
-        <Divider sx={{ 
+        <Divider sx={{
           borderStyle: 'dashed',
           borderColor: 'grey.300'
         }} />
 
         <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
           <Typography variant="caption" color="text.secondary">
-            {nota.servicos.length} serviço{nota.servicos.length !== 1 ? 's' : ''}
+            {(nota.servicos || []).length} serviço{(nota.servicos || []).length !== 1 ? 's' : ''}
           </Typography>
-          
+
           <Stack direction="row" alignItems="center" spacing={0.5}>
             <Iconify icon="solar:user-circle-bold-duotone" width={14} sx={{ color: 'text.disabled' }} />
             <Typography variant="caption" color="text.secondary">
@@ -603,7 +606,7 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
   const isDesktop = useResponsive('up', 'sm');
 
   const [isPending, startTransition] = useTransition();
-  
+
   const [selectedDay, setSelectedDay] = useState(null);
 
   const canFetch = isOpen && userId && monthData?.ano && monthData?.mes;
@@ -629,9 +632,9 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
     if (!data?.data) return [];
     return data.data.map((nota) => ({
       ...nota,
-      diaDaEmissao: dayjs(nota.dataEmissao).date(),
+      diaDaEmissao: nota?.dataEmissao ? dayjs(nota.dataEmissao).date() : null,
     }));
-  }, [data]); 
+  }, [data]);
 
   const filteredNotas = useMemo(() => {
     if (selectedDay === null) {
@@ -639,7 +642,7 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
     }
     return allNotas.filter((nota) => nota.diaDaEmissao === selectedDay);
   }, [allNotas, selectedDay]);
-  
+
   const handleDayClick = (day) => {
     const dayNumber = Number(day);
 
