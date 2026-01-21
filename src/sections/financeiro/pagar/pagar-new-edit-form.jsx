@@ -18,7 +18,6 @@ import {
   FormControl,
   CardContent,
   Autocomplete,
-  InputAdornment,
   CircularProgress,
 } from '@mui/material';
 
@@ -296,9 +295,6 @@ export function PagarNewEditForm({ currentConta }) {
                     label="Valor"
                     value={field.value}
                     onChange={handleValorChange}
-                    InputProps={{
-                      startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-                    }}
                     fullWidth
                     required
                   />

@@ -8,6 +8,7 @@ import Chip from '@mui/material/Chip';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import MenuList from '@mui/material/MenuList';
@@ -39,9 +40,9 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 const TABLE_HEAD = [
   { id: 'nome', label: 'Nome', width: 200 },
-  { id: 'createdAt', label: 'Data Criação', width: 140 },
+  { id: 'createdAt', label: 'Data Criação', width: 160 },
   { id: 'segment', label: 'Segmento', width: 120 },
-  { id: 'origem', label: 'Origem', width: 180 },
+  { id: 'origem', label: 'Origem', width: 300 },
   { id: 'local', label: 'Local', width: 140 },
   { id: 'statusLead', label: 'Status', width: 140 },
   { id: 'owner', label: 'Responsável', width: 140 },
@@ -67,7 +68,7 @@ export function LeadsListView() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(25);
-  
+
   // Filtros
   const [filtroStatus, setFiltroStatus] = useState('novo');
   const [filtroBusca, setFiltroBusca] = useState('');
@@ -92,9 +93,9 @@ export function LeadsListView() {
   const leadsFiltrados = leads.filter((lead) => {
     // Filtro de status
     const matchStatus = filtroStatus === 'todos' || lead.statusLead === filtroStatus || (!lead.statusLead && filtroStatus === 'novo');
-    
+
     // Filtro de busca (nome, email, telefone)
-    const matchBusca = !filtroBusca || 
+    const matchBusca = !filtroBusca ||
       lead.nome?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
       lead.email?.toLowerCase().includes(filtroBusca.toLowerCase()) ||
       lead.telefone?.includes(filtroBusca);
@@ -212,7 +213,7 @@ export function LeadsListView() {
                 ) : paginatedLeads.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={8}>
-                      <TableNoData 
+                      <TableNoData
                         title="Nenhum lead encontrado"
                         description="Tente ajustar os filtros ou aguarde novos leads chegarem"
                       />
@@ -293,7 +294,7 @@ function LeadTableRow({ row, onUpdate }) {
   return (
     <>
       <TableRow hover>
-        <TableCell>
+        <TableCell sx={{ width: 200 }}>
           <Stack spacing={0.5}>
             <Typography variant="subtitle2">{row.nome}</Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -302,36 +303,74 @@ function LeadTableRow({ row, onUpdate }) {
           </Stack>
         </TableCell>
 
-        <TableCell>{fDate(row.createdAt)}</TableCell>
+        <TableCell sx={{ width: 160, maxWidth: 160 }}>
+          <Typography
+            variant="body2"
+            sx={{
+              fontSize: '0.875rem',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            {fDate(row.createdAt)}
+          </Typography>
+        </TableCell>
 
-        <TableCell>
-          <Chip 
-            label={row.segment || '-'} 
-            size="small" 
+        <TableCell sx={{ width: 120 }}>
+          <Chip
+            label={row.segment || '-'}
+            size="small"
             variant="soft"
             sx={{ textTransform: 'capitalize' }}
           />
         </TableCell>
 
-        <TableCell>
-          <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
-            {row.origem || '-'}
-          </Typography>
+        <TableCell sx={{ width: 300, maxWidth: 300 }}>
+          {row.origem ? (
+            <Tooltip title={row.origem} arrow placement="top">
+              <Typography
+                variant="body2"
+                sx={{
+                  fontSize: '0.875rem',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  display: 'block',
+                  textDecoration: 'none',
+                }}
+              >
+                {row.origem}
+              </Typography>
+            </Tooltip>
+          ) : (
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: '0.875rem',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap'
+              }}
+            >
+              -
+            </Typography>
+          )}
         </TableCell>
 
-        <TableCell>
+        <TableCell sx={{ width: 140 }}>
           <Typography variant="body2">
             {row.cidade ? `${row.cidade} - ${row.estado}` : '-'}
           </Typography>
         </TableCell>
 
-        <TableCell>
+        <TableCell sx={{ width: 140 }}>
           <Label variant="soft" color={getStatusColor(row.statusLead || 'novo')}>
             {getStatusLabel(row.statusLead || 'novo')}
           </Label>
         </TableCell>
 
-        <TableCell>
+        <TableCell sx={{ width: 140 }}>
           <Stack direction="row" spacing={0.5} alignItems="center">
             <Iconify icon="solar:user-bold" width={16} sx={{ color: 'text.disabled' }} />
             <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
@@ -340,7 +379,7 @@ function LeadTableRow({ row, onUpdate }) {
           </Stack>
         </TableCell>
 
-        <TableCell align="right">
+        <TableCell align="right" sx={{ width: 50 }}>
           <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
           </IconButton>
