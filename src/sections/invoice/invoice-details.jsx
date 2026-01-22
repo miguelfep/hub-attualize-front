@@ -49,6 +49,7 @@ const cobrancaStatusColors = {
   VENCIDO: 'error',
   CANCELADO: 'info',
   RECEBIDO: 'success',
+  PROCESSANDO: 'secondary'
 };
 
 const cobrancaStatusTexts = {
@@ -56,6 +57,7 @@ const cobrancaStatusTexts = {
   VENCIDO: 'Vencida',
   CANCELADO: 'Cancelado',
   RECEBIDO: 'Pago',
+  PROCESSANDO: 'Processando'
 };
 
 export function InvoiceDetails({ invoice, nfses }) {
