@@ -155,8 +155,8 @@ export function ClienteListView() {
       table.onResetPage();
 
       let statusValue = newValue;
-      if (newValue === 'active' || newValue === true) statusValue = true;
-      if (newValue === 'inactive' || newValue === false) statusValue = false;
+      if (newValue === true) statusValue = true;
+      if (newValue === false) statusValue = false;
 
       filters.setState({ status: statusValue });
     },
@@ -187,26 +187,17 @@ export function ClienteListView() {
         />
 
         <Card>
-          <Tabs
-            value={
-              filters.state.status === true ? 'active' :
-                filters.state.status === false ? 'inactive' :
-                  filters.state.status
-            }
-            onChange={handleFilterStatus}
-            sx={{
-              px: 2.5,
-              boxShadow: (theme) =>
-                `inset 0 -2px 0 0 ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}`,
-            }}
-          >
-            {CLIENTE_STATUS_OPTIONS.map((tab) => {
-              const currentStatus =
-                filters.state.status === true ? 'active' :
-                  filters.state.status === false ? 'inactive' :
-                    filters.state.status;
-
-              const isSelected = tab.value === currentStatus;
+        <Tabs
+          value={filters.state.status ?? 'all'} 
+          onChange={handleFilterStatus}
+          sx={{
+            px: 2.5,
+            boxShadow: (theme) =>
+              `inset 0 -2px 0 0 ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)}`,
+          }}
+        >
+          {CLIENTE_STATUS_OPTIONS.map((tab) => {
+            const isSelected = filters.state.status === tab.value;
 
               return (
                 <Tab
@@ -347,7 +338,7 @@ export function ClienteListView() {
             onRowsPerPageChange={table.onChangeRowsPerPage}
           />
         </Card>
-      </DashboardContent>
+      </DashboardContent >
 
       <ConfirmDialog
         open={confirm.value}
@@ -403,9 +394,9 @@ function applyFilter({ inputData, comparator, filters }) {
   if (status !== 'all') {
     if (status === 'lead') {
       inputData = inputData.filter((user) => user.tipoContato === 'lead');
-    } else if (status === true || status === 'active') {
+    } else if (status === true) {
       inputData = inputData.filter((user) => user.status === true && user.tipoContato !== 'lead');
-    } else if (status === false || status === 'inactive') {
+    } else if (status === false) {
       inputData = inputData.filter((user) => user.status === false);
     }
   }
