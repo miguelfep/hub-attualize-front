@@ -1,25 +1,26 @@
 'use client';
 
-import NextLink from 'next/link';
 import { useMemo } from 'react';
+import NextLink from 'next/link';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import {
   Box,
-  Button,
   Card,
-  CardActionArea,
-  CardContent,
   Chip,
-  Container,
   Grid,
   Stack,
+  Button,
+  Container,
   Typography,
+  CardContent,
+  CardActionArea,
 } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
 
 import { Logo } from 'src/components/logo';
 import { Iconify } from 'src/components/iconify';
-import { paths } from 'src/routes/paths';
 
 const CONTENT_ITEMS = [
   {

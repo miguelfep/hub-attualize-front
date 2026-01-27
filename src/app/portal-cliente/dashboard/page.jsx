@@ -27,7 +27,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 export default function PortalClienteDashboardView() {
   const { user } = useAuthContext();
-  const { updateSettings } = useSettingsContext();
+  const { updateSettings, updateClienteData } = useSettingsContext();
 
   const [dashboardData, setDashboardData] = useState(null);
   const [banners, setBanners] = useState([]);
@@ -49,13 +49,17 @@ export default function PortalClienteDashboardView() {
       if (data?.settings) {
         updateSettings(data.settings);
       }
+      // Atualizar dados do cliente incluindo possuiExtrato
+      if (data?.cliente) {
+        updateClienteData(data.cliente);
+      }
     } catch (error) {
       toast.error('Erro ao carregar dados do dashboard');
     } finally {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.userId, updateSettings]);
+  }, [user?.userId, updateSettings, updateClienteData]);
 
   useEffect(() => {
     fetchDashboardData();

@@ -122,6 +122,13 @@ export const paths = {
     fiscal: {
       root: `${ROOTS.DASHBOARD}/fiscal/nfse`,
     },
+    contabil: {
+      root: `${ROOTS.DASHBOARD}/contabil/conciliacoes`,
+      conciliacoes: {
+        root: `${ROOTS.DASHBOARD}/contabil/conciliacoes`,
+        details: (id) => `${ROOTS.DASHBOARD}/contabil/conciliacoes/${id}`,
+      },
+    },
     certificados: {
       root: `${ROOTS.DASHBOARD}/certificados`,
     },
@@ -283,6 +290,7 @@ export const paths = {
     licencas: `${ROOTS.CLIENTE}/licencas`,
     profile: `${ROOTS.CLIENTE}/profile`,
     settings: `${ROOTS.CLIENTE}/settings`,
+    conciliacaoBancaria: `${ROOTS.CLIENTE}/conciliacao-bancaria`,
     conteudos: {
       root: `${ROOTS.CLIENTE}/conteudos`,
       aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,

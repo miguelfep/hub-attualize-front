@@ -39,7 +39,9 @@ import FileUploadField from 'src/components/file-upload/FileUploadField';
 import { useAuthContext } from 'src/auth/hooks';
 
 import SociosForm from './cliete-socios-form';
+import ClienteBancosSection from './cliente-bancos-section';
 import { ClientePortalSettings } from './cliente-portal-settings';
+import PlanoContasClienteSection from './plano-contas-cliente-section';
 import { HistoricoComercialCliente } from './historico-comecial-cliente';
 
 export const TRIBUTACAO_OPTIONS = [
@@ -230,7 +232,8 @@ export function ClienteNewEditForm({ currentCliente }) {
   const { user } = useAuthContext();
   const canSeeHistorico = ['admin', 'comercial'].includes(user?.role);
   const historicoTabIndex = 5; // posição quando visível
-  const portalTabIndex = canSeeHistorico ? 6 : 5;
+  const bancosTabIndex = canSeeHistorico ? 6 : 5; // ✅ Nova tab de Bancos
+  const portalTabIndex = canSeeHistorico ? 7 : 6; // Ajustado para depois de Bancos
 
   const normalizePhoneBR = (input) => {
     const raw = String(input || '');
@@ -439,6 +442,7 @@ const onSubmit = handleSubmit(
         <Tab label="Dados Contábeis" />
         <Tab label="Departamento Pessoal" />
         {canSeeHistorico && <Tab label="Histórico Comercial" />}
+        <Tab label="Bancos" />
         <Tab label="Configurações do Portal" />
       </Tabs>
       <Grid container spacing={3} mt={2}>
@@ -897,6 +901,21 @@ const onSubmit = handleSubmit(
                     )}
                   />
                 </Grid>
+                
+                {/* Plano de Contas - Mostra apenas se possuiExtrato estiver ativo */}
+                {watch('possuiExtrato') && (
+                  <Grid xs={12}>
+                    <Divider sx={{ my: 2 }} />
+                    <PlanoContasClienteSection 
+                      clienteId={currentCliente?._id} 
+                      possuiExtrato={watch('possuiExtrato')}
+                    />
+                  </Grid>
+                )}
+                
+                <Grid xs={12}>
+                  <Divider sx={{ my: 2 }} />
+                </Grid>
                 <Grid xs={12}>
                   <Field.Editor name="dadosContabil" label="Dados Contábeis" fullWidth />
                 </Grid>
@@ -934,6 +953,14 @@ const onSubmit = handleSubmit(
         {canSeeHistorico && tabIndex === historicoTabIndex && (
           <Grid xs={12}>
             <HistoricoComercialCliente cliente={currentCliente} />
+          </Grid>
+        )}
+        {/* ✅ Nova Tab: Bancos */}
+        {tabIndex === bancosTabIndex && (
+          <Grid xs={12}>
+            <Card sx={{ p: 3 }}>
+              <ClienteBancosSection clienteId={currentCliente?._id} />
+            </Card>
           </Grid>
         )}
       {tabIndex === portalTabIndex && (
