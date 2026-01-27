@@ -326,7 +326,33 @@ export function InvoiceDetails({ invoice, nfses }) {
         {invoice.cobrancas && invoice.cobrancas.length > 0 && invoice.cobrancas[0].boleto && (
           <Box sx={{ mt: 2 }}>
             {(() => {
-              const boleto = JSON.parse(invoice.cobrancas[0].boleto);
+              // Tentar fazer parse do boleto de forma segura
+              let boleto = null;
+              const boletoString = invoice.cobrancas[0].boleto;
+              
+              // Verificar se é uma string JSON válida
+              if (typeof boletoString === 'string' && boletoString.trim().startsWith('{')) {
+                try {
+                  boleto = JSON.parse(boletoString);
+                } catch (error) {
+                  console.error('Erro ao fazer parse do boleto:', error);
+                  // Se não for JSON válido, pode ser status como "PROCESSANDO" ou PIX
+                  return null;
+                }
+              } else if (typeof boletoString === 'object') {
+                // Se já for um objeto, usar diretamente
+                boleto = boletoString;
+              } else {
+                // Se for string simples (como "PROCESSANDO"), não renderizar o card de boleto
+                return null;
+              }
+              
+              // Verificar se o boleto tem as propriedades necessárias
+              if (!boleto || (!boleto.linhaDigitavel && !boleto.pixCopiaECola)) {
+                return null;
+              }
+              
+              console.log('boleto', boleto);  
               return (
                 <Card sx={{ mt: 2 }}>
                   <CardContent>
@@ -358,16 +384,20 @@ export function InvoiceDetails({ invoice, nfses }) {
                     </Stack>
                     <Divider sx={{ mb: 2 }} />
                     <Stack spacing={2} sx={{ mt: 3 }}>
-                      <CopyToClipboard text={boleto.linhaDigitavel}>
-                        <Button variant="outlined" size="small" sx={{ mt: 1 }}>
-                          Copiar Linha Digitável
-                        </Button>
-                      </CopyToClipboard>
-                      <CopyToClipboard text={boleto.pixCopiaECola}>
-                        <Button variant="outlined" size="small" sx={{ mt: 1 }}>
-                          Copiar PIX Copia e Cola
-                        </Button>
-                      </CopyToClipboard>
+                      {boleto.linhaDigitavel && (
+                        <CopyToClipboard text={boleto.linhaDigitavel}>
+                          <Button variant="outlined" size="small" sx={{ mt: 1 }}>
+                            Copiar Linha Digitável
+                          </Button>
+                        </CopyToClipboard>
+                      )}
+                      {boleto.pixCopiaECola && (
+                        <CopyToClipboard text={boleto.pixCopiaECola}>
+                          <Button variant="outlined" size="small" sx={{ mt: 1 }}>
+                            Copiar PIX Copia e Cola
+                          </Button>
+                        </CopyToClipboard>
+                      )}
                     </Stack>
                   </CardContent>
                 </Card>
