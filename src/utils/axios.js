@@ -192,4 +192,17 @@ export const endpoints = {
     exportar: (conciliacaoId) => `${baseUrl}reconciliation/${conciliacaoId}/export`,
     download: (fileName) => `${baseUrl}reconciliation/download/${fileName}`,
   },
+  // Plano de Contas
+  planoContas: {
+    importar: `${baseUrl}plano-contas/importar`,
+    listar: (clienteId) => `${baseUrl}plano-contas/${clienteId}`,
+    analiticas: (clienteId) => `${baseUrl}plano-contas/${clienteId}/analiticas`,
+    porCodigo: (clienteId, codigo) => `${baseUrl}plano-contas/${clienteId}/codigo/${codigo}`,
+    buscar: (clienteId, termo, limite = 20) => `${baseUrl}plano-contas/${clienteId}/buscar?termo=${termo}&limite=${limite}`,
+    sugerir: (clienteId, descricao) => `${baseUrl}plano-contas/${clienteId}/sugerir?descricao=${descricao}`,
+    verificar: (clienteId) => `${baseUrl}plano-contas/${clienteId}/verificar`,
+    estatisticas: (clienteId) => `${baseUrl}plano-contas/${clienteId}/estatisticas`,
+    atualizar: (clienteId, codigo) => `${baseUrl}plano-contas/${clienteId}/${codigo}`,
+    desativar: (clienteId, codigo) => `${baseUrl}plano-contas/${clienteId}/${codigo}`,
+  },
 };

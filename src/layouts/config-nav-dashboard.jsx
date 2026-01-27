@@ -122,6 +122,18 @@ export const navData = [
         ],
       },
       {
+        title: 'Contábil',
+        path: paths.dashboard.contabil.root,
+        icon: ICONS.banking,
+        roles: ['admin', 'financeiro', 'operacional'],
+        children: [
+          {
+            title: 'Conciliações Bancárias',
+            path: paths.dashboard.contabil.root,
+          },
+        ],
+      },
+      {
         title: 'Societario',
         path: paths.dashboard.aberturas.root,
         icon: ICONS.tour,

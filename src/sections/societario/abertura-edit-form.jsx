@@ -2,8 +2,8 @@
 
 import { z as zod } from 'zod';
 import { toast } from 'sonner';
-import { useMemo, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useMemo, useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import Box from '@mui/material/Box';
@@ -21,11 +21,11 @@ import { updateAbertura } from 'src/actions/societario';
 import { Form, schemaHelper } from 'src/components/hook-form';
 
 import AberturaIniciadoForm from './abertura-iniciado-form';
+import { AberturaKickoffForm } from './abertura-kickoff-form';
 // Importação dos componentes específicos para cada status
 import { AberturaValidacaoForm } from './abertura-validacao-form';
-import { AberturaKickoffForm } from './abertura-kickoff-form';
-import { AberturaConstituicaoFormNew } from './abertura-constituicao-form-new';
 import { AberturaOnboardingForm } from './abertura-onboarding-form';
+import { AberturaConstituicaoFormNew } from './abertura-constituicao-form-new';
 
 // Definir o esquema de validação usando Zod
 const AberturaSchema = zod.object({

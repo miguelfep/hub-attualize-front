@@ -4,6 +4,7 @@ import useSWR from 'swr';
 import Cookies from 'js-cookie';
 
 import axios, { fetcher, endpoints } from 'src/utils/axios';
+
 import { STORAGE_KEY as JWT_STORAGE_KEY } from 'src/auth/context/jwt/constant';
 
 // ----------------------------------------------------------------------

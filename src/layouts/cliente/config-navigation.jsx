@@ -4,10 +4,11 @@ import { useSettings } from 'src/hooks/useSettings';
 
 import { Iconify } from 'src/components/iconify';
 
+
 // ----------------------------------------------------------------------
 
 export function usePortalNavData() {
-  const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos } = useSettings();
+  const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos, possuiExtrato } = useSettings();
 
   const vendasChildren = [
     podeGerenciarClientes && {
@@ -71,6 +72,12 @@ export function usePortalNavData() {
       title: 'Meu Faturamento',
       path: paths.cliente.faturamentos.root,
       icon: <Iconify icon="solar:hand-money-linear" />,
+    },
+    // Só mostra "Extratos Bancários" se possuiExtrato estiver ativo
+    possuiExtrato && {
+      title: 'Extratos Bancários',
+      path: paths.cliente.conciliacaoBancaria,
+      icon: <Iconify icon="solar:card-2-bold-duotone" />,
     },
     {
       title: 'Meu Plano',

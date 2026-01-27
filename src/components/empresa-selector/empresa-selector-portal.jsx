@@ -30,7 +30,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
   const optimisticLabelRef = useRef('');
   const router = useRouter();
 
-  const { updateSettings } = useSettingsContext();
+  const { updateSettings, updateClienteData } = useSettingsContext();
 
   const fetchEmpresas = useCallback(async () => {
     try {
@@ -38,12 +38,16 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/empresas/${userId}`);
       
       if (response.data.success) {
-        const { empresas: empresasData, empresaAtiva: empresaAtivaData, settings } = response.data.data;
+        const { empresas: empresasData, empresaAtiva: empresaAtivaData, settings, cliente } = response.data.data;
 
         setEmpresas(empresasData || []);
         setEmpresaAtiva(empresaAtivaData);
         if (settings) {
           updateSettings(settings);
+        }
+        // ✅ Atualizar dados do cliente incluindo possuiExtrato
+        if (cliente) {
+          updateClienteData(cliente);
         }
       }
     } catch (error) {
@@ -52,7 +56,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
     } finally {
       setLoadingEmpresas(false);
     }
-  }, [userId, updateSettings]);
+  }, [userId, updateSettings, updateClienteData]);
 
   useEffect(() => {
     if (userId) {
@@ -77,11 +81,15 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
       });
 
       if (response.data.success) {
-        const { empresaAtiva: novaAtiva, settings } = response.data.data || {};
+        const { empresaAtiva: novaAtiva, settings, cliente } = response.data.data || {};
         setEmpresaAtiva(novaAtiva || novaEmpresaId);
         toast.success('Empresa alterada com sucesso!');
         if (settings) {
           updateSettings(settings);
+        }
+        // ✅ Atualizar dados do cliente incluindo possuiExtrato
+        if (cliente) {
+          updateClienteData(cliente);
         }
         if (onEmpresaChange) onEmpresaChange(response.data.data.empresaAtiva);
         // Navegação suave mantendo o header
