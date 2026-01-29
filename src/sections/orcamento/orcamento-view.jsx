@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 import { toast } from 'sonner';
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
@@ -14,7 +14,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import { updateInvoice, getInvoiceById } from 'src/actions/invoices';
+import { updateInvoice } from 'src/actions/invoices';
+import { useInvoice } from 'src/contexts/InvoiceContext';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -26,79 +27,34 @@ import { CheckoutOrderComplete } from '../checkout/checkout-order-complete';
 
 const ORCAMENTO_CHECKOUT_STEPS = ['Aprovação', 'Pagamento'];
 
-export function OrcamentoView({ invoice, nfses }) {
-
-  const [currentInvoice, setCurrentInvoice] = useState(invoice);
+export function OrcamentoView({ invoice: initialInvoice, nfses }) {
+  // Usar contexto para gerenciar invoice e polling automático
+  const { invoice: currentInvoice, loading, updateInvoiceData } = useInvoice();
+  
   const [currentNfses, setCurrentNfses] = useState(nfses);
   const [activeStep, setActiveStep] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('boleto');
-  const [status, setStatus] = useState(invoice?.status || 'orcamento');
-  const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(currentInvoice?.status || initialInvoice?.status || 'orcamento');
   const [rejectionReason, setRejectionReason] = useState(''); // Estado para o motivo da recusa
   const [showRejectionInput, setShowRejectionInput] = useState(false); // Controle para mostrar input
-  const timeoutRef = useRef(null); // Ref para armazenar o timeout
 
+  // Atualizar status quando invoice do contexto mudar
   useEffect(() => {
-    if (status !== 'orcamento') {
+    if (currentInvoice?.status) {
+      setStatus(currentInvoice.status);
+    }
+    
+    if (currentInvoice?.status !== 'orcamento') {
       setActiveStep(1);
     }
 
-    // Cleanup: limpar timeout se o componente desmontar
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
-  }, [status]);
-
-  const updateInvoiceData = async () => {
-    setLoading(true);
-    try {
-      // Aguardar um pouco para garantir que o backend processou completamente
-      // Usar Promise com timeout controlado
-      await new Promise((resolve) => {
-        timeoutRef.current = setTimeout(() => {
-          resolve();
-        }, 800);
-      });
-
-      const response = await getInvoiceById(currentInvoice._id);
-      // A API retorna { invoice, nfses }, então precisamos extrair o invoice
-      const updatedInvoice = response.invoice || response;
-
-      // Criar um novo objeto para garantir que o React detecte a mudança
-      const newInvoice = {
-        ...updatedInvoice,
-        cobrancas: updatedInvoice.cobrancas || [],
-      };
-
-      // Atualizar o estado do invoice (isso vai forçar o re-render)
-      setCurrentInvoice(newInvoice);
-
-      // Atualizar status se necessário
-      if (newInvoice.status) {
-        setStatus(newInvoice.status);
-      }
-
-      // Se tem cobrancas, atualizar o activeStep para mostrar a cobrança
-      if (newInvoice.cobrancas && Array.isArray(newInvoice.cobrancas) && newInvoice.cobrancas.length > 0) {
-        setActiveStep(1); // Garantir que está no step de pagamento
-      }
-    } catch (error) {
-      console.error('Erro ao atualizar invoice:', error);
-      toast.error('Erro ao atualizar invoice');
-    } finally {
-      // Limpar o timeout ref
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-        timeoutRef.current = null;
-      }
-      setLoading(false);
+    // Se tem cobrancas, atualizar o activeStep para mostrar a cobrança
+    if (currentInvoice?.cobrancas && Array.isArray(currentInvoice.cobrancas) && currentInvoice.cobrancas.length > 0) {
+      setActiveStep(1); // Garantir que está no step de pagamento
     }
-  };
+  }, [currentInvoice]);
 
   const handleApproval = async (newStatus, reason = '') => {
-    setLoading(true);
     try {
       const data = {
         status: newStatus,
@@ -108,10 +64,11 @@ export function OrcamentoView({ invoice, nfses }) {
       await updateInvoice(currentInvoice._id, data);
       setStatus(newStatus);
       toast.success(`Status atualizado para ${newStatus}`);
+      
+      // Atualizar invoice no contexto
+      await updateInvoiceData(500);
     } catch (error) {
       toast.error('Erro ao atualizar status');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -120,22 +77,19 @@ export function OrcamentoView({ invoice, nfses }) {
   };
 
   const handlePayment = async () => {
-    setLoading(true);
     try {
       await axios.post('/api/process-payment', {
         invoiceId: currentInvoice._id,
         paymentMethod,
       });
       toast.success(`Pagamento processado com ${paymentMethod}`);
-      await updateInvoiceData();
+      await updateInvoiceData(500);
     } catch (error) {
       toast.error('Erro ao processar pagamento');
-    } finally {
-      setLoading(false);
     }
   };
 
-  if (!invoice) {
+  if (!currentInvoice && !initialInvoice) {
     return (
       <Container sx={{ mt: 10, textAlign: 'center' }}>
         <Box>
