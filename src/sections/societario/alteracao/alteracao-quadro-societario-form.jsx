@@ -135,56 +135,58 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
     }
   };
 
-const handleDownload = async (index, documentType) => {
-  try {
-    const fileUrl = getValues(`socios.${index}.${documentType}`);
-    if (!fileUrl || !fileUrl.includes('/')) {
-      toast.error(`URL inválida para o arquivo: ${getDocumentLabel(documentType, index)}.`);
-      return;
+  const handleDownload = async (index, documentType) => {
+    try {
+      const fileUrl = getValues(`socios.${index}.${documentType}`);
+      if (!fileUrl || !fileUrl.includes('/')) {
+        toast.error(`URL inválida para o arquivo: ${getDocumentLabel(documentType, index)}.`);
+        return;
+      }
+
+      const filename = fileUrl.split('/').pop() || `default_${documentType}.bin`;
+      if (!filename.includes('.')) {
+        toast.error(`Nome do arquivo inválido (sem extensão): ${getDocumentLabel(documentType, index)}.`);
+        return;
+      }
+      const cleanFilename = encodeURIComponent(filename.trim()); // Apenas codifica
+
+      // Usar socios.{index}.{documentType} para nova estrutura de pastas
+      const downloadPath = `socios.${index}.${documentType}`;
+      const response = await downloadArquivoAlteracao(alteracaoId, downloadPath, cleanFilename);
+      if (!response || !response.data || response.status !== 200) {
+        throw new Error('Falha na resposta da API ou arquivo não encontrado.');
+      }
+
+      const mimeTypes = {
+        pdf: 'application/pdf',
+        png: 'image/png',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+      };
+      const extension = filename.split('.').pop().toLowerCase();
+      const mimeType = mimeTypes[extension] || 'application/octet-stream';
+
+      const blob = new Blob([response.data], { type: mimeType });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      toast.success(`${getDocumentLabel(documentType, index)} baixado com sucesso.`);
+    } catch (error) {
+      const errorMessage = error.response?.status === 404
+        ? `Arquivo não encontrado no servidor: ${getDocumentLabel(documentType, index)}.`
+        : error.response
+          ? `Erro do servidor: ${error.response.status} - ${error.response.data?.message || error.message}`
+          : error.message.includes('Network Error')
+            ? 'Erro de rede: não foi possível conectar ao servidor.'
+            : `Erro ao baixar ${getDocumentLabel(documentType, index)}: ${error.message}`;
+      toast.error(errorMessage);
     }
-
-    const filename = fileUrl.split('/').pop() || `default_${documentType}.bin`;
-    if (!filename.includes('.')) {
-      toast.error(`Nome do arquivo inválido (sem extensão): ${getDocumentLabel(documentType, index)}.`);
-      return;
-    }
-    const cleanFilename = encodeURIComponent(filename.trim()); // Apenas codifica
-
-    const response = await downloadArquivoAlteracao(alteracaoId, documentType, cleanFilename);
-    if (!response || !response.data || response.status !== 200) {
-      throw new Error('Falha na resposta da API ou arquivo não encontrado.');
-    }
-
-    const mimeTypes = {
-      pdf: 'application/pdf',
-      png: 'image/png',
-      jpg: 'image/jpeg',
-      jpeg: 'image/jpeg',
-    };
-    const extension = filename.split('.').pop().toLowerCase();
-    const mimeType = mimeTypes[extension] || 'application/octet-stream';
-
-    const blob = new Blob([response.data], { type: mimeType });
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(downloadUrl);
-    toast.success(`${getDocumentLabel(documentType, index)} baixado com sucesso.`);
-  } catch (error) {
-    const errorMessage = error.response?.status === 404
-      ? `Arquivo não encontrado no servidor: ${getDocumentLabel(documentType, index)}.`
-      : error.response
-        ? `Erro do servidor: ${error.response.status} - ${error.response.data?.message || error.message}`
-        : error.message.includes('Network Error')
-          ? 'Erro de rede: não foi possível conectar ao servidor.'
-          : `Erro ao baixar ${getDocumentLabel(documentType, index)}: ${error.message}`;
-    toast.error(errorMessage);
-  }
-};
+  };
 
   const handleDelete = async (index, documentType) => {
     try {
@@ -460,7 +462,7 @@ const handleDownload = async (index, documentType) => {
                 name={`socios.${index}.estadoCivil`}
                 control={control}
                 render={({ field, fieldState }) => (
-                  <FormControl fullWidth>
+                  <FormControl fullWidth error={!!fieldState.error}>
                     <InputLabel id={`estado-civil-select-label-${index}`}>
                       Estado Civil
                     </InputLabel>
@@ -472,8 +474,6 @@ const handleDownload = async (index, documentType) => {
                       disabled={!watch(`socios.${index}.socioEnabled`)}
                       value={field.value || ""}
                       onChange={(e) => field.onChange(e.target.value)}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
                     >
                       <MenuItem value="">
                         <em>Selecione uma opção</em>
@@ -519,7 +519,7 @@ const handleDownload = async (index, documentType) => {
                 name={`socios.${index}.etnia`}
                 control={control}
                 render={({ field, fieldState }) => (
-                  <FormControl fullWidth>
+                  <FormControl fullWidth error={!!fieldState.error}>
                     <InputLabel id={`etnia-select-label-${index}`}>
                       Raça/Cor
                     </InputLabel>
@@ -531,8 +531,6 @@ const handleDownload = async (index, documentType) => {
                       disabled={!watch(`socios.${index}.socioEnabled`)}
                       value={field.value || ""}
                       onChange={(e) => field.onChange(e.target.value)}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
                     >
                       <MenuItem value="">
                         <em>Selecione uma opção</em>
@@ -553,7 +551,7 @@ const handleDownload = async (index, documentType) => {
                 name={`socios.${index}.grau_escolaridade`}
                 control={control}
                 render={({ field, fieldState }) => (
-                  <FormControl fullWidth>
+                  <FormControl fullWidth error={!!fieldState.error}>
                     <InputLabel id={`grau-escolaridade-select-label-${index}`}>
                       Grau de Escolaridade
                     </InputLabel>
@@ -565,8 +563,6 @@ const handleDownload = async (index, documentType) => {
                       disabled={!watch(`socios.${index}.socioEnabled`)}
                       value={field.value || ""}
                       onChange={(e) => field.onChange(e.target.value)}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
                     >
                       <MenuItem value="">
                         <em>Selecione uma opção</em>
@@ -586,7 +582,7 @@ const handleDownload = async (index, documentType) => {
               <Controller
                 name={`socios.${index}.administrador`}
                 control={control}
-                render={({ field, fieldState }) => (
+                render={({ field }) => (
                   <FormControlLabel
                     control={
                       <Switch
@@ -596,8 +592,6 @@ const handleDownload = async (index, documentType) => {
                       />
                     }
                     label="É Administrador?"
-                    error={!!fieldState.error}
-                    helperText={fieldState.error?.message}
                   />
                 )}
               />

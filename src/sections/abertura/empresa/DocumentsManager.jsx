@@ -5,7 +5,7 @@ import { Box, Grid, Button, Switch, Divider, Typography, FormControlLabel } from
 
 import { uploadArquivo, deletarArquivo, downloadArquivo } from 'src/actions/societario';
 
-const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
+const DocumentsManager = ({ formData, setFormData, aberturaId, readOnly = false }) => {
   // Função para obter o nome amigável do documento
   const getDocumentName = (name) => {
     switch (name) {
@@ -110,52 +110,60 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
       </Typography>
       <Divider sx={{ mb: 2 }} />
 
-      {/* Toggles */}
-      <Box sx={{ mb: 3 }}>
-        <FormControlLabel
-          control={
-            <Switch
-              checked={formData.notificarWhats || false}
-              onChange={() => handleToggleChange('notificarWhats')}
-            />
-          }
-          label="Notificar whatsapp?"
-        />
-        <FormControlLabel
-          control={
-            <Switch
-              checked={formData.marcaRegistrada || false}
-              onChange={() => handleToggleChange('marcaRegistrada')}
-            />
-          }
-          label="Tem marca registrada?"
-        />
-        {!formData.marcaRegistrada && (
+      {/* Toggles - só exibe se não for readOnly */}
+      {!readOnly && (
+        <Box sx={{ mb: 3 }}>
           <FormControlLabel
             control={
               <Switch
-                checked={formData.interesseRegistroMarca || false}
-                onChange={() => handleToggleChange('interesseRegistroMarca')}
+                checked={formData.notificarWhats || false}
+                onChange={() => handleToggleChange('notificarWhats')}
               />
             }
-            label="Interesse em registrar marca?"
+            label="Notificar whatsapp?"
           />
-        )}
-        <FormControlLabel
-          control={
-            <Switch
-              checked={formData.possuiRT || false}
-              onChange={() => handleToggleChange('possuiRT')}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.marcaRegistrada || false}
+                onChange={() => handleToggleChange('marcaRegistrada')}
+              />
+            }
+            label="Tem marca registrada?"
+          />
+          {!formData.marcaRegistrada && (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.interesseRegistroMarca || false}
+                  onChange={() => handleToggleChange('interesseRegistroMarca')}
+                />
+              }
+              label="Interesse em registrar marca?"
             />
-          }
-          label="Possui RT?"
-        />
-      </Box>
+          )}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={formData.possuiRT || false}
+                onChange={() => handleToggleChange('possuiRT')}
+              />
+            }
+            label="Possui RT?"
+          />
+        </Box>
+      )}
 
       {/* Document Upload */}
       <Grid container spacing={3}>
         {documents.map((doc) => {
-          if (doc.toggle && !formData[doc.toggle]) return null;
+          if (doc.toggle) {
+            const documentoExiste = !!formData[doc.name];
+            const toggleAtivo = !!formData[doc.toggle];
+            
+            if (readOnly && !documentoExiste && !toggleAtivo) return null;
+            if (!readOnly && !toggleAtivo) return null;
+          }
 
           return (
             <Grid item xs={12} sm={6} md={4} key={doc.name}>
@@ -178,23 +186,31 @@ const DocumentsManager = ({ formData, setFormData, aberturaId }) => {
                       color="success"
                       onClick={() => handleDownload(doc.name)}
                       fullWidth
-                      sx={{ mb: 1 }}
+                      sx={{ mb: readOnly ? 0 : 1 }}
                     >
                       Baixar
                     </Button>
-                    <Button
-                      variant="outlined"
-                      color="error"
-                      onClick={() => handleDelete(doc.name)}
-                      fullWidth
-                    >
-                      Deletar
-                    </Button>
+                    {!readOnly && (
+                      <Button
+                        variant="outlined"
+                        color="error"
+                        onClick={() => handleDelete(doc.name)}
+                        fullWidth
+                      >
+                        Deletar
+                      </Button>
+                    )}
                   </Box>
                 ) : (
-                  <Button variant="contained" onClick={() => handleUpload(doc.name)} fullWidth>
-                    Enviar Documento
-                  </Button>
+                  readOnly ? (
+                    <Typography variant="body2" color="text.secondary">
+                      Documento não enviado
+                    </Typography>
+                  ) : (
+                    <Button variant="contained" onClick={() => handleUpload(doc.name)} fullWidth>
+                      Enviar Documento
+                    </Button>
+                  )
                 )}
               </Box>
             </Grid>

@@ -19,7 +19,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
 
     const validateFile = (file) => {
         const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
-        const maxSize = 5 * 1024 * 1024; // 5MB
+        const maxSize = 5 * 1024 * 1024;
         if (!allowedTypes.includes(file.type)) {
             return 'Tipo de arquivo não permitido. Use PDF, JPEG ou PNG.';
         }
@@ -82,20 +82,22 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
 
     const handleDownload = async (documentType, index = null) => {
         try {
-            const path = getDocumentPath(documentType, index);
-            const fileUrl = getValues(path);
+            const formPath = getDocumentPath(documentType, index);
+            const fileUrl = getValues(formPath);
             if (!fileUrl) throw new Error('Arquivo não disponível para download.');
             const filename = fileUrl.split('/').pop();
 
+            const downloadPath = index !== null ? `socios.${index}.${documentType}` : documentType;
+
             const response = await downloadArquivoAlteracao(
                 currentAlteracao._id,
-                documentType,
-                filename,
-                index
+                downloadPath,
+                filename
             );
 
             if (response?.data) {
-                const blob = new Blob([response.data], { type: response.data.type });
+                const contentType = response.data.type || response.headers?.['content-type'] || 'application/octet-stream';
+                const blob = new Blob([response.data], { type: contentType });
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = downloadUrl;
@@ -105,21 +107,26 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 link.remove();
                 window.URL.revokeObjectURL(downloadUrl);
                 toast.success(`${getDocumentLabel(documentType, index)} baixado com sucesso.`);
+            } else {
+                throw new Error('Resposta vazia do servidor');
             }
         } catch (error) {
+            console.error('Erro no download:', error);
             toast.error(`Erro ao baixar ${getDocumentLabel(documentType, index)}.`);
         }
     };
 
     const handleDelete = async (documentType, index = null) => {
         try {
-            const path = getDocumentPath(documentType, index);
+            const deletePath = index !== null ? `socios.${index}.${documentType}` : documentType;
+            const formPath = getDocumentPath(documentType, index);
+
             const response = await deletarArquivoAlteracao(
                 currentAlteracao._id,
-                path
+                deletePath
             );
             if (response.status === 200) {
-                setValue(path, '');
+                setValue(formPath, '');
                 toast.success(`${getDocumentLabel(documentType, index)} deletado com sucesso.`);
             }
         } catch (error) {
@@ -179,7 +186,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
         { value: "mestrado", label: "Mestrado" },
         { value: "doutorado", label: "Doutorado" },
         { value: "prefiroNaoInformar", label: "Prefiro não informar" },
-  ];
+    ];
 
     const { control, handleSubmit, reset, getValues, watch, setValue } = useForm({
         defaultValues: {
@@ -295,9 +302,14 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
     const onApprove = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, { ...data, statusAlteracao: 'kickoff', somenteAtualizar: false });
+            await updateAlteracao(currentAlteracao._id, {
+                ...data,
+                statusAlteracao: 'em_alteracao',
+                somenteAtualizar: false,
+                notificarWhats: true,
+            });
             toast.success('Alteração aprovada!');
-            if (handleAdvanceStatus) handleAdvanceStatus('kickoff');
+            if (handleAdvanceStatus) handleAdvanceStatus('em_alteracao');
         } catch (error) {
             toast.error('Erro ao aprovar a alteração');
         } finally {
@@ -308,9 +320,14 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
     const onReject = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, { ...data, statusAlteracao: 'iniciado' });
+            await updateAlteracao(currentAlteracao._id, {
+                ...data,
+                statusAlteracao: 'em_validacao',
+                somenteAtualizar: false,
+                notificarWhats: false,
+            });
             toast.error('Alteração reprovada!');
-            if (handleAdvanceStatus) handleAdvanceStatus('iniciado');
+            if (handleAdvanceStatus) handleAdvanceStatus('em_validacao');
         } catch (error) {
             toast.error('Erro ao reprovar a alteração');
         } finally {
@@ -323,6 +340,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
             <Tabs value={activeTab} onChange={handleTabChange}>
                 <Tab label="Dados da Alteração" />
                 <Tab label="Kickoff" />
+                <Tab label="Documentos" />
             </Tabs>
             {activeTab === 0 && (
                 <>
@@ -777,175 +795,6 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                             />
                         </Grid>
                     </Grid>
-                    <Grid item xs={12}>
-                        <Grid container spacing={2} mt={2}>
-                            <Grid item xs={6} sm={6}>
-                                <Controller
-                                    name='iptuAnexo'
-                                    control={control}
-                                    render={({ field: { value } }) => (
-                                        <Box
-                                            sx={{
-                                                border: '1px solid',
-                                                borderColor: 'divider',
-                                                borderRadius: 2,
-                                                padding: 2,
-                                                textAlign: 'center',
-                                            }}
-                                        >
-                                            <Typography variant="subtitle1" gutterBottom>
-                                                <strong>IPTU do Imóvel</strong>
-                                            </Typography>
-                                            <Box>
-                                                <Button
-                                                    variant="contained"
-                                                    color="primary"
-                                                    fullWidth
-                                                    sx={{ mb: 1 }}
-                                                    onClick={() => handleUpload('iptuAnexo')}
-                                                >
-                                                    Enviar Anexo
-                                                </Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    fullWidth
-                                                    onClick={() => handleDelete('iptuAnexo')}
-                                                >
-                                                    Deletar
-                                                </Button>
-                                                {value && (
-                                                    <Button
-                                                        variant="outlined"
-                                                        fullWidth
-                                                        sx={{ mt: 1 }}
-                                                        onClick={() => handleDownload('iptuAnexo')}
-                                                    >
-                                                        Baixar
-                                                    </Button>
-                                                )}
-                                            </Box>
-                                            {value && typeof value === 'string' && (
-                                                <Box mt={2}>
-                                                    <Typography variant="body2" noWrap>{value}</Typography>
-                                                </Box>
-                                            )}
-                                        </Box>
-                                    )}
-                                />
-                            </Grid>
-
-                            <Grid item xs={6} sm={6}>
-                                <Controller
-                                    name='rgAnexo'
-                                    control={control}
-                                    render={({ field: { value } }) => (
-                                        <Box
-                                            sx={{
-                                                border: '1px solid',
-                                                borderColor: 'divider',
-                                                borderRadius: 2,
-                                                padding: 2,
-                                                textAlign: 'center',
-                                            }}
-                                        >
-                                            <Typography variant="subtitle1" gutterBottom>
-                                                <strong>RG do Representante</strong>
-                                            </Typography>
-                                            <Box>
-                                                <Button
-                                                    variant="contained"
-                                                    color="primary"
-                                                    fullWidth
-                                                    sx={{ mb: 1 }}
-                                                    onClick={() => handleUpload('rgAnexo')}
-                                                >
-                                                    Enviar Anexo
-                                                </Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    fullWidth
-                                                    onClick={() => handleDelete('rgAnexo')}
-                                                >
-                                                    Deletar
-                                                </Button>
-                                                {value && (
-                                                    <Button
-                                                        variant="outlined"
-                                                        fullWidth
-                                                        sx={{ mt: 1 }}
-                                                        onClick={() => handleDownload('rgAnexo')}
-                                                    >
-                                                        Baixar
-                                                    </Button>
-                                                )}
-                                            </Box>
-                                            {value && typeof value === 'string' && (
-                                                <Box mt={2}>
-                                                    <Typography variant="body2" noWrap>{value}</Typography>
-                                                </Box>
-                                            )}
-                                        </Box>
-                                    )}
-                                />
-                            </Grid>
-
-                            <Grid item xs={6} sm={6}>
-                                <Controller
-                                    name='documentoRT'
-                                    control={control}
-                                    render={({ field: { value } }) => (
-                                        <Box
-                                            sx={{
-                                                border: '1px solid',
-                                                borderColor: 'divider',
-                                                borderRadius: 2,
-                                                padding: 2,
-                                                textAlign: 'center',
-                                            }}
-                                        >
-                                            <Typography variant="subtitle1" gutterBottom>
-                                                <strong>Documento de Classe (Responsável Técnico)</strong>
-                                            </Typography>
-                                            <Box>
-                                                <Button
-                                                    variant="contained"
-                                                    color="primary"
-                                                    fullWidth
-                                                    sx={{ mb: 1 }}
-                                                    onClick={() => handleUpload('documentoRT')}
-                                                >
-                                                    Enviar Anexo
-                                                </Button>
-                                                <Button
-                                                    variant="outlined"
-                                                    fullWidth
-                                                    onClick={() => handleDelete('documentoRT')}
-                                                >
-                                                    Deletar
-                                                </Button>
-                                                {value && (
-                                                    <Button
-                                                        variant="outlined"
-                                                        fullWidth
-                                                        sx={{ mt: 1 }}
-                                                        onClick={() => handleDownload('documentoRT')}
-                                                    >
-                                                        Baixar
-                                                    </Button>
-                                                )}
-                                            </Box>
-                                            {value && typeof value === 'string' && (
-                                                <Box mt={2}>
-                                                    <Typography variant="body2" noWrap>{value}</Typography>
-                                                </Box>
-                                            )}
-                                        </Box>
-                                    )}
-                                />
-                            </Grid>
-                        </Grid>
-
-                    </Grid>
                     <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
                         <Button
                             variant="contained"
@@ -954,24 +803,6 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                             startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
                         >
                             Salvar
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            onClick={handleSubmit(onReject)}
-                            disabled={loading.value}
-                            startIcon={<Iconify icon="eva:close-circle-fill" />}
-                        >
-                            Reprovar
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="success"
-                            onClick={handleSubmit(onApprove)}
-                            disabled={loading.value}
-                            startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
-                        >
-                            Aprovar
                         </Button>
                     </Stack>
                 </>
@@ -1021,6 +852,348 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                     </>
                 )
             }
+
+            {activeTab === 2 && (
+                <Box sx={{ mt: 3 }}>
+                    <Typography variant="h6" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Iconify icon="eva:file-text-fill" width={24} />
+                        Documentos da Alteração
+                    </Typography>
+
+                    {/* Documentos Gerais */}
+                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                        Documentos Gerais
+                    </Typography>
+                    <Grid container spacing={2}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Controller
+                                name='iptuAnexo'
+                                control={control}
+                                render={({ field: { value } }) => (
+                                    <Box
+                                        sx={{
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 2,
+                                            padding: 2,
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        <Typography variant="subtitle1" gutterBottom>
+                                            <strong>IPTU do Imóvel</strong>
+                                        </Typography>
+                                        <Stack spacing={1}>
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                fullWidth
+                                                onClick={() => handleUpload('iptuAnexo')}
+                                                startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                                            >
+                                                Enviar
+                                            </Button>
+                                            {value && (
+                                                <>
+                                                    <Button
+                                                        variant="outlined"
+                                                        fullWidth
+                                                        onClick={() => handleDownload('iptuAnexo')}
+                                                        startIcon={<Iconify icon="eva:download-fill" />}
+                                                    >
+                                                        Baixar
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="error"
+                                                        fullWidth
+                                                        onClick={() => handleDelete('iptuAnexo')}
+                                                        startIcon={<Iconify icon="eva:trash-2-fill" />}
+                                                    >
+                                                        Deletar
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </Stack>
+                                        {value && typeof value === 'string' && (
+                                            <Box mt={2}>
+                                                <Typography variant="body2" noWrap>
+                                                    📎 {value.split('/').pop()}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Controller
+                                name='rgAnexo'
+                                control={control}
+                                render={({ field: { value } }) => (
+                                    <Box
+                                        sx={{
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 2,
+                                            padding: 2,
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        <Typography variant="subtitle1" gutterBottom>
+                                            <strong>RG do Representante</strong>
+                                        </Typography>
+                                        <Stack spacing={1}>
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                fullWidth
+                                                onClick={() => handleUpload('rgAnexo')}
+                                                startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                                            >
+                                                Enviar
+                                            </Button>
+                                            {value && (
+                                                <>
+                                                    <Button
+                                                        variant="outlined"
+                                                        fullWidth
+                                                        onClick={() => handleDownload('rgAnexo')}
+                                                        startIcon={<Iconify icon="eva:download-fill" />}
+                                                    >
+                                                        Baixar
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="error"
+                                                        fullWidth
+                                                        onClick={() => handleDelete('rgAnexo')}
+                                                        startIcon={<Iconify icon="eva:trash-2-fill" />}
+                                                    >
+                                                        Deletar
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </Stack>
+                                        {value && typeof value === 'string' && (
+                                            <Box mt={2}>
+                                                <Typography variant="body2" noWrap>
+                                                    📎 {value.split('/').pop()}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                )}
+                            />
+                        </Grid>
+
+                        <Grid item xs={12} sm={6} md={4}>
+                            <Controller
+                                name='documentoRT'
+                                control={control}
+                                render={({ field: { value } }) => (
+                                    <Box
+                                        sx={{
+                                            border: '1px solid',
+                                            borderColor: 'divider',
+                                            borderRadius: 2,
+                                            padding: 2,
+                                            textAlign: 'center',
+                                        }}
+                                    >
+                                        <Typography variant="subtitle1" gutterBottom>
+                                            <strong>Documento RT</strong>
+                                        </Typography>
+                                        <Stack spacing={1}>
+                                            <Button
+                                                variant="contained"
+                                                color="primary"
+                                                fullWidth
+                                                onClick={() => handleUpload('documentoRT')}
+                                                startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                                            >
+                                                Enviar
+                                            </Button>
+                                            {value && (
+                                                <>
+                                                    <Button
+                                                        variant="outlined"
+                                                        fullWidth
+                                                        onClick={() => handleDownload('documentoRT')}
+                                                        startIcon={<Iconify icon="eva:download-fill" />}
+                                                    >
+                                                        Baixar
+                                                    </Button>
+                                                    <Button
+                                                        variant="outlined"
+                                                        color="error"
+                                                        fullWidth
+                                                        onClick={() => handleDelete('documentoRT')}
+                                                        startIcon={<Iconify icon="eva:trash-2-fill" />}
+                                                    >
+                                                        Deletar
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </Stack>
+                                        {value && typeof value === 'string' && (
+                                            <Box mt={2}>
+                                                <Typography variant="body2" noWrap>
+                                                    📎 {value.split('/').pop()}
+                                                </Typography>
+                                            </Box>
+                                        )}
+                                    </Box>
+                                )}
+                            />
+                        </Grid>
+                    </Grid>
+
+                    {/* Documentos dos Sócios */}
+                    {getValues('socios')?.length > 0 && (
+                        <Box sx={{ mt: 4 }}>
+                            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                                Documentos dos Sócios
+                            </Typography>
+                            {getValues('socios').map((socio, index) => (
+                                <Box key={index} sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
+                                        Sócio {index + 1}: {socio.nome || 'Sem nome'}
+                                    </Typography>
+                                    <Grid container spacing={2}>
+                                        <Grid item xs={12} sm={6}>
+                                            <Controller
+                                                name={`socios.${index}.cnhAnexo`}
+                                                control={control}
+                                                render={({ field: { value } }) => (
+                                                    <Box
+                                                        sx={{
+                                                            border: '1px solid',
+                                                            borderColor: 'divider',
+                                                            borderRadius: 2,
+                                                            padding: 2,
+                                                            textAlign: 'center',
+                                                        }}
+                                                    >
+                                                        <Typography variant="subtitle1" gutterBottom>
+                                                            <strong>CNH</strong>
+                                                        </Typography>
+                                                        <Stack spacing={1}>
+                                                            <Button
+                                                                variant="contained"
+                                                                color="primary"
+                                                                fullWidth
+                                                                size="small"
+                                                                onClick={() => handleUpload('cnhAnexo', index)}
+                                                                startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                                                            >
+                                                                Enviar
+                                                            </Button>
+                                                            {value && (
+                                                                <>
+                                                                    <Button
+                                                                        variant="outlined"
+                                                                        fullWidth
+                                                                        size="small"
+                                                                        onClick={() => handleDownload('cnhAnexo', index)}
+                                                                        startIcon={<Iconify icon="eva:download-fill" />}
+                                                                    >
+                                                                        Baixar
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="outlined"
+                                                                        color="error"
+                                                                        fullWidth
+                                                                        size="small"
+                                                                        onClick={() => handleDelete('cnhAnexo', index)}
+                                                                        startIcon={<Iconify icon="eva:trash-2-fill" />}
+                                                                    >
+                                                                        Deletar
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                        </Stack>
+                                                        {value && typeof value === 'string' && (
+                                                            <Box mt={1}>
+                                                                <Typography variant="caption" noWrap>
+                                                                    📎 {value.split('/').pop()}
+                                                                </Typography>
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                )}
+                                            />
+                                        </Grid>
+                                        <Grid item xs={12} sm={6}>
+                                            <Controller
+                                                name={`socios.${index}.comprovanteEnderecoAnexo`}
+                                                control={control}
+                                                render={({ field: { value } }) => (
+                                                    <Box
+                                                        sx={{
+                                                            border: '1px solid',
+                                                            borderColor: 'divider',
+                                                            borderRadius: 2,
+                                                            padding: 2,
+                                                            textAlign: 'center',
+                                                        }}
+                                                    >
+                                                        <Typography variant="subtitle1" gutterBottom>
+                                                            <strong>Comprovante de Endereço</strong>
+                                                        </Typography>
+                                                        <Stack spacing={1}>
+                                                            <Button
+                                                                variant="contained"
+                                                                color="primary"
+                                                                fullWidth
+                                                                size="small"
+                                                                onClick={() => handleUpload('comprovanteEnderecoAnexo', index)}
+                                                                startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                                                            >
+                                                                Enviar
+                                                            </Button>
+                                                            {value && (
+                                                                <>
+                                                                    <Button
+                                                                        variant="outlined"
+                                                                        fullWidth
+                                                                        size="small"
+                                                                        onClick={() => handleDownload('comprovanteEnderecoAnexo', index)}
+                                                                        startIcon={<Iconify icon="eva:download-fill" />}
+                                                                    >
+                                                                        Baixar
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="outlined"
+                                                                        color="error"
+                                                                        fullWidth
+                                                                        size="small"
+                                                                        onClick={() => handleDelete('comprovanteEnderecoAnexo', index)}
+                                                                        startIcon={<Iconify icon="eva:trash-2-fill" />}
+                                                                    >
+                                                                        Deletar
+                                                                    </Button>
+                                                                </>
+                                                            )}
+                                                        </Stack>
+                                                        {value && typeof value === 'string' && (
+                                                            <Box mt={1}>
+                                                                <Typography variant="caption" noWrap>
+                                                                    📎 {value.split('/').pop()}
+                                                                </Typography>
+                                                            </Box>
+                                                        )}
+                                                    </Box>
+                                                )}
+                                            />
+                                        </Grid>
+                                    </Grid>
+                                </Box>
+                            ))}
+                        </Box>
+                    )}
+                </Box>
+            )}
         </Card >
     );
 }

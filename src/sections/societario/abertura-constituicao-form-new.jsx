@@ -7,16 +7,18 @@ import {
   Box,
   Tab,
   Grid,
+  Chip,
   Card,
   Tabs,
-  Chip,
   Stack,
+  Switch,
   Divider,
   MenuItem,
   TextField,
   Typography,
   LinearProgress,
   CircularProgress,
+  FormControlLabel,
 } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -24,6 +26,36 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { updateAbertura } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+
+import DocumentsManager from '../abertura/empresa/DocumentsManager';
+
+const formatarValorMonetario = (valor) => {
+  if (!valor) return '';
+
+  if (typeof valor === 'number') {
+    return `R$ ${valor.toLocaleString('pt-BR', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }
+
+  const valorString = String(valor);
+
+  const valorLimpo = valorString
+    .replace(/R\$\s*/gi, '')  // Remove R$ e espaços após
+    .replace(/\s/g, '')        // Remove outros espaços
+    .replace(/\./g, '')        // Remove pontos (separador de milhar BR)
+    .replace(',', '.');        // Troca vírgula por ponto (decimal)
+
+  const numero = parseFloat(valorLimpo);
+
+  if (Number.isNaN(numero)) return valor; // Se não conseguir converter, retorna o valor original
+
+  return `R$ ${numero.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+};
 
 const SITUACOES_ABERTURA = [
   { value: 0, label: 'Solicitando Viabilidade', completed: false },
@@ -46,6 +78,10 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
   const [etapasCompletadas, setEtapasCompletadas] = useState(
     currentAbertura?.etapasCompletadas || []
   );
+  const [documentosData, setDocumentosData] = useState(currentAbertura || {});
+  const [notificarWhats, setNotificarWhats] = useState(
+    currentAbertura?.notificarWhats ?? true
+  );
   const loading = useBoolean();
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
@@ -62,8 +98,12 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
     if (currentAbertura) {
       setSituacaoAbertura(currentAbertura.situacaoAbertura ?? 0);
       setEtapasCompletadas(currentAbertura.etapasCompletadas || []);
+      setNotificarWhats(currentAbertura.notificarWhats ?? true);
+      setDocumentosData(currentAbertura);
+      setActiveTab(0); // Reset para a primeira aba ao trocar de abertura
     }
-  }, [currentAbertura]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentAbertura?._id]);
 
   const handleSituacaoChange = async (event) => {
     const novaSituacao = parseInt(event.target.value, 10);
@@ -75,6 +115,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
       await updateAbertura(currentAbertura._id, {
         situacaoAbertura: novaSituacao,
         somenteAtualizar: false,
+        notificarWhats,
       });
 
       // Marca a etapa anterior como completada se ainda não estiver
@@ -106,7 +147,11 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
         onEtapasChange(novasEtapasCompletadas);
       }
 
-      toast.success('Situação da abertura atualizada com sucesso! A mensagem será enviada automaticamente ao cliente.');
+      toast.success(
+        notificarWhats
+          ? 'Situação da abertura atualizada com sucesso! A mensagem será enviada automaticamente ao cliente.'
+          : 'Situação da abertura atualizada com sucesso!'
+      );
     } catch (error) {
       console.error('Erro ao atualizar situação:', error);
       toast.error('Erro ao atualizar situação da abertura');
@@ -133,173 +178,213 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
             Em Constituição - Acompanhamento de Etapas
           </Typography>
 
-      {/* Barra de Progresso */}
-      <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="body2" color="text.secondary">
-            Progresso da Abertura
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {Math.round(progresso)}%
-          </Typography>
-        </Box>
-        <LinearProgress variant="determinate" value={progresso} sx={{ height: 8, borderRadius: 1 }} />
-      </Box>
+          {/* Barra de Progresso */}
+          <Box sx={{ mb: 4 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                Progresso da Abertura
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {Math.round(progresso)}%
+              </Typography>
+            </Box>
+            <LinearProgress variant="determinate" value={progresso} sx={{ height: 8, borderRadius: 1 }} />
+          </Box>
 
-      {/* Select de Situação */}
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        <Grid item xs={12} md={6}>
-          <TextField
-            select
-            fullWidth
-            label="Situação da Abertura"
-            value={situacaoAbertura}
-            onChange={handleSituacaoChange}
-            disabled={saving || loading.value}
-            helperText="Ao alterar a situação, uma mensagem será enviada automaticamente ao cliente pelo backend"
-          >
-            {SITUACOES_ABERTURA.map((situacao) => (
-              <MenuItem key={situacao.value} value={situacao.value}>
-                {situacao.value}. {situacao.label}
-              </MenuItem>
-            ))}
-          </TextField>
-        </Grid>
-      </Grid>
-
-      {/* Lista de Etapas */}
-      <Box sx={{ mt: 3 }}>
-        <Typography variant="subtitle2" sx={{ mb: 2 }}>
-          Etapas do Processo:
-        </Typography>
-        <Stack spacing={1}>
-          {SITUACOES_ABERTURA.map((situacao, index) => {
-            const isCompleted = etapasCompletadas.includes(situacao.value);
-            const isCurrent = situacao.value === situacaoAbertura;
-            const isPast = situacao.value < situacaoAbertura;
-            // Se a situação atual é 10 (Abertura concluída), todas as etapas são consideradas completas
-            const isAllCompleted = situacaoAbertura === 10;
-
-            return (
+          {/* Select de Situação */}
+          <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-start">
+            <Grid item xs={12} md={6}>
+              <TextField
+                select
+                fullWidth
+                label="Situação da Abertura"
+                value={situacaoAbertura}
+                onChange={handleSituacaoChange}
+                disabled={saving || loading.value}
+                helperText={
+                  notificarWhats
+                    ? 'Ao alterar a situação, uma mensagem será enviada automaticamente ao cliente'
+                    : 'Notificação WhatsApp desativada - cliente não será notificado'
+                }
+              >
+                {SITUACOES_ABERTURA.map((situacao) => (
+                  <MenuItem key={situacao.value} value={situacao.value}>
+                    {situacao.value}. {situacao.label}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+            <Grid item xs={12} md={6}>
               <Box
-                key={situacao.value}
                 sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 1,
                   p: 2,
                   borderRadius: 1,
+                  bgcolor: notificarWhats ? 'success.lighter' : 'grey.100',
                   border: '1px solid',
-                  borderColor: isCurrent
-                    ? 'primary.main'
-                    : isCompleted || isPast || isAllCompleted
-                      ? 'success.lighter'
-                      : 'divider',
-                  bgcolor: isCurrent
-                    ? 'primary.lighter'
-                    : isCompleted || isPast || isAllCompleted
-                      ? 'success.lighter'
-                      : 'background.paper',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
+                  borderColor: notificarWhats ? 'success.light' : 'grey.300',
                 }}
               >
-                <Box
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    bgcolor: isCurrent
-                      ? 'primary.main'
-                      : isCompleted || isPast || isAllCompleted
-                        ? 'success.main'
-                        : 'grey.300',
-                    color: isCurrent || isCompleted || isPast || isAllCompleted ? 'white' : 'text.secondary',
-                    fontWeight: 'bold',
-                  }}
-                >
-                  {isCompleted || isPast || isAllCompleted ? (
-                    <Iconify icon="eva:checkmark-fill" width={20} />
-                  ) : (
-                    situacao.value + 1
-                  )}
-                </Box>
-                <Box sx={{ flex: 1 }}>
-                  <Typography
-                    variant="body2"
+                <Iconify
+                  icon={notificarWhats ? 'ic:baseline-whatsapp' : 'ic:baseline-notifications-off'}
+                  width={24}
+                  sx={{ color: notificarWhats ? 'success.main' : 'grey.500', alignSelf: 'center' }}
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={notificarWhats}
+                      onChange={(e) => setNotificarWhats(e.target.checked)}
+                      disabled={saving || loading.value}
+                      color="success"
+                    />
+                  }
+                  label={
+                    <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                      {notificarWhats ? 'Notificar cliente via WhatsApp' : 'Notificação WhatsApp desativada'}
+                    </Typography>
+                  }
+                  sx={{ m: 0 }}
+                />
+              </Box>
+            </Grid>
+          </Grid>
+
+          {/* Lista de Etapas */}
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+              Etapas do Processo:
+            </Typography>
+            <Stack spacing={1}>
+              {SITUACOES_ABERTURA.map((situacao, index) => {
+                const isCompleted = etapasCompletadas.includes(situacao.value);
+                const isCurrent = situacao.value === situacaoAbertura;
+                const isPast = situacao.value < situacaoAbertura;
+                // Se a situação atual é 10 (Abertura concluída), todas as etapas são consideradas completas
+                const isAllCompleted = situacaoAbertura === 10;
+
+                return (
+                  <Box
+                    key={situacao.value}
                     sx={{
-                      fontWeight: isCurrent ? 'bold' : 'normal',
-                      color: isCurrent ? 'primary.main' : 'text.primary',
+                      p: 2,
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: isCurrent
+                        ? 'primary.main'
+                        : isCompleted || isPast || isAllCompleted
+                          ? 'success.lighter'
+                          : 'divider',
+                      bgcolor: isCurrent
+                        ? 'primary.lighter'
+                        : isCompleted || isPast || isAllCompleted
+                          ? 'success.lighter'
+                          : 'background.paper',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
                     }}
                   >
-                    {situacao.label}
-                  </Typography>
-                </Box>
-                {isCurrent && (
-                  <Chip label="Atual" size="small" color="primary" />
-                )}
-                {(isCompleted || (isAllCompleted && !isCurrent)) && (
-                  <Chip label="Concluída" size="small" color="success" />
-                )}
-              </Box>
-            );
-          })}
-        </Stack>
-      </Box>
+                    <Box
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: isCurrent
+                          ? 'primary.main'
+                          : isCompleted || isPast || isAllCompleted
+                            ? 'success.main'
+                            : 'grey.300',
+                        color: isCurrent || isCompleted || isPast || isAllCompleted ? 'white' : 'text.secondary',
+                        fontWeight: 'bold',
+                      }}
+                    >
+                      {isCompleted || isPast || isAllCompleted ? (
+                        <Iconify icon="eva:checkmark-fill" width={20} />
+                      ) : (
+                        situacao.value + 1
+                      )}
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          fontWeight: isCurrent ? 'bold' : 'normal',
+                          color: isCurrent ? 'primary.main' : 'text.primary',
+                        }}
+                      >
+                        {situacao.label}
+                      </Typography>
+                    </Box>
+                    {isCurrent && (
+                      <Chip label="Atual" size="small" color="primary" />
+                    )}
+                    {(isCompleted || (isAllCompleted && !isCurrent)) && (
+                      <Chip label="Concluída" size="small" color="success" />
+                    )}
+                  </Box>
+                );
+              })}
+            </Stack>
+          </Box>
 
-      {saving && (
-        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
-          <CircularProgress size={16} />
-          <Typography variant="body2" color="text.secondary">
-            Salvando...
-          </Typography>
-        </Box>
-      )}
+          {saving && (
+            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CircularProgress size={16} />
+              <Typography variant="body2" color="text.secondary">
+                Salvando...
+              </Typography>
+            </Box>
+          )}
 
-      {/* Alerta sobre conclusão das etapas */}
-      {!todasCompletas && (
-        <Box
-          sx={{
-            mt: 3,
-            p: 2,
-            borderRadius: 1,
-            bgcolor: 'warning.lighter',
-            border: '1px solid',
-            borderColor: 'warning.main',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-          }}
-        >
-          <Iconify icon="eva:alert-circle-fill" width={24} sx={{ color: 'warning.main' }} />
-          <Typography variant="body2" sx={{ color: 'warning.darker' }}>
-            Para avançar para o próximo status, todas as etapas da abertura devem estar concluídas.
-            Etapas completadas: {etapasCompletadas.length} de {SITUACOES_ABERTURA.length}
-          </Typography>
-        </Box>
-      )}
+          {/* Alerta sobre conclusão das etapas */}
+          {!todasCompletas && (
+            <Box
+              sx={{
+                mt: 3,
+                p: 2,
+                borderRadius: 1,
+                bgcolor: 'warning.lighter',
+                border: '1px solid',
+                borderColor: 'warning.main',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Iconify icon="eva:alert-circle-fill" width={24} sx={{ color: 'warning.main' }} />
+              <Typography variant="body2" sx={{ color: 'warning.darker' }}>
+                Para avançar para o próximo status, todas as etapas da abertura devem estar concluídas.
+                Etapas completadas: {etapasCompletadas.length} de {SITUACOES_ABERTURA.length}
+              </Typography>
+            </Box>
+          )}
 
-      {todasCompletas && (
-        <Box
-          sx={{
-            mt: 3,
-            p: 2,
-            borderRadius: 1,
-            bgcolor: 'success.lighter',
-            border: '1px solid',
-            borderColor: 'success.main',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 1,
-          }}
-        >
-          <Iconify icon="eva:checkmark-circle-2-fill" width={24} sx={{ color: 'success.main' }} />
-          <Typography variant="body2" sx={{ color: 'success.darker' }}>
-            Todas as etapas foram concluídas! Você pode avançar para o próximo status.
-          </Typography>
-        </Box>
-      )}
+          {todasCompletas && (
+            <Box
+              sx={{
+                mt: 3,
+                p: 2,
+                borderRadius: 1,
+                bgcolor: 'success.lighter',
+                border: '1px solid',
+                borderColor: 'success.main',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
+              <Iconify icon="eva:checkmark-circle-2-fill" width={24} sx={{ color: 'success.main' }} />
+              <Typography variant="body2" sx={{ color: 'success.darker' }}>
+                Todas as etapas foram concluídas! Você pode avançar para o próximo status.
+              </Typography>
+            </Box>
+          )}
         </Box>
       )}
 
@@ -537,14 +622,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
               <TextField
                 label="Capital Social"
                 fullWidth
-                value={
-                  currentAbertura?.capitalSocial
-                    ? `R$ ${Number(currentAbertura.capitalSocial).toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}`
-                    : ''
-                }
+                value={formatarValorMonetario(currentAbertura?.capitalSocial)}
                 InputProps={{ readOnly: true }}
                 variant="outlined"
               />
@@ -553,14 +631,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
               <TextField
                 label="Valor Mensalidade"
                 fullWidth
-                value={
-                  currentAbertura?.valorMensalidade
-                    ? `R$ ${Number(currentAbertura.valorMensalidade).toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}`
-                    : ''
-                }
+                value={formatarValorMonetario(currentAbertura?.valorMensalidade)}
                 InputProps={{ readOnly: true }}
                 variant="outlined"
               />
@@ -569,14 +640,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
               <TextField
                 label="Pro Labore"
                 fullWidth
-                value={
-                  currentAbertura?.proLabore
-                    ? `R$ ${Number(currentAbertura.proLabore).toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}`
-                    : ''
-                }
+                value={formatarValorMonetario(currentAbertura?.proLabore)}
                 InputProps={{ readOnly: true }}
                 variant="outlined"
               />
@@ -585,14 +649,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
               <TextField
                 label="Previsão de Faturamento"
                 fullWidth
-                value={
-                  currentAbertura?.previsaoFaturamento
-                    ? `R$ ${Number(currentAbertura.previsaoFaturamento).toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}`
-                    : ''
-                }
+                value={formatarValorMonetario(currentAbertura?.previsaoFaturamento)}
                 InputProps={{ readOnly: true }}
                 variant="outlined"
               />
@@ -641,6 +698,16 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 />
               </Grid>
             )}
+
+            {/* Documentos */}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+              <DocumentsManager
+                formData={documentosData}
+                setFormData={setDocumentosData}
+                aberturaId={currentAbertura._id}
+              />
+            </Grid>
           </Grid>
         </Box>
       )}

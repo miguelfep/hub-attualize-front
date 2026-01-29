@@ -238,7 +238,9 @@ export default function AlteracaoDocumentos({ alteracaoId }) {
                                     </Box>
                                     {file && (
                                         <Box mt={2}>
-                                            <Typography variant="body2">{file}</Typography>
+                                            <Typography variant="body2" color="text.secondary">
+                                                📎 {file.split('/').pop()}
+                                            </Typography>
                                         </Box>
                                     )}
                                 </Box>
