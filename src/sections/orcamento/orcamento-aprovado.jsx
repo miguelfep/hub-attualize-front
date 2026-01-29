@@ -20,11 +20,13 @@ import {
   FormControl,
   FormControlLabel,
   CircularProgress,
+  Card,
+  CardContent,
+  Chip,
 } from '@mui/material';
 
 import { fCurrency, onlyDigits, formatTelefone, formatCPFOrCNPJ, validateCPFOrCNPJ } from 'src/utils/format-number';
 
-import { gerarPixParaInvoice } from 'src/actions/pix';
 import { crirarPedidoOrcamento, updateInvoice } from 'src/actions/invoices';
 
 import { Iconify } from 'src/components/iconify';
@@ -163,7 +165,7 @@ export function OrcamentoAprovado({
   const handleFinalize = async () => {
     setIsCreating(true);
     
-    // Se for PIX, gerar PIX primeiro
+    // Se for PIX, gerar PIX junto com os dados do formulário
     if (method === 'pix') {
       setGerandoPix(true);
       try {
@@ -182,22 +184,24 @@ export function OrcamentoAprovado({
 
         setErrors({});
 
-        // Preparar dados do formulário
+        // Preparar dados do formulário com todos os dados necessários
+        // Isso atualizará o cliente/lead e processará o pagamento PIX
         const dataInvoice = {
           paymentMethod: 'pix',
+          forcarNovoPix: false, // Não forçar novo PIX se já existir um válido
           ...formData,
           cep: sanitizeCep(formData.cep),
           cpfCnpj: onlyDigits(formData.cpfCnpj),
           telefone: onlyDigits(formData.telefone),
         };
 
-        // Gerar PIX
-        await gerarPixParaInvoice(invoice._id, false);
-        
-        // Criar pedido com dados do formulário
+        console.log('📤 Enviando dados do formulário para checkout:', dataInvoice);
+
+        // Criar pedido e gerar PIX em uma única chamada
+        // A API irá: atualizar cliente/lead com os dados do formulário e gerar o PIX
         await crirarPedidoOrcamento(invoice._id, dataInvoice);
 
-        // Atualizar invoice
+        // Atualizar invoice para refletir as mudanças
         await updateInvoiceData();
 
         toast.success('QR Code PIX gerado com sucesso!');
@@ -458,12 +462,101 @@ function PaymentMethods({ method, handleChangeMethod }) {
       <Typography variant="h6" sx={{ mb: 3 }}>
         Forma de Pagamento
       </Typography>
-      <FormControl component="fieldset">
-        <RadioGroup name="formaPagamento" value={method} onChange={handleChangeMethod}>
-          <FormControlLabel value="boleto" control={<Radio />} label="Boleto" />
-          <FormControlLabel value="pix" control={<Radio />} label="PIX" />
-        </RadioGroup>
-      </FormControl>
+      <Stack spacing={2}>
+        {/* PIX - Destacado com viés cognitivo */}
+        <Card
+          component="label"
+          sx={{
+            cursor: 'pointer',
+            border: method === 'pix' ? 2 : 1,
+            borderColor: method === 'pix' ? 'primary.main' : 'divider',
+            backgroundColor: method === 'pix' ? 'action.selected' : 'background.paper',
+            position: 'relative',
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: 2,
+            },
+          }}
+          onClick={() => handleChangeMethod({ target: { value: 'pix' } })}
+        >
+          <CardContent>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Radio
+                checked={method === 'pix'}
+                value="pix"
+                onChange={handleChangeMethod}
+                sx={{ p: 0 }}
+              />
+              <Stack direction="row" spacing={1} alignItems="center" flex={1}>
+                <Iconify icon="solar:qr-code-bold" width={32} sx={{ color: 'primary.main' }} />
+                <Stack flex={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      PIX
+                    </Typography>
+                    <Chip
+                      label="Recomendado"
+                      color="success"
+                      size="small"
+                      sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
+                    />
+                    <Chip
+                      label="Pagamento Instantâneo"
+                      color="primary"
+                      size="small"
+                      variant="outlined"
+                      sx={{ height: 20, fontSize: '0.65rem' }}
+                    />
+                  </Stack>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    Confirmação imediata • Sem taxas • Mais rápido e seguro
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+
+        {/* Boleto - Opção secundária */}
+        <Card
+          component="label"
+          sx={{
+            cursor: 'pointer',
+            border: method === 'boleto' ? 2 : 1,
+            borderColor: method === 'boleto' ? 'primary.main' : 'divider',
+            backgroundColor: method === 'boleto' ? 'action.selected' : 'background.paper',
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': {
+              borderColor: 'primary.main',
+              boxShadow: 2,
+            },
+          }}
+          onClick={() => handleChangeMethod({ target: { value: 'boleto' } })}
+        >
+          <CardContent>
+            <Stack direction="row" spacing={2} alignItems="center">
+              <Radio
+                checked={method === 'boleto'}
+                value="boleto"
+                onChange={handleChangeMethod}
+                sx={{ p: 0 }}
+              />
+              <Stack direction="row" spacing={1} alignItems="center" flex={1}>
+                <Iconify icon="solar:document-text-bold" width={32} sx={{ color: 'text.secondary' }} />
+                <Stack flex={1}>
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Boleto Bancário
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    Vencimento em até 3 dias úteis • Pode levar até 2 dias para compensar
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      </Stack>
     </Box>
   );
 }

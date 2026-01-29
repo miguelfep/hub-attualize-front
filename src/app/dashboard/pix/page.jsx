@@ -86,11 +86,35 @@ export default function PixPage() {
       };
 
       const response = await listarCobrancasPix(filtros);
-      setCobrancas(response.cobs || []);
-      setTotalCobrancas(response.paginacao?.total || 0);
+      
+      console.log('📥 Resposta da API listarCobrancasPix:', response);
+      
+      // A resposta pode vir em diferentes formatos
+      // Tentar diferentes estruturas possíveis
+      const cobrancasList = response?.cobs 
+        || response?.cobrancas 
+        || response?.data?.cobs 
+        || response?.data?.cobrancas 
+        || (Array.isArray(response) ? response : []);
+      
+      const total = response?.paginacao?.total 
+        || response?.total 
+        || response?.data?.paginacao?.total 
+        || response?.data?.total 
+        || cobrancasList.length;
+
+      console.log('✅ Cobranças processadas:', { count: cobrancasList.length, total });
+      
+      setCobrancas(cobrancasList);
+      setTotalCobrancas(total);
     } catch (error) {
       console.error('Erro ao carregar cobranças:', error);
-      toast.error('Erro ao carregar cobranças PIX');
+      const errorMessage = error?.response?.data?.message 
+        || error?.message 
+        || 'Erro ao carregar cobranças PIX';
+      toast.error(errorMessage);
+      setCobrancas([]);
+      setTotalCobrancas(0);
     } finally {
       setLoading(false);
     }
@@ -107,11 +131,30 @@ export default function PixPage() {
       };
 
       const response = await listarPixRecebidos(filtros);
-      setPixRecebidos(response.pix || []);
-      setTotalRecebidos(response.paginacao?.total || 0);
+      
+      // A resposta pode vir em diferentes formatos
+      const pixList = response?.pix 
+        || response?.recebidos 
+        || response?.data?.pix 
+        || response?.data?.recebidos 
+        || (Array.isArray(response) ? response : []);
+      
+      const total = response?.paginacao?.total 
+        || response?.total 
+        || response?.data?.paginacao?.total 
+        || response?.data?.total 
+        || pixList.length;
+
+      setPixRecebidos(pixList);
+      setTotalRecebidos(total);
     } catch (error) {
       console.error('Erro ao carregar PIX recebidos:', error);
-      toast.error('Erro ao carregar PIX recebidos');
+      const errorMessage = error?.response?.data?.message 
+        || error?.message 
+        || 'Erro ao carregar PIX recebidos';
+      toast.error(errorMessage);
+      setPixRecebidos([]);
+      setTotalRecebidos(0);
     } finally {
       setLoading(false);
     }

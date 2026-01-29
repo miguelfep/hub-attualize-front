@@ -46,19 +46,30 @@ export async function consultarCobrancaPix(txid) {
  * @returns {Promise} Lista de cobranças
  */
 export async function listarCobrancasPix(filtros = {}) {
-  const params = new URLSearchParams();
-  
-  Object.entries(filtros).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      params.append(key, value);
-    }
-  });
+  try {
+    const params = new URLSearchParams();
+    
+    Object.entries(filtros).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, value);
+      }
+    });
 
-  const queryString = params.toString();
-  const url = queryString ? `${baseUrl}pix/cob?${queryString}` : `${baseUrl}pix/cob`;
-  
-  const res = await axios.get(url);
-  return res.data;
+    const queryString = params.toString();
+    const url = queryString ? `${baseUrl}pix/cob?${queryString}` : `${baseUrl}pix/cob`;
+    
+    console.log('🔍 Fazendo requisição para:', url);
+    const res = await axios.get(url);
+    console.log('📥 Resposta completa:', res);
+    console.log('📥 Resposta data:', res.data);
+    
+    // O interceptor pode retornar apenas res.data, então verificar
+    return res.data || res;
+  } catch (error) {
+    console.error('❌ Erro em listarCobrancasPix:', error);
+    // Se o interceptor já retornou error.response.data, lançar novamente
+    throw error;
+  }
 }
 
 // ----------------------------------------------------------------------
@@ -85,19 +96,30 @@ export async function gerarPixParaInvoice(invoiceId, forcarNovoPix = false) {
  * @returns {Promise} Lista de PIX recebidos
  */
 export async function listarPixRecebidos(filtros = {}) {
-  const params = new URLSearchParams();
-  
-  Object.entries(filtros).forEach(([key, value]) => {
-    if (value !== undefined && value !== null && value !== '') {
-      params.append(key, value);
-    }
-  });
+  try {
+    const params = new URLSearchParams();
+    
+    Object.entries(filtros).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        params.append(key, value);
+      }
+    });
 
-  const queryString = params.toString();
-  const url = queryString ? `${baseUrl}pix/recebidos?${queryString}` : `${baseUrl}pix/recebidos`;
-  
-  const res = await axios.get(url);
-  return res.data;
+    const queryString = params.toString();
+    const url = queryString ? `${baseUrl}pix/recebidos?${queryString}` : `${baseUrl}pix/recebidos`;
+    
+    console.log('🔍 Fazendo requisição para:', url);
+    const res = await axios.get(url);
+    console.log('📥 Resposta completa:', res);
+    console.log('📥 Resposta data:', res.data);
+    
+    // O interceptor pode retornar apenas res.data, então verificar
+    return res.data || res;
+  } catch (error) {
+    console.error('❌ Erro em listarPixRecebidos:', error);
+    // Se o interceptor já retornou error.response.data, lançar novamente
+    throw error;
+  }
 }
 
 // ----------------------------------------------------------------------
