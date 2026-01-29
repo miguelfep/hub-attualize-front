@@ -205,4 +205,27 @@ export const endpoints = {
     atualizar: (clienteId, codigo) => `${baseUrl}plano-contas/${clienteId}/${codigo}`,
     desativar: (clienteId, codigo) => `${baseUrl}plano-contas/${clienteId}/${codigo}`,
   },
+  // PIX
+  pix: {
+    qrcode: {
+      gerar: `${baseUrl}pix/qrcode`,
+      consultar: (txid) => `${baseUrl}pix/qrcode/${txid}`,
+    },
+    cobranca: {
+      consultar: (txid) => `${baseUrl}pix/cob/${txid}`,
+      listar: `${baseUrl}pix/cob`,
+    },
+    recebidos: {
+      listar: `${baseUrl}pix/recebidos`,
+      consultar: (e2eid) => `${baseUrl}pix/recebidos/${e2eid}`,
+      devolver: (e2eid, idDevolucao) => `${baseUrl}pix/recebidos/${e2eid}/devolucao/${idDevolucao}`,
+    },
+    logs: {
+      listar: `${baseUrl}pix/logs`,
+      estatisticas: `${baseUrl}pix/logs/estatisticas`,
+    },
+    relatorios: {
+      recebidos: `${baseUrl}pix/relatorios/recebidos`,
+    },
+  },
 };

@@ -12,7 +12,10 @@ import { styled } from '@mui/material/styles';
 import TableRow from '@mui/material/TableRow';
 import TableHead from '@mui/material/TableHead';
 import TableBody from '@mui/material/TableBody';
+import Accordion from '@mui/material/Accordion';
 import Typography from '@mui/material/Typography';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import AccordionDetails from '@mui/material/AccordionDetails';
 import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import { Chip, Alert, Dialog, Switch, Tooltip, TextField, CardContent, DialogTitle, DialogContent, DialogActions, CircularProgress, FormControlLabel } from '@mui/material';
 
@@ -25,6 +28,7 @@ import { criarNFSeInvoice, cancelarNFSeInvoice } from 'src/actions/notafiscal';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { QrCodePix } from 'src/components/pix/qrcode-pix';
 
 import { InvoiceToolbar } from './invoice-toolbar';
 
@@ -139,6 +143,294 @@ export function InvoiceDetails({ invoice, nfses }) {
       </StyledTableRow>
     </>
   );
+
+  // Componente para exibir informações de pagamento
+  const renderInformacoesPagamento = () => {
+    if (!invoice?.cobrancas || invoice.cobrancas.length === 0) {
+      return null;
+    }
+
+    return (
+      <Card sx={{ mt: 3, border: 1, borderColor: 'divider' }}>
+        <CardContent>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 3 }}>
+            <Iconify icon="solar:card-bold" width={24} />
+            <Typography variant="h6">Informações de Pagamento</Typography>
+          </Stack>
+
+          <Stack spacing={3}>
+            {invoice.cobrancas.map((cobranca, index) => {
+              // PIX
+              if (cobranca.metodoPagamento === 'pix') {
+                let pixData = null;
+                
+                if (cobranca.pix) {
+                  try {
+                    pixData = typeof cobranca.pix === 'string' 
+                      ? JSON.parse(cobranca.pix) 
+                      : cobranca.pix;
+                  } catch (e) {
+                    console.error('Erro ao parsear dados PIX:', e);
+                  }
+                }
+
+                return (
+                  <Card key={`cobranca-pix-${index}`} variant="outlined" sx={{ p: 2 }}>
+                    <Stack spacing={2}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify icon="solar:qr-code-bold" width={20} />
+                          <Typography variant="subtitle1">Pagamento PIX</Typography>
+                        </Stack>
+                        <Label
+                          variant="soft"
+                          color={cobrancaStatusColors[cobranca.status] || 'default'}
+                        >
+                          {cobrancaStatusTexts[cobranca.status] || cobranca.status}
+                        </Label>
+                      </Stack>
+
+                      <Stack spacing={1.5}>
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            Valor:
+                          </Typography>
+                          <Typography variant="subtitle2">{fCurrency(cobranca.valor || invoice?.total)}</Typography>
+                        </Stack>
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            Vencimento:
+                          </Typography>
+                          <Typography variant="body2">{fDate(cobranca.dataVencimento)}</Typography>
+                        </Stack>
+                        {pixData?.txid && (
+                          <Stack direction="row" justifyContent="space-between">
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              TXID:
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.75rem' }}>
+                              {pixData.txid}
+                            </Typography>
+                          </Stack>
+                        )}
+                        {pixData?.status && (
+                          <Stack direction="row" justifyContent="space-between">
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              Status PIX:
+                            </Typography>
+                            <Label variant="soft" color={pixData.status === 'CONCLUIDA' ? 'success' : 'info'}>
+                              {pixData.status}
+                            </Label>
+                          </Stack>
+                        )}
+                      </Stack>
+
+                      {pixData && (pixData.pixCopiaECola || pixData.qrcode) && (
+                        <>
+                          <Divider />
+                          <Stack spacing={1}>
+                            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                              Código PIX (Copia e Cola):
+                            </Typography>
+                            <Box
+                              sx={{
+                                p: 1.5,
+                                borderRadius: 1,
+                                bgcolor: 'background.neutral',
+                                border: (theme) => `1px solid ${theme.palette.divider}`,
+                                maxHeight: 100,
+                                overflow: 'auto',
+                              }}
+                            >
+                              <Typography variant="caption" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                {pixData.pixCopiaECola || pixData.qrcode}
+                              </Typography>
+                            </Box>
+                            <CopyToClipboard text={pixData.pixCopiaECola || pixData.qrcode}>
+                              <Button variant="outlined" size="small" startIcon={<Iconify icon="solar:copy-bold" />}>
+                                Copiar Código PIX
+                              </Button>
+                            </CopyToClipboard>
+                          </Stack>
+                        </>
+                      )}
+
+                      {pixData && (pixData.qrcodeBase64 || pixData.qrcode || pixData.pixCopiaECola) && (
+                        <>
+                          <Divider />
+                          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <QrCodePix pixData={pixData} />
+                          </Box>
+                        </>
+                      )}
+                    </Stack>
+                  </Card>
+                );
+              }
+
+              // Boleto
+              if (cobranca.metodoPagamento === 'boleto' && cobranca.boleto) {
+                let boleto = null;
+                
+                try {
+                  boleto = typeof cobranca.boleto === 'string' 
+                    ? JSON.parse(cobranca.boleto) 
+                    : cobranca.boleto;
+                } catch (e) {
+                  console.error('Erro ao parsear dados do boleto:', e);
+                  return null;
+                }
+
+                if (!boleto || (!boleto.linhaDigitavel && !boleto.codigoBarras && !boleto.pixCopiaECola)) {
+                  return null;
+                }
+
+                return (
+                  <Card key={`cobranca-boleto-${index}`} variant="outlined" sx={{ p: 2 }}>
+                    <Stack spacing={2}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Iconify icon="solar:document-text-bold" width={20} />
+                          <Typography variant="subtitle1">Pagamento Boleto</Typography>
+                        </Stack>
+                        <Label
+                          variant="soft"
+                          color={cobrancaStatusColors[cobranca.status] || 'default'}
+                        >
+                          {cobrancaStatusTexts[cobranca.status] || cobranca.status}
+                        </Label>
+                      </Stack>
+
+                      <Stack spacing={1.5}>
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            Valor:
+                          </Typography>
+                          <Typography variant="subtitle2">{fCurrency(cobranca.valor || invoice?.total)}</Typography>
+                        </Stack>
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            Vencimento:
+                          </Typography>
+                          <Typography variant="body2">{fDate(cobranca.dataVencimento)}</Typography>
+                        </Stack>
+                        {boleto.codigoSolicitacao && (
+                          <Stack direction="row" justifyContent="space-between">
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              Código de Solicitação:
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                              {boleto.codigoSolicitacao}
+                            </Typography>
+                          </Stack>
+                        )}
+                      </Stack>
+
+                      {(boleto.linhaDigitavel || boleto.codigoBarras || boleto.pixCopiaECola) && (
+                        <Accordion>
+                          <AccordionSummary
+                            expandIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}
+                            aria-controls="boleto-details-content"
+                            id="boleto-details-header"
+                          >
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              Ver detalhes do boleto
+                            </Typography>
+                          </AccordionSummary>
+                          <AccordionDetails>
+                            <Stack spacing={2}>
+                              {boleto.linhaDigitavel && (
+                                <Stack spacing={1}>
+                                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    Linha Digitável:
+                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      p: 1.5,
+                                      borderRadius: 1,
+                                      bgcolor: 'background.neutral',
+                                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                                    }}
+                                  >
+                                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                      {boleto.linhaDigitavel}
+                                    </Typography>
+                                  </Box>
+                                  <CopyToClipboard text={boleto.linhaDigitavel}>
+                                    <Button variant="outlined" size="small" startIcon={<Iconify icon="solar:copy-bold" />}>
+                                      Copiar Linha Digitável
+                                    </Button>
+                                  </CopyToClipboard>
+                                </Stack>
+                              )}
+
+                              {boleto.codigoBarras && (
+                                <Stack spacing={1}>
+                                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    Código de Barras:
+                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      p: 1.5,
+                                      borderRadius: 1,
+                                      bgcolor: 'background.neutral',
+                                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                                    }}
+                                  >
+                                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                      {boleto.codigoBarras}
+                                    </Typography>
+                                  </Box>
+                                  <CopyToClipboard text={boleto.codigoBarras}>
+                                    <Button variant="outlined" size="small" startIcon={<Iconify icon="solar:copy-bold" />}>
+                                      Copiar Código de Barras
+                                    </Button>
+                                  </CopyToClipboard>
+                                </Stack>
+                              )}
+
+                              {boleto.pixCopiaECola && (
+                                <Stack spacing={1}>
+                                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                    PIX Copia e Cola (Boleto):
+                                  </Typography>
+                                  <Box
+                                    sx={{
+                                      p: 1.5,
+                                      borderRadius: 1,
+                                      bgcolor: 'background.neutral',
+                                      border: (theme) => `1px solid ${theme.palette.divider}`,
+                                      maxHeight: 100,
+                                      overflow: 'auto',
+                                    }}
+                                  >
+                                    <Typography variant="caption" sx={{ fontFamily: 'monospace', wordBreak: 'break-all' }}>
+                                      {boleto.pixCopiaECola}
+                                    </Typography>
+                                  </Box>
+                                  <CopyToClipboard text={boleto.pixCopiaECola}>
+                                    <Button variant="outlined" size="small" startIcon={<Iconify icon="solar:copy-bold" />}>
+                                      Copiar PIX Copia e Cola
+                                    </Button>
+                                  </CopyToClipboard>
+                                </Stack>
+                              )}
+                            </Stack>
+                          </AccordionDetails>
+                        </Accordion>
+                      )}
+                    </Stack>
+                  </Card>
+                );
+              }
+
+              return null;
+            })}
+          </Stack>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderFooter = (
     <Box gap={2} display="flex" alignItems="center" flexWrap="wrap" sx={{ py: 3 }}>
@@ -323,88 +615,6 @@ export function InvoiceDetails({ invoice, nfses }) {
             </Button>
           </DialogActions>
         </Dialog>
-        {invoice.cobrancas && invoice.cobrancas.length > 0 && invoice.cobrancas[0].boleto && (
-          <Box sx={{ mt: 2 }}>
-            {(() => {
-              // Tentar fazer parse do boleto de forma segura
-              let boleto = null;
-              const boletoString = invoice.cobrancas[0].boleto;
-              
-              // Verificar se é uma string JSON válida
-              if (typeof boletoString === 'string' && boletoString.trim().startsWith('{')) {
-                try {
-                  boleto = JSON.parse(boletoString);
-                } catch (error) {
-                  console.error('Erro ao fazer parse do boleto:', error);
-                  // Se não for JSON válido, pode ser status como "PROCESSANDO" ou PIX
-                  return null;
-                }
-              } else if (typeof boletoString === 'object') {
-                // Se já for um objeto, usar diretamente
-                boleto = boletoString;
-              } else {
-                // Se for string simples (como "PROCESSANDO"), não renderizar o card de boleto
-                return null;
-              }
-              
-              // Verificar se o boleto tem as propriedades necessárias
-              if (!boleto || (!boleto.linhaDigitavel && !boleto.pixCopiaECola)) {
-                return null;
-              }
-              
-              console.log('boleto', boleto);  
-              return (
-                <Card sx={{ mt: 2 }}>
-                  <CardContent>
-                    <Label
-                      variant="soft"
-                      color={cobrancaStatusColors[invoice.cobrancas[0].status] || 'default'}
-                      sx={{ mb: 3 }}
-                    >
-                      {cobrancaStatusTexts[invoice.cobrancas[0].status] ||
-                        invoice.cobrancas[0].status}
-                    </Label>
-                    <Stack spacing={2.5} sx={{ mb: 3 }}>
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                          Valor
-                        </Typography>
-                        <Typography variant="h4" color="warning">
-                          {fCurrency(invoice?.total)}
-                        </Typography>
-                      </Stack>
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                          Vencimento
-                        </Typography>
-                        <Typography variant="subtitle1">
-                          {fDate(invoice?.dataVencimento)}
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                    <Divider sx={{ mb: 2 }} />
-                    <Stack spacing={2} sx={{ mt: 3 }}>
-                      {boleto.linhaDigitavel && (
-                        <CopyToClipboard text={boleto.linhaDigitavel}>
-                          <Button variant="outlined" size="small" sx={{ mt: 1 }}>
-                            Copiar Linha Digitável
-                          </Button>
-                        </CopyToClipboard>
-                      )}
-                      {boleto.pixCopiaECola && (
-                        <CopyToClipboard text={boleto.pixCopiaECola}>
-                          <Button variant="outlined" size="small" sx={{ mt: 1 }}>
-                            Copiar PIX Copia e Cola
-                          </Button>
-                        </CopyToClipboard>
-                      )}
-                    </Stack>
-                  </CardContent>
-                </Card>
-              );
-            })()}
-          </Box>
-        )}
         {invoice.urlPagamento && (
           <Box sx={{ mt: 2 }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
@@ -554,6 +764,7 @@ export function InvoiceDetails({ invoice, nfses }) {
         {renderList}
         <Divider sx={{ mt: 5, borderStyle: 'dashed' }} />
         {renderFooter}
+        {renderInformacoesPagamento()}
 
         {/* Mostrar o campo de edição do motivo se o status for 'perdida' */}
         {currentStatus === 'perdida' && (

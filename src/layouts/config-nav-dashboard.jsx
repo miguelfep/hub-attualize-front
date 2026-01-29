@@ -107,6 +107,11 @@ export const navData = [
             roles: ['admin', 'financeiro'],
             path: paths.dashboard.financeiro.pagar,
           },
+          {
+            title: 'PIX',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.pix.root,
+          },
         ],
       },
       {

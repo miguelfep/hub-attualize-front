@@ -1,4 +1,5 @@
 import { CONFIG } from 'src/config-global';
+import { InvoiceProvider } from 'src/contexts/InvoiceContext';
 import { getInvoices, getInvoiceById } from 'src/actions/invoices';
 
 import { OrcamentoView } from 'src/sections/orcamento/orcamento-view';
@@ -16,7 +17,11 @@ export default async function Page({ params }) {
     throw new Error('Invoice not found');
   }
 
-  return <OrcamentoView invoice={invoice} nfses={nfses} />;
+  return (
+    <InvoiceProvider initialInvoice={invoice}>
+      <OrcamentoView invoice={invoice} nfses={nfses} />
+    </InvoiceProvider>
+  );
 }
 
 // ----------------------------------------------------------------------
