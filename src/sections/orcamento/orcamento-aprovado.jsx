@@ -10,6 +10,7 @@ import {
   Grid,
   Radio,
   Stack,
+  Alert,
   Button,
   Divider,
   Container,
@@ -23,7 +24,8 @@ import {
 
 import { fCurrency, onlyDigits, formatTelefone, formatCPFOrCNPJ, validateCPFOrCNPJ } from 'src/utils/format-number';
 
-import { crirarPedidoOrcamento } from 'src/actions/invoices';
+import { gerarPixParaInvoice } from 'src/actions/pix';
+import { crirarPedidoOrcamento, updateInvoice } from 'src/actions/invoices';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -59,6 +61,8 @@ export function OrcamentoAprovado({
   loading,
   updateInvoiceData, // Nova prop para atualizar a invoice
 }) {
+  const [pixGerado, setPixGerado] = useState(false);
+  const [gerandoPix, setGerandoPix] = useState(false);
   const enderecoInicial = invoice?.cliente?.endereco?.[0] || invoice?.endereco || {};
   const [method, setMethod] = useState(paymentMethod);
   const [errors, setErrors] = useState({});
@@ -85,7 +89,23 @@ export function OrcamentoAprovado({
   }, [invoice?.cobrancas?.length, invoice?._id]);
 
   if (hasCobrancas) {
-    return <CobrancaExistente invoice={invoice} />;
+    return (
+      <CobrancaExistente 
+        invoice={invoice}
+        onPagamentoConfirmado={async (dadosPix) => {
+          try {
+            // Atualizar status da invoice para "pago"
+            await updateInvoice(invoice._id, { status: 'pago' });
+            await updateInvoiceData();
+            toast.success('Pagamento PIX confirmado!');
+          } catch (error) {
+            console.error('Erro ao atualizar status:', error);
+            await updateInvoiceData();
+            toast.success('Pagamento PIX confirmado!');
+          }
+        }}
+      />
+    );
   }
 
   const handleChangeMethod = (event) => {
@@ -142,6 +162,58 @@ export function OrcamentoAprovado({
 
   const handleFinalize = async () => {
     setIsCreating(true);
+    
+    // Se for PIX, gerar PIX primeiro
+    if (method === 'pix') {
+      setGerandoPix(true);
+      try {
+        // Validar formulário primeiro
+        const validationResult = formDataSchema.safeParse(formData);
+        if (!validationResult.success) {
+          const newErrors = {};
+          validationResult.error.errors.forEach((error) => {
+            newErrors[error.path[0]] = error.message;
+          });
+          setErrors(newErrors);
+          setIsCreating(false);
+          setGerandoPix(false);
+          return;
+        }
+
+        setErrors({});
+
+        // Preparar dados do formulário
+        const dataInvoice = {
+          paymentMethod: 'pix',
+          ...formData,
+          cep: sanitizeCep(formData.cep),
+          cpfCnpj: onlyDigits(formData.cpfCnpj),
+          telefone: onlyDigits(formData.telefone),
+        };
+
+        // Gerar PIX
+        await gerarPixParaInvoice(invoice._id, false);
+        
+        // Criar pedido com dados do formulário
+        await crirarPedidoOrcamento(invoice._id, dataInvoice);
+
+        // Atualizar invoice
+        await updateInvoiceData();
+
+        toast.success('QR Code PIX gerado com sucesso!');
+        setPixGerado(true);
+      } catch (error) {
+        console.error('Erro ao gerar PIX:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Erro ao gerar QR Code PIX';
+        toast.error(errorMessage);
+      } finally {
+        setIsCreating(false);
+        setGerandoPix(false);
+      }
+      return;
+    }
+
+    // Para outros métodos de pagamento (boleto, etc)
     const validationResult = formDataSchema.safeParse(formData);
     if (!validationResult.success) {
       const newErrors = {};
@@ -210,10 +282,15 @@ export function OrcamentoAprovado({
               cepNotFound={cepNotFound}
             />
             <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
+            {method === 'pix' && (
+              <Alert severity="info" sx={{ mt: 2 }}>
+                Clique em &quot;Finalizar Pedido&quot; para gerar o QR Code PIX. O QR Code será exibido na seção &quot;Detalhes da Cobrança&quot;.
+              </Alert>
+            )}
           </Box>
         </Grid>
         <Grid xs={12} md={4}>
-          <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} />
+          <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} gerandoPix={gerandoPix} method={method} />
         </Grid>
       </Grid>
     </Container>
@@ -391,7 +468,7 @@ function PaymentMethods({ method, handleChangeMethod }) {
   );
 }
 
-function PaymentSummary({ invoice, handleFinalize, isCreating }) {
+function PaymentSummary({ invoice, handleFinalize, isCreating, gerandoPix, method }) {
   return (
     <Box
       sx={{
@@ -451,9 +528,10 @@ function PaymentSummary({ invoice, handleFinalize, isCreating }) {
           variant="contained"
           sx={{ mt: 5, mb: 3 }}
           onClick={handleFinalize}
-          disabled={isCreating}
+          disabled={isCreating || gerandoPix}
+          startIcon={(isCreating || gerandoPix) ? <CircularProgress size={24} /> : undefined}
         >
-          {isCreating ? <CircularProgress size={24} /> : 'Finalizar pedido'}
+          {gerandoPix ? 'Gerando QR Code PIX...' : isCreating ? 'Processando...' : 'Finalizar pedido'}
         </Button>
       </Stack>
       <Stack alignItems="center" spacing={1}>

@@ -258,6 +258,11 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/avaliacoes`,
       detalhes: (id) => `${ROOTS.DASHBOARD}/avaliacoes/${id}`,
     },
+    pix: {
+      root: `${ROOTS.DASHBOARD}/pix`,
+      logs: `${ROOTS.DASHBOARD}/pix/logs`,
+      relatorios: `${ROOTS.DASHBOARD}/pix/relatorios`,
+    },
   },
   // CLIENTE AREA
   cliente: {
