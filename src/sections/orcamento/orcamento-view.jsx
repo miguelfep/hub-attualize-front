@@ -33,7 +33,7 @@ export function OrcamentoView({ invoice: initialInvoice, nfses }) {
   
   const [currentNfses, setCurrentNfses] = useState(nfses);
   const [activeStep, setActiveStep] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState('boleto');
+  const [paymentMethod, setPaymentMethod] = useState('pix'); // PIX pré-selecionado por padrão
   const [status, setStatus] = useState(currentInvoice?.status || initialInvoice?.status || 'orcamento');
   const [rejectionReason, setRejectionReason] = useState(''); // Estado para o motivo da recusa
   const [showRejectionInput, setShowRejectionInput] = useState(false); // Controle para mostrar input
