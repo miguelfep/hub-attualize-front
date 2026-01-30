@@ -247,9 +247,10 @@ export const usePlanoContas = (clienteId) => {
         await carregarEstatisticas(true); // forceRefresh = true
         
         return response.data.data;
-      } 
-        toast.error(response.data.message || 'Erro ao importar plano de contas.');
-        return null;
+      }
+      
+      toast.error(response.data.message || 'Erro ao importar plano de contas.');
+      return null;
       
     } catch (err) {
       console.error('Erro ao importar plano de contas:', err);
@@ -284,9 +285,10 @@ export const usePlanoContas = (clienteId) => {
         toast.success('Conta atualizada com sucesso!');
         await carregarContas();
         return response.data.data;
-      } 
-        toast.error(response.data.message || 'Erro ao atualizar conta.');
-        return null;
+      }
+      
+      toast.error(response.data.message || 'Erro ao atualizar conta.');
+      return null;
       
     } catch (err) {
       console.error('Erro ao atualizar conta:', err);
@@ -314,9 +316,10 @@ export const usePlanoContas = (clienteId) => {
         toast.success('Conta desativada com sucesso!');
         await carregarContas();
         return true;
-      } 
-        toast.error(response.data.message || 'Erro ao desativar conta.');
-        return false;
+      }
+      
+      toast.error(response.data.message || 'Erro ao desativar conta.');
+      return false;
       
     } catch (err) {
       console.error('Erro ao desativar conta:', err);
