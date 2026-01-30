@@ -71,22 +71,7 @@ export function HeaderBase({
 }) {
   const theme = useTheme();
 
-  // UseEffect para adicionar o script do Digisac Web Chat
-  useEffect(() => {
-    // Configura o objeto global _digisac
-    window._digisac = { id: 'c0517922-0328-4ccf-8027-fa9f7b78f6e2' };
 
-    // Cria e adiciona o script externo ao DOM
-    const script = document.createElement('script');
-    script.src = 'https://webchat.digisac.app/embedded.js';
-    script.async = true;
-    document.head.appendChild(script);
-
-    // Remove o script ao desmontar o componente (limpeza)
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
 
   return (
     <HeaderSection
