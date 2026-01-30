@@ -728,7 +728,7 @@ const onSubmit = handleSubmit(
                 <Grid xs={12}>
                   <Field.Editor name="observacao" label="Observação" fullWidth />
                 </Grid>
-                <Grid container item spacing={2} xs={12} sx={{ mt: 1 }}>
+                <Grid container spacing={2} xs={12} sx={{ mt: 1 }}>
                 <Grid item xs={12}>
                   <Typography variant="h6" sx={{ mb: -1 }}>Documentos da Empresa</Typography>
                 </Grid>

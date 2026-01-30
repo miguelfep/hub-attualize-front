@@ -161,6 +161,40 @@ export const usePlanoContas = (clienteId) => {
     }
   }, [clienteId, baseUrl]);
 
+  // Carregar estatísticas com cache
+  const carregarEstatisticas = useCallback(async (forceRefresh = false) => {
+    if (!clienteId) return;
+
+    // 🔥 Verificar cache
+    const cached = cache.estatisticas.get(clienteId);
+    const now = Date.now();
+    
+    if (!forceRefresh && cached && (now - cached.timestamp < cache.TIMEOUT)) {
+      console.log(`✅ Usando cache de estatísticas para cliente ${clienteId}`);
+      setEstatisticas(cached.data);
+      return;
+    }
+
+    try {
+      const url = `${baseUrl}plano-contas/${clienteId}/estatisticas`;
+      console.log(`🔍 Buscando estatísticas: ${url}`);
+      const response = await axios.get(url);
+      
+      const data = response.data.data || null;
+      
+      // 🔥 Atualizar cache
+      cache.estatisticas.set(clienteId, {
+        data,
+        timestamp: now
+      });
+      
+      setEstatisticas(data);
+      console.log(`✅ Estatísticas carregadas e cacheadas`);
+    } catch (err) {
+      console.error('Erro ao carregar estatísticas:', err);
+    }
+  }, [clienteId, baseUrl]);
+
   // Importar plano de contas
   const importarPlanoContas = useCallback(async (arquivo) => {
     if (!clienteId || !arquivo) {
@@ -292,40 +326,6 @@ export const usePlanoContas = (clienteId) => {
       return false;
     }
   }, [clienteId, baseUrl, carregarContas]);
-
-  // Carregar estatísticas com cache
-  const carregarEstatisticas = useCallback(async (forceRefresh = false) => {
-    if (!clienteId) return;
-
-    // 🔥 Verificar cache
-    const cached = cache.estatisticas.get(clienteId);
-    const now = Date.now();
-    
-    if (!forceRefresh && cached && (now - cached.timestamp < cache.TIMEOUT)) {
-      console.log(`✅ Usando cache de estatísticas para cliente ${clienteId}`);
-      setEstatisticas(cached.data);
-      return;
-    }
-
-    try {
-      const url = `${baseUrl}plano-contas/${clienteId}/estatisticas`;
-      console.log(`🔍 Buscando estatísticas: ${url}`);
-      const response = await axios.get(url);
-      
-      const data = response.data.data || null;
-      
-      // 🔥 Atualizar cache
-      cache.estatisticas.set(clienteId, {
-        data,
-        timestamp: now
-      });
-      
-      setEstatisticas(data);
-      console.log(`✅ Estatísticas carregadas e cacheadas`);
-    } catch (err) {
-      console.error('Erro ao carregar estatísticas:', err);
-    }
-  }, [clienteId, baseUrl]);
 
   // Carregar dados inicialmente (apenas uma vez por clienteId)
   useEffect(() => {

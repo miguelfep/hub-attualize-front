@@ -1,5 +1,5 @@
 import { CONFIG } from 'src/config-global';
-import { getClientes, getClienteById } from 'src/actions/clientes';
+import { getClientes, getClienteById } from 'src/actions/clientes-ssr';
 
 import { ClienteEditView } from 'src/sections/cliente/view';
 

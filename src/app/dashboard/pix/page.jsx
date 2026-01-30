@@ -21,8 +21,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
-import { fCurrency } from 'src/utils/format-number';
 import { fDate } from 'src/utils/format-time';
+import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { listarCobrancasPix, listarPixRecebidos } from 'src/actions/pix';
