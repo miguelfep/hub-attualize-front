@@ -4,8 +4,8 @@ const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 // ----------------------------------------------------------------------
 
 export async function getAberturasSocietario() {
-  return axios.get( `${baseUrl}societario/aberturas`);
-} 
+  return axios.get(`${baseUrl}societario/aberturas`);
+}
 
 // ----------------------------------------------------------------------
 
@@ -16,7 +16,7 @@ export async function getAberturaById(id) {
 // ----------------------------------------------------------------------
 
 export async function createAbertura(itemData) {
-  return axios.post( `${baseUrl}societario/abertura`, itemData);
+  return axios.post(`${baseUrl}societario/abertura`, itemData);
 }
 
 // ----------------------------------------------------------------------
@@ -138,7 +138,7 @@ export async function createLicenca(itemData) {
 // Função para atualizar a licença com arquivo e data de vencimento
 export async function updateLicencaWithFile(id, file, itemData) {
   const data = new FormData();
-  
+
   // Adiciona o arquivo ao FormData, se ele existir
   if (file) {
     data.append('file', file);
@@ -149,7 +149,7 @@ export async function updateLicencaWithFile(id, file, itemData) {
     if (value !== undefined && value !== null) {
       data.append(key, value);
     }
-  });  
+  });
 
   try {
     const response = await axios.post(`${baseUrl}societario/licenca/${id}/upload`, data, {
@@ -157,7 +157,7 @@ export async function updateLicencaWithFile(id, file, itemData) {
         'Content-Type': 'multipart/form-data',
       },
     });
- 
+
     return response;
   } catch (error) {
     console.error('Erro ao atualizar licença com arquivo e dados:', error);
@@ -194,7 +194,7 @@ export async function downloadLicenca(id) {
     const response = await axios.get(`${baseUrl}societario/licenca/download/${id}`, {
       responseType: 'blob', // Necessário para receber o arquivo como blob
     });
-   
+
     return response;
 
   } catch (error) {
@@ -206,7 +206,7 @@ export async function downloadLicenca(id) {
 export async function deletarArquivoLicenca(id) {
   try {
     const response = await axios.delete(`${baseUrl}societario/licenca/delete/file/${id}`);
-   
+
     return response;
 
   } catch (error) {
@@ -252,10 +252,10 @@ export async function getAlteracoesSocietario() {
   return axios.get(`${baseUrl}societario/alteracoes`);
 }
 
-export async function createAlteracao(itemData, statusAlteracao = {}) {
+export async function createAlteracao(itemData, options = {}) {
   const data = {
     ...itemData,
-    statusAlteracao,
+    ...options,
   }
   return axios.post(`${baseUrl}societario/alteracao`, data);
 }
@@ -295,24 +295,28 @@ export const uploadArquivoAlteracao = async (aberturaId, documentType, file, soc
 
 export async function downloadArquivoAlteracao(clientId, documentType, filename) {
   try {
+    // Encode o filename para evitar problemas com caracteres especiais na URL
+    const encodedFilename = encodeURIComponent(filename);
     const response = await axios.get(
-      `${baseUrl}societario/download/alteracao/${clientId}/${documentType}/${filename}`,
+      `${baseUrl}societario/download/alteracao/${clientId}/${documentType}/${encodedFilename}`,
       {
         responseType: 'blob',
       }
     );
     return response;
   } catch (error) {
-    return error;
+    console.error('Erro ao baixar arquivo de alteração:', error);
+    throw error;
   }
-};
+}
 
-export async function deletarArquivoAlteracao(clientId, documentType, socioCpf, config = {}) {
+export async function deletarArquivoAlteracao(clientId, documentType, config = {}) {
   try {
-    const url = socioCpf
-      ? `${baseUrl}societario/delete/alteracao/${clientId}/${documentType}/${socioCpf}`
-      : `${baseUrl}societario/delete/alteracao/${clientId}/${documentType}`;
-    const response = await axios.delete(url, config);
+    // documentType pode ser "iptuAnexo" ou "socios.0.cnhAnexo"
+    const response = await axios.delete(
+      `${baseUrl}societario/delete/alteracao/${clientId}/${documentType}`,
+      config
+    );
     return response;
   } catch (error) {
     console.error('Erro ao deletar arquivo de alteração:', error);

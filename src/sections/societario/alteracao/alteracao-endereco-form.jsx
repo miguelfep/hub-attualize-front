@@ -1,8 +1,19 @@
 import { toast } from "sonner";
+import { useState } from "react";
 import InputMask from "react-input-mask";
 import { Controller, useFormContext } from "react-hook-form";
 
-import { Box, Grid, Switch, Divider, TextField, Typography, FormControlLabel } from "@mui/material";
+import {
+  Box,
+  Grid,
+  Switch,
+  Divider,
+  TextField,
+  Typography,
+  InputAdornment,
+  FormControlLabel,
+  CircularProgress,
+} from "@mui/material";
 
 import { buscarCep } from "src/actions/cep";
 
@@ -10,11 +21,13 @@ import { buscarCep } from "src/actions/cep";
 export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
   const { control, watch, setValue } = useFormContext();
   const cepEnabled = watch("cepEnabled");
+  const [loadingCep, setLoadingCep] = useState(false);
 
-  const handleCepChange = async (e) => {
+  const handleCepBlur = async (e) => {
     const cep = e.target.value.replace(/[\D]/g, '');
 
-    if (cep.length === 8) {
+    if (cep.length === 8 && cepEnabled) {
+      setLoadingCep(true);
       try {
         const data = await buscarCep(cep);
 
@@ -23,6 +36,8 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
         setValue('cidade', data.cidade || '', { shouldValidate: true });
       } catch (error) {
         toast.error('Erro ao buscar CEP');
+      } finally {
+        setLoadingCep(false);
       }
     }
   };
@@ -55,7 +70,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
                       {...field}
                       fullWidth
                       label="CEP"
-                      disabled={!switchField.value}
+                      disabled={!switchField.value || loadingCep}
                       error={!!fieldState.error}
                       helperText={fieldState.error?.message}
                       InputProps={{
@@ -63,13 +78,14 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
                         inputProps: {
                           mask: "99.999-999",
                           value: field.value || '',
-                          onChange: (e) => {
-                            field.onChange(e.target.value);
-                            if (switchField.value) {
-                              handleCepChange(e);
-                            }
-                          },
+                          onChange: (e) => field.onChange(e.target.value),
+                          onBlur: handleCepBlur,
                         },
+                        endAdornment: loadingCep && (
+                          <InputAdornment position="end">
+                            <CircularProgress size={20} />
+                          </InputAdornment>
+                        ),
                       }}
                     />
                   )}

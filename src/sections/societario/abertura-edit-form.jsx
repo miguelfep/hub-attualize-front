@@ -22,7 +22,6 @@ import { Form, schemaHelper } from 'src/components/hook-form';
 
 import AberturaIniciadoForm from './abertura-iniciado-form';
 import { AberturaKickoffForm } from './abertura-kickoff-form';
-// Importação dos componentes específicos para cada status
 import { AberturaValidacaoForm } from './abertura-validacao-form';
 import { AberturaOnboardingForm } from './abertura-onboarding-form';
 import { AberturaConstituicaoFormNew } from './abertura-constituicao-form-new';
@@ -142,7 +141,7 @@ export function AberturaEditForm({ currentAbertura }) {
     if (previousStatus) {
       loading.onTrue();
       try {
-        await updateAbertura(currentAbertura._id, { statusAbertura: previousStatus });
+        await updateAbertura(currentAbertura._id, { statusAbertura: previousStatus, somenteAtualizar: false, notificarWhats: false });
         setValue('statusAbertura', previousStatus);
         toast.success('Status retornado com sucesso!');
       } catch (error) {

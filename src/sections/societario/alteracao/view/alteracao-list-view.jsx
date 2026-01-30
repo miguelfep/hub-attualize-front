@@ -67,9 +67,11 @@ export default function AlteracaoListView() {
   const handleCloseModal = () => {
     setOpenModal(false);
     setSelectedClient(null);
+    setNotificarWhats(true);
   }
 
   const [selectedClient, setSelectedClient] = useState(null);
+  const [notificarWhats, setNotificarWhats] = useState(true);
 
   const [clientes, setClientes] = useState([]);
 
@@ -335,7 +337,7 @@ export default function AlteracaoListView() {
           />
         </Card>
       </DashboardContent>
-      <Dialog open={openModal} onClose={handleCloseModal} fullWidth maxWidth="xs">
+      <Dialog open={openModal} onClose={handleCloseModal} fullWidth maxWidth="sm">
         <Box sx={{ p: 3 }}>
           <ClienteListDialog
             list={clientes}
@@ -343,29 +345,38 @@ export default function AlteracaoListView() {
             selected={(cliente) => clientes.find((c) => c._id === cliente._id)}
             onSelect={(cliente) => setSelectedClient(cliente)}
             selectedClient={selectedClient}
+            notificarWhats={notificarWhats}
+            onNotificarChange={setNotificarWhats}
             action={
               <Button
-                size="medium"
+                variant="contained"
+                size="large"
                 color="primary"
-                startIcon={<Iconify icon="mingcute:add-line" />}
-                sx={{ alignSelf: 'flex-end' }}
+                disabled={!selectedClient}
+                startIcon={<Iconify icon="mingcute:send-fill" />}
                 onClick={async () => {
                   if (!selectedClient) {
                     toast.error('Selecione um Cliente');
                   } else {
                     try {
-                      await createAlteracao(selectedClient, { statusAlteracao: 'iniciado' });
-                      setSelectedClient(null);
+                      await createAlteracao(selectedClient, {
+                        statusAlteracao: 'iniciado',
+                        notificarWhats,
+                      });
                       handleCloseModal();
-                      toast.success('Formulário enviado com sucesso!');
+                      toast.success(
+                        notificarWhats
+                          ? 'Alteração criada! O cliente será notificado via WhatsApp.'
+                          : 'Alteração criada com sucesso!'
+                      );
                       await fetchAlteracoes();
                     } catch (error) {
-                      toast.error('Erro ao enviar o formulário');
+                      toast.error('Erro ao criar a alteração');
                     }
                   }
                 }}
               >
-                Enviar Formulário
+                Criar Alteração
               </Button>
             }
           />

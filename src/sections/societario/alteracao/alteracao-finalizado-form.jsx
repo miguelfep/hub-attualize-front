@@ -67,7 +67,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
         { value: "mestrado", label: "Mestrado" },
         { value: "doutorado", label: "Doutorado" },
         { value: "prefiroNaoInformar", label: "Prefiro não informar" },
-  ];
+    ];
 
     const { control, handleSubmit, reset, getValues, watch } = useForm({
         defaultValues: {
@@ -186,11 +186,16 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
     const onApprove = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, { ...data, statusAlteracao: 'kickoff', somenteAtualizar: false });
-            toast.success('Alteração aprovada!');
-            if (handleAdvanceStatus) handleAdvanceStatus('kickoff');
+            await updateAlteracao(currentAlteracao._id, {
+                ...data,
+                statusAlteracao: 'em_alteracao',
+                somenteAtualizar: false,
+                notificarWhats: false,
+            });
+            toast.success('Alteração reaberta!');
+            if (handleAdvanceStatus) handleAdvanceStatus('em_alteracao');
         } catch (error) {
-            toast.error('Erro ao aprovar a alteração');
+            toast.error('Erro ao reabrir a alteração');
         } finally {
             loading.onFalse();
         }
@@ -199,11 +204,16 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
     const onReject = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, { ...data, statusAlteracao: 'iniciado' });
-            toast.error('Alteração reprovada!');
+            await updateAlteracao(currentAlteracao._id, {
+                ...data,
+                statusAlteracao: 'iniciado',
+                somenteAtualizar: false,
+                notificarWhats: false,
+            });
+            toast.error('Alteração reiniciada!');
             if (handleAdvanceStatus) handleAdvanceStatus('iniciado');
         } catch (error) {
-            toast.error('Erro ao reprovar a alteração');
+            toast.error('Erro ao reiniciar a alteração');
         } finally {
             loading.onFalse();
         }
@@ -751,38 +761,38 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
             )}
 
             {activeTab === 1 && (
-                    <Grid container spacing={2} mt={2}>
-                        <Grid item xs={12}>
-                            <Controller
-                                name="anotacoes"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        label="Anotações"
-                                        fullWidth
-                                        multiline
-                                        rows={4}
-                                        variant="outlined"
-                                    />
-                                )}
-                            />
-                        </Grid>
-                        <Grid item xs={12} sm={12}>
-                            <Controller
-                                name="urlMeetKickoff"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        label="URL do Meet"
-                                        fullWidth
-                                        variant="outlined"
-                                    />
-                                )}
-                            />
-                        </Grid>
+                <Grid container spacing={2} mt={2}>
+                    <Grid item xs={12}>
+                        <Controller
+                            name="anotacoes"
+                            control={control}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    label="Anotações"
+                                    fullWidth
+                                    multiline
+                                    rows={4}
+                                    variant="outlined"
+                                />
+                            )}
+                        />
                     </Grid>
+                    <Grid item xs={12} sm={12}>
+                        <Controller
+                            name="urlMeetKickoff"
+                            control={control}
+                            render={({ field }) => (
+                                <TextField
+                                    {...field}
+                                    label="URL do Meet"
+                                    fullWidth
+                                    variant="outlined"
+                                />
+                            )}
+                        />
+                    </Grid>
+                </Grid>
             )}
             <Stack direction="row" spacing={2} sx={{ mt: 3, mb: 3 }} justifyContent="center">
                 <Button variant="contained" onClick={handleSave} disabled={loading.value}>

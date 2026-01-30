@@ -90,7 +90,11 @@ export default function AlteracaoEditForm({ alteracaoData }) {
     if (nextStatus) {
       loading.onTrue();
       try {
-        updateAlteracao(alteracaoData._id, { statusAlteracao: nextStatus, somenteAtualizar: false });
+        await updateAlteracao(alteracaoData._id, { 
+          statusAlteracao: nextStatus, 
+          somenteAtualizar: false,
+          notificarWhats: true,
+        });
         setValue('statusAlteracao', nextStatus);
         toast.success('Status avançado com sucesso!');
       } catch (error) {
@@ -106,7 +110,11 @@ export default function AlteracaoEditForm({ alteracaoData }) {
     if (previousStatus) {
       loading.onTrue();
       try {
-        await updateAlteracao(alteracaoData._id, { statusAlteracao: previousStatus });
+        await updateAlteracao(alteracaoData._id, { 
+          statusAlteracao: previousStatus,
+          somenteAtualizar: false,
+          notificarWhats: false,
+        });
         setValue('statusAlteracao', previousStatus);
         toast.success('Status retornado com sucesso!');
       } catch (error) {

@@ -85,20 +85,22 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
 
     const handleDownload = async (documentType, index = null) => {
         try {
-            const path = getDocumentPath(documentType, index);
-            const fileUrl = getValues(path);
+            const formPath = getDocumentPath(documentType, index);
+            const fileUrl = getValues(formPath);
             if (!fileUrl) throw new Error('Arquivo não disponível para download.');
             const filename = fileUrl.split('/').pop();
 
+            const downloadPath = index !== null ? `socios.${index}.${documentType}` : documentType;
+
             const response = await downloadArquivoAlteracao(
                 currentAlteracao._id,
-                documentType,
-                filename,
-                index
+                downloadPath,
+                filename
             );
 
             if (response?.data) {
-                const blob = new Blob([response.data], { type: response.data.type });
+                const contentType = response.data.type || response.headers?.['content-type'] || 'application/octet-stream';
+                const blob = new Blob([response.data], { type: contentType });
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const link = document.createElement('a');
                 link.href = downloadUrl;
@@ -108,21 +110,26 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                 link.remove();
                 window.URL.revokeObjectURL(downloadUrl);
                 toast.success(`${getDocumentLabel(documentType, index)} baixado com sucesso.`);
+            } else {
+                throw new Error('Resposta vazia do servidor');
             }
         } catch (error) {
+            console.error('Erro no download:', error);
             toast.error(`Erro ao baixar ${getDocumentLabel(documentType, index)}.`);
         }
     };
 
     const handleDelete = async (documentType, index = null) => {
         try {
-            const path = getDocumentPath(documentType, index);
+            const deletePath = index !== null ? `socios.${index}.${documentType}` : documentType;
+            const formPath = getDocumentPath(documentType, index);
+
             const response = await deletarArquivoAlteracao(
                 currentAlteracao._id,
-                path
+                deletePath
             );
             if (response.status === 200) {
-                setValue(path, '');
+                setValue(formPath, '');
                 toast.success(`${getDocumentLabel(documentType, index)} deletado com sucesso.`);
             }
         } catch (error) {
@@ -181,7 +188,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
         { value: "mestrado", label: "Mestrado" },
         { value: "doutorado", label: "Doutorado" },
         { value: "prefiroNaoInformar", label: "Prefiro não informar" },
-  ];
+    ];
 
     const { control, handleSubmit, reset, getValues, setValue, watch } = useForm({
         defaultValues: {
@@ -298,7 +305,12 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
     const onApprove = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, { ...data, statusAlteracao: 'kickoff', somenteAtualizar: false });
+            await updateAlteracao(currentAlteracao._id, {
+                ...data,
+                statusAlteracao: 'kickoff',
+                somenteAtualizar: false,
+                notificarWhats: true,
+            });
             toast.success('Alteração aprovada!');
             if (handleAdvanceStatus) handleAdvanceStatus('kickoff');
         } catch (error) {
@@ -311,7 +323,12 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
     const onReject = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, { ...data, statusAlteracao: 'iniciado' });
+            await updateAlteracao(currentAlteracao._id, {
+                ...data,
+                statusAlteracao: 'iniciado',
+                somenteAtualizar: false,
+                notificarWhats: false,
+            });
             toast.error('Alteração reprovada!');
             if (handleAdvanceStatus) handleAdvanceStatus('iniciado');
         } catch (error) {
@@ -343,7 +360,8 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                     </Grid>
                     <Grid item xs={12} sm={6}>
                         <Controller
-                            name="razaoSocial" responsave
+                            name="razaoSocial"
+                            control={control}
                             render={({ field }) => (
                                 <TextField {...field} label="Razão Social" fullWidth variant="outlined" />
                             )}
@@ -769,7 +787,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                     </Box>
                                                     {value && typeof value === 'string' && (
                                                         <Box mt={2}>
-                                                            <Typography variant="body2" noWrap>{value}</Typography>
+                                                            <Typography variant="body2" noWrap>📎 {value.split('/').pop()}</Typography>
                                                         </Box>
                                                     )}
                                                 </Box>
@@ -827,7 +845,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                     </Box>
                                                     {value && typeof value === 'string' && (
                                                         <Box mt={2}>
-                                                            <Typography variant="body2" noWrap>{value}</Typography>
+                                                            <Typography variant="body2" noWrap>📎 {value.split('/').pop()}</Typography>
                                                         </Box>
                                                     )}
                                                 </Box>
@@ -915,7 +933,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                     </Box>
                                     {value && typeof value === 'string' && (
                                         <Box mt={2}>
-                                            <Typography variant="body2" noWrap>{value}</Typography>
+                                            <Typography variant="body2" noWrap>📎 {value.split('/').pop()}</Typography>
                                         </Box>
                                     )}
                                 </Box>
@@ -970,7 +988,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                     </Box>
                                     {value && typeof value === 'string' && (
                                         <Box mt={2}>
-                                            <Typography variant="body2" noWrap>{value}</Typography>
+                                            <Typography variant="body2" noWrap>📎 {value.split('/').pop()}</Typography>
                                         </Box>
                                     )}
                                 </Box>
@@ -1025,7 +1043,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                     </Box>
                                     {value && typeof value === 'string' && (
                                         <Box mt={2}>
-                                            <Typography variant="body2" noWrap>{value}</Typography>
+                                            <Typography variant="body2" noWrap>📎 {value.split('/').pop()}</Typography>
                                         </Box>
                                     )}
                                 </Box>

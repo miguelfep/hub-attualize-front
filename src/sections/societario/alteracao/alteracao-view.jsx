@@ -106,14 +106,14 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
       formaAtuacao: alteracaoData?.formaAtuacao ?? alteracaoData?.cliente?.formaAtuacao ?? '',
       formaAtuacaoEnabled: false,
       interesseRegistroMarca: alteracaoData?.interesseRegistroMarca || false,
-      cep: alteracaoData?.enderecoComercial?.cep ?? alteracaoData?.cliente?.endereco?.[0]?.cep ?? '',
+      cep: alteracaoData?.enderecoComercial?.cep || alteracaoData?.cliente?.endereco?.[0]?.cep || '',
       cepEnabled: false,
-      logradouro: alteracaoData?.enderecoComercial?.logradouro ?? alteracaoData?.cliente?.endereco?.[0]?.rua ?? '',
-      bairro: alteracaoData?.enderecoComercial?.bairro ?? alteracaoData?.cliente?.endereco?.[0]?.bairro ?? '',
-      cidade: alteracaoData?.enderecoComercial?.cidade ?? alteracaoData?.cliente?.endereco?.[0]?.cidade ?? '',
-      numero: alteracaoData?.enderecoComercial?.numero ?? alteracaoData?.cliente?.endereco?.[0]?.numero ?? '',
+      logradouro: alteracaoData?.enderecoComercial?.logradouro || alteracaoData?.cliente?.endereco?.[0]?.rua || '',
+      bairro: alteracaoData?.enderecoComercial?.bairro || alteracaoData?.cliente?.endereco?.[0]?.bairro || '',
+      cidade: alteracaoData?.enderecoComercial?.cidade || alteracaoData?.cliente?.endereco?.[0]?.cidade || '',
+      numero: alteracaoData?.enderecoComercial?.numero || alteracaoData?.cliente?.endereco?.[0]?.numero || '',
       numeroEnabled: false,
-      complemento: alteracaoData?.enderecoComercial?.complemento ?? alteracaoData?.cliente?.endereco?.[0]?.complemento ?? '',
+      complemento: alteracaoData?.enderecoComercial?.complemento || alteracaoData?.cliente?.endereco?.[0]?.complemento || '',
       complementoEnabled: false,
       responsavelTecnico: alteracaoData?.responsavelTecnico ?? alteracaoData?.cliente?.responsavelReceitaFederal ?? '',
       novasAtividades: alteracaoData?.novasAtividades || '',
@@ -184,7 +184,7 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
 
   useEffect(() => {
     const fetchBairro = async () => {
-      const cep = alteracaoData?.enderecoComercial?.cep ?? alteracaoData?.cliente?.endereco?.[0]?.cep;
+      const cep = alteracaoData?.enderecoComercial?.cep || alteracaoData?.cliente?.endereco?.[0]?.cep;
       if (cep) {
         const cepFormatado = cep.replace(/\D/g, '');
         const detalhes = await buscarCep(cepFormatado);

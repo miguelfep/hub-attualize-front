@@ -4,18 +4,105 @@ import React, { useState, useEffect } from 'react';
 import { NumericFormat } from 'react-number-format';
 import { useForm, Controller } from 'react-hook-form';
 
-import { Tab, Tabs, Grid, Card, Stack, Button, Switch, Divider, MenuItem, TextField, Typography, FormControlLabel } from '@mui/material';
+import {
+    Box,
+    Tab,
+    Tabs,
+    Grid,
+    Card,
+    Chip,
+    Stack,
+    Button,
+    Switch,
+    Divider,
+    MenuItem,
+    TextField,
+    Typography,
+    LinearProgress,
+    CircularProgress,
+    FormControlLabel,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
 
-import { updateAlteracao } from 'src/actions/societario';
+import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
 
+// Componente de Card de Documento (movido para fora para evitar re-render)
+function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDeleteClick }) {
+    return (
+        <Box
+            sx={{
+                border: '1px solid',
+                borderColor: 'divider',
+                borderRadius: 2,
+                padding: 2,
+                textAlign: 'center',
+            }}
+        >
+            <Typography variant="subtitle1" gutterBottom>
+                <strong>{label}</strong>
+            </Typography>
+            <Box>
+                <Button
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    sx={{ mb: 1 }}
+                    onClick={onUploadClick}
+                >
+                    Enviar Anexo
+                </Button>
+                <Button
+                    variant="outlined"
+                    fullWidth
+                    onClick={onDeleteClick}
+                    disabled={!value}
+                >
+                    Deletar
+                </Button>
+                {value && (
+                    <Button
+                        variant="outlined"
+                        fullWidth
+                        sx={{ mt: 1 }}
+                        onClick={onDownloadClick}
+                    >
+                        Baixar
+                    </Button>
+                )}
+            </Box>
+            {value && typeof value === 'string' && (
+                <Box mt={2}>
+                    <Typography variant="body2" noWrap>📎 {value.split('/').pop()}</Typography>
+                </Box>
+            )}
+        </Box>
+    );
+}
+
+const SITUACOES_ALTERACAO = [
+    { value: 0, label: 'Solicitando Viabilidade' },
+    { value: 1, label: 'Aprovação da Viabilidade' },
+    { value: 2, label: 'Pagamento taxas de registro' },
+    { value: 3, label: 'Assinatura do processo' },
+    { value: 4, label: 'Protocolo do processo' },
+    { value: 5, label: 'Aguardando deferimento' },
+    { value: 6, label: 'Processo deferido' },
+    { value: 7, label: 'Início de licenças e alvarás' },
+    { value: 8, label: 'Alteração concluída' },
+];
+
 export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvanceStatus }) {
     const loading = useBoolean();
+    const [saving, setSaving] = useState(false);
+    const [activeTab, setActiveTab] = useState(0);
+    const [situacaoAlteracao, setSituacaoAlteracao] = useState(currentAlteracao?.situacaoAlteracao ?? 0);
+    const [etapasCompletadas, setEtapasCompletadas] = useState(currentAlteracao?.etapasCompletadas || []);
+    const [notificarWhats, setNotificarWhats] = useState(currentAlteracao?.notificarWhats ?? true);
 
     const regimeBensOptions = [
         { value: 'Comunhão Parcial de Bens', label: 'Comunhão Parcial de Bens' },
@@ -44,7 +131,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
         { value: 'terceiro', label: 'Em estabelecimento de terceiros' },
         { value: 'casa_cliente', label: 'Casa do cliente' },
         { value: 'outros', label: 'Outros' },
-    ]
+    ];
 
     const etniaOptions = [
         { value: "branca", label: "Branca" },
@@ -69,7 +156,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
         { value: "prefiroNaoInformar", label: "Prefiro não informar" },
     ];
 
-    const { control, handleSubmit, reset, getValues, watch } = useForm({
+    const { control, handleSubmit, reset, getValues, watch, setValue } = useForm({
         defaultValues: {
             id: currentAlteracao?._id || '',
             alteracoes: currentAlteracao?.alteracoes || [],
@@ -83,13 +170,13 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
             regimeTributario: currentAlteracao?.regimeTributario || '',
             formaAtuacao: currentAlteracao?.formaAtuacao || '',
             enderecoComercial: {
-                cep: currentAlteracao?.cep || '',
-                logradouro: currentAlteracao?.logradouro || '',
-                numero: currentAlteracao?.numero || '',
-                complemento: currentAlteracao?.complemento || '',
-                bairro: currentAlteracao?.bairro || '',
-                cidade: currentAlteracao?.cidade || '',
-                estado: currentAlteracao?.estado || '',
+                cep: currentAlteracao?.enderecoComercial?.cep || '',
+                logradouro: currentAlteracao?.enderecoComercial?.logradouro || '',
+                numero: currentAlteracao?.enderecoComercial?.numero || '',
+                complemento: currentAlteracao?.enderecoComercial?.complemento || '',
+                bairro: currentAlteracao?.enderecoComercial?.bairro || '',
+                cidade: currentAlteracao?.enderecoComercial?.cidade || '',
+                estado: currentAlteracao?.enderecoComercial?.estado || '',
             },
             novasAtividades: currentAlteracao?.novasAtividades || '',
             socios: currentAlteracao?.socios?.length > 0
@@ -105,7 +192,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                     porcentagem: Number(socio?.porcentagem) || 0,
                     regimeBens: socio?.regimeBens || '',
                     etnia: socio?.etnia || '',
-                    grau_escolaridade: socio?.etnia || '',
+                    grau_escolaridade: socio?.grau_escolaridade || '',
                     endereco: socio?.endereco || '',
                     profissao: socio?.profissao || '',
                     administrador: socio?.administrador || false,
@@ -115,23 +202,36 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
             possuiRT: currentAlteracao?.possuiRT || false,
             marcaRegistrada: currentAlteracao?.marcaRegistrada || false,
             interesseRegistroMarca: currentAlteracao?.interesseRegistroMarca || false,
-            notificarWhats: currentAlteracao?.notificarWhatsapp || false,
             anotacoes: currentAlteracao?.anotacoes || '',
             urlMeetKickoff: currentAlteracao?.urlMeetKickoff || '',
+            iptuAnexo: currentAlteracao?.iptuAnexo || '',
+            rgAnexo: currentAlteracao?.rgAnexo || '',
+            documentoRT: currentAlteracao?.documentoRT || '',
         },
     });
 
-    const [activeTab, setActiveTab] = useState(0);
     const handleTabChange = (event, newValue) => setActiveTab(newValue);
+
+    // Verifica se todas as etapas estão completas
+    const todasEtapasCompletas = () => {
+        if (situacaoAlteracao === 8) return true;
+        const todasEtapas = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        return todasEtapas.every((etapa) => etapasCompletadas.includes(etapa));
+    };
 
     useEffect(() => {
         if (currentAlteracao) {
             reset(currentAlteracao);
+            setSituacaoAlteracao(currentAlteracao.situacaoAlteracao ?? 0);
+            setEtapasCompletadas(currentAlteracao.etapasCompletadas || []);
+            setNotificarWhats(currentAlteracao.notificarWhats ?? true);
+            setActiveTab(0);
         }
-    }, [currentAlteracao, reset]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentAlteracao?._id]);
 
     const handleCepBlur = async () => {
-        const cep = getValues('enderecoComercial.cep').replace('-', '');
+        const cep = getValues('enderecoComercial.cep')?.replace('-', '') || '';
         if (cep.length === 8) {
             loading.onTrue();
             try {
@@ -159,30 +259,184 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
         }
     };
 
-    const handleSave = async () => {
-        loading.onTrue();
+    const handleSituacaoChange = async (event) => {
+        const novaSituacao = parseInt(event.target.value, 10);
+        const situacaoAnterior = situacaoAlteracao;
+
+        setSaving(true);
         try {
-            const selectedValue = getValues("situacaoAlteracao");
-            const dataToSave = {
-                ...getValues(),
-                statusAlteracao: selectedValue === 8 ? "finalizado" : 'em_alteracao',
-            };
-            await updateAlteracao(currentAlteracao._id, dataToSave);
-            toast.success("Dados salvos com sucesso!");
-            if (selectedValue === 8 && handleAdvanceStatus) {
+            // Atualiza a situação da alteração
+            await updateAlteracao(currentAlteracao._id, {
+                situacaoAlteracao: novaSituacao,
+                statusAlteracao: novaSituacao === 8 ? 'finalizado' : 'em_alteracao',
+                somenteAtualizar: false,
+                notificarWhats,
+            });
+
+            // Marca a etapa anterior como completada
+            const novasEtapasCompletadas = [...etapasCompletadas];
+            if (!novasEtapasCompletadas.includes(situacaoAnterior) && situacaoAnterior >= 0) {
+                novasEtapasCompletadas.push(situacaoAnterior);
+            }
+
+            // Se a nova situação for a última (8 - Alteração concluída), marca todas as etapas
+            if (novaSituacao === 8) {
+                const todasEtapas = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+                todasEtapas.forEach((etapa) => {
+                    if (!novasEtapasCompletadas.includes(etapa)) {
+                        novasEtapasCompletadas.push(etapa);
+                    }
+                });
+            }
+
+            // Atualiza as etapas completadas
+            await updateAlteracao(currentAlteracao._id, {
+                etapasCompletadas: novasEtapasCompletadas,
+                somenteAtualizar: true,
+            });
+
+            setSituacaoAlteracao(novaSituacao);
+            setEtapasCompletadas(novasEtapasCompletadas);
+
+            // Se finalizou, avança o status
+            if (novaSituacao === 8 && handleAdvanceStatus) {
                 handleAdvanceStatus('finalizado');
             }
+
+            toast.success(
+                notificarWhats
+                    ? 'Situação atualizada! Mensagem enviada ao cliente.'
+                    : 'Situação atualizada com sucesso!'
+            );
         } catch (error) {
-            toast.error("Erro ao salvar os dados");
+            console.error('Erro ao atualizar situação:', error);
+            toast.error('Erro ao atualizar situação da alteração');
         } finally {
-            loading.onFalse();
+            setSaving(false);
+        }
+    };
+
+    // ========== Funções de Documentos ==========
+    const validateFile = (file) => {
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png'];
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        if (!allowedTypes.includes(file.type)) {
+            return 'Tipo de arquivo não permitido. Use PDF, JPEG ou PNG.';
+        }
+        if (file.size > maxSize) {
+            return 'Arquivo muito grande. O tamanho máximo é 5MB.';
+        }
+        return null;
+    };
+
+    const getDocumentLabel = (type, index) => {
+        const labels = {
+            cnhAnexo: `CNH do Sócio ${index + 1}`,
+            comprovanteEnderecoAnexo: `Comprovante de Endereço do Sócio ${index + 1}`,
+            rgAnexo: `RG do Representante`,
+            iptuAnexo: `IPTU do Imóvel`,
+            documentoRT: `Documento de Classe (Responsável Técnico)`,
+        };
+        return labels[type] || `Documento desconhecido`;
+    };
+
+    const getDocumentPath = (documentType, index) =>
+        index != null ? `socios.${index}.${documentType}` : documentType;
+
+    const handleUpload = async (documentType, index = null) => {
+        try {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = '.pdf,image/*';
+            fileInput.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const validationError = validateFile(file);
+                    if (validationError) {
+                        toast.error(validationError);
+                        return;
+                    }
+
+                    const response = await uploadArquivoAlteracao(
+                        currentAlteracao._id,
+                        documentType,
+                        file,
+                        index
+                    );
+
+                    if (response.status === 200) {
+                        const path = getDocumentPath(documentType, index);
+                        setValue(path, response.data.filename);
+                        toast.success(`${getDocumentLabel(documentType, index)} enviado com sucesso!`);
+                    } else {
+                        throw new Error(response.data?.error || 'Erro ao enviar arquivo.');
+                    }
+                }
+            };
+            fileInput.click();
+        } catch (error) {
+            toast.error(`Erro ao enviar ${getDocumentLabel(documentType, index)}.`);
+        }
+    };
+
+    const handleDownload = async (documentType, index = null) => {
+        try {
+            const formPath = getDocumentPath(documentType, index);
+            const fileUrl = getValues(formPath);
+            if (!fileUrl) throw new Error('Arquivo não disponível para download.');
+            const filename = fileUrl.split('/').pop();
+
+            const downloadPath = index !== null ? `socios.${index}.${documentType}` : documentType;
+
+            const response = await downloadArquivoAlteracao(
+                currentAlteracao._id,
+                downloadPath,
+                filename
+            );
+
+            if (response?.data) {
+                const contentType = response.data.type || response.headers?.['content-type'] || 'application/octet-stream';
+                const blob = new Blob([response.data], { type: contentType });
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+                toast.success(`${getDocumentLabel(documentType, index)} baixado com sucesso.`);
+            } else {
+                throw new Error('Resposta vazia do servidor');
+            }
+        } catch (error) {
+            console.error('Erro no download:', error);
+            toast.error(`Erro ao baixar ${getDocumentLabel(documentType, index)}.`);
+        }
+    };
+
+    const handleDelete = async (documentType, index = null) => {
+        try {
+            const deletePath = index !== null ? `socios.${index}.${documentType}` : documentType;
+            const formPath = getDocumentPath(documentType, index);
+
+            const response = await deletarArquivoAlteracao(
+                currentAlteracao._id,
+                deletePath
+            );
+            if (response.status === 200) {
+                setValue(formPath, '');
+                toast.success(`${getDocumentLabel(documentType, index)} deletado com sucesso.`);
+            }
+        } catch (error) {
+            toast.error(`Erro ao deletar ${getDocumentLabel(documentType, index)}.`);
         }
     };
 
     const onSave = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, data);
+            await updateAlteracao(currentAlteracao._id, { ...data, somenteAtualizar: true });
             toast.success('Dados salvos com sucesso!');
         } catch (error) {
             toast.error('Erro ao salvar os dados');
@@ -191,89 +445,235 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
         }
     };
 
-    const onApprove = async (data) => {
-        loading.onTrue();
-        try {
-            await updateAlteracao(currentAlteracao._id, { ...data, statusAlteracao: 'kickoff', somenteAtualizar: false });
-            toast.success('Alteração aprovada!');
-            if (handleAdvanceStatus) handleAdvanceStatus('kickoff');
-        } catch (error) {
-            toast.error('Erro ao aprovar a alteração');
-        } finally {
-            loading.onFalse();
-        }
-    };
-
-    const onReject = async (data) => {
-        loading.onTrue();
-        try {
-            await updateAlteracao(currentAlteracao._id, { ...data, statusAlteracao: 'iniciado' });
-            toast.error('Alteração reprovada!');
-            if (handleAdvanceStatus) handleAdvanceStatus('iniciado');
-        } catch (error) {
-            toast.error('Erro ao reprovar a alteração');
-        } finally {
-            loading.onFalse();
-        }
-    };
+    const progresso = ((situacaoAlteracao + 1) / SITUACOES_ALTERACAO.length) * 100;
+    const todasCompletas = todasEtapasCompletas();
 
     return (
         <Card sx={{ p: 3, mb: 3 }}>
-            <Tabs value={activeTab} onChange={handleTabChange}>
+            <Tabs value={activeTab} onChange={handleTabChange} centered sx={{ mb: 3 }}>
+                <Tab label="Acompanhamento de Etapas" />
                 <Tab label="Dados da Alteração" />
-                <Tab label="Kickoff" />
+                <Tab label="Documentos" />
             </Tabs>
 
+            {/* ========== ABA 0: Acompanhamento de Etapas ========== */}
             {activeTab === 0 && (
-                <>
-                    {currentAlteracao.statusAlteracao === 'em_alteracao' && (
-                        <Grid container spacing={2} mt={2}>
-                            <Grid item xs={12}>
-                                <Controller
-                                    name="situacaoAlteracao"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <TextField
-                                            {...field}
-                                            label="Situação da Alteração"
-                                            select
-                                            fullWidth
-                                            variant="outlined"
-                                        >
-                                            <MenuItem value={0}>Solicitando Viabilidade</MenuItem>
-                                            <MenuItem value={1}>Aprovação da Viabilidade</MenuItem>
-                                            <MenuItem value={2}>Pagamento taxas de registro</MenuItem>
-                                            <MenuItem value={3}>Assinatura do processo</MenuItem>
-                                            <MenuItem value={4}>Protocolo do processo</MenuItem>
-                                            <MenuItem value={5}>Aguardando deferimento</MenuItem>
-                                            <MenuItem value={6}>Processo deferido</MenuItem>
-                                            <MenuItem value={7}>Inicio de licenças e alvaras</MenuItem>
-                                            <MenuItem value={8}>Alteração concluida</MenuItem>
-                                        </TextField>
-                                    )}
-                                />
-                            </Grid>
-                            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
-                                <Button
-                                    variant="contained"
-                                    onClick={handleSave}
-                                    disabled={loading.value}
-                                >
-                                    Salvar
-                                </Button>
-                            </Grid>
-                            <Grid xs={12} sx={{ mt: 4 }}>
-                                <Divider />
-                            </Grid>
+                <Box>
+                    <Typography variant="h6" sx={{ mb: 3 }}>
+                        Em Alteração - Acompanhamento de Etapas
+                    </Typography>
+
+                    {/* Barra de Progresso */}
+                    <Box sx={{ mb: 4 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                            <Typography variant="body2" color="text.secondary">
+                                Progresso da Alteração
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {Math.round(progresso)}%
+                            </Typography>
+                        </Box>
+                        <LinearProgress variant="determinate" value={progresso} sx={{ height: 8, borderRadius: 1 }} />
+                    </Box>
+
+                    {/* Select de Situação + Switch de Notificação */}
+                    <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-start">
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                select
+                                fullWidth
+                                label="Situação da Alteração"
+                                value={situacaoAlteracao}
+                                onChange={handleSituacaoChange}
+                                disabled={saving || loading.value}
+                                helperText={
+                                    notificarWhats
+                                        ? 'Ao alterar a situação, uma mensagem será enviada automaticamente ao cliente'
+                                        : 'Notificação WhatsApp desativada - cliente não será notificado'
+                                }
+                            >
+                                {SITUACOES_ALTERACAO.map((situacao) => (
+                                    <MenuItem key={situacao.value} value={situacao.value}>
+                                        {situacao.value}. {situacao.label}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
                         </Grid>
+                        <Grid item xs={12} md={6}>
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'flex-start',
+                                    gap: 1,
+                                    p: 2,
+                                    borderRadius: 1,
+                                    bgcolor: notificarWhats ? 'success.lighter' : 'grey.100',
+                                    border: '1px solid',
+                                    borderColor: notificarWhats ? 'success.light' : 'grey.300',
+                                }}
+                            >
+                                <Iconify
+                                    icon={notificarWhats ? 'ic:baseline-whatsapp' : 'ic:baseline-notifications-off'}
+                                    width={24}
+                                    sx={{ color: notificarWhats ? 'success.main' : 'grey.500', alignSelf: 'center' }}
+                                />
+                                <FormControlLabel
+                                    control={
+                                        <Switch
+                                            checked={notificarWhats}
+                                            onChange={(e) => setNotificarWhats(e.target.checked)}
+                                            disabled={saving || loading.value}
+                                            color="success"
+                                        />
+                                    }
+                                    label={
+                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                            {notificarWhats ? 'Notificar cliente via WhatsApp' : 'Notificação WhatsApp desativada'}
+                                        </Typography>
+                                    }
+                                    sx={{ m: 0 }}
+                                />
+                            </Box>
+                        </Grid>
+                    </Grid>
+
+                    <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                            Etapas do Processo:
+                        </Typography>
+                        <Stack spacing={1}>
+                            {SITUACOES_ALTERACAO.map((situacao) => {
+                                const isCompleted = etapasCompletadas.includes(situacao.value);
+                                const isCurrent = situacao.value === situacaoAlteracao;
+                                const isPast = situacao.value < situacaoAlteracao;
+                                const isAllCompleted = situacaoAlteracao === 8;
+
+                                return (
+                                    <Box
+                                        key={situacao.value}
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 1,
+                                            border: '1px solid',
+                                            borderColor: isCurrent
+                                                ? 'primary.main'
+                                                : isCompleted || isPast || isAllCompleted
+                                                    ? 'success.lighter'
+                                                    : 'divider',
+                                            bgcolor: isCurrent
+                                                ? 'primary.lighter'
+                                                : isCompleted || isPast || isAllCompleted
+                                                    ? 'success.lighter'
+                                                    : 'background.paper',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <Box
+                                            sx={{
+                                                width: 32,
+                                                height: 32,
+                                                borderRadius: '50%',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                bgcolor: isCurrent
+                                                    ? 'primary.main'
+                                                    : isCompleted || isPast || isAllCompleted
+                                                        ? 'success.main'
+                                                        : 'grey.300',
+                                                color: isCurrent || isCompleted || isPast || isAllCompleted ? 'white' : 'text.secondary',
+                                                fontWeight: 'bold',
+                                            }}
+                                        >
+                                            {isCompleted || isPast || isAllCompleted ? (
+                                                <Iconify icon="eva:checkmark-fill" width={20} />
+                                            ) : (
+                                                situacao.value + 1
+                                            )}
+                                        </Box>
+                                        <Box sx={{ flex: 1 }}>
+                                            <Typography
+                                                variant="body2"
+                                                sx={{
+                                                    fontWeight: isCurrent ? 'bold' : 'normal',
+                                                    color: isCurrent ? 'primary.main' : 'text.primary',
+                                                }}
+                                            >
+                                                {situacao.label}
+                                            </Typography>
+                                        </Box>
+                                        {isCurrent && <Chip label="Atual" size="small" color="primary" />}
+                                        {(isCompleted || (isAllCompleted && !isCurrent)) && (
+                                            <Chip label="Concluída" size="small" color="success" />
+                                        )}
+                                    </Box>
+                                );
+                            })}
+                        </Stack>
+                    </Box>
+
+                    {saving && (
+                        <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CircularProgress size={16} />
+                            <Typography variant="body2" color="text.secondary">
+                                Salvando...
+                            </Typography>
+                        </Box>
                     )}
 
-                    <Grid container spacing={2} mt={2}>
-                        <Grid item xs={12}>
-                            <Typography variant="h4" align="center" gutterBottom>
-                                Dados da Alteração
+                    {!todasCompletas && (
+                        <Box
+                            sx={{
+                                mt: 3,
+                                p: 2,
+                                borderRadius: 1,
+                                bgcolor: 'warning.lighter',
+                                border: '1px solid',
+                                borderColor: 'warning.main',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                            }}
+                        >
+                            <Iconify icon="eva:alert-circle-fill" width={24} sx={{ color: 'warning.main' }} />
+                            <Typography variant="body2" sx={{ color: 'warning.darker' }}>
+                                Etapas completadas: {etapasCompletadas.length} de {SITUACOES_ALTERACAO.length}
                             </Typography>
-                        </Grid>
+                        </Box>
+                    )}
+
+                    {todasCompletas && (
+                        <Box
+                            sx={{
+                                mt: 3,
+                                p: 2,
+                                borderRadius: 1,
+                                bgcolor: 'success.lighter',
+                                border: '1px solid',
+                                borderColor: 'success.main',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 1,
+                            }}
+                        >
+                            <Iconify icon="eva:checkmark-circle-2-fill" width={24} sx={{ color: 'success.main' }} />
+                            <Typography variant="body2" sx={{ color: 'success.darker' }}>
+                                Todas as etapas foram concluídas! Alteração finalizada.
+                            </Typography>
+                        </Box>
+                    )}
+                </Box>
+            )}
+
+            {activeTab === 1 && (
+                <Box>
+                    <Typography variant="h6" sx={{ mb: 3 }}>
+                        Dados da Alteração
+                    </Typography>
+
+                    <Grid container spacing={2}>
                         <Grid item xs={12}>
                             <Controller
                                 name="alteracoes"
@@ -281,7 +681,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 render={({ field }) => (
                                     <TextField
                                         {...field}
-                                        label="Alterações"
+                                        label="Alterações Solicitadas"
                                         multiline
                                         rows={3}
                                         fullWidth
@@ -351,17 +751,9 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="regimeTributario"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField
-                                        select
-                                        {...field}
-                                        label="Regime Tributário"
-                                        fullWidth
-                                        variant="outlined"
-                                    >
-                                        {regimeTributarioOptions.map((option, index) => (
-                                            <MenuItem key={index} value={option.value}>
-                                                {option.label}
-                                            </MenuItem>
+                                    <TextField select {...field} label="Regime Tributário" fullWidth variant="outlined">
+                                        {regimeTributarioOptions.map((option) => (
+                                            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                                         ))}
                                     </TextField>
                                 )}
@@ -372,17 +764,9 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="formaAtuacao"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField
-                                        select
-                                        {...field}
-                                        label="Forma de Atuação"
-                                        fullWidth
-                                        variant="outlined"
-                                    >
-                                        {formaAtuacaoOptions.map((option, index) => (
-                                            <MenuItem key={index} value={option.value}>
-                                                {option.label}
-                                            </MenuItem>
+                                    <TextField select {...field} label="Forma de Atuação" fullWidth variant="outlined">
+                                        {formaAtuacaoOptions.map((option) => (
+                                            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                                         ))}
                                     </TextField>
                                 )}
@@ -393,43 +777,32 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="responsavelTecnico"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField
-                                        select
-                                        {...field}
-                                        label="Responsável Técnico"
-                                        fullWidth
-                                        variant="outlined"
-                                    >
+                                    <TextField select {...field} label="Responsável Técnico" fullWidth variant="outlined">
+                                        <MenuItem value="">Nenhum</MenuItem>
                                         <MenuItem value="novoResponsavelTecnico">Novo Responsável Técnico</MenuItem>
-                                        {currentAlteracao?.socios.map((socio, index) => (
-                                            <MenuItem key={index} value={socio.nome}>
-                                                {socio.nome}
-                                            </MenuItem>
+                                        {currentAlteracao?.socios?.map((socio, index) => (
+                                            <MenuItem key={index} value={socio.nome}>{socio.nome}</MenuItem>
                                         ))}
                                     </TextField>
                                 )}
                             />
                         </Grid>
 
+                        {/* Endereço Comercial */}
                         <Grid item xs={12}>
-                            <Typography variant="h6">Endereço Comercial</Typography>
+                            <Divider sx={{ my: 2 }} />
+                            <Typography variant="subtitle1">Endereço Comercial</Typography>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid item xs={12} sm={4}>
                             <Controller
                                 name="enderecoComercial.cep"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        label="CEP"
-                                        fullWidth
-                                        variant="outlined"
-                                        onBlur={handleCepBlur}
-                                    />
+                                    <TextField {...field} label="CEP" fullWidth variant="outlined" onBlur={handleCepBlur} />
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={8}>
+                        <Grid item xs={12} sm={8}>
                             <Controller
                                 name="enderecoComercial.logradouro"
                                 control={control}
@@ -484,14 +857,19 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                             />
                         </Grid>
 
+                        {/* Sócios */}
                         <Grid item xs={12}>
-                            <Typography variant="h6">Informações dos Sócios</Typography>
+                            <Divider sx={{ my: 2 }} />
+                            <Typography variant="subtitle1">Informações dos Sócios</Typography>
                         </Grid>
 
-                        {getValues('socios').map((socio, index) => {
+                        {getValues('socios')?.map((socio, index) => {
                             const estadoCivilValue = watch(`socios[${index}].estadoCivil`);
                             return (
                                 <React.Fragment key={index}>
+                                    <Grid item xs={12}>
+                                        <Typography variant="subtitle2" sx={{ mt: 1 }}>Sócio {index + 1}</Typography>
+                                    </Grid>
                                     <Grid item xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].nome`}
@@ -514,7 +892,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid item xs={12} sm={4}>
                                         <Controller
                                             name={`socios[${index}].rg`}
                                             control={control}
@@ -527,21 +905,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Controller
-                                            name={`socios[${index}].naturalidade`}
-                                            control={control}
-                                            render={({ field }) => (
-                                                <TextField
-                                                    {...field}
-                                                    label={`Naturalidade Sócio ${index + 1}`}
-                                                    fullWidth
-                                                    variant="outlined"
-                                                />
-                                            )}
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid item xs={12} sm={4}>
                                         <Controller
                                             name={`socios[${index}].porcentagem`}
                                             control={control}
@@ -549,33 +913,24 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                                 <NumericFormat
                                                     {...field}
                                                     customInput={TextField}
-                                                    label={`Porcentagem Sócio ${index + 1}`}
+                                                    label="Porcentagem"
                                                     fullWidth
                                                     variant="outlined"
                                                     decimalScale={2}
                                                     suffix="%"
-                                                    value={field.value}
                                                     onValueChange={(values) => field.onChange(values.floatValue)}
                                                 />
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid item xs={12} sm={4}>
                                         <Controller
                                             name={`socios[${index}].estadoCivil`}
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField
-                                                    select
-                                                    {...field}
-                                                    label="Estado Civil"
-                                                    fullWidth
-                                                    variant="outlined"
-                                                >
+                                                <TextField select {...field} label="Estado Civil" fullWidth variant="outlined">
                                                     {estadoCivilOptions.map((option) => (
-                                                        <MenuItem key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </MenuItem>
+                                                        <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                                                     ))}
                                                 </TextField>
                                             )}
@@ -587,17 +942,9 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                                 name={`socios[${index}].regimeBens`}
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <TextField
-                                                        select
-                                                        {...field}
-                                                        label={`Regime de Bens Sócio ${index + 1}`}
-                                                        fullWidth
-                                                        variant="outlined"
-                                                    >
+                                                    <TextField select {...field} label="Regime de Bens" fullWidth variant="outlined">
                                                         {regimeBensOptions.map((option) => (
-                                                            <MenuItem key={option.value} value={option.value}>
-                                                                {option.label}
-                                                            </MenuItem>
+                                                            <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                                                         ))}
                                                     </TextField>
                                                 )}
@@ -606,96 +953,12 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                     )}
                                     <Grid item xs={12} sm={6}>
                                         <Controller
-                                            name={`socios[${index}].endereco`}
-                                            control={control}
-                                            render={({ field }) => (
-                                                <TextField
-                                                    {...field}
-                                                    label={`Endereço do Sócio ${index + 1}`}
-                                                    fullWidth
-                                                    variant="outlined"
-                                                />
-                                            )}
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Controller
-                                            name={`socios[${index}].profissao`}
-                                            control={control}
-                                            render={({ field }) => (
-                                                <TextField
-                                                    {...field}
-                                                    label={`Profissão Sócio ${index + 1}`}
-                                                    fullWidth
-                                                    variant="outlined"
-                                                />
-                                            )}
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Controller
-                                            name={`socios[${index}].cnh`}
-                                            control={control}
-                                            render={({ field }) => (
-                                                <TextField
-                                                    {...field}
-                                                    label={`CNH do Sócio ${index + 1}`}
-                                                    fullWidth
-                                                    variant="outlined"
-                                                />
-                                            )}
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Controller
-                                            name={`socios[${index}].etnia`}
-                                            control={control}
-                                            render={({ field }) => (
-                                                <TextField
-                                                    select
-                                                    {...field}
-                                                    label="Raça/Cor"
-                                                    fullWidth
-                                                    variant="outlined"
-                                                >
-                                                    {etniaOptions.map((option) => (
-                                                        <MenuItem key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </MenuItem>
-                                                    ))}
-                                                </TextField>
-                                            )}
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Controller
-                                            name={`socios[${index}].grau_escolaridade`}
-                                            control={control}
-                                            render={({ field }) => (
-                                                <TextField
-                                                    select
-                                                    {...field}
-                                                    label="Grau de Escolaridade"
-                                                    fullWidth
-                                                    variant="outlined"
-                                                >
-                                                    {grauEscolaridadeOptions.map((option) => (
-                                                        <MenuItem key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </MenuItem>
-                                                    ))}
-                                                </TextField>
-                                            )}
-                                        />
-                                    </Grid>
-                                    <Grid item xs={12} sm={6}>
-                                        <Controller
                                             name={`socios[${index}].administrador`}
                                             control={control}
                                             render={({ field }) => (
                                                 <FormControlLabel
                                                     control={<Switch {...field} checked={field.value} />}
-                                                    label={`Sócio Administrador ${index + 1}`}
+                                                    label="Sócio Administrador"
                                                 />
                                             )}
                                         />
@@ -704,63 +967,33 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                             );
                         })}
 
+                        {/* Novas Atividades */}
                         <Grid item xs={12}>
-                            <Typography variant="h6">Atividades Econômicas</Typography>
+                            <Divider sx={{ my: 2 }} />
+                            <Typography variant="subtitle1">Atividades Econômicas</Typography>
                         </Grid>
-                    </Grid>
-                    <Grid item xs={12} mb={2} mt={2}>
-                        <Controller
-                            name='novasAtividades'
-                            control={control}
-                            render={({ field }) => (
-                                <TextField
-                                    {...field}
-                                    label="Novas Atividades"
-                                    fullWidth
-                                    multiline
-                                    rows={4}
-                                    variant="outlined"
-                                />
-                            )}
-                        />
-                    </Grid>
+                        <Grid item xs={12}>
+                            <Controller
+                                name="novasAtividades"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField
+                                        {...field}
+                                        label="Novas Atividades"
+                                        fullWidth
+                                        multiline
+                                        rows={4}
+                                        variant="outlined"
+                                    />
+                                )}
+                            />
+                        </Grid>
 
-                    {currentAlteracao.statusAlteracao === 'em_validacao' && (
-                        <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
-                            <Button
-                                variant="contained"
-                                onClick={handleSubmit(onSave)}
-                                disabled={loading.value}
-                                startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
-                            >
-                                Salvar
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                color="error"
-                                onClick={handleSubmit(onReject)}
-                                disabled={loading.value}
-                                startIcon={<Iconify icon="eva:close-circle-fill" />}
-                            >
-                                Reprovar
-                            </Button>
-                            <Button
-                                variant="contained"
-                                color="success"
-                                onClick={handleSubmit(onApprove)}
-                                disabled={loading.value}
-                                startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
-                            >
-                                Aprovar
-                            </Button>
-                        </Stack>
-                    )}
-                </>
-            )}
-
-            {activeTab === 1 && (
-                <>
-                    <Grid container spacing={2} mt={2}>
+                        {/* Anotações */}
+                        <Grid item xs={12}>
+                            <Divider sx={{ my: 2 }} />
+                            <Typography variant="subtitle1">Anotações Internas</Typography>
+                        </Grid>
                         <Grid item xs={12}>
                             <Controller
                                 name="anotacoes"
@@ -777,27 +1010,95 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={12}>
-                            <Controller
-                                name="urlMeetKickoff"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        label="URL do Meet"
-                                        fullWidth
-                                        variant="outlined"
-                                    />
-                                )}
+                    </Grid>
+
+                    <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
+                        <Button
+                            variant="contained"
+                            onClick={handleSubmit(onSave)}
+                            disabled={loading.value}
+                            startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+                        >
+                            Salvar Dados
+                        </Button>
+                    </Stack>
+                </Box>
+            )}
+
+            {activeTab === 2 && (
+                <Box>
+                    <Typography variant="h6" sx={{ mb: 3 }}>
+                        Documentos da Alteração
+                    </Typography>
+
+                    {/* Documentos Gerais */}
+                    <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                        Documentos Gerais
+                    </Typography>
+                    <Grid container spacing={2} sx={{ mb: 4 }}>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <DocumentCard
+                                label="IPTU do Imóvel"
+                                value={watch('iptuAnexo')}
+                                onUploadClick={() => handleUpload('iptuAnexo')}
+                                onDownloadClick={() => handleDownload('iptuAnexo')}
+                                onDeleteClick={() => handleDelete('iptuAnexo')}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <DocumentCard
+                                label="RG do Representante"
+                                value={watch('rgAnexo')}
+                                onUploadClick={() => handleUpload('rgAnexo')}
+                                onDownloadClick={() => handleDownload('rgAnexo')}
+                                onDeleteClick={() => handleDelete('rgAnexo')}
+                            />
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
+                            <DocumentCard
+                                label="Documento RT"
+                                value={watch('documentoRT')}
+                                onUploadClick={() => handleUpload('documentoRT')}
+                                onDownloadClick={() => handleDownload('documentoRT')}
+                                onDeleteClick={() => handleDelete('documentoRT')}
                             />
                         </Grid>
                     </Grid>
-                    <Stack direction="row" spacing={2} sx={{ mt: 3, mb: 3 }} justifyContent="center">
-                        <Button variant="contained" onClick={handleSave} disabled={loading.value}>
-                            Salvar
-                        </Button>
-                    </Stack>
-                </>
+
+                    {/* Documentos dos Sócios */}
+                    <Divider sx={{ my: 3 }} />
+                    <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                        Documentos dos Sócios
+                    </Typography>
+
+                    {getValues('socios')?.map((socio, index) => (
+                        <Box key={index} sx={{ mb: 4 }}>
+                            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                                Sócio {index + 1}: {socio.nome || 'Sem nome'}
+                            </Typography>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} sm={6}>
+                                    <DocumentCard
+                                        label={`CNH do Sócio ${index + 1}`}
+                                        value={watch(`socios.${index}.cnhAnexo`)}
+                                        onUploadClick={() => handleUpload('cnhAnexo', index)}
+                                        onDownloadClick={() => handleDownload('cnhAnexo', index)}
+                                        onDeleteClick={() => handleDelete('cnhAnexo', index)}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} sm={6}>
+                                    <DocumentCard
+                                        label={`Comprovante de Endereço ${index + 1}`}
+                                        value={watch(`socios.${index}.comprovanteEnderecoAnexo`)}
+                                        onUploadClick={() => handleUpload('comprovanteEnderecoAnexo', index)}
+                                        onDownloadClick={() => handleDownload('comprovanteEnderecoAnexo', index)}
+                                        onDeleteClick={() => handleDelete('comprovanteEnderecoAnexo', index)}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+                    ))}
+                </Box>
             )}
         </Card>
     );
