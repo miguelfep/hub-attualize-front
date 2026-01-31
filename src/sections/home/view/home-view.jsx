@@ -5,6 +5,8 @@ import Stack from '@mui/material/Stack';
 import { BackToTop } from 'src/components/animate/back-to-top';
 import { ScrollProgress, useScrollProgress } from 'src/components/animate/scroll-progress';
 
+import { AboutPartners } from 'src/sections/about/about-partners';
+
 import { HomeFAQs } from '../home-faqs';
 import HomeBanner from '../home-banner';
 import { HomeMinimal } from '../home-minimal';
@@ -40,6 +42,8 @@ export function HomeView() {
         <HomeTestimonials />
 
         <HomeFAQs />
+
+        <AboutPartners />
 
         <HomeAdvertisement />
       </Stack>

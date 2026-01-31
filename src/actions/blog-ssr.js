@@ -1,3 +1,4 @@
+
 import axios from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
@@ -95,5 +96,75 @@ export async function searchPosts(query, page = 1, perPage = 10) {
   } catch (error) {
     console.error('Erro ao buscar posts:', error);
     return { posts: [], totalPosts: 0, totalPages: 0 }; // Retorna vazio em caso de erro
+  }
+}
+
+// ----------------------------------------------------------------------
+
+// Buscar comentários de um post específico
+export async function getPostComments(postId, page = 1, perPage = 100) {
+  try {
+    const res = await axios.get(
+      `https://attualizecontabil.com.br/wp-json/wp/v2/comments`,
+      {
+        params: {
+          post: postId, // ID do post
+          per_page: perPage,
+          page,
+          orderby: 'date',
+          order: 'asc',
+          status: 'approve', // Apenas comentários aprovados
+        },
+      }
+    );
+
+    const totalComments = res.headers['x-wp-total'] || 0;
+    const totalPages = res.headers['x-wp-totalpages'] || 0;
+
+    return {
+      comments: res.data,
+      totalComments,
+      totalPages,
+    };
+  } catch (error) {
+    console.error('Erro ao buscar comentários:', error);
+    return { comments: [], totalComments: 0, totalPages: 0 };
+  }
+}
+
+// ----------------------------------------------------------------------
+
+// Criar um novo comentário (usando rota API do Next.js como proxy)
+export async function createPostComment(postId, commentData) {
+  try {
+    // Usar a rota API do Next.js que faz proxy para o WordPress
+    const res = await axios.post('/api/blog/comments', {
+      postId,
+      author_name: commentData.author_name,
+      author_email: commentData.author_email,
+      content: commentData.content,
+      parent: commentData.parent || 0, // 0 para comentário principal, ID do comentário para resposta
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error('Erro ao criar comentário:', error);
+    
+    // Retornar mensagem de erro mais amigável
+    if (error.response) {
+      const errorData = error.response.data;
+      const errorMessage = errorData?.error || errorData?.message || 'Erro ao criar comentário';
+      
+      // Se for erro de autenticação, fornecer mensagem mais clara
+      if (errorData?.code === 'rest_comment_login_required') {
+        throw new Error(
+          'Comentários anônimos não estão habilitados. Por favor, entre em contato com o administrador do site.'
+        );
+      }
+      
+      throw new Error(errorMessage);
+    }
+    
+    throw new Error('Erro ao processar comentário. Tente novamente.');
   }
 }

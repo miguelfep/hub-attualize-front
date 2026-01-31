@@ -5,6 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
 import { toast } from 'src/components/snackbar';
@@ -15,15 +17,15 @@ const WORDPRESS_URL = 'https://attualizecontabil.com.br';
 
 // ----------------------------------------------------------------------
 
-export const CommentSchema = zod.object({
+export const ReplySchema = zod.object({
   author_name: zod.string().min(1, { message: 'Nome é obrigatório!' }),
   author_email: zod.string().email({ message: 'Email inválido!' }),
-  content: zod.string().min(1, { message: 'Comentário é obrigatório!' }),
+  content: zod.string().min(1, { message: 'Resposta é obrigatória!' }),
 });
 
 // ----------------------------------------------------------------------
 
-export function PostCommentForm({ postId, onCommentAdded }) {
+export function PostCommentReplyForm({ postId, parentId, parentAuthorName, onReplyAdded, onCancel }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const defaultValues = { 
@@ -33,7 +35,7 @@ export function PostCommentForm({ postId, onCommentAdded }) {
   };
 
   const methods = useForm({
-    resolver: zodResolver(CommentSchema),
+    resolver: zodResolver(ReplySchema),
     defaultValues,
   });
 
@@ -43,8 +45,8 @@ export function PostCommentForm({ postId, onCommentAdded }) {
   } = methods;
 
   const onSubmit = handleSubmit(async (data) => {
-    if (!postId) {
-      toast.error('Erro: ID do post não encontrado');
+    if (!postId || !parentId) {
+      toast.error('Erro: ID do post ou comentário não encontrado');
       return;
     }
 
@@ -58,6 +60,7 @@ export function PostCommentForm({ postId, onCommentAdded }) {
           author_name: data.author_name,
           author_email: data.author_email,
           content: data.content,
+          parent: parentId, // ID do comentário pai
         },
         {
           headers: {
@@ -66,22 +69,22 @@ export function PostCommentForm({ postId, onCommentAdded }) {
         }
       );
       
-      toast.success('Comentário enviado! Ele será publicado após aprovação.');
+      toast.success('Resposta enviada! Ela será publicada após aprovação.');
       reset();
       
       // Recarregar comentários se callback fornecido
-      if (onCommentAdded) {
+      if (onReplyAdded) {
         // Aguardar um pouco antes de recarregar para dar tempo do WordPress processar
         setTimeout(() => {
-          onCommentAdded();
+          onReplyAdded();
         }, 1000);
       }
     } catch (error) {
-      console.error('Erro ao criar comentário:', error);
+      console.error('Erro ao criar resposta:', error);
       
       // Mostrar mensagem de erro mais específica
       const errorData = error.response?.data;
-      const errorMessage = errorData?.message || errorData?.error || error.message || 'Erro ao enviar comentário. Tente novamente.';
+      const errorMessage = errorData?.message || errorData?.error || error.message || 'Erro ao enviar resposta. Tente novamente.';
       
       if (errorData?.code === 'rest_comment_login_required') {
         toast.error(
@@ -98,15 +101,24 @@ export function PostCommentForm({ postId, onCommentAdded }) {
 
   return (
     <Form methods={methods} onSubmit={onSubmit}>
-      <Stack 
-        spacing={3}
-        sx={{
-          p: 3,
-          borderRadius: 2,
-          bgcolor: 'background.neutral',
-          border: (theme) => `1px solid ${theme.vars.palette.divider}`,
-        }}
-      >
+      <Stack spacing={2.5}>
+        <Stack 
+          direction="row" 
+          alignItems="center" 
+          spacing={1}
+          sx={{
+            p: 1.5,
+            borderRadius: 1,
+            bgcolor: 'primary.lighter',
+            border: (theme) => `1px solid ${theme.vars.palette.primary.main}`,
+          }}
+        >
+          <Iconify icon="solar:arrow-right-bold" width={16} sx={{ color: 'primary.main' }} />
+          <Typography variant="body2" sx={{ color: 'primary.main', fontWeight: 600 }}>
+            Respondendo para <strong>{parentAuthorName}</strong>
+          </Typography>
+        </Stack>
+
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
           <Field.Text
             name="author_name"
@@ -125,28 +137,41 @@ export function PostCommentForm({ postId, onCommentAdded }) {
 
         <Field.Text
           name="content"
-          label="Comentário"
-          placeholder="Escreva seu comentário..."
+          label="Sua resposta"
+          placeholder={`Respondendo para ${parentAuthorName}...`}
           multiline
-          rows={5}
+          rows={4}
           fullWidth
         />
 
-        <Stack direction="row" justifyContent="flex-end">
+        <Stack direction="row" spacing={2} justifyContent="flex-end">
+          {onCancel && (
+            <Button 
+              variant="outlined" 
+              onClick={onCancel}
+              disabled={isSubmitting}
+              sx={{
+                textTransform: 'none',
+                minWidth: 100,
+              }}
+            >
+              Cancelar
+            </Button>
+          )}
           <LoadingButton 
             type="submit" 
             variant="contained" 
             loading={isSubmitting}
             size="large"
-            startIcon={!isSubmitting && <Iconify icon="solar:chat-round-dots-bold" width={20} />}
+            startIcon={!isSubmitting && <Iconify icon="solar:chat-round-dots-bold" width={18} />}
             sx={{
-              minWidth: 180,
+              minWidth: 160,
               textTransform: 'none',
-              fontSize: '1rem',
+              fontSize: '0.9375rem',
               fontWeight: 600,
             }}
           >
-            {isSubmitting ? 'Enviando...' : 'Enviar Comentário'}
+            {isSubmitting ? 'Enviando...' : 'Enviar Resposta'}
           </LoadingButton>
         </Stack>
       </Stack>

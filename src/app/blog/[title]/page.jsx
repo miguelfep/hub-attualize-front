@@ -16,7 +16,7 @@ export async function generateMetadata({ params }) {
   const post = await getPostBySlug(title);
 
   const SITE_URL = 'https://attualize.com.br';
-  const postUrl = `${SITE_URL}/post/${title}`;
+  const postUrl = `${SITE_URL}/blog/${title}`;
   const postTitle = post?.yoast_head_json?.title || post?.title?.rendered || 'Postagem';
   const postDescription =
     post?.yoast_head_json?.description ||
@@ -95,7 +95,7 @@ export default async function Page({ params }) {
 
   // Criar structured data JSON-LD para o post
   const SITE_URL = 'https://attualize.com.br';
-  const postUrl = `${SITE_URL}/post/${title}`;
+  const postUrl = `${SITE_URL}/blog/${title}`;
   const postTitle = post?.yoast_head_json?.title || post?.title?.rendered || '';
   const postDescription =
     post?.yoast_head_json?.description ||

@@ -55,10 +55,10 @@ export const paths = {
     },
   },
   post: {
-    root: `/post`,
+    root: `/blog`,
     blog: `/blog`,
-    details: (slug) => `/post/${slug}`,
-    demo: { details: `/post/${paramCase(MOCK_TITLE)}` },
+    details: (slug) => `/blog/${slug}`,
+    demo: { details: `/blog/${paramCase(MOCK_TITLE)}` },
   },
   // AUTH
   auth: {

@@ -1,9 +1,18 @@
 # *
 User-agent: *
 Allow: /
+Disallow: /dashboard/
+Disallow: /portal-cliente/
+Disallow: /auth/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /error/
 
 # Host
 Host: https://attualize.com.br
+
+# Crawl-delay (opcional, ajuda a não sobrecarregar o servidor)
+Crawl-delay: 1
 
 # Sitemaps
 Sitemap: https://attualize.com.br/sitemap.xml
