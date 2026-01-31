@@ -4,6 +4,28 @@ import { getPosts } from 'src/actions/blog-ssr';
 
 const SITE_URL = 'https://attualize.com.br';
 
+// Função para normalizar datas para o formato ISO 8601 válido do sitemap
+function normalizeDate(dateString) {
+  if (!dateString) {
+    return new Date().toISOString();
+  }
+
+  try {
+    const date = new Date(dateString);
+    
+    // Verificar se a data é válida
+    if (Number.isNaN(date.getTime())) {
+      return new Date().toISOString();
+    }
+
+    // Retornar no formato ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ)
+    return date.toISOString();
+  } catch (error) {
+    // Se houver erro ao parsear, retornar data atual
+    return new Date().toISOString();
+  }
+}
+
 export async function GET(request) {
   try {
     // Buscar todos os posts do blog
@@ -27,7 +49,7 @@ export async function GET(request) {
     // Criar URLs dos posts
     const postFields = allPosts.map((post) => ({
       loc: `${SITE_URL}/blog/${post.slug}`,
-      lastmod: post.modified || post.date,
+      lastmod: normalizeDate(post.modified || post.date),
       changefreq: 'weekly',
       priority: 0.8,
     }));
