@@ -4,6 +4,7 @@ import { AboutHero } from '../about-hero';
 import { AboutWhat } from '../about-what';
 import { AboutTeam } from '../about-team';
 import { AboutVision } from '../about-vision';
+import { AboutPartners } from '../about-partners';
 import { AboutTestimonials } from '../about-testimonials';
 
 // ----------------------------------------------------------------------
@@ -16,6 +17,8 @@ export function AboutView() {
       <AboutWhat />
 
       <AboutVision />
+
+      <AboutPartners />
 
       <AboutTeam />
 

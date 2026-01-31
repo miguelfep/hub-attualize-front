@@ -18,7 +18,7 @@ import { Iconify, SocialIcon } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
+export function PostDetailsHero({ title, author, authorAvatar, coverUrl, createdAt }) {
   const theme = useTheme();
 
   const _socialsShare = [
@@ -49,16 +49,26 @@ export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
         overflow: 'hidden',
       }}
     >
-      <Container sx={{ height: 1, position: 'relative' }}>
+      <Container 
+        sx={{ 
+          height: 1, 
+          position: 'relative',
+          maxWidth: { xs: '100%', sm: 800, md: 1000, lg: 1200 },
+          px: { xs: 2, sm: 3, md: 4 },
+        }}
+      >
         <Typography
-          variant="h2"
+          variant="h3"
           component="h1"
           sx={{
             zIndex: 9,
             color: 'common.white',
             position: 'absolute',
-            maxWidth: 600,
-            pt: { xs: 2, md: 8 },
+            maxWidth: { xs: '100%', sm: 700, md: 900 },
+            pt: { xs: 3, md: 8 },
+            fontSize: { xs: '1.5rem', sm: '2rem', md: '2.5rem', lg: '3rem' },
+            lineHeight: { xs: 1.3, md: 1.2 },
+            fontWeight: 700,
           }}
         >
           {title}
@@ -79,14 +89,14 @@ export function PostDetailsHero({ title, author, coverUrl, createdAt }) {
               sx={{ px: { xs: 2, md: 3 }, pb: { xs: 3, md: 8 } }}
             >
               <Avatar
-                alt={author.name}
-                src="/logo/hub-tt.png"
+                alt={typeof author === 'string' ? author : author?.name || 'Autor'}
+                src={authorAvatar || '/logo/hub-tt.png'}
                 sx={{ width: 64, height: 64, mr: 2 }}
               />
 
               <ListItemText
                 sx={{ color: 'common.white' }}
-                primary={author}
+                primary={typeof author === 'string' ? author : author?.name || 'Autor'}
                 secondary={fDate(createdAt)}
                 primaryTypographyProps={{ typography: 'subtitle1', mb: 0.5 }}
                 secondaryTypographyProps={{ color: 'inherit', sx: { opacity: 0.64 } }}

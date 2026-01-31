@@ -1,3 +1,5 @@
+import { memo } from 'react';
+
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Card from '@mui/material/Card';
@@ -26,41 +28,55 @@ function truncateText(htmlString, maxLength) {
   return plainText.length > maxLength ? `${plainText.slice(0, maxLength)}...` : plainText;
 }
 
-export function PostItem({ post }) {
+export const PostItem = memo(({ post }) => {
   const theme = useTheme();
 
   const linkTo = paths.post.details(post.slug);
 
   return (
-    <Card>
+    <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ position: 'relative' }}>
         <AvatarShape
           sx={{
             left: 0,
             zIndex: 9,
-            width: 88,
-            height: 36,
-            bottom: -16,
+            width: 72,
+            height: 30,
+            bottom: -12,
             position: 'absolute',
           }}
         />
 
         <Avatar
           alt={post.author || 'Autor desconhecido'}
-          src={post.author_avatar || ''}
+          src={post.authorAvatar || post.author_avatar || ''}
           sx={{
-            left: 24,
+            left: 20,
             zIndex: 9,
-            bottom: -24,
+            bottom: -20,
             position: 'absolute',
+            width: 40,
+            height: 40,
           }}
-        />
+        >
+          {!post.authorAvatar && !post.author_avatar && post.author?.charAt(0)?.toUpperCase()}
+        </Avatar>
 
-        <Image alt={post.title} src={post.imageUrl} ratio="4/3" />
+        <Image 
+          alt={post.title} 
+          src={post.imageUrl} 
+          ratio="4/3"
+          useIntersectionObserver
+          threshold={100}
+        />
       </Box>
 
-      <CardContent sx={{ pt: 6 }}>
-        <Typography variant="caption" component="div" sx={{ mb: 1, color: 'text.disabled' }}>
+      <CardContent sx={{ pt: 5, pb: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <Typography 
+          variant="caption" 
+          component="div" 
+          sx={{ mb: 0.75, color: 'text.disabled', fontSize: '0.7rem' }}
+        >
           {fDate(post.date)}
         </Typography>
 
@@ -69,24 +85,34 @@ export function PostItem({ post }) {
           href={linkTo}
           color="inherit"
           variant="subtitle2"
-          sx={{ ...maxLine({ line: 2, persistent: theme.typography.subtitle2 }) }}
+          sx={{ 
+            ...maxLine({ line: 2, persistent: theme.typography.subtitle2 }),
+            fontSize: '0.875rem',
+            fontWeight: 600,
+            mb: 0.75,
+          }}
         >
           {post.title}
         </Link>
         <Typography
           variant="body2"
           component="p"
-          sx={{ mt: 1, color: 'text.secondary' }}
-          dangerouslySetInnerHTML={{ __html: truncateText(post.excerpt, 100) }}
+          sx={{ 
+            mt: 'auto',
+            color: 'text.secondary',
+            fontSize: '0.8125rem',
+            lineHeight: 1.5,
+          }}
+          dangerouslySetInnerHTML={{ __html: truncateText(post.excerpt, 80) }}
         />
       </CardContent>
     </Card>
   );
-}
+});
 
 // ----------------------------------------------------------------------
 
-export function PostItemLatest({ post, index }) {
+export const PostItemLatest = memo(({ post, index }) => {
   const theme = useTheme();
 
   const linkTo = paths.post.details(post.slug);
@@ -97,20 +123,24 @@ export function PostItemLatest({ post, index }) {
     <Card>
       <Avatar
         alt={post.author || 'Autor desconhecido'}
-        src={post.author || '/default-avatar.png'}
+        src={post.authorAvatar || post.author_avatar || ''}
         sx={{
           top: 24,
           left: 24,
           zIndex: 9,
           position: 'absolute',
         }}
-      />
+      >
+        {!post.authorAvatar && !post.author_avatar && post.author?.charAt(0)?.toUpperCase()}
+      </Avatar>
 
       <Image
         alt={post.title}
         src={post.imageUrl}
         ratio="4/3"
         sx={{ height: 360 }}
+        useIntersectionObserver
+        threshold={100}
         slotProps={{ overlay: { bgcolor: varAlpha(theme.vars.palette.grey['900Channel'], 0.48) } }}
       />
 
@@ -150,7 +180,7 @@ export function PostItemLatest({ post, index }) {
       </CardContent>
     </Card>
   );
-}
+});
 
 // ----------------------------------------------------------------------
 

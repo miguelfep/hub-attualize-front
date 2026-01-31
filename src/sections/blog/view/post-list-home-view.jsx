@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
@@ -26,12 +27,24 @@ export function PostListHomeView({ initialPosts, totalPages }) {
   // Estado para posts, página atual, e carregamento
   const [posts, setPosts] = useState(initialPosts);
   const [page, setPage] = useState(1);
-  const [hasMorePosts, setHasMorePosts] = useState(page < totalPages);
+  const [hasMorePosts, setHasMorePosts] = useState(totalPages > 1);
   const [loading, setLoading] = useState(false);
 
   // Estado para ordenação e busca
   const [sortBy, setSortBy] = useState('latest');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Flag para rastrear se estamos em modo de busca
+  const [isSearchMode, setIsSearchMode] = useState(false);
+
+  // Ref para o elemento de observação (infinite scroll)
+  const observerTarget = useRef(null);
+  
+  // Ref para evitar múltiplas chamadas simultâneas
+  const isLoadingRef = useRef(false);
+  
+  // Ref para debounce do Intersection Observer
+  const observerTimeoutRef = useRef(null);
 
   // Debounce para evitar chamadas frequentes de busca
   const debouncedQuery = useDebounce(searchQuery);
@@ -54,38 +67,81 @@ export function PostListHomeView({ initialPosts, totalPages }) {
 
   // Efeito para executar a busca quando o usuário digitar algo
   useEffect(() => {
-    if (debouncedQuery) {
+    if (debouncedQuery && debouncedQuery.trim() !== '') {
+      setIsSearchMode(true);
       loadSearchResults();
+    } else if (isSearchMode && (!debouncedQuery || debouncedQuery.trim() === '')) {
+      // Só restaura quando sair do modo de busca (quando a busca for realmente limpa)
+      setIsSearchMode(false);
+      setPosts(initialPosts);
+      setPage(1);
+      setHasMorePosts(totalPages > 1);
     }
-  }, [debouncedQuery, loadSearchResults]);
+  }, [debouncedQuery, loadSearchResults, isSearchMode, initialPosts, totalPages]);
 
-  // Mapeando e adaptando os dados recebidos da API do WordPress
-  const formattedPosts = posts.map((post) => ({
-    id: post.id,
-    title: post.title.rendered,
-    date: post.date,
-    content: post.content.rendered,
-    excerpt: post.excerpt.rendered,
-    slug: post.slug,
-    link: post.link,
-    author: post._embedded?.author[0]?.name || 'Autor Desconhecido',
-    imageUrl: post.yoast_head_json.og_image[0].url || '/default-image.png',
-  }));
+  // Mapeando e adaptando os dados recebidos da API do WordPress (memoizado)
+  const formattedPosts = useMemo(
+    () =>
+      posts.map((post) => ({
+        id: post.id,
+        title: post.title.rendered,
+        date: post.date,
+        content: post.content.rendered,
+        excerpt: post.excerpt.rendered,
+        slug: post.slug,
+        link: post.link,
+        author: post._embedded?.author[0]?.name || 'Autor Desconhecido',
+        authorAvatar:
+          post._embedded?.author?.[0]?.avatar_urls?.['96'] ||
+          post._embedded?.author?.[0]?.avatar_urls?.['48'] ||
+          null,
+        imageUrl: post.yoast_head_json?.og_image?.[0]?.url || '/default-image.png',
+      })),
+    [posts]
+  );
 
-  // Aplicar ordenação e filtros nos posts
-  const dataFiltered = applyFilter({ inputData: formattedPosts, sortBy });
+  // Aplicar ordenação e filtros nos posts (memoizado)
+  const dataFiltered = useMemo(
+    () => applyFilter({ inputData: formattedPosts, sortBy }),
+    [formattedPosts, sortBy]
+  );
 
   // Função para carregar mais posts
-  const loadMorePosts = async () => {
-    if (page >= totalPages || loading) return; // Não carrega se não houver mais posts ou se estiver carregando
+  const loadMorePosts = useCallback(async () => {
+    // Verificações de segurança para evitar múltiplas chamadas
+    if (
+      page >= totalPages || 
+      loading || 
+      debouncedQuery || 
+      isSearchMode ||
+      isLoadingRef.current // Evita múltiplas chamadas simultâneas
+    ) {
+      return;
+    }
+    
+    // Marca como carregando
+    isLoadingRef.current = true;
     setLoading(true);
 
     try {
       const nextPage = page + 1;
-      const { posts: newPosts } = await getPosts(nextPage, 10); // Busca a próxima página
+      const { posts: newPosts } = await getPosts(nextPage, 15); // Busca apenas a próxima página com 15 posts
 
       if (newPosts.length > 0) {
-        setPosts((prevPosts) => [...prevPosts, ...newPosts]); // Adiciona os novos posts
+        // Adiciona os novos posts aos existentes (sem fazer reload)
+        setPosts((prevPosts) => {
+          // Verifica se os posts já não foram adicionados (evita duplicatas)
+          const existingIds = new Set(prevPosts.map((p) => p.id));
+          const uniqueNewPosts = newPosts.filter((p) => !existingIds.has(p.id));
+          
+          if (uniqueNewPosts.length === 0) {
+            // Se não há posts novos, não há mais para carregar
+            setHasMorePosts(false);
+            return prevPosts;
+          }
+          
+          return [...prevPosts, ...uniqueNewPosts];
+        });
         setPage(nextPage); // Atualiza a página atual
         if (nextPage >= totalPages) {
           setHasMorePosts(false); // Não há mais posts para carregar
@@ -95,10 +151,73 @@ export function PostListHomeView({ initialPosts, totalPages }) {
       }
     } catch (error) {
       console.error('Erro ao carregar mais posts:', error);
+      setHasMorePosts(false); // Em caso de erro, para de tentar carregar
     } finally {
       setLoading(false);
+      isLoadingRef.current = false; // Libera para próxima chamada
     }
-  };
+  }, [page, totalPages, loading, debouncedQuery, isSearchMode]);
+
+  // Intersection Observer para infinite scroll automático
+  useEffect(() => {
+    // Não criar observer se estiver em busca ou não houver mais posts
+    if (debouncedQuery || !hasMorePosts || isSearchMode) {
+      return undefined;
+    }
+
+    const currentTarget = observerTarget.current;
+    if (!currentTarget) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        
+        // Verifica se o elemento está visível e todas as condições estão OK
+        if (
+          entry.isIntersecting && 
+          hasMorePosts && 
+          !loading && 
+          !debouncedQuery && 
+          !isSearchMode &&
+          !isLoadingRef.current // Garante que não está carregando
+        ) {
+          // Limpa timeout anterior se existir
+          if (observerTimeoutRef.current) {
+            clearTimeout(observerTimeoutRef.current);
+          }
+          
+          // Debounce de 500ms para evitar múltiplas chamadas rápidas
+          observerTimeoutRef.current = setTimeout(() => {
+            // Verifica novamente antes de carregar (pode ter mudado durante o timeout)
+            if (
+              !isLoadingRef.current && 
+              hasMorePosts && 
+              !loading && 
+              !debouncedQuery && 
+              !isSearchMode &&
+              page < totalPages
+            ) {
+              loadMorePosts();
+            }
+          }, 500);
+        }
+      },
+      { 
+        threshold: 0.1, 
+        rootMargin: '400px' // Carrega 400px antes de chegar no elemento
+      }
+    );
+
+    observer.observe(currentTarget);
+
+    return () => {
+      observer.unobserve(currentTarget);
+      // Limpa timeout ao desmontar
+      if (observerTimeoutRef.current) {
+        clearTimeout(observerTimeoutRef.current);
+      }
+    };
+  }, [hasMorePosts, loading, debouncedQuery, isSearchMode, loadMorePosts, page, totalPages]);
 
   // Atualiza o estado da ordenação
   const handleSortBy = useCallback((newValue) => {
@@ -136,14 +255,39 @@ export function PostListHomeView({ initialPosts, totalPages }) {
       </Stack>
 
       {/* Lista de posts filtrados */}
-      <PostList posts={dataFiltered} loading={loading} />
+      <PostList 
+        posts={dataFiltered} 
+        loading={loading && posts.length === 0} 
+        isLoadingMore={loading && posts.length > 0}
+      />
 
-      {/* Botão "Ver mais" */}
+      {/* Indicador de carregamento para infinite scroll */}
       {hasMorePosts && (
-        <Stack alignItems="center" sx={{ mt: 8, mb: { xs: 10, md: 15 } }}>
-          <Button size="large" variant="outlined" onClick={loadMorePosts} disabled={loading}>
-            {loading ? 'Carregando...' : 'Ver mais'}
-          </Button>
+        <Stack
+          ref={observerTarget}
+          alignItems="center"
+          justifyContent="center"
+          sx={{ mt: 8, mb: { xs: 10, md: 15 }, minHeight: 60 }}
+        >
+          {loading && (
+            <Stack alignItems="center" spacing={2}>
+              <CircularProgress size={40} />
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Carregando mais posts...
+              </Typography>
+            </Stack>
+          )}
+          {/* Fallback: botão manual caso o Intersection Observer não funcione */}
+          {!loading && (
+            <Button 
+              size="large" 
+              variant="outlined" 
+              onClick={loadMorePosts}
+              disabled={isLoadingRef.current}
+            >
+              Ver mais posts
+            </Button>
+          )}
         </Stack>
       )}
     </Container>

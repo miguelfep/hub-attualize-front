@@ -400,10 +400,10 @@ export default function StatusConciliacaoPage() {
         </div>
         <Button
           variant="contained"
-          startIcon={<Iconify icon="eva:plus-fill" />}
+          startIcon={<Iconify icon="eva:credit-card-fill" />}
           onClick={() => router.push(`${paths.cliente.conciliacaoBancaria}/bancos`)}
         >
-          Cadastrar Banco
+         Meus Bancos
         </Button>
       </Stack>
 

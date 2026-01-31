@@ -1,16 +1,11 @@
 import { m } from 'framer-motion';
-import ReactPlayer from 'react-player';
-import React, { useState } from 'react';
 
 import Fab from '@mui/material/Fab';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Dialog from '@mui/material/Dialog';
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import DialogContent from '@mui/material/DialogContent';
 
 import { CONFIG } from 'src/config-global';
 import { varAlpha } from 'src/theme/styles';
@@ -21,16 +16,15 @@ import { varFade, MotionViewport } from 'src/components/animate';
 
 // ----------------------------------------------------------------------
 
+const YOUTUBE_VIDEO_ID = 'gfee734lGcs';
+const YOUTUBE_URL = `https://www.youtube.com/watch?v=${YOUTUBE_VIDEO_ID}&autoplay=1&rel=0&modestbranding=1`;
+
 export function AboutVision() {
   const theme = useTheme();
-  const [open, setOpen] = useState(false);
 
-  const handleClickOpen = () => {
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
+  const handlePlayVideo = () => {
+    // Abre o YouTube diretamente na melhor qualidade disponível
+    window.open(YOUTUBE_URL, '_blank', 'noopener,noreferrer');
   };
 
   const renderImg = (
@@ -103,8 +97,20 @@ export function AboutVision() {
         >
           {renderImg}
           {renderLogos}
-          <Fab sx={{ position: 'absolute', zIndex: 9 }} onClick={handleClickOpen}>
-            <Iconify icon="solar:play-broken" width={24} />
+          <Fab 
+            sx={{ 
+              position: 'absolute', 
+              zIndex: 9,
+              '&:hover': {
+                transform: 'scale(1.1)',
+              },
+              transition: 'transform 0.2s ease-in-out',
+            }} 
+            onClick={handlePlayVideo}
+            color="primary"
+            size="large"
+          >
+            <Iconify icon="solar:play-broken" width={32} />
           </Fab>
         </Box>
 
@@ -114,48 +120,6 @@ export function AboutVision() {
           </Typography>
         </m.div>
       </Container>
-
-      <Dialog
-        open={open}
-        onClose={handleClose}
-        maxWidth="xl" // Ajuste o valor para tornar o modal maior
-        fullWidth
-        PaperProps={{
-          style: {
-            backgroundColor: theme.palette.background.default,
-            width: '90%', // Ajuste a largura conforme necessário
-            height: '90%', // Ajuste a altura conforme necessário
-            maxWidth: 'none', // Desabilita o maxWidth padrão
-          },
-        }}
-      >
-        <DialogContent>
-          <Box
-            sx={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden' }}
-          >
-            <ReactPlayer
-              url="https://www.youtube.com/embed/gfee734lGcs?si=quv_ZsDF74PXR-BW"
-              width="100%"
-              height="100%"
-              style={{ position: 'absolute', top: 0, left: 0 }}
-              controls
-              playing
-            />
-          </Box>
-          <IconButton
-            aria-label="close"
-            onClick={handleClose}
-            sx={{
-              position: 'absolute',
-              right: 8,
-              top: 8,
-              color: (localTheme) => localTheme.palette.grey[500],
-            }}
-          >
-            <Iconify icon="solar:close-square-bold-duotone" />
-          </IconButton>
-        </DialogContent>
-      </Dialog>
     </Box>
   );
 }

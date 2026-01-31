@@ -43,6 +43,72 @@ export const viewport = {
   themeColor: primary.main,
 };
 
+export const metadata = {
+  metadataBase: new URL('https://attualize.com.br'),
+  title: {
+    default: 'Attualize HUB - Contabilidade Digital Especializada',
+    template: `%s | ${CONFIG.site.name}`,
+  },
+  description:
+    'Attualize Contábil é a contabilidade digital especializada em atender empresas nas áreas de beleza, saúde e bem-estar. Atendemos todo o Brasil com serviços personalizados e expertise no setor.',
+  keywords: [
+    'contabilidade digital',
+    'contabilidade para psicólogos',
+    'contabilidade para clínicas de estética',
+    'abertura de empresa',
+    'contabilidade online',
+    'atendimento contábil',
+    'gestão contábil',
+  ],
+  authors: [{ name: 'Attualize Contábil' }],
+  creator: 'Attualize Contábil',
+  publisher: 'Attualize Contábil',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'pt_BR',
+    url: 'https://attualize.com.br',
+    siteName: CONFIG.site.name,
+    title: 'Attualize HUB - Contabilidade Digital Especializada',
+    description:
+      'Attualize Contábil é a contabilidade digital especializada em atender empresas nas áreas de beleza, saúde e bem-estar.',
+    images: [
+      {
+        url: '/logo/attualize.png',
+        width: 1200,
+        height: 630,
+        alt: 'Attualize HUB',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Attualize HUB - Contabilidade Digital Especializada',
+    description:
+      'Attualize Contábil é a contabilidade digital especializada em atender empresas nas áreas de beleza, saúde e bem-estar.',
+    images: ['/logo/attualize.png'],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    // Adicione aqui quando tiver o código do Google Search Console
+    // google: 'seu-codigo-google-search-console',
+  },
+};
+
 export default async function RootLayout({ children }) {
   const lang = CONFIG.isStaticExport ? 'en' : await detectLanguage();
   const settings = CONFIG.isStaticExport ? defaultSettings : await detectSettings();
