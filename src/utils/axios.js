@@ -228,4 +228,28 @@ export const endpoints = {
       recebidos: `${baseUrl}pix/relatorios/recebidos`,
     },
   },
+  // Indicações
+  indicacoes: {
+    codigo: `${baseUrl}indicacao/codigo`,
+    link: `${baseUrl}indicacao/link`,
+    criar: `${baseUrl}indicacao/criar`,
+    minhas: `${baseUrl}indicacao/minhas`,
+    detalhes: (id) => `${baseUrl}indicacao/${id}`,
+    indicadorPorCodigo: (codigo) => `${baseUrl}indicacao/codigo/${codigo}/indicador`,
+    // Admin
+    todas: `${baseUrl}indicacao/admin/todas`,
+    aprovar: (id) => `${baseUrl}indicacao/admin/${id}/aprovar`,
+    rejeitar: (id) => `${baseUrl}indicacao/admin/${id}/rejeitar`,
+    atualizarStatus: (id) => `${baseUrl}indicacao/admin/${id}/status`,
+  },
+  // Recompensas
+  recompensas: {
+    conta: `${baseUrl}recompensa/conta`,
+    solicitarDesconto: `${baseUrl}recompensa/solicitar-desconto`,
+    solicitarPix: `${baseUrl}recompensa/solicitar-pix`,
+    transacoes: `${baseUrl}recompensa/transacoes`,
+    pixPendentes: `${baseUrl}recompensa/pix/pendentes`,
+    aprovarPix: (id) => `${baseUrl}recompensa/transacao/${id}/aprovar`,
+    rejeitarPix: (id) => `${baseUrl}recompensa/transacao/${id}/rejeitar`,
+  },
 };

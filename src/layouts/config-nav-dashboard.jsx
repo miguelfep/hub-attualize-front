@@ -3,6 +3,7 @@ import { paths } from 'src/routes/paths';
 import { CONFIG } from 'src/config-global';
 
 import { SvgColor } from 'src/components/svg-color';
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -177,6 +178,24 @@ export const navData = [
             path: paths.dashboard.usuarios.root,
             icon: ICONS.user,
             roles: ['admin'],
+          },
+        ],
+      },
+      {
+        title: 'Recompensas',
+        path: paths.dashboard.recompensas.root,
+        icon: <Iconify width={24} icon="solar:gift-bold-duotone" />,
+        roles: ['admin', 'comercial', 'financeiro'],
+        children: [
+          {
+            title: 'PIX Pendentes',
+            roles: ['admin', 'comercial', 'financeiro'],
+            path: paths.dashboard.recompensas.root,
+          },
+          {
+            title: 'Indicações',
+            roles: ['admin', 'comercial', 'financeiro'],
+            path: paths.dashboard.indicacoes.root,
           },
         ],
       },

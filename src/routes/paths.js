@@ -263,6 +263,17 @@ export const paths = {
       logs: `${ROOTS.DASHBOARD}/pix/logs`,
       relatorios: `${ROOTS.DASHBOARD}/pix/relatorios`,
     },
+    recompensas: {
+      root: `${ROOTS.DASHBOARD}/recompensas`,
+      pixPendentes: `${ROOTS.DASHBOARD}/recompensas/pix-pendentes`,
+    },
+    indicacoes: {
+      root: `${ROOTS.DASHBOARD}/indicacoes`,
+    },
+    indicacoes: {
+      root: `${ROOTS.DASHBOARD}/indicacoes`,
+      detalhes: (id) => `${ROOTS.DASHBOARD}/indicacoes/${id}`,
+    },
   },
   // CLIENTE AREA
   cliente: {
@@ -303,5 +314,12 @@ export const paths = {
       reformaTributaria: `${ROOTS.CLIENTE}/conteudos/reforma-tributaria`,
     },
     aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
+    indicacoes: `${ROOTS.CLIENTE}/indicacoes`,
+    recompensas: `${ROOTS.CLIENTE}/recompensas`,
+  },
+  // Indicação (Público)
+  indicacao: {
+    root: '/indicacao',
+    criar: (codigo) => `/indicacao/${codigo}`,
   },
 };

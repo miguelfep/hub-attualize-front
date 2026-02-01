@@ -22,6 +22,7 @@ import { AnalyticsWelcome } from 'src/sections/dashboard-portal-cliente/Analytic
 import DetalhesMensalModal from 'src/sections/dashboard-portal-cliente/chart/DetalhesMensalModal';
 import VisaoGeralOrcamentos from 'src/sections/dashboard-portal-cliente/chart/VisaoGeralOrcamentos';
 import { AnalyticsWidgetSummary } from 'src/sections/dashboard-portal-cliente/AnalyticsWidgetSummary';
+import { IndiqueGanheCard } from 'src/sections/dashboard-portal-cliente/indique-ganhe-card';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -127,7 +128,10 @@ export default function PortalClienteDashboardView() {
               color="warning"
               link={paths.cliente.faturamentos.root}
             />
-        </Grid>
+          </Grid>
+          <Grid item xs={12}>
+            <IndiqueGanheCard />
+          </Grid>
           <Grid item xs={12} sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}> 
             <VisaoGeralOrcamentos
               height={500} 

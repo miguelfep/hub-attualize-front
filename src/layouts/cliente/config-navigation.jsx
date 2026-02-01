@@ -85,6 +85,23 @@ export function usePortalNavData() {
       icon: <Iconify icon="solar:money-bag-bold" />,
     },
     {
+      title: 'Indique e Ganhe',
+      path: '#',
+      icon: <Iconify icon="solar:gift-bold-duotone" />,
+      children: [
+        {
+          title: 'Minhas Indicações',
+          path: paths.cliente.indicacoes,
+          icon: <Iconify icon="solar:user-plus-bold" />,
+        },
+        {
+          title: 'Recompensas',
+          path: paths.cliente.recompensas,
+          icon: <Iconify icon="solar:wallet-money-bold" />,
+        },
+      ],
+    },
+    {
       title: 'Meus Documentos',
       path: '#',
       icon: <Iconify icon="solar:documents-bold-duotone" />,
