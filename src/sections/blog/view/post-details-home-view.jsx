@@ -21,6 +21,7 @@ import { getPostComments } from 'src/actions/blog-ssr';
 import { Iconify } from 'src/components/iconify';
 import { Markdown } from 'src/components/markdown';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import { EmptyContent } from 'src/components/empty-content';
 
 import { PostItem } from '../post-item';
 import { PostDetailsHero } from '../post-details-hero';
@@ -48,6 +49,20 @@ export function PostDetailsHomeView({ post, latestPosts, initialComments = [], i
       setLoadingComments(false);
     }
   }, [post?.id]);
+
+  // Se não houver post, retornar mensagem de erro
+  if (!post) {
+    return (
+      <Container sx={{ my: 5 }}>
+        <EmptyContent
+          filled
+          title="Post não encontrado!"
+          description="A postagem que você está procurando não existe ou foi removida."
+        />
+      </Container>
+    );
+  }
+
   const formattedPosts = latestPosts
     .filter((latestPost) => latestPost.id !== post.id) // Remover a postagem atual
     .map((latest) => ({
@@ -73,7 +88,7 @@ export function PostDetailsHomeView({ post, latestPosts, initialComments = [], i
   return (
     <>
       <PostDetailsHero
-        title={post?.yoast_head_json.title ?? ''}
+        title={post?.yoast_head_json?.title ?? post?.title?.rendered ?? ''}
         author={post?._embedded?.author?.[0]?.name || post?.yoast_head_json?.author || 'Autor'}
         authorAvatar={
           // WordPress retorna avatares em diferentes tamanhos, tentamos do maior para o menor
@@ -82,7 +97,12 @@ export function PostDetailsHomeView({ post, latestPosts, initialComments = [], i
           post?._embedded?.author?.[0]?.avatar_urls?.['24'] ||
           null
         }
-        coverUrl={post?.yoast_head_json.og_image[0].url ?? ''}
+        coverUrl={
+          post?.yoast_head_json?.og_image?.[0]?.url ||
+          post?.jetpack_featured_media_url ||
+          post?._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
+          ''
+        }
         createdAt={post?.date}
       />
 
@@ -94,7 +114,7 @@ export function PostDetailsHomeView({ post, latestPosts, initialComments = [], i
           links={[
             { name: 'Home', href: '/' },
             { name: 'Blog', href: paths.post.blog },
-            { name: post?.yoast_head_json.title },
+            { name: post?.yoast_head_json?.title || post?.title?.rendered || 'Post' },
           ]}
           sx={{ maxWidth: { xs: '100%', md: 1000 }, mx: 'auto', px: { xs: 2, md: 0 } }}
         />
@@ -117,7 +137,7 @@ export function PostDetailsHomeView({ post, latestPosts, initialComments = [], i
               color: 'text.secondary',
             }}
           >
-            {post?.yoast_head_json.description}
+            {post?.yoast_head_json?.description || post?.excerpt?.rendered?.replace(/<[^>]*>/g, '').substring(0, 160) || ''}
           </Typography>
 
           <Markdown 

@@ -10,213 +10,244 @@ import { PostDetailsHomeView } from 'src/sections/blog/view';
 // ----------------------------------------------------------------------
 
 export async function generateMetadata({ params }) {
-  const { title } = params;
+  try {
+    const { title } = params;
 
-  // Fetch the post based on the slug
-  const post = await getPostBySlug(title);
+    // Fetch the post based on the slug
+    const post = await getPostBySlug(title);
 
-  const SITE_URL = 'https://attualize.com.br';
-  const postUrl = `${SITE_URL}/blog/${title}`;
-  const postTitle = post?.yoast_head_json?.title || post?.title?.rendered || 'Postagem';
-  const postDescription =
-    post?.yoast_head_json?.description ||
-    post?.excerpt?.rendered?.replace(/<[^>]*>/g, '').substring(0, 160) ||
-    'Descrição da postagem';
-  const postImage =
-    post?.jetpack_featured_media_url ||
-    post?._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
-    `${SITE_URL}/logo/attualize.png`;
-  const keywords = post?.yoast_head_json?.keywords || [];
-  const publishedTime = post?.date || new Date().toISOString();
-  const modifiedTime = post?.modified || publishedTime;
+    const SITE_URL = 'https://attualize.com.br';
+    const postUrl = `${SITE_URL}/blog/${title}`;
 
-  // If the post is found, set the title for SEO
-  if (post) {
-    return {
-      title: postTitle,
-      description: postDescription,
-      keywords: keywords.length > 0 ? keywords : undefined,
-      authors: post?._embedded?.author?.[0]?.name
-        ? [{ name: post._embedded.author[0].name }]
-        : undefined,
-      publishedTime,
-      modifiedTime,
-      alternates: {
-        canonical: postUrl,
-      },
-      openGraph: {
-        type: 'article',
+    // If the post is found, set the title for SEO
+    if (post) {
+      const postTitle = post?.yoast_head_json?.title || post?.title?.rendered || 'Postagem';
+      const postDescription =
+        post?.yoast_head_json?.description ||
+        post?.excerpt?.rendered?.replace(/<[^>]*>/g, '').substring(0, 160) ||
+        'Descrição da postagem';
+      const postImage =
+        post?.jetpack_featured_media_url ||
+        post?._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
+        `${SITE_URL}/logo/attualize.png`;
+      const keywords = post?.yoast_head_json?.keywords || [];
+      const publishedTime = post?.date || new Date().toISOString();
+      const modifiedTime = post?.modified || publishedTime;
+
+      return {
         title: postTitle,
         description: postDescription,
-        url: postUrl,
-        siteName: CONFIG.site.name,
+        keywords: keywords.length > 0 ? keywords : undefined,
+        authors: post?._embedded?.author?.[0]?.name
+          ? [{ name: post._embedded.author[0].name }]
+          : undefined,
         publishedTime,
         modifiedTime,
-        authors: post?._embedded?.author?.[0]?.name
-          ? [post._embedded.author[0].name]
-          : undefined,
-        images: [
-          {
-            url: postImage,
-            width: 1200,
-            height: 630,
-            alt: postTitle,
-          },
-        ],
-      },
-      twitter: {
-        card: 'summary_large_image',
-        title: postTitle,
-        description: postDescription,
-        images: [postImage],
+        alternates: {
+          canonical: postUrl,
+        },
+        openGraph: {
+          type: 'article',
+          title: postTitle,
+          description: postDescription,
+          url: postUrl,
+          siteName: CONFIG.site.name,
+          publishedTime,
+          modifiedTime,
+          authors: post?._embedded?.author?.[0]?.name
+            ? [post._embedded.author[0].name]
+            : undefined,
+          images: [
+            {
+              url: postImage,
+              width: 1200,
+              height: 630,
+              alt: postTitle,
+            },
+          ],
+        },
+        twitter: {
+          card: 'summary_large_image',
+          title: postTitle,
+          description: postDescription,
+          images: [postImage],
+        },
+      };
+    }
+
+    // Fallback metadata if the post is not found
+    return {
+      title: `Postagem não encontrada - ${CONFIG.site.name}`,
+      description: 'A postagem solicitada não foi encontrada.',
+      robots: {
+        index: false,
+        follow: false,
       },
     };
+  } catch (error) {
+    console.error('Erro ao gerar metadata:', error);
+    // Retornar metadata padrão em caso de erro
+    return {
+      title: `Blog - ${CONFIG.site.name}`,
+      description: 'Blog da Attualize Contábil',
+    };
   }
-
-  // Fallback metadata if the post is not found
-  return {
-    title: `Postagem não encontrada - ${CONFIG.site.name}`,
-    description: 'A postagem solicitada não foi encontrada.',
-    robots: {
-      index: false,
-      follow: false,
-    },
-  };
 }
 
 export default async function Page({ params }) {
   const { title } = params;
 
-  // Buscar o post primeiro para obter o ID
-  const post = await getPostBySlug(title);
+  try {
+    // Buscar o post primeiro para obter o ID
+    const post = await getPostBySlug(title);
 
-  // Paralelizar chamadas independentes para reduzir TTFB
-  const [latestPosts, commentsData] = await Promise.all([
-    getLatestPosts(),
-    post ? getPostComments(post.id) : Promise.resolve({ comments: [], totalComments: 0 }),
-  ]);
+    // Se o post não existir, retornar null para o componente tratar
+    if (!post) {
+      return (
+        <PostDetailsHomeView 
+          post={null} 
+          latestPosts={[]} 
+          initialComments={[]}
+          initialTotalComments={0}
+        />
+      );
+    }
 
-  // Criar structured data JSON-LD para o post
-  const SITE_URL = 'https://attualize.com.br';
-  const postUrl = `${SITE_URL}/blog/${title}`;
-  const postTitle = post?.yoast_head_json?.title || post?.title?.rendered || '';
-  const postDescription =
-    post?.yoast_head_json?.description ||
-    post?.excerpt?.rendered?.replace(/<[^>]*>/g, '').substring(0, 160) ||
-    '';
-  const postImage =
-    post?.jetpack_featured_media_url ||
-    post?._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
-    `${SITE_URL}/logo/attualize.png`;
-  const authorName = post?._embedded?.author?.[0]?.name || 'Attualize Contábil';
-  const publishedTime = post?.date || new Date().toISOString();
-  const modifiedTime = post?.modified || publishedTime;
+    // Paralelizar chamadas independentes para reduzir TTFB
+    const [latestPosts, commentsData] = await Promise.all([
+      getLatestPosts(),
+      post?.id ? getPostComments(post.id) : Promise.resolve({ comments: [], totalComments: 0 }),
+    ]);
 
-  // Structured data melhorado para SEO e IA
-  const structuredData = post
-    ? [
-        // BlogPosting schema
-        {
-          '@context': 'https://schema.org',
-          '@type': 'BlogPosting',
-          headline: postTitle,
-          description: postDescription,
-          image: Array.isArray(postImage) ? postImage : [postImage],
-          datePublished: publishedTime,
-          dateModified: modifiedTime,
-          author: {
-            '@type': 'Organization',
-            name: authorName,
-            url: SITE_URL,
-          },
-          publisher: {
-            '@type': 'Organization',
-            name: CONFIG.site.name,
-            logo: {
-              '@type': 'ImageObject',
-              url: `${SITE_URL}/logo/attualize.png`,
-              width: 1200,
-              height: 630,
-            },
-          },
-          mainEntityOfPage: {
-            '@type': 'WebPage',
-            '@id': postUrl,
-          },
-          url: postUrl,
-          articleSection: 'Contabilidade',
-          keywords: post?.yoast_head_json?.keywords?.join(', ') || '',
-          inLanguage: 'pt-BR',
+    // Criar structured data JSON-LD para o post
+    const SITE_URL = 'https://attualize.com.br';
+    const postUrl = `${SITE_URL}/blog/${title}`;
+    const postTitle = post?.yoast_head_json?.title || post?.title?.rendered || '';
+    const postDescription =
+      post?.yoast_head_json?.description ||
+      post?.excerpt?.rendered?.replace(/<[^>]*>/g, '').substring(0, 160) ||
+      '';
+    const postImage =
+      post?.jetpack_featured_media_url ||
+      post?._embedded?.['wp:featuredmedia']?.[0]?.source_url ||
+      `${SITE_URL}/logo/attualize.png`;
+    const authorName = post?._embedded?.author?.[0]?.name || 'Attualize Contábil';
+    const publishedTime = post?.date || new Date().toISOString();
+    const modifiedTime = post?.modified || publishedTime;
+
+    // Structured data melhorado para SEO e IA
+    const structuredData = [
+      // BlogPosting schema
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BlogPosting',
+        headline: postTitle,
+        description: postDescription,
+        image: Array.isArray(postImage) ? postImage : [postImage],
+        datePublished: publishedTime,
+        dateModified: modifiedTime,
+        author: {
+          '@type': 'Organization',
+          name: authorName,
+          url: SITE_URL,
         },
-        // BreadcrumbList schema
-        {
-          '@context': 'https://schema.org',
-          '@type': 'BreadcrumbList',
-          itemListElement: [
-            {
-              '@type': 'ListItem',
-              position: 1,
-              name: 'Início',
-              item: SITE_URL,
-            },
-            {
-              '@type': 'ListItem',
-              position: 2,
-              name: 'Blog',
-              item: `${SITE_URL}/blog`,
-            },
-            {
-              '@type': 'ListItem',
-              position: 3,
-              name: postTitle,
-              item: postUrl,
-            },
-          ],
-        },
-        // Organization schema (para melhor descoberta)
-        {
-          '@context': 'https://schema.org',
+        publisher: {
           '@type': 'Organization',
           name: CONFIG.site.name,
-          url: SITE_URL,
-          logo: `${SITE_URL}/logo/attualize.png`,
-          sameAs: [
-            // Adicione suas redes sociais aqui quando disponíveis
-            // 'https://www.facebook.com/attualize',
-            // 'https://www.instagram.com/attualize',
-            // 'https://www.linkedin.com/company/attualize',
-          ],
+          logo: {
+            '@type': 'ImageObject',
+            url: `${SITE_URL}/logo/attualize.png`,
+            width: 1200,
+            height: 630,
+          },
         },
-      ]
-    : null;
+        mainEntityOfPage: {
+          '@type': 'WebPage',
+          '@id': postUrl,
+        },
+        url: postUrl,
+        articleSection: 'Contabilidade',
+        keywords: post?.yoast_head_json?.keywords?.join(', ') || '',
+        inLanguage: 'pt-BR',
+      },
+      // BreadcrumbList schema
+      {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          {
+            '@type': 'ListItem',
+            position: 1,
+            name: 'Início',
+            item: SITE_URL,
+          },
+          {
+            '@type': 'ListItem',
+            position: 2,
+            name: 'Blog',
+            item: `${SITE_URL}/blog`,
+          },
+          {
+            '@type': 'ListItem',
+            position: 3,
+            name: postTitle,
+            item: postUrl,
+          },
+        ],
+      },
+      // Organization schema (para melhor descoberta)
+      {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: CONFIG.site.name,
+        url: SITE_URL,
+        logo: `${SITE_URL}/logo/attualize.png`,
+        sameAs: [
+          // Adicione suas redes sociais aqui quando disponíveis
+          // 'https://www.facebook.com/attualize',
+          // 'https://www.instagram.com/attualize',
+          // 'https://www.linkedin.com/company/attualize',
+        ],
+      },
+    ];
 
-  return (
-    <>
-      {structuredData && Array.isArray(structuredData) ? (
-        structuredData.map((data, index) => (
+    return (
+      <>
+        {structuredData.map((data, index) => (
           <StructuredData key={index} data={data} />
-        ))
-      ) : structuredData ? (
-        <StructuredData data={structuredData} />
-      ) : null}
+        ))}
+        <PostDetailsHomeView 
+          post={post} 
+          latestPosts={latestPosts || []} 
+          initialComments={commentsData?.comments || []}
+          initialTotalComments={commentsData?.totalComments || 0}
+        />
+      </>
+    );
+  } catch (error) {
+    console.error('Erro ao carregar post:', error);
+    // Retornar página de erro amigável
+    return (
       <PostDetailsHomeView 
-        post={post} 
-        latestPosts={latestPosts} 
-        initialComments={commentsData.comments}
-        initialTotalComments={commentsData.totalComments}
+        post={null} 
+        latestPosts={[]} 
+        initialComments={[]}
+        initialTotalComments={0}
       />
-    </>
-  );
+    );
+  }
 }
 
 // ----------------------------------------------------------------------
 
 /**
- * [1] ISR (Incremental Static Regeneration)
- * Revalida a página a cada 1 hora (3600 segundos)
- * Isso permite cache estático com atualização periódica
+ * Configuração dinâmica
+ * Como o layout usa cookies() e outras APIs dinâmicas,
+ * precisamos marcar a página como dinâmica
+ * O cache ainda funciona através do fetch com next: { revalidate }
  */
-export const revalidate = CONFIG.isStaticExport ? false : 3600;
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
 
 /**
  * [2] Static exports
