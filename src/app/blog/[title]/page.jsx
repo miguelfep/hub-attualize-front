@@ -87,11 +87,14 @@ export async function generateMetadata({ params }) {
 export default async function Page({ params }) {
   const { title } = params;
 
+  // Buscar o post primeiro para obter o ID
   const post = await getPostBySlug(title);
-  const latestPosts = await getLatestPosts();
-  
-  // Buscar comentários do post
-  const commentsData = post ? await getPostComments(post.id) : { comments: [], totalComments: 0 };
+
+  // Paralelizar chamadas independentes para reduzir TTFB
+  const [latestPosts, commentsData] = await Promise.all([
+    getLatestPosts(),
+    post ? getPostComments(post.id) : Promise.resolve({ comments: [], totalComments: 0 }),
+  ]);
 
   // Criar structured data JSON-LD para o post
   const SITE_URL = 'https://attualize.com.br';
@@ -209,12 +212,11 @@ export default async function Page({ params }) {
 // ----------------------------------------------------------------------
 
 /**
- * [1] Default
- * Remove [1] and [2] if not using [2]
+ * [1] ISR (Incremental Static Regeneration)
+ * Revalida a página a cada 1 hora (3600 segundos)
+ * Isso permite cache estático com atualização periódica
  */
-const dynamic = CONFIG.isStaticExport ? 'auto' : 'force-dynamic';
-
-export { dynamic };
+export const revalidate = CONFIG.isStaticExport ? false : 3600;
 
 /**
  * [2] Static exports

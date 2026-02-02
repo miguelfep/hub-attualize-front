@@ -1,3 +1,6 @@
+import { Suspense } from 'react';
+
+import { CONFIG } from 'src/config-global';
 
 import { HomeEstetica } from 'src/sections/estetica-home/homeEstetica';
 
@@ -34,6 +37,17 @@ export const metadata = {
   },
 };
 
+/**
+ * ISR (Incremental Static Regeneration)
+ * Revalida a página a cada 1 hora (3600 segundos)
+ * Isso permite cache estático com atualização periódica
+ */
+export const revalidate = CONFIG.isStaticExport ? false : 3600;
+
 export default function Page() {
-  return <HomeEstetica />;
+  return (
+    <Suspense fallback={null}>
+      <HomeEstetica />
+    </Suspense>
+  );
 }
