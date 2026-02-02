@@ -102,13 +102,48 @@ export async function enviarLinkAbertura(id, config = {}) {
 }
 
 
-// Função para buscar todas as licenças
+// Função para buscar todas as licenças (legado - manter para compatibilidade)
 export async function getLicencas() {
   try {
     const response = await axios.get(`${baseUrl}societario/licencas`);
     return response;
   } catch (error) {
     console.error('Erro ao buscar licenças:', error);
+    throw error;
+  }
+}
+
+/**
+ * Listar licenças com filtros e paginação
+ * Suporta params: page, limit, status, cliente, vencidos, expiraEmDias, sortBy, sortOrder
+ * @param {Object} params 
+ * @returns {Promise}
+ */
+export async function listarLicencas(params = {}) {
+  try {
+    const query = { ...params };
+    const response = await axios.get(`${baseUrl}societario/licencas`, { params: query });
+    return response;
+  } catch (error) {
+    console.error('Erro ao listar licenças:', error);
+    throw error;
+  }
+}
+
+/**
+ * Listar licenças de um cliente específico
+ * Suporta params: page, limit, status, incluirComentarios
+ * @param {string} clienteId - ID do cliente
+ * @param {Object} params - Parâmetros de filtro e paginação
+ * @returns {Promise}
+ */
+export async function listarLicencasPorCliente(clienteId, params = {}) {
+  try {
+    const query = { ...params };
+    const response = await axios.get(`${baseUrl}societario/licencas/cliente/${clienteId}`, { params: query });
+    return response;
+  } catch (error) {
+    console.error('Erro ao listar licenças do cliente:', error);
     throw error;
   }
 }
@@ -124,12 +159,84 @@ export async function getLicencaById(id) {
   }
 }
 
-// Função para criar uma nova licença (sem arquivo e sem data de vencimento)
-export async function createLicenca(itemData) {
+/**
+ * Validar arquivo de licença
+ * @param {File} file - Arquivo a ser validado
+ * @returns {Object} Resultado da validação
+ */
+export function validarArquivoLicenca(file) {
+  const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+  
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: 'Arquivo muito grande. O tamanho máximo permitido é 20MB.'
+    };
+  }
+  
+  return {
+    isValid: true,
+    error: null
+  };
+}
+
+/**
+ * Criar uma nova licença (agora suporta upload de arquivo opcional)
+ * @param {Object|FormData} itemData - Dados da licença ou FormData com arquivo
+ * @param {File} [file] - Arquivo opcional da licença (máx 20MB)
+ * @returns {Promise}
+ */
+export async function createLicenca(itemData, file = null) {
   try {
-    const response = await axios.post(`${baseUrl}societario/licenca`, itemData);
-    return response;
+    // Se houver arquivo, validar tamanho
+    if (file) {
+      const validacao = validarArquivoLicenca(file);
+      if (!validacao.isValid) {
+        const error = new Error(validacao.error);
+        error.status = 413;
+        throw error;
+      }
+    }
+
+    // Se houver arquivo ou se itemData já for FormData, usar multipart/form-data
+    const isFormData = itemData instanceof FormData || file !== null;
+    
+    if (isFormData) {
+      const formData = itemData instanceof FormData ? itemData : new FormData();
+      
+      // Se não for FormData, adicionar campos do itemData
+      if (!(itemData instanceof FormData)) {
+        Object.entries(itemData).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            formData.append(key, value);
+          }
+        });
+      }
+      
+      // Adicionar arquivo se fornecido
+      if (file) {
+        formData.append('file', file);
+      }
+
+      const response = await axios.post(`${baseUrl}societario/licenca`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } 
+      // Requisição JSON normal (compatibilidade com código antigo)
+      const response = await axios.post(`${baseUrl}societario/licenca`, itemData);
+      return response;
+    
   } catch (error) {
+    // Tratar erro 413 do backend
+    if (error.response?.status === 413 || error.status === 413) {
+      const errorMessage = error.response?.data?.message || error.message || 'Arquivo muito grande. O tamanho máximo permitido é 20MB.';
+      const customError = new Error(errorMessage);
+      customError.status = 413;
+      throw customError;
+    }
     console.error('Erro ao criar licença:', error);
     throw error;
   }
@@ -363,5 +470,49 @@ export async function gerarAcessoUsuario(id, config = {}) {
   } catch (error) {
     console.error("Erro ao gerar acesso do usuário:", error);
     throw error;
+  }
+}
+
+/**
+ * Obter cor do status da licença
+ * @param {string} status - Status da licença
+ * @returns {string} Cor do status
+ */
+export function getCorStatusLicenca(status) {
+  switch (status) {
+    case 'valida':
+      return 'success';
+    case 'vencida':
+      return 'error';
+    case 'dispensada':
+      return 'info';
+    case 'a_expirar':
+      return 'warning';
+    case 'em_processo':
+      return 'secondary';
+    default:
+      return 'default';
+  }
+}
+
+/**
+ * Obter ícone do status da licença
+ * @param {string} status - Status da licença
+ * @returns {string} Nome do ícone
+ */
+export function getIconeStatusLicenca(status) {
+  switch (status) {
+    case 'valida':
+      return 'solar:shield-check-bold-duotone';
+    case 'vencida':
+      return 'solar:shield-cross-bold-duotone';
+    case 'dispensada':
+      return 'solar:shield-user-bold-duotone';
+    case 'a_expirar':
+      return 'solar:sort-by-time-bold';
+    case 'em_processo':
+      return 'solar:shield-bold-duotone';
+    default:
+      return 'solar:sort-by-time-bold';
   }
 }

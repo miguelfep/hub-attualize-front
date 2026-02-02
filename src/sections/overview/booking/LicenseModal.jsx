@@ -21,6 +21,7 @@ import {
   downloadLicenca,
   updateLicencaWithFile,
   deletarArquivoLicenca,
+  validarArquivoLicenca,
   criarComentarioLicenca,
   listarComentariosLicenca,
   deletarComentarioSocietario,
@@ -44,8 +45,18 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
 
   const handleFileUpload = async (event) => {
     const selectedFile = event.target.files[0];
+    if (!selectedFile) return;
+
+    // Validar tamanho do arquivo
+    const validacao = validarArquivoLicenca(selectedFile);
+    if (!validacao.isValid) {
+      toast.error(validacao.error);
+      event.target.value = '';
+      return;
+    }
+
     setFile(selectedFile);
-    setFileName(selectedFile ? selectedFile.name : '');
+    setFileName(selectedFile.name);
 
     const dataToSend = {
       ...editedLicense,
@@ -57,7 +68,12 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
       await fetchLicencas();
       toast.success('Arquivo enviado com sucesso');
     } catch (error) {
-      toast.error('Erro ao enviar arquivo');
+      if (error.response?.status === 413 || error.status === 413) {
+        toast.error(error.response?.data?.message || 'Arquivo muito grande. O tamanho máximo permitido é 20MB.');
+      } else {
+        toast.error('Erro ao enviar arquivo');
+      }
+      console.error('Erro ao enviar arquivo:', error);
     }
   };
 
@@ -94,13 +110,27 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
       clienteId: editedLicense.cliente?._id,
     };
 
+    // Validar arquivo se houver novo arquivo
+    if (file) {
+      const validacao = validarArquivoLicenca(file);
+      if (!validacao.isValid) {
+        toast.error(validacao.error);
+        return;
+      }
+    }
+
     try {
       await updateLicencaWithFile(editedLicense._id, file, dataToSend);
       await fetchLicencas();
       toast.success('Licença atualizada com sucesso');
       onClose();
     } catch (error) {
-      toast.error('Erro ao atualizar licença');
+      if (error.response?.status === 413 || error.status === 413) {
+        toast.error(error.response?.data?.message || 'Arquivo muito grande. O tamanho máximo permitido é 20MB.');
+      } else {
+        toast.error('Erro ao atualizar licença');
+      }
+      console.error('Erro ao atualizar licença:', error);
     }
   };
 
@@ -230,10 +260,17 @@ export default function LicenseModal({ licenca, fetchLicencas, onClose }) {
             </Button>
           </Box>
         ) : (
-          <Button fullWidth variant="contained" component="label" sx={{ mt: 2, mb: 1 }}>
-            Upload Arquivo
-            <input type="file" hidden onChange={handleFileUpload} />
-          </Button>
+          <Box sx={{ mt: 2, mb: 1 }}>
+            <Button fullWidth variant="contained" component="label">
+              Upload Arquivo (máx. 20MB)
+              <input type="file" hidden onChange={handleFileUpload} />
+            </Button>
+            {file && (
+              <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
+                Arquivo selecionado: {file.name} ({(file.size / 1024 / 1024).toFixed(2)} MB)
+              </Typography>
+            )}
+          </Box>
         )}
         <Button fullWidth variant="contained" color="primary" onClick={handleSaveChanges} sx={{ mt: 2 }}>
           Salvar Alterações
