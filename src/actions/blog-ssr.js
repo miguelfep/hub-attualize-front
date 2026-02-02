@@ -6,19 +6,31 @@ import axios from 'src/utils/axios';
 // Fetch all posts with pagination
 export async function getPosts(page = 1, perPage = 10) {
   try {
-    const res = await axios.get('https://attualizecontabil.com.br/wp-json/wp/v2/posts', {
-      params: {
-        per_page: perPage, // Number of posts per page
-        page, // Current page for pagination
-        _embed: true, // Embed related data (e.g., images, author)
-      },
+    const params = new URLSearchParams({
+      per_page: perPage.toString(),
+      page: page.toString(),
+      _embed: 'true',
     });
 
-    const totalPosts = res.headers['x-wp-total']; // Total number of posts
-    const totalPages = res.headers['x-wp-totalpages']; // Total number of pages
+    // Usar fetch nativo do Next.js com cache
+    const res = await fetch(
+      `https://attualizecontabil.com.br/wp-json/wp/v2/posts?${params.toString()}`,
+      {
+        // Cache do Next.js: revalida a cada 30 minutos (1800 segundos)
+        next: { revalidate: 1800 },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch posts');
+    }
+
+    const data = await res.json();
+    const totalPosts = parseInt(res.headers.get('x-wp-total') || '0', 10);
+    const totalPages = parseInt(res.headers.get('x-wp-totalpages') || '0', 10);
 
     return {
-      posts: res.data, // Post data from response
+      posts: data, // Post data from response
       totalPosts, // Total number of posts for client-side info
       totalPages, // Total number of pages for pagination
     };
@@ -32,19 +44,32 @@ export async function getPosts(page = 1, perPage = 10) {
 
 export async function getPostBySlug(slug) {
   try {
-    const res = await axios.get('https://attualizecontabil.com.br/wp-json/wp/v2/posts', {
-      params: {
-        slug, // Agora busca pelo slug ao invés do título
-        _embed: true, // Embute os dados relacionados (imagens, autor, etc.)
-        per_page: 1, // Limita o resultado a 1 post
-      },
+    const params = new URLSearchParams({
+      slug,
+      _embed: 'true',
+      per_page: '1',
     });
 
-    if (res.data.length === 0) {
+    // Usar fetch nativo do Next.js com cache
+    const res = await fetch(
+      `https://attualizecontabil.com.br/wp-json/wp/v2/posts?${params.toString()}`,
+      {
+        // Cache do Next.js: revalida a cada 1 hora (3600 segundos)
+        next: { revalidate: 3600 },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch post');
+    }
+
+    const data = await res.json();
+
+    if (data.length === 0) {
       throw new Error('Post not found');
     }
 
-    return res.data[0]; // Retorna o primeiro post correspondente ao slug
+    return data[0]; // Retorna o primeiro post correspondente ao slug
   } catch (error) {
     console.error('Erro ao buscar o post:', error);
     return null;
@@ -56,16 +81,27 @@ export async function getPostBySlug(slug) {
 // Fetch the latest posts (e.g., 5 latest posts)
 export async function getLatestPosts(perPage = 5) {
   try {
-    const res = await axios.get('https://attualizecontabil.com.br/wp-json/wp/v2/posts', {
-      params: {
-        per_page: perPage, // Number of latest posts
-        _embed: true, // Embed related data
-        orderby: 'date', // Order by post date
-        order: 'desc', // Most recent posts first
-      },
+    const params = new URLSearchParams({
+      per_page: perPage.toString(),
+      _embed: 'true',
+      orderby: 'date',
+      order: 'desc',
     });
 
-    return res.data; // Return array of latest posts
+    // Usar fetch nativo do Next.js com cache
+    const res = await fetch(
+      `https://attualizecontabil.com.br/wp-json/wp/v2/posts?${params.toString()}`,
+      {
+        // Cache do Next.js: revalida a cada 30 minutos (1800 segundos)
+        next: { revalidate: 1800 },
+      }
+    );
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch latest posts');
+    }
+
+    return await res.json(); // Return array of latest posts
   } catch (error) {
     console.error('Failed to fetch the latest posts:', error);
     return [];
@@ -104,25 +140,35 @@ export async function searchPosts(query, page = 1, perPage = 10) {
 // Buscar comentários de um post específico
 export async function getPostComments(postId, page = 1, perPage = 100) {
   try {
-    const res = await axios.get(
-      `https://attualizecontabil.com.br/wp-json/wp/v2/comments`,
+    const params = new URLSearchParams({
+      post: postId.toString(),
+      per_page: perPage.toString(),
+      page: page.toString(),
+      orderby: 'date',
+      order: 'asc',
+      status: 'approve',
+    });
+
+    // Usar fetch nativo do Next.js com cache
+    const res = await fetch(
+      `https://attualizecontabil.com.br/wp-json/wp/v2/comments?${params.toString()}`,
       {
-        params: {
-          post: postId, // ID do post
-          per_page: perPage,
-          page,
-          orderby: 'date',
-          order: 'asc',
-          status: 'approve', // Apenas comentários aprovados
-        },
+        // Cache do Next.js: revalida a cada 5 minutos (300 segundos)
+        // Comentários podem mudar mais frequentemente, então cache menor
+        next: { revalidate: 300 },
       }
     );
 
-    const totalComments = res.headers['x-wp-total'] || 0;
-    const totalPages = res.headers['x-wp-totalpages'] || 0;
+    if (!res.ok) {
+      throw new Error('Failed to fetch comments');
+    }
+
+    const data = await res.json();
+    const totalComments = parseInt(res.headers.get('x-wp-total') || '0', 10);
+    const totalPages = parseInt(res.headers.get('x-wp-totalpages') || '0', 10);
 
     return {
-      comments: res.data,
+      comments: data,
       totalComments,
       totalPages,
     };

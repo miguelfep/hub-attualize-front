@@ -1,14 +1,12 @@
-import { CONFIG } from 'src/config-global';
-import { getPosts } from 'src/actions/blog-ssr';
-
-import { PostListHomeView } from 'src/sections/blog/view';
+import { redirect } from 'next/navigation';
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Nosso Blog - ${CONFIG.site.name}` };
-
-export default async function Page() {
-  const { posts } = await getPosts();
-
-  return <PostListHomeView posts={posts} />;
+/**
+ * Redireciona permanentemente de /post para /blog
+ * Redirecionamento 301 para SEO
+ */
+export default function Page() {
+  // Redirecionamento permanente (301) para /blog
+  redirect('/blog');
 }
