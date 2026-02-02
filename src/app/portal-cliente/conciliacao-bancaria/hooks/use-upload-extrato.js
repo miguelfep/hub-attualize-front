@@ -1,6 +1,10 @@
 import { useState } from 'react';
 
-import { uploadArquivoConciliacao } from 'src/actions/conciliacao';
+import { 
+  obterStatusConciliacao, 
+  uploadArquivoConciliacao, 
+  buscarTransacoesConciliacao 
+} from 'src/actions/conciliacao';
 
 /**
  * Hook para gerenciar upload de extrato
@@ -11,13 +15,97 @@ export function useUploadExtrato() {
   const [resultado, setResultado] = useState(null);
   const [error, setError] = useState(null);
   const [errorData, setErrorData] = useState(null); // 🔥 NOVO: objeto completo do erro
+  
+  // 🔥 NOVOS ESTADOS: Processamento assíncrono
+  const [processandoStatus, setProcessandoStatus] = useState(null); // 'processando' | 'pendente' | 'concluida' | 'erro' | null
+  const [progressoProcessamento, setProgressoProcessamento] = useState(0); // 0-100
+  const [conciliacaoId, setConciliacaoId] = useState(null);
+
+  /**
+   * 🔥 NOVO: Função de polling do status do processamento
+   */
+  const aguardarProcessamento = async (id, maxTentativas = 120) => {
+    const intervalo = 1000; // 1 segundo
+    
+    const tentarVerificarStatus = async (tentativa) => {
+      try {
+        const statusResponse = await obterStatusConciliacao(id);
+        const statusData = statusResponse.data?.data;
+        
+        if (!statusData) {
+          throw new Error('Resposta inválida do servidor');
+        }
+        
+        // Atualizar estados de progresso
+        setProcessandoStatus(statusData.status);
+        setProgressoProcessamento(statusData.progresso || 0);
+        
+        // Se processamento concluído (pendente ou concluida), buscar transações
+        if (statusData.status === 'pendente' || statusData.status === 'concluida') {
+          // Buscar transações
+          const transacoesResponse = await buscarTransacoesConciliacao(id);
+          const transacoesData = transacoesResponse.data?.data;
+          
+          return {
+            conciliacaoId: id,
+            status: statusData.status,
+            transacoes: transacoesData?.todas || [],
+            resumo: transacoesData?.resumo || statusData.resumo || null,
+            transacoesIgnoradas: transacoesData?.transacoesIgnoradas || [],
+            ...statusData,
+          };
+        }
+        
+        // Se erro no processamento
+        if (statusData.status === 'erro') {
+          const erroMsg = statusData.erros?.[0] || 'Erro ao processar arquivo';
+          throw new Error(erroMsg);
+        }
+        
+        return null; // Continuar tentando
+      } catch (err) {
+        // Se for erro de status do processamento (status = "erro"), propagar imediatamente
+        if (err.message && !err.message.toLowerCase().includes('network') && !err.message.toLowerCase().includes('timeout') && !err.message.toLowerCase().includes('resposta inválida')) {
+          throw err;
+        }
+        // Erro de rede ou resposta inválida: continuar tentando até timeout
+        // Mas atualizar progresso para indicar que houve problema
+        console.warn('Erro durante polling, tentando novamente...', err.message);
+        return null; // Continuar tentando
+      }
+    };
+    
+    // Usar recursão ao invés de loop com await
+    const executarTentativas = async (tentativaAtual) => {
+      if (tentativaAtual >= maxTentativas) {
+        throw new Error('Timeout ao processar arquivo. O processamento pode estar demorando mais que o esperado.');
+      }
+      
+      const statusResultado = await tentarVerificarStatus(tentativaAtual);
+      
+      if (statusResultado) {
+        return statusResultado;
+      }
+      
+      // Aguardar antes da próxima tentativa
+      await new Promise(resolve => setTimeout(resolve, intervalo));
+      
+      return executarTentativas(tentativaAtual + 1);
+    };
+    
+    return executarTentativas(0);
+  };
 
   const upload = async (clienteId, bancoId, mesAno, arquivo) => {
     setLoading(true);
     setError(null);
-    setErrorData(null); // 🔥 Limpar errorData também
+    setErrorData(null);
     setResultado(null);
     setUploadProgress(0);
+    // 🔥 Limpar estados de processamento
+    setProcessandoStatus(null);
+    setProgressoProcessamento(0);
+    setConciliacaoId(null);
 
     let teveErro = false;
 
@@ -35,11 +123,43 @@ export function useUploadExtrato() {
         }
       );
 
+      // ✅ NOVO: API sempre retorna imediatamente com status "processando"
+      // Não retorna transações na resposta - processamento acontece em background
       if (response.data?.success) {
-        setResultado(response.data.data);
-        // 🔥 NÃO resetar loading imediatamente - deixar a página controlar
-        // O loading será resetado quando a página redirecionar
-        return response.data.data;
+        const uploadData = response.data?.data;
+        const id = uploadData?.conciliacaoId;
+        const status = uploadData?.status;
+        
+        // ✅ Verificar se é processamento assíncrono (status = "processando")
+        if (status === 'processando') {
+          if (!id) {
+            throw new Error('ID de conciliação não retornado pelo servidor');
+          }
+          
+          // ✅ Processamento assíncrono: retornar apenas conciliacaoId e status
+          // O processamento continuará em background
+          // A página de status fará o polling para verificar quando finalizar
+          setConciliacaoId(id);
+          setProcessandoStatus('processando');
+          
+          return {
+            conciliacaoId: id,
+            status: 'processando',
+            processamentoAssincrono: true,
+            mensagem: uploadData?.mensagem || 'Arquivo recebido e será processado em breve. Use o endpoint de status para verificar o progresso.',
+          };
+        }
+        
+        // ✅ FLUXO ANTIGO: Resposta síncrona (compatibilidade - se ainda existir)
+        // Se a resposta tiver transações, é processamento síncrono (OFX antigo)
+        if (uploadData?.transacoes) {
+          setResultado(uploadData);
+          return uploadData;
+        }
+        
+        // ✅ Se não tem transações nem status "processando", retornar dados como estão
+        setResultado(uploadData);
+        return uploadData;
       }
       
       teveErro = true;
@@ -137,7 +257,11 @@ export function useUploadExtrato() {
     setUploadProgress(0);
     setResultado(null);
     setError(null);
-    setErrorData(null); // 🔥 Limpar errorData também
+    setErrorData(null);
+    // 🔥 Limpar estados de processamento
+    setProcessandoStatus(null);
+    setProgressoProcessamento(0);
+    setConciliacaoId(null);
   };
 
   return { 
@@ -146,7 +270,11 @@ export function useUploadExtrato() {
     uploadProgress,
     resultado, 
     error,
-    errorData, // 🔥 NOVO: retornar objeto completo do erro
+    errorData,
+    // 🔥 NOVOS RETORNOS: Estados de processamento assíncrono
+    processandoStatus,
+    progressoProcessamento,
+    conciliacaoId,
     reset
   };
 }

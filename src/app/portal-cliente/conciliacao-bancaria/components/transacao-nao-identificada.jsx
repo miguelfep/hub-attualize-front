@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -18,12 +18,37 @@ import { SelectContaContabil } from 'src/components/plano-contas';
  * Cor: Vermelho
  * Ação: Ver sugestão baseada em histórico e aceitar/editar
  */
-export default function TransacaoNaoIdentificada({ transacao, onConfirmar, clienteId }) {
+export default function TransacaoNaoIdentificada({ 
+  transacao, 
+  onConfirmar, 
+  clienteId,
+  onContaChange, // 🔥 NOVO: Callback quando conta muda
+  autoConfirm, // 🔥 NOVO: Flag para confirmar automaticamente
+}) {
   // Estado para conta contábil selecionada (inicializar com sugestão se houver)
   const [contaContabilId, setContaContabilId] = useState(
     transacao.contaSugerida?._id || ''
   );
   const [confirmando, setConfirmando] = useState(false);
+
+  // 🔥 NOVO: Notificar mudança de conta
+  const handleContaChange = (novaConta) => {
+    setContaContabilId(novaConta);
+    if (onContaChange) {
+      onContaChange(transacao._id || transacao.transacaoImportadaId, novaConta);
+    }
+  };
+
+  // 🔥 NOVO: Auto-confirmar se flag estiver ativa e tiver conta
+  useEffect(() => {
+    if (autoConfirm && contaContabilId && !confirmando) {
+      const transacaoId = transacao._id || transacao.transacaoImportadaId;
+      if (transacaoId && contaContabilId) {
+        onConfirmar(transacaoId, null, contaContabilId);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoConfirm]);
 
   const handleConfirmar = () => {
     const transacaoId = transacao._id || transacao.transacaoImportadaId;
@@ -109,6 +134,7 @@ export default function TransacaoNaoIdentificada({ transacao, onConfirmar, clien
         </Typography>
 
         {/* Linha 3: Sugestão (se houver) */}
+        {/* ✅ Sugestão já vem salva na resposta (gerada durante upload, não ao buscar) */}
         {transacao.contaSugerida && (
           <Box
             sx={{
@@ -149,7 +175,7 @@ export default function TransacaoNaoIdentificada({ transacao, onConfirmar, clien
             <SelectContaContabil
               clienteId={clienteId}
               value={contaContabilId}
-              onChange={setContaContabilId}
+              onChange={handleContaChange}
               descricaoTransacao={transacao.descricao || ''}
               transacaoTipo={transacao.tipo}
               label="Conta contábil"
