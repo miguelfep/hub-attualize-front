@@ -10,6 +10,9 @@ node_modules
 .pnp
 .pnp.js
 
+# lock files (usando Yarn)
+package-lock.json
+
 # testing
 coverage
 
