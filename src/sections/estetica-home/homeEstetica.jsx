@@ -2,8 +2,8 @@
 
 import { lazy, Suspense } from 'react';
 
-import Stack from '@mui/material/Stack';
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { BackToTop } from 'src/components/animate/back-to-top';
