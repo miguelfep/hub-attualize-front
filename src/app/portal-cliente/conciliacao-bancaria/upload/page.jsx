@@ -104,7 +104,18 @@ export default function UploadExtratoPage() {
   const [mesesFaltantes, setMesesFaltantes] = useState([]);
   const [mostrarAvisoMesesFaltantes, setMostrarAvisoMesesFaltantes] = useState(false);
 
-  const { upload, loading, uploadProgress, resultado, error: uploadError, errorData, reset } = useUploadExtrato();
+  const { 
+    upload, 
+    loading, 
+    uploadProgress, 
+    resultado, 
+    error: uploadError, 
+    errorData, 
+    processandoStatus,
+    progressoProcessamento,
+    conciliacaoId,
+    reset 
+  } = useUploadExtrato();
 
   // 🔥 Detectar quando há erro e abrir modal apropriado
   useEffect(() => {
@@ -348,6 +359,14 @@ export default function UploadExtratoPage() {
 
     try {
       // ⚠️ IMPORTANTE: Passar bancoId e mesAno para o upload
+      // ✅ NOVO: API retorna IMEDIATAMENTE com status "processando"
+      // 1. Recebe arquivo (PDF ou OFX)
+      // 2. Retorna imediatamente com conciliacaoId e status "processando"
+      // 3. Processa arquivo em background (não bloqueia resposta)
+      // 4. Gera sugestões de contas contábeis (chama IA se necessário)
+      // 5. Salva sugestões no banco
+      // 6. Atualiza status para "pendente" quando concluído
+      // ⚡ Resposta é INSTANTÂNEA - processamento acontece em background
       const result = await upload(clienteId, bancoId, mesAno, arquivo);
       
       // Limpar avisos após upload bem-sucedido
@@ -355,7 +374,17 @@ export default function UploadExtratoPage() {
       setMesesFaltantes([]);
       
       if (result) {
-        // 🔥 NOVO: Verificar se há transações ignoradas
+        // 🔥 NOVO: Processamento assíncrono (PDF) - redirecionar imediatamente para status
+        if (result.processamentoAssincrono) {
+          toast.success(result.mensagem || 'Arquivo enviado! O processamento está em andamento.');
+          // Redirecionar para página de status onde o usuário pode acompanhar o progresso
+          setTimeout(() => {
+            router.push(`${paths.cliente.conciliacaoBancaria}/status`);
+          }, 1500);
+          return;
+        }
+        
+        // 🔥 FLUXO ANTIGO: Processamento síncrono (OFX) - verificar transações ignoradas
         if (result.transacoesIgnoradas && result.transacoesIgnoradas.length > 0) {
           console.log('⚠️ Transações ignoradas encontradas:', result.transacoesIgnoradas.length);
           setTransacoesIgnoradas(result.transacoesIgnoradas);
@@ -687,14 +716,31 @@ export default function UploadExtratoPage() {
                 <CircularProgress size={60} thickness={4} />
                 <Stack spacing={1} alignItems="center">
                   <Typography variant="h6" fontWeight="bold">
-                    Processando extrato bancário...
+                    {processandoStatus ? (
+                      processandoStatus === 'processando' 
+                        ? 'Processando arquivo...' 
+                        : processandoStatus === 'pendente' 
+                        ? 'Processamento concluído!' 
+                        : processandoStatus === 'concluida'
+                        ? 'Conciliação finalizada!'
+                        : 'Processando extrato bancário...'
+                    ) : 'Enviando arquivo...'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Aguarde enquanto processamos as transações
+                    {processandoStatus 
+                      ? processandoStatus === 'processando'
+                        ? 'Aguarde enquanto processamos as transações'
+                        : 'Finalizando processamento...'
+                      : 'Aguarde enquanto enviamos o arquivo'}
                   </Typography>
                 </Stack>
-                {uploadProgress > 0 && (
+                
+                {/* 🔥 Barra de progresso do upload */}
+                {uploadProgress > 0 && uploadProgress < 100 && (
                   <Box sx={{ width: '100%' }}>
+                    <Typography variant="caption" color="text.secondary" gutterBottom>
+                      Upload do arquivo
+                    </Typography>
                     <LinearProgress 
                       variant="determinate" 
                       value={uploadProgress} 
@@ -702,6 +748,36 @@ export default function UploadExtratoPage() {
                     />
                     <Typography variant="body2" textAlign="center" mt={1} fontWeight="bold">
                       {uploadProgress}% concluído
+                    </Typography>
+                  </Box>
+                )}
+                
+                {/* 🔥 Barra de progresso do processamento (assíncrono) */}
+                {processandoStatus && progressoProcessamento >= 0 && (
+                  <Box sx={{ width: '100%', mt: uploadProgress > 0 && uploadProgress < 100 ? 2 : 0 }}>
+                    <Stack direction="row" justifyContent="space-between" alignItems="center" mb={1}>
+                      <Typography variant="caption" color="text.secondary">
+                        Processamento
+                      </Typography>
+                      <Chip 
+                        label={processandoStatus === 'processando' ? 'Processando...' : 
+                               processandoStatus === 'pendente' ? 'Pendente' : 
+                               processandoStatus === 'concluida' ? 'Concluída' : 
+                               processandoStatus}
+                        size="small"
+                        color={processandoStatus === 'processando' ? 'info' : 
+                               processandoStatus === 'pendente' ? 'warning' : 
+                               processandoStatus === 'concluida' ? 'success' : 'default'}
+                      />
+                    </Stack>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={progressoProcessamento} 
+                      sx={{ height: 8, borderRadius: 1 }}
+                      color={processandoStatus === 'concluida' ? 'success' : 'primary'}
+                    />
+                    <Typography variant="body2" textAlign="center" mt={1} fontWeight="bold">
+                      {progressoProcessamento}% concluído
                     </Typography>
                   </Box>
                 )}
@@ -1103,8 +1179,9 @@ export default function UploadExtratoPage() {
               </Typography>
             </Alert>
 
-            {/* Resumo */}
-            {resultado && (
+            {/* Resumo - Apenas para processamento síncrono (compatibilidade) */}
+            {/* ✅ NOVO: Processamento assíncrono não retorna transações na resposta */}
+            {resultado && !resultado.processamentoAssincrono && resultado.transacoes && (
               <Card sx={{ p: 2, bgcolor: 'success.lighter', border: 1, borderColor: 'success.main' }}>
                 <Stack spacing={1}>
                   <Typography variant="subtitle2" fontWeight="bold" color="success.dark">

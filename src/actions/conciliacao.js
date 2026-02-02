@@ -60,12 +60,46 @@ export async function confirmarTransacao(transacaoId, contaContabilId) {
 }
 
 /**
+ * Confirmar múltiplas transações em lote
+ * 🔥 NOVO: Endpoint aceita formato lote { transacoes: [...] }
+ * @param {Array<{transacaoId: string, contaContabilId: string, isPrevisao?: boolean}>} transacoes - Array de transações para confirmar
+ * @returns {Promise<{success: boolean, message: string, data: {total: number, sucessos: number, erros: number, detalhes: Array}}>}
+ */
+export async function confirmarTransacoesEmLote(transacoes) {
+  return axios.post(`${baseUrl}conciliacao/confirmar`, {
+    transacoes: transacoes.map(t => ({
+      transacaoId: t.transacaoId,
+      contaContabilId: t.contaContabilId,
+      isPrevisao: t.isPrevisao || false,
+    })),
+  });
+}
+
+/**
  * 🔥 NOVO: Buscar transações pendentes de uma conciliação
  * @param {string} conciliacaoId - ID da conciliação
  * @returns {Promise}
  */
 export async function buscarTransacoesPendentes(conciliacaoId) {
   return axios.get(`${baseUrl}conciliacao/${conciliacaoId}/pendentes`);
+}
+
+/**
+ * 🔥 NOVO: Obter status do processamento de uma conciliação (para fluxo assíncrono)
+ * @param {string} conciliacaoId - ID da conciliação
+ * @returns {Promise} Retorna status, progresso e informações do processamento
+ */
+export async function obterStatusConciliacao(conciliacaoId) {
+  return axios.get(`${baseUrl}conciliacao/${conciliacaoId}/status`);
+}
+
+/**
+ * 🔥 NOVO: Buscar todas as transações de uma conciliação (após processamento)
+ * @param {string} conciliacaoId - ID da conciliação
+ * @returns {Promise} Retorna todas as transações (pendentes, confirmadas, etc.) com resumo
+ */
+export async function buscarTransacoesConciliacao(conciliacaoId) {
+  return axios.get(`${baseUrl}conciliacao/${conciliacaoId}/transacoes`);
 }
 
 /**
