@@ -1,5 +1,6 @@
 import 'src/global.css';
 
+import Script from 'next/script';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -113,12 +114,28 @@ export default async function RootLayout({ children }) {
   const lang = CONFIG.isStaticExport ? 'en' : await detectLanguage();
   const settings = CONFIG.isStaticExport ? defaultSettings : await detectSettings();
 
+  const basePath = CONFIG.site.basePath || '';
+
   return (
     <html lang={lang ?? 'en'} suppressHydrationWarning>
       <head>
-        {/* Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-L5BFBLV0Z4" />
-        <script
+        {/* Preload da imagem do banner mobile (LCP element crítico para página de estética) */}
+        <link
+          rel="preload"
+          as="image"
+          href={`${basePath}/assets/images/about/banner-6-mobile.png`}
+          fetchPriority="high"
+        />
+      </head>
+      <body>
+        {/* Google Analytics - Carregado após renderização inicial para não bloquear */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-L5BFBLV0Z4"
+          strategy="afterInteractive"
+        />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
@@ -128,8 +145,6 @@ export default async function RootLayout({ children }) {
             `,
           }}
         />
-      </head>
-      <body>
         {getInitColorSchemeScript}
         <I18nProvider lang={CONFIG.isStaticExport ? undefined : lang}>
           <LocalizationProvider>

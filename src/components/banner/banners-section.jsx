@@ -24,18 +24,23 @@ export function BannersSection({ banners = [] }) {
         width: '100%',
         maxWidth: '100%',
         overflow: 'hidden',
+        boxSizing: 'border-box',
         '& .swiper': {
           width: '100%',
           maxWidth: '100%',
           overflow: 'hidden',
+          boxSizing: 'border-box',
         },
         '& .swiper-wrapper': {
           width: '100%',
           maxWidth: '100%',
+          boxSizing: 'border-box',
         },
         '& .swiper-slide': {
           width: '100%',
           maxWidth: '100%',
+          boxSizing: 'border-box',
+          overflow: 'hidden',
         },
         '& .swiper-pagination-bullet': {
           bgcolor: 'rgba(255, 255, 255, 0.48)',
@@ -60,10 +65,11 @@ export function BannersSection({ banners = [] }) {
           maxWidth: '100%',
           borderRadius: theme.shape.borderRadius * 2,
           overflow: 'hidden',
+          boxSizing: 'border-box',
         }}
       >
         {banners.map((banner) => (
-          <SwiperSlide key={banner.id} style={{ width: '100%', maxWidth: '100%' }}>
+          <SwiperSlide key={banner.id} style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
             <BannerCard banner={banner} />
           </SwiperSlide>
         ))}

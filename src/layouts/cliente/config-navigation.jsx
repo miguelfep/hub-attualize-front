@@ -90,6 +90,11 @@ export function usePortalNavData() {
       icon: <Iconify icon="solar:documents-bold-duotone" />,
       children: [
         {
+          title: 'Guias',
+          path: paths.cliente.guiasFiscais.list,
+          icon: <Iconify icon="solar:file-text-bold-duotone" />,
+        },
+        {
           title: 'Licenças',
           path: paths.cliente.licencas,
           icon: <Iconify icon="solar:document-text-bold-duotone" />,

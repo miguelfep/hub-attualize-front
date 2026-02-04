@@ -22,8 +22,74 @@ const StyledOverlay = styled('div')(({ theme }) => ({
 }));
 
 export function BannerCard({ banner }) {
-  const { title, description, icon, color, buttonText, link, badge } = banner;
+  const { title, description, icon, color, buttonText, link, badge, image } = banner;
 
+  // Se o banner tiver uma imagem, renderizar como banner de imagem
+  if (image) {
+    return (
+      <Card
+        component={link ? 'a' : 'div'}
+        href={link || undefined}
+        target={link ? '_blank' : undefined}
+        rel={link ? 'noopener noreferrer' : undefined}
+        sx={{
+          height: '100%',
+          width: '100%',
+          maxWidth: '100%',
+          position: 'relative',
+          overflow: 'hidden',
+          cursor: link ? 'pointer' : 'default',
+          textDecoration: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          p: 0,
+          '&:hover': link
+            ? {
+                transform: 'scale(1.02)',
+                transition: 'transform 0.3s ease-in-out',
+              }
+            : {},
+        }}
+      >
+        <Box
+          component="img"
+          alt={title || 'Banner'}
+          src={image}
+          sx={{
+            width: '100%',
+            height: '100%',
+            objectFit: 'contain',
+            objectPosition: 'center',
+            maxWidth: '100%',
+            maxHeight: '100%',
+            display: 'block',
+          }}
+        />
+        {badge && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 16,
+              right: 16,
+              zIndex: 9,
+              py: 0.5,
+              px: 1,
+              borderRadius: 1,
+              typography: 'caption',
+              fontWeight: 'bold',
+              color: 'common.white',
+              bgcolor: color || 'primary.main',
+            }}
+          >
+            {badge}
+          </Box>
+        )}
+      </Card>
+    );
+  }
+
+  // Renderização padrão para banners de texto/ícone
   return (
     <Card sx={{ height: '100%', width: '100%', maxWidth: '100%', position: 'relative', overflow: 'hidden' }}>
       <Iconify

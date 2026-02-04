@@ -228,4 +228,19 @@ export const endpoints = {
       recebidos: `${baseUrl}pix/relatorios/recebidos`,
     },
   },
+  // Guias Fiscais
+  guiasFiscais: {
+    upload: `${baseUrl}guias-fiscais/upload`,
+    list: `${baseUrl}guias-fiscais`,
+    get: (id) => `${baseUrl}guias-fiscais/${id}`,
+    update: (id) => `${baseUrl}guias-fiscais/${id}`,
+    delete: (id) => `${baseUrl}guias-fiscais/${id}`,
+    batch: `${baseUrl}guias-fiscais/batch`,
+    download: (id) => `${baseUrl}guias-fiscais/${id}/download`,
+    portal: {
+      list: `${baseUrl}portal/guias-fiscais`,
+      get: (id) => `${baseUrl}portal/guias-fiscais/${id}`,
+      download: (id) => `${baseUrl}portal/guias-fiscais/${id}/download`,
+    },
+  },
 };

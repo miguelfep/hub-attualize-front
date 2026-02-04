@@ -26,6 +26,7 @@ import { Logo } from 'src/components/logo';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { useSettingsContext } from 'src/components/settings';
+import { PartnerBanners } from 'src/components/banner/partner-banners';
 import { NavSectionVertical } from 'src/components/nav-section/vertical';
 import { EmpresaSelectorPortal } from 'src/components/empresa-selector/empresa-selector-portal';
 
@@ -93,7 +94,7 @@ export function ClienteLayout({ children }) {
         <Box sx={{ pl: 3.5, pt: 2.5, pb: 1 }}>
           <Logo />
         </Box>
-        <Scrollbar>
+        <Scrollbar sx={{ flex: 1 }}>
           <NavSectionVertical
             data={usePortalNavData()}
             slotProps={{
@@ -101,6 +102,11 @@ export function ClienteLayout({ children }) {
             }}
             sx={{ px: 2 }}
           />
+          
+          {/* Banners de Parceiros - Logo após o menu */}
+          <Box sx={{ px: 2, pt: 3, pb: 2 }}>
+            <PartnerBanners compact />
+          </Box>
         </Scrollbar>
       </Box>
 

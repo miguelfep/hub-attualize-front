@@ -28,6 +28,13 @@ const LINKS = [
     ],
   },
   {
+    headline: 'Benefícios',
+    children: [
+      { name: 'VR/VA', href: paths.vrVa.solicitar },
+      { name: 'MedPass', href: paths.medpass.solicitar },
+    ],
+  },
+  {
     headline: 'Especialidades',
     children: [
       { name: 'Beleza', href: '#' },
