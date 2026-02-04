@@ -263,6 +263,13 @@ export const paths = {
       logs: `${ROOTS.DASHBOARD}/pix/logs`,
       relatorios: `${ROOTS.DASHBOARD}/pix/relatorios`,
     },
+    guiasFiscais: {
+      root: `${ROOTS.DASHBOARD}/guias-fiscais`,
+      list: `${ROOTS.DASHBOARD}/guias-fiscais`,
+      upload: `${ROOTS.DASHBOARD}/guias-fiscais/upload`,
+      details: (id) => `${ROOTS.DASHBOARD}/guias-fiscais/${id}`,
+      edit: (id) => `${ROOTS.DASHBOARD}/guias-fiscais/${id}/edit`,
+    },
   },
   // CLIENTE AREA
   cliente: {
@@ -303,5 +310,20 @@ export const paths = {
       reformaTributaria: `${ROOTS.CLIENTE}/conteudos/reforma-tributaria`,
     },
     aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
+    guiasFiscais: {
+      root: `${ROOTS.CLIENTE}/guias-fiscais`,
+      list: `${ROOTS.CLIENTE}/guias-fiscais`,
+      calendar: `${ROOTS.CLIENTE}/guias-fiscais/calendario`,
+      details: (id) => `${ROOTS.CLIENTE}/guias-fiscais/${id}`,
+    },
+  },
+  // PUBLIC BENEFITS
+  vrVa: {
+    root: '/vr-va',
+    solicitar: '/vr-va/solicitar',
+  },
+  medpass: {
+    root: '/medpass',
+    solicitar: '/medpass/solicitar',
   },
 };

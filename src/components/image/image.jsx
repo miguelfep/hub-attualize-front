@@ -1,4 +1,5 @@
 import { forwardRef } from 'react';
+import NextImage from 'next/image';
 import { LazyLoadImage } from 'react-lazy-load-image-component';
 
 import Box from '@mui/material/Box';
@@ -54,12 +55,71 @@ export const Image = forwardRef(
       wrapperClassName,
       useIntersectionObserver,
       //
+      // Novas props para otimização com next/image
+      useNextImage = false,
+      priority = false,
+      fetchPriority,
+      quality,
+      sizes,
+      //
       slotProps,
       sx,
       ...other
     },
     ref
   ) => {
+    // Verifica se deve usar next/image (quando useNextImage=true ou quando src é local e não tem efeitos especiais)
+    const shouldUseNextImage =
+      useNextImage ||
+      (src &&
+        !src.startsWith('http') &&
+        !src.startsWith('//') &&
+        !disabledEffect &&
+        !visibleByDefault &&
+        !delayTime &&
+        !threshold);
+
+    // Se usar next/image, renderiza versão otimizada
+    if (shouldUseNextImage) {
+      return (
+        <ImageWrapper
+          ref={ref}
+          component="span"
+          className={imageClasses.root}
+          sx={{
+            ...(!!ratio && { width: 1, position: 'relative', aspectRatio: ratio }),
+            ...sx,
+          }}
+          {...other}
+        >
+          <Box
+            sx={{
+              position: 'relative',
+              width: '100%',
+              height: '100%',
+              ...(ratio && { aspectRatio: ratio }),
+            }}
+          >
+            <NextImage
+              src={src}
+              alt={alt || ''}
+              fill
+              priority={priority}
+              fetchPriority={fetchPriority}
+              quality={quality || 85}
+              sizes={sizes || '100vw'}
+              style={{
+                objectFit: 'cover',
+                ...(ratio && { aspectRatio: ratio }),
+              }}
+            />
+          </Box>
+          {slotProps?.overlay && <Overlay className={imageClasses.overlay} sx={slotProps?.overlay} />}
+        </ImageWrapper>
+      );
+    }
+
+    // Fallback para componente original com lazy loading
     const content = (
       <Box
         component={LazyLoadImage}

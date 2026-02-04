@@ -16,6 +16,7 @@ export const navData = [
     path: paths.post.blog,
     icon: <Iconify width={22} icon="solar:file-bold-duotone" />,
   },
+ 
   {
     title: 'Fale Conosco',
     path: paths.contact,

@@ -127,6 +127,19 @@ export const navData = [
         ],
       },
       {
+        title: 'Express',
+        path: paths.dashboard.guiasFiscais.list,
+        icon: ICONS.file,
+        roles: ['admin', 'operacional'],
+        children: [
+          {
+            title: 'Guias e Documentos',
+            path: paths.dashboard.guiasFiscais.list,
+            roles: ['admin', 'operacional'],
+          },
+        ],
+      },
+      {
         title: 'Contábil',
         path: paths.dashboard.contabil.root,
         icon: ICONS.banking,

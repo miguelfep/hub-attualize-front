@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import ReactPlayer from 'react-player/lazy';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 
@@ -56,6 +57,9 @@ export function BannerEstetica() {
     }
   };
 
+  const bannerImageMobile = `${CONFIG.site.basePath}/assets/images/about/banner-6-mobile.png`;
+  const bannerImageDesktop = `${CONFIG.site.basePath}/assets/images/about/banner-6.png`;
+
   return (
     <Box
       component="section"
@@ -67,18 +71,95 @@ export function BannerEstetica() {
         py: { xs: 6, md: 10 },
         px: { xs: 2, md: 4 },
         position: 'relative',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundImage: {
-          xs: `linear-gradient(to bottom, ${alpha('#000000', 0.7)}, ${alpha('#000000', 0.6)}), url(${CONFIG.site.basePath}/assets/images/about/banner-6-mobile.jpg)`,
-          md: `linear-gradient(to right, ${alpha('#000000', 0.7)}, ${alpha('#000000', 0.6)}), url(${CONFIG.site.basePath}/assets/images/about/banner-6.png)`
-        },
         display: 'flex',
         alignItems: 'center',
         overflow: 'hidden',
       }}
     >
-      <Container maxWidth="lg">
+      {/* Imagem de fundo otimizada com next/image */}
+      <Box
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
+        }}
+      >
+        {/* Imagem mobile - LCP element crítico */}
+        <Box
+          sx={{
+            display: { xs: 'block', md: 'none' },
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <Image
+            src={bannerImageMobile}
+            alt="Banner contabilidade clínicas de estética"
+            fill
+            priority
+            fetchPriority="high"
+            quality={85}
+            sizes="100vw"
+            style={{
+              objectFit: 'cover',
+              objectPosition: 'center',
+            }}
+          />
+        </Box>
+        {/* Imagem desktop */}
+        <Box
+          sx={{
+            display: { xs: 'none', md: 'block' },
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+          }}
+        >
+          <Image
+            src={bannerImageDesktop}
+            alt="Banner contabilidade clínicas de estética"
+            fill
+            priority
+            fetchPriority="high"
+            quality={85}
+            sizes="100vw"
+            style={{
+              objectFit: 'cover',
+              objectPosition: 'center',
+            }}
+          />
+        </Box>
+        {/* Overlay gradiente */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            background: {
+              xs: `linear-gradient(to bottom, ${alpha('#000000', 0.7)}, ${alpha('#000000', 0.6)})`,
+              md: `linear-gradient(to right, ${alpha('#000000', 0.7)}, ${alpha('#000000', 0.6)})`,
+            },
+            zIndex: 1,
+          }}
+        />
+      </Box>
+      <Container
+        maxWidth="lg"
+        sx={{
+          position: 'relative',
+          zIndex: 2,
+        }}
+      >
         <Box
           sx={{
             display: 'grid',
