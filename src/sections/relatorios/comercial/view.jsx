@@ -2,7 +2,14 @@
 
 import * as XLSX from 'xlsx'; // Import the XLSX library
 
-import ReactApexChart from 'react-apexcharts';
+import dynamic from 'next/dynamic';
+
+const ReactApexChart = dynamic(
+  () => import('react-apexcharts').then((mod) => mod.default || mod),
+  {
+    ssr: false,
+  }
+);
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';

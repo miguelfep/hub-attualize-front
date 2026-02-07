@@ -12,6 +12,7 @@ const nextConfig = {
     },
     '@mui/material': {
       transform: '@mui/material/{{member}}',
+      skipDefaultConversion: false,
     },
     '@mui/lab': {
       transform: '@mui/lab/{{member}}',
@@ -20,20 +21,15 @@ const nextConfig = {
       transform: '@iconify/react/dist/iconify.js',
       skipDefaultConversion: true,
     },
-    'date-fns': {
-      transform: 'date-fns/{{member}}',
-    },
     'lodash': {
       transform: 'lodash/{{member}}',
     },
   },
   experimental: {
     optimizePackageImports: [
-      '@mui/material',
       '@mui/icons-material',
       '@mui/lab',
       '@iconify/react',
-      'date-fns',
     ],
     turbotrace: {
       logLevel: 'error',
