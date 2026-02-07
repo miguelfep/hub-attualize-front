@@ -101,7 +101,7 @@ const nextConfig = {
       },
     ];
   },
-  webpack(config) {
+  webpack(config, { isServer }) {
     config.module.rules.push(
       {
         test: /\.svg$/,
@@ -115,6 +115,17 @@ const nextConfig = {
         },
       }
     );
+
+    // Garantir que o módulo ws seja incluído no servidor
+    if (isServer) {
+      config.externals = config.externals || [];
+      // Não externalizar ws no servidor
+      if (Array.isArray(config.externals)) {
+        config.externals = config.externals.filter(
+          (external) => typeof external !== 'function' || !external.toString().includes('ws')
+        );
+      }
+    }
 
     return config;
   },
