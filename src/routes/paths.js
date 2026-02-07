@@ -119,6 +119,9 @@ export const paths = {
     calendar: `${ROOTS.DASHBOARD}/calendar`,
     fileManager: `${ROOTS.DASHBOARD}/file-manager`,
     permission: `${ROOTS.DASHBOARD}/permission`,
+    audit: {
+      root: `${ROOTS.DASHBOARD}/audit`,
+    },
     fiscal: {
       root: `${ROOTS.DASHBOARD}/fiscal/nfse`,
     },

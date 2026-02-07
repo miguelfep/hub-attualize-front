@@ -1,10 +1,12 @@
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
+import utc from 'dayjs/plugin/utc';
 import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 
 // ----------------------------------------------------------------------
 
+dayjs.extend(utc);
 dayjs.extend(duration);
 dayjs.extend(relativeTime);
 dayjs.locale('pt-br');
@@ -56,6 +58,37 @@ export function fDate(date, format) {
   const isValid = dayjs(date).isValid();
 
   return isValid ? dayjs(date).format(format ?? formatStr.date) : 'Invalid time value';
+}
+
+// ----------------------------------------------------------------------
+
+/** output: 17 Apr 2022 (sem conversão de timezone - usa UTC)
+ * Formata data mantendo o timezone UTC, evitando problemas de conversão
+ * Útil para datas que devem ser exibidas exatamente como estão no banco
+ */
+export function fDateUTC(date, format) {
+  if (!date) {
+    return null;
+  }
+
+  // Se for string ISO, extrair apenas a parte da data (YYYY-MM-DD) para evitar conversão
+  if (typeof date === 'string' && date.includes('T')) {
+    const datePart = date.split('T')[0];
+    const [ano, mes, dia] = datePart.split('-');
+    
+    // Se o formato solicitado for o padrão split (DD/MM/YYYY), retornar diretamente
+    if (format === formatStr.split.date || format === 'DD/MM/YYYY') {
+      return `${dia}/${mes}/${ano}`;
+    }
+    
+    // Para outros formatos, usar dayjs em UTC
+    const isValid = dayjs.utc(date).isValid();
+    return isValid ? dayjs.utc(date).format(format ?? formatStr.date) : 'Invalid time value';
+  }
+
+  // Para outros tipos, usar dayjs em UTC
+  const isValid = dayjs.utc(date).isValid();
+  return isValid ? dayjs.utc(date).format(format ?? formatStr.date) : 'Invalid time value';
 }
 
 // ----------------------------------------------------------------------

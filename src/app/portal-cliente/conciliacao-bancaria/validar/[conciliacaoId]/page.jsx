@@ -1043,12 +1043,41 @@ export default function ValidacaoConciliacaoPage() {
             </Typography>
           </Alert>
         ) : transacoesPendentes.length === 0 ? (
-          <Alert severity="success" icon={<Iconify icon="eva:checkmark-circle-2-fill" />}>
+          <Alert 
+            severity="success" 
+            icon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+            action={
+              <Button
+                variant="outlined"
+                color="primary"
+                size="small"
+                startIcon={<Iconify icon="eva:upload-fill" />}
+                onClick={() => {
+                  const bancoId = conciliacao?.bancoId?._id || conciliacao?.bancoId;
+                  const mesAno = conciliacao?.ano && conciliacao?.mes 
+                    ? `${conciliacao.ano}-${conciliacao.mes.toString().padStart(2, '0')}`
+                    : '';
+                  
+                  if (bancoId && mesAno) {
+                    router.push(
+                      `${paths.cliente.conciliacaoBancaria}/upload?banco=${bancoId}&mesAno=${mesAno}`
+                    );
+                  } else {
+                    toast.error('Não foi possível identificar o banco ou período para reenvio');
+                  }
+                }}
+              >
+                Reenviar Arquivo
+              </Button>
+            }
+          >
             <Typography variant="subtitle1" fontWeight="bold">
               ✅ Todas as transações foram conciliadas!
             </Typography>
             <Typography variant="body2">
-              Clique em &quot;Finalizar Conciliação&quot; para concluir o processo.
+              {conciliacao?.status === 'concluida' || statusProcessamento === 'concluida' 
+                ? 'Esta conciliação está finalizada. Você pode reenviar o arquivo caso falte algum lançamento.'
+                : 'Clique em "Finalizar Conciliação" para concluir o processo.'}
             </Typography>
           </Alert>
         ) : (

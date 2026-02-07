@@ -8,9 +8,12 @@ import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { fDate } from 'src/utils/format-time';
+import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+
+import { isGuia, getCompetencia, formatCompetencia } from '../utils';
 
 // ----------------------------------------------------------------------
 
@@ -43,6 +46,8 @@ const getTipoGuiaLabel = (tipo) => {
     ISS: 'ISS',
     PIS: 'PIS',
     COFINS: 'COFINS',
+    IRPJ: 'IRPJ',
+    CSLL: 'CSLL',
     INSS: 'INSS',
     FGTS: 'FGTS',
     HOLERITE: 'Holerite',
@@ -68,6 +73,7 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
     _id,
     nomeArquivo,
     tipoGuia,
+    categoria,
     dataVencimento,
     status,
     statusProcessamento,
@@ -75,7 +81,8 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
     dadosExtraidos,
   } = guia;
 
-  const competencia = dadosExtraidos?.competencia || null;
+  const competencia = getCompetencia(guia);
+  const isGuiaType = isGuia(categoria);
 
   const currentStatus = statusProcessamento || status;
 
@@ -112,7 +119,17 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
 
             <Typography variant="subtitle2">{nomeArquivo || 'Documento'}</Typography>
 
-            {dataVencimento && (
+            {competencia && (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Iconify icon="solar:calendar-mark-bold-duotone" width={16} />
+                <Typography variant="body2" color="text.secondary">
+                  Competência: {formatCompetencia(competencia)}
+                </Typography>
+              </Stack>
+            )}
+
+            {/* Vencimento - apenas para guias (não para documentos) */}
+            {isGuiaType && dataVencimento && (
               <Stack direction="row" alignItems="center" spacing={1}>
                 <Iconify icon="solar:calendar-bold" width={16} />
                 <Typography variant="body2" color="text.secondary">
@@ -123,7 +140,7 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
 
             {dadosExtraidos?.valor && (
               <Typography variant="body2" fontWeight="medium">
-                Valor: R$ {dadosExtraidos.valor.toFixed(2)}
+                Valor: {fCurrency(dadosExtraidos.valor)}
               </Typography>
             )}
           </Stack>

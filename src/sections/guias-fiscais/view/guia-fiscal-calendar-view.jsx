@@ -1,10 +1,7 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useMemo, useState } from 'react';
-import Calendar from '@fullcalendar/react';
-import listPlugin from '@fullcalendar/list';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import interactionPlugin from '@fullcalendar/interaction';
 
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -22,6 +19,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { fDate } from 'src/utils/format-time';
+import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { useGetGuiasFiscaisPortal, downloadGuiaFiscalPortal } from 'src/actions/guias-fiscais';
@@ -29,6 +27,42 @@ import { useGetGuiasFiscaisPortal, downloadGuiaFiscalPortal } from 'src/actions/
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+
+import { isGuia, getCompetencia, formatCompetencia } from '../utils';
+
+// Lazy load FullCalendar e plugins para melhorar performance inicial
+const CalendarWithPlugins = dynamic(
+  async () => {
+    const [
+      { default: Calendar },
+      { default: listPlugin },
+      { default: dayGridPlugin },
+      { default: interactionPlugin },
+    ] = await Promise.all([
+      import('@fullcalendar/react'),
+      import('@fullcalendar/list'),
+      import('@fullcalendar/daygrid'),
+      import('@fullcalendar/interaction'),
+    ]);
+
+    return function CalendarWrapper(props) {
+      return (
+        <Calendar
+          {...props}
+          plugins={[dayGridPlugin, listPlugin, interactionPlugin]}
+        />
+      );
+    };
+  },
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{ minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Carregando calendário...
+      </div>
+    ),
+  }
+);
 
 // ----------------------------------------------------------------------
 
@@ -135,13 +169,12 @@ export function GuiaFiscalCalendarView() {
       />
 
       <Card sx={{ p: 3 }}>
-        <Calendar
+        <CalendarWithPlugins
           weekends
           selectable
           events={events}
           eventClick={handleEventClick}
           initialView="dayGridMonth"
-          plugins={[dayGridPlugin, listPlugin, interactionPlugin]}
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
@@ -175,14 +208,28 @@ export function GuiaFiscalCalendarView() {
                 </Label>
               </Stack>
 
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="body2" color="text.secondary">
-                  Vencimento:
-                </Typography>
-                <Typography variant="body2" fontWeight="medium">
-                  {selectedGuia.dataVencimento ? fDate(selectedGuia.dataVencimento) : '-'}
-                </Typography>
-              </Stack>
+              {getCompetencia(selectedGuia) && (
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">
+                    Competência:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    {formatCompetencia(getCompetencia(selectedGuia))}
+                  </Typography>
+                </Stack>
+              )}
+
+              {/* Vencimento - apenas para guias (não para documentos) */}
+              {isGuia(selectedGuia.categoria) && selectedGuia.dataVencimento && (
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">
+                    Vencimento:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    {fDate(selectedGuia.dataVencimento)}
+                  </Typography>
+                </Stack>
+              )}
 
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="body2" color="text.secondary">
@@ -212,7 +259,7 @@ export function GuiaFiscalCalendarView() {
                     Valor:
                   </Typography>
                   <Typography variant="body2" fontWeight="medium">
-                    R$ {selectedGuia.dadosExtraidos.valor.toFixed(2)}
+                    {fCurrency(selectedGuia.dadosExtraidos.valor)}
                   </Typography>
                 </Stack>
               )}

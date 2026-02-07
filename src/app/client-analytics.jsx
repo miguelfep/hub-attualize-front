@@ -13,6 +13,10 @@ export default function ClientAnalytics() {
       window.gtag('config', 'G-L5BFBLV0Z4', {
         page_path: url,
       });
+      // Enviar page_view manualmente já que desabilitamos send_page_view automático
+      window.gtag('event', 'page_view', {
+        page_path: url,
+      });
     }
   }, [pathname, searchParams]);
 

@@ -194,6 +194,12 @@ export const navData = [
         ],
       },
       {
+        title: 'Logs de Auditoria',
+        path: paths.dashboard.audit.root,
+        icon: ICONS.lock,
+        roles: ['admin'],
+      },
+      {
         title: 'Relatórios',
         path: paths.dashboard.aberturas.root,
         icon: ICONS.analytics,

@@ -83,12 +83,30 @@ export default function PortalFaturamentoPage() {
     
     try {
       const numeroNota = numeroNotaDebounce || undefined;
+      
+      // Ajustar datas para evitar problemas de timezone
+      // Adicionar buffer de 1 dia antes e depois para garantir que notas próximas à meia-noite sejam encontradas
+      let inicioAjustado = startDate || undefined;
+      let fimAjustado = endDate || undefined;
+      
+      if (startDate) {
+        // Subtrair 1 dia para incluir notas que podem ter sido salvas no dia anterior devido ao timezone
+        const inicioLocal = dayjs(startDate).subtract(1, 'day').format('YYYY-MM-DD');
+        inicioAjustado = inicioLocal;
+      }
+      
+      if (endDate) {
+        // Adicionar 1 dia para incluir notas que podem ter sido salvas no dia seguinte devido ao timezone
+        const fimLocal = dayjs(endDate).add(1, 'day').format('YYYY-MM-DD');
+        fimAjustado = fimLocal;
+      }
+      
       const res = await listarNotasFiscaisPorCliente({
         clienteId,
         numeroNota,
         status: status || undefined,
-        inicio: startDate || undefined,
-        fim: endDate || undefined,
+        inicio: inicioAjustado,
+        fim: fimAjustado,
       });
 
       const { data } = res;
@@ -329,7 +347,21 @@ export default function PortalFaturamentoPage() {
                       />
                     )}
                   </Stack>
-                  <Typography variant="caption" color="text.secondary">{dataEmissao ? dayjs(dataEmissao).format('DD/MM/YYYY HH:mm') : '-'}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {dataEmissao 
+                      ? (() => {
+                          // Extrair apenas a parte da data da string ISO para evitar problemas de timezone
+                          if (typeof dataEmissao === 'string' && dataEmissao.includes('T')) {
+                            const datePart = dataEmissao.split('T')[0];
+                            const timePart = dataEmissao.split('T')[1]?.split('.')[0] || '';
+                            const [ano, mes, dia] = datePart.split('-');
+                            const [hora, minuto] = timePart.split(':');
+                            return `${dia}/${mes}/${ano} ${hora || '00'}:${minuto || '00'}`;
+                          }
+                          return dayjs(dataEmissao).format('DD/MM/YYYY HH:mm');
+                        })()
+                      : '-'}
+                  </Typography>
                 </Stack>
 
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 1.5 }}>

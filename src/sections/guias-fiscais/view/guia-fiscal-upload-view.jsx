@@ -142,13 +142,27 @@ export function GuiaFiscalUploadView() {
 
     try {
       setLoading(true);
+      console.log('📤 Iniciando upload de', files.length, 'arquivo(s)');
+      console.log('📄 Arquivos:', files.map((f) => ({ name: f.name, size: f.size })));
+      
       const response = await uploadGuiasFiscais(files);
+      
+      console.log('✅ Resposta do upload:', response);
 
       if (response.success) {
         setUploadResult(response.data);
         
         // Mostrar resumo
         const { processadas, erros, duplicatas, resumo, clientesNaoEncontrados, errosDetalhados } = response.data;
+        
+        console.log('📊 Resumo do processamento:', {
+          processadas,
+          erros,
+          duplicatas,
+          resumo,
+          clientesNaoEncontrados: clientesNaoEncontrados?.length || 0,
+          errosDetalhados: errosDetalhados?.length || 0,
+        });
         
         let mensagem = `${processadas} documento(s) processado(s) com sucesso!`;
         if (duplicatas > 0) {
@@ -168,16 +182,17 @@ export function GuiaFiscalUploadView() {
         } else if (erros > 0 && duplicatas === 0) {
           toast.warning(`${erros} documento(s) com erro. Verifique os detalhes.`);
         } else {
-          // Redirecionar para a lista após 2 segundos
+          // Redirecionar para a lista com parâmetro refresh para forçar atualização
           setTimeout(() => {
-            router.push(paths.dashboard.guiasFiscais.list);
-          }, 2000);
+            router.push(`${paths.dashboard.guiasFiscais.list}?refresh=${Date.now()}`);
+          }, 1500);
         }
       } else {
+        console.error('❌ Erro no upload:', response);
         toast.error(response.message || 'Erro ao processar documentos');
       }
     } catch (error) {
-      console.error('Erro ao fazer upload:', error);
+      console.error('❌ Erro ao fazer upload:', error);
       toast.error(error?.message || 'Erro ao fazer upload dos documentos');
     } finally {
       setLoading(false);
