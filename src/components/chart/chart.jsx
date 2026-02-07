@@ -7,14 +7,17 @@ import { withLoadingProps } from 'src/utils/with-loading-props';
 import { ChartLoading } from './chart-loading';
 
 const ApexChart = withLoadingProps((props) =>
-  dynamic(() => import('react-apexcharts').then((mod) => mod.default), {
-    ssr: false,
-    loading: () => {
-      const { loading, type } = props();
+  dynamic(
+    () => import('react-apexcharts').then((mod) => mod.default || mod),
+    {
+      ssr: false,
+      loading: () => {
+        const { loading, type } = props();
 
-      return loading?.disabled ? null : <ChartLoading type={type} sx={loading?.sx} />;
-    },
-  })
+        return loading?.disabled ? null : <ChartLoading type={type} sx={loading?.sx} />;
+      },
+    }
+  )
 );
 
 // ----------------------------------------------------------------------
