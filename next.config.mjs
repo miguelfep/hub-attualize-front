@@ -116,15 +116,13 @@ const nextConfig = {
       }
     );
 
-    // Garantir que o módulo ws seja incluído no servidor
+    // Garantir que o módulo ws seja resolvido corretamente no servidor
     if (isServer) {
-      config.externals = config.externals || [];
-      // Não externalizar ws no servidor
-      if (Array.isArray(config.externals)) {
-        config.externals = config.externals.filter(
-          (external) => typeof external !== 'function' || !external.toString().includes('ws')
-        );
-      }
+      // Criar alias para o módulo ws compilado do Next.js
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'next/dist/compiled/ws': 'ws',
+      };
     }
 
     return config;
