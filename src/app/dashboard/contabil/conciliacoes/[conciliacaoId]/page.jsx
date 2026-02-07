@@ -36,7 +36,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
-import { fDate } from 'src/utils/format-time';
+import { fDate, fDateUTC } from 'src/utils/format-time';
 
 import { Iconify } from 'src/components/iconify';
 import { SelectContaContabil } from 'src/components/plano-contas';
@@ -462,7 +462,7 @@ export default function DetalhesConciliacaoPage() {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1600, mx: 'auto' }}>
+    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, width: '100%' }}>
       {/* Header */}
       <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
         <div>
@@ -503,7 +503,7 @@ export default function DetalhesConciliacaoPage() {
 
       {/* Informações da Conciliação */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} lg={6}>
           <Card sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               ℹ️ Informações da Conciliação
@@ -559,7 +559,7 @@ export default function DetalhesConciliacaoPage() {
         </Grid>
 
         {/* Resumo Financeiro */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} lg={6}>
           <Card sx={{ p: 3, bgcolor: 'primary.lighter' }}>
             <Typography variant="h6" gutterBottom>
               💰 Resumo Financeiro
@@ -657,7 +657,7 @@ export default function DetalhesConciliacaoPage() {
                   <TableRow key={transacao._id || transacao.transacaoImportadaId} hover>
                     <TableCell>
                       <Typography variant="body2">
-                        {transacao.data ? fDate(transacao.data) : 'N/A'}
+                        {transacao.data ? fDateUTC(transacao.data, 'DD MMM YYYY') : 'N/A'}
                       </Typography>
                     </TableCell>
                     <TableCell>

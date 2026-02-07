@@ -12,6 +12,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { paths } from 'src/routes/paths';
 
 import { fDate } from 'src/utils/format-time';
+import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { downloadGuiaFiscalPortal, useGetGuiaFiscalPortalById } from 'src/actions/guias-fiscais';
@@ -19,6 +20,8 @@ import { downloadGuiaFiscalPortal, useGetGuiaFiscalPortalById } from 'src/action
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+
+import { isGuia, getCompetencia, formatCompetencia } from '../utils';
 
 // ----------------------------------------------------------------------
 
@@ -158,14 +161,28 @@ export function GuiaFiscalPortalDetailsView({ id }) {
                   </Typography>
                 </Stack>
 
-                <Stack direction="row" justifyContent="space-between">
-                  <Typography variant="body2" color="text.secondary">
-                    Data de Vencimento:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    {guia.dataVencimento ? fDate(guia.dataVencimento) : '-'}
-                  </Typography>
-                </Stack>
+                {getCompetencia(guia) && (
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography variant="body2" color="text.secondary">
+                      Competência:
+                    </Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {formatCompetencia(getCompetencia(guia))}
+                    </Typography>
+                  </Stack>
+                )}
+
+                {/* Vencimento - apenas para guias (não para documentos) */}
+                {isGuia(guia.categoria) && (
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography variant="body2" color="text.secondary">
+                      Data de Vencimento:
+                    </Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {guia.dataVencimento ? fDate(guia.dataVencimento) : '-'}
+                    </Typography>
+                  </Stack>
+                )}
               </Stack>
             </Box>
 
@@ -183,7 +200,7 @@ export function GuiaFiscalPortalDetailsView({ id }) {
                         {key.charAt(0).toUpperCase() + key.slice(1)}:
                       </Typography>
                       <Typography variant="body2" fontWeight="medium">
-                        {typeof value === 'number' ? `R$ ${value.toFixed(2)}` : String(value)}
+                        {typeof value === 'number' ? fCurrency(value) : String(value)}
                       </Typography>
                     </Stack>
                   ))}

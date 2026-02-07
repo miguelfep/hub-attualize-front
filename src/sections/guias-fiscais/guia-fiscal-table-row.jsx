@@ -19,6 +19,8 @@ import { fDate } from 'src/utils/format-time';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
+import { isGuia, getCompetencia, formatCompetencia } from './utils';
+
 // ----------------------------------------------------------------------
 
 const getStatusColor = (status) => {
@@ -109,7 +111,7 @@ export function GuiaFiscalTableRow({ row, selected, onSelectRow, onViewRow, onEd
     tipoGuia,
     categoria,
     cnpj,
-    clienteNome,
+    clienteId,
     dataVencimento,
     status,
     statusProcessamento,
@@ -162,17 +164,28 @@ export function GuiaFiscalTableRow({ row, selected, onSelectRow, onViewRow, onEd
       </TableCell>
 
       <TableCell>
-        <Typography variant="body2">{clienteNome || '-'}</Typography>
+        <Typography variant="body2">{clienteId?.razaoSocial || '-'}</Typography>
       </TableCell>
 
       <TableCell>
-        {dataVencimento ? (
-          <Tooltip title={format(new Date(dataVencimento), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}>
-            <Box>{fDate(dataVencimento)}</Box>
-          </Tooltip>
-        ) : (
-          '-'
-        )}
+        <Stack spacing={0.5}>
+          {getCompetencia(row) && (
+            <Typography variant="body2" color="text.secondary">
+              {formatCompetencia(getCompetencia(row))}
+            </Typography>
+          )}
+          {/* Vencimento - apenas para guias (não para documentos) */}
+          {isGuia(categoria) && dataVencimento && (
+            <Tooltip title={format(new Date(dataVencimento), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}>
+              <Box>
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                  Venc: {fDate(dataVencimento)}
+                </Typography>
+              </Box>
+            </Tooltip>
+          )}
+          {!isGuia(categoria) && !getCompetencia(row) && '-'}
+        </Stack>
       </TableCell>
 
       <TableCell>

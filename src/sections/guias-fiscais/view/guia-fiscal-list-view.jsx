@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -17,7 +17,7 @@ import { useSetState } from 'src/hooks/use-set-state';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { useGetAllClientes } from 'src/actions/clientes';
-import { deleteGuiaFiscal, deleteGuiasFiscaisBatch, useGetGuiasFiscais } from 'src/actions/guias-fiscais';
+import { deleteGuiaFiscal, useGetGuiasFiscais, deleteGuiasFiscaisBatch } from 'src/actions/guias-fiscais';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
@@ -45,7 +45,7 @@ const TABLE_HEAD = [
   { id: 'tipoGuia', label: 'Tipo' },
   { id: 'cnpj', label: 'CNPJ' },
   { id: 'clienteNome', label: 'Razão Social' },
-  { id: 'dataVencimento', label: 'Vencimento' },
+  { id: 'dataVencimento', label: 'Competência / Vencimento' },
   { id: 'status', label: 'Status' },
   { id: 'createdAt', label: 'Enviado em' },
   { id: '', width: 88 },
@@ -121,7 +121,6 @@ export function GuiaFiscalListView() {
   const confirm = useBoolean();
   const confirmBatch = useBoolean();
 
-  const [clienteIdToDelete, setClienteIdToDelete] = useState(null);
   const [guiaIdToDelete, setGuiaIdToDelete] = useState(null);
 
   const filters = useSetState(DEFAULT_FILTERS);
@@ -175,6 +174,27 @@ export function GuiaFiscalListView() {
   const { data, isLoading, error, mutate } = useGetGuiasFiscais(apiParams);
 
   const total = data?.total || 0;
+
+  // Revalidar dados quando a página receber foco (após voltar do upload)
+  useEffect(() => {
+    const handleFocus = () => {
+      mutate();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [mutate]);
+
+  // Revalidar quando a URL tiver parâmetro refresh
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('refresh')) {
+      mutate();
+      // Limpar parâmetro da URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [mutate]);
 
   // Dados filtrados localmente (para busca por nome)
   const dataFiltered = useMemo(

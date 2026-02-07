@@ -1,9 +1,7 @@
 'use client';
 
-import Calendar from '@fullcalendar/react';
-import dayGridPlugin from '@fullcalendar/daygrid';
+import dynamic from 'next/dynamic';
 import { useRef, useMemo, useCallback } from 'react';
-import interactionPlugin from '@fullcalendar/interaction';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -18,6 +16,36 @@ import { useRouter } from 'src/routes/hooks';
 import { useGetGuiasFiscaisPortal } from 'src/actions/guias-fiscais';
 
 import { Iconify } from 'src/components/iconify';
+
+// Lazy load FullCalendar e plugins para melhorar performance inicial
+const CalendarWithPlugins = dynamic(
+  async () => {
+    const [
+      { default: Calendar },
+      { default: dayGridPlugin },
+      { default: interactionPlugin },
+    ] = await Promise.all([
+      import('@fullcalendar/react'),
+      import('@fullcalendar/daygrid'),
+      import('@fullcalendar/interaction'),
+    ]);
+
+    // Usar forwardRef para suportar ref
+    const { forwardRef } = await import('react');
+    
+    return forwardRef((props, ref) => (
+        <Calendar
+          {...props}
+          ref={ref}
+          plugins={[dayGridPlugin, interactionPlugin]}
+        />
+      ));
+  },
+  {
+    ssr: false,
+    loading: () => null, // Widget pequeno, não precisa de loading visível
+  }
+);
 
 // ----------------------------------------------------------------------
 
@@ -39,6 +67,8 @@ const getTipoGuiaLabel = (tipo) => {
     ISS: 'ISS',
     PIS: 'PIS',
     COFINS: 'COFINS',
+    IRPJ: 'IRPJ',
+    CSLL: 'CSLL',
     INSS: 'INSS',
     FGTS: 'FGTS',
     HOLERITE: 'Holerite',
@@ -197,13 +227,12 @@ export function GuiaFiscalCalendarWidget() {
             },
           }}
         >
-          <Calendar
+          <CalendarWithPlugins
             ref={calendarRef}
             weekends
             events={events}
             eventClick={handleEventClick}
             initialView="dayGridMonth"
-            plugins={[dayGridPlugin, interactionPlugin]}
             headerToolbar={false}
             height="auto"
             aspectRatio={1.0}

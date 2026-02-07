@@ -1,13 +1,7 @@
 'use client';
 
-import Calendar from '@fullcalendar/react'; // => request placed at the top
-
 import { useEffect } from 'react';
-import listPlugin from '@fullcalendar/list';
-import dayGridPlugin from '@fullcalendar/daygrid';
-import timeGridPlugin from '@fullcalendar/timegrid';
-import timelinePlugin from '@fullcalendar/timeline';
-import interactionPlugin from '@fullcalendar/interaction';
+import dynamic from 'next/dynamic';
 
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -35,6 +29,46 @@ import { useCalendar } from '../hooks/use-calendar';
 import { CalendarToolbar } from '../calendar-toolbar';
 import { CalendarFilters } from '../calendar-filters';
 import { CalendarFiltersResult } from '../calendar-filters-result';
+
+// Lazy load FullCalendar e plugins para melhorar performance inicial
+const CalendarWithPlugins = dynamic(
+  async () => {
+    const [
+      { default: Calendar },
+      { default: listPlugin },
+      { default: dayGridPlugin },
+      { default: timeGridPlugin },
+      { default: timelinePlugin },
+      { default: interactionPlugin },
+    ] = await Promise.all([
+      import('@fullcalendar/react'),
+      import('@fullcalendar/list'),
+      import('@fullcalendar/daygrid'),
+      import('@fullcalendar/timegrid'),
+      import('@fullcalendar/timeline'),
+      import('@fullcalendar/interaction'),
+    ]);
+
+    // Usar forwardRef para suportar ref
+    const { forwardRef } = await import('react');
+    
+    return forwardRef((props, ref) => (
+        <Calendar
+          {...props}
+          ref={ref}
+          plugins={[listPlugin, dayGridPlugin, timelinePlugin, timeGridPlugin, interactionPlugin]}
+        />
+      ));
+  },
+  {
+    ssr: false,
+    loading: () => (
+      <div style={{ minHeight: 400, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        Carregando calendário...
+      </div>
+    ),
+  }
+);
 
 // ----------------------------------------------------------------------
 
@@ -135,7 +169,7 @@ export function CalendarView() {
               onOpenFilters={openFilters.onTrue}
             />
 
-            <Calendar
+            <CalendarWithPlugins
               weekends
               editable
               droppable
@@ -159,13 +193,6 @@ export function CalendarView() {
               eventResize={(arg) => {
                 onResizeEvent(arg, updateEvent);
               }}
-              plugins={[
-                listPlugin,
-                dayGridPlugin,
-                timelinePlugin,
-                timeGridPlugin,
-                interactionPlugin,
-              ]}
             />
           </StyledCalendar>
         </Card>

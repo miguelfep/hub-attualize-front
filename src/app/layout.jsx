@@ -1,6 +1,7 @@
 import 'src/global.css';
 
 import Script from 'next/script';
+import dynamic from 'next/dynamic';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -12,14 +13,11 @@ import { I18nProvider } from 'src/locales/i18n-provider';
 import { ThemeProvider } from 'src/theme/theme-provider';
 import { getInitColorSchemeScript } from 'src/theme/color-scheme-script';
 
-import { Snackbar } from 'src/components/snackbar';
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { detectSettings } from 'src/components/settings/server';
 // import { MercadoPagoProvider } from 'src/components/mercado-pago'; // Removido temporariamente - será implementado depois
-import { SettingsDrawer, defaultSettings, SettingsProvider } from 'src/components/settings';
-
-import { CheckoutProvider } from 'src/sections/checkout/context';
+import { defaultSettings, SettingsProvider } from 'src/components/settings';
 
 import { AuthProvider as JwtAuthProvider } from 'src/auth/context/jwt';
 import { AuthProvider as Auth0AuthProvider } from 'src/auth/context/auth0';
@@ -28,6 +26,19 @@ import { AuthProvider as SupabaseAuthProvider } from 'src/auth/context/supabase'
 import { AuthProvider as FirebaseAuthProvider } from 'src/auth/context/firebase';
 
 import ClientAnalytics from './client-analytics';
+
+// Lazy load de componentes não críticos para melhorar performance inicial
+const Snackbar = dynamic(() => import('src/components/snackbar').then((mod) => ({ default: mod.Snackbar })), {
+  ssr: false,
+});
+
+const SettingsDrawer = dynamic(() => import('src/components/settings').then((mod) => ({ default: mod.SettingsDrawer })), {
+  ssr: false,
+});
+
+const CheckoutProvider = dynamic(() => import('src/sections/checkout/context').then((mod) => ({ default: mod.CheckoutProvider })), {
+  ssr: false,
+});
 
 // ----------------------------------------------------------------------
 
@@ -119,6 +130,9 @@ export default async function RootLayout({ children }) {
   return (
     <html lang={lang ?? 'en'} suppressHydrationWarning>
       <head>
+        {/* Preconnect para Google Analytics - melhora tempo de conexão */}
+        <link rel="preconnect" href="https://www.googletagmanager.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         {/* Preload da imagem do banner mobile (LCP element crítico para página de estética) */}
         <link
           rel="preload"
@@ -128,20 +142,22 @@ export default async function RootLayout({ children }) {
         />
       </head>
       <body>
-        {/* Google Analytics - Carregado após renderização inicial para não bloquear */}
+        {/* Google Analytics - Carregado com lazyOnload para não bloquear renderização inicial */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-L5BFBLV0Z4"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
         <Script
           id="google-analytics"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', 'G-L5BFBLV0Z4');
+              gtag('config', 'G-L5BFBLV0Z4', {
+                send_page_view: false
+              });
             `,
           }}
         />

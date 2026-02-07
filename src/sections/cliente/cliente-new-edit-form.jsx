@@ -269,7 +269,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       possuiFuncionario: currentCliente?.possuiFuncionario || false,
       dadosDepartamentoPessoal: currentCliente?.dadosDepartamentoPessoal || '',
       planoEmpresa: currentCliente?.planoEmpresa || '',
-      status: currentCliente?.status || true,
+      status: currentCliente?.status !== undefined ? currentCliente.status : true,
       tipoContato: currentCliente?.tipoContato || 'cliente',
       dataEntrada: currentCliente?.dataEntrada ? new Date(currentCliente.dataEntrada) : null,
       dataSaida: currentCliente?.dataSaida ? new Date(currentCliente.dataSaida) : null,
@@ -313,6 +313,7 @@ export function ClienteNewEditForm({ currentCliente }) {
   const { isSubmitting, errors } = formState;
 
   const clienteVip = watch('clienteVip'); // Observar o valor de clienteVip
+  const statusAtivo = watch('status') !== undefined ? watch('status') : true; // Observar o valor de status do banco
 
   const {
     fields: enderecoFields,
@@ -370,6 +371,7 @@ const onSubmit = handleSubmit(
           const updatedCliente = await getClienteById(currentCliente._id);
           reset({
             ...updatedCliente,
+            status: updatedCliente.status !== undefined ? updatedCliente.status : true,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
             dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
             contratoSocialFile: null, 
@@ -435,7 +437,43 @@ const onSubmit = handleSubmit(
 
   return (
     <Form methods={methods} onSubmit={onSubmit}>
-      <Tabs value={tabIndex} onChange={handleTabChange} aria-label="Cliente Editar">
+      {/* Toggle de Status Ativo/Inativo */}
+      <Card sx={{ p: 2, mb: 2 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between">
+          <Box>
+            <Typography variant="h6" gutterBottom>
+              Status do Cliente
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {statusAtivo 
+                ? 'Cliente ativo - Todos os campos podem ser editados' 
+                : 'Cliente inativo - Campos bloqueados para edição'}
+            </Typography>
+          </Box>
+          <FormControlLabel
+            control={
+              <Controller
+                name="status"
+                control={control}
+                render={({ field }) => (
+                  <Switch
+                    {...field}
+                    checked={field.value ?? true}
+                    color="success"
+                  />
+                )}
+              />
+            }
+            label={
+              <Typography variant="body1" fontWeight="medium">
+                {statusAtivo ? 'Ativo' : 'Inativo'}
+              </Typography>
+            }
+          />
+        </Stack>
+      </Card>
+
+      <Tabs value={tabIndex} onChange={handleTabChange} aria-label="Cliente Editar" disabled={!statusAtivo}>
         <Tab label="Dados da Empresa" />
         <Tab label="Sócios" />
         <Tab label="Dados Fiscais" />
@@ -490,6 +528,7 @@ const onSubmit = handleSubmit(
                         type="number"
                         label="Código"
                         fullWidth
+                        disabled={!statusAtivo}
                         error={!!errors.codigo}
                         helperText={errors.codigo ? errors.codigo.message : ''}
                       />
@@ -498,38 +537,38 @@ const onSubmit = handleSubmit(
                 </Grid>
                 <Grid xs={12} sm={7} sx={{ display: { xs: 'none', sm: 'block' } }} />
                 <Grid xs={12} sm={3}>
-                  <Field.Select name="tipoContato" label="Tipo de conta" fullWidth>
+                  <Field.Select name="tipoContato" label="Tipo de conta" fullWidth disabled={!statusAtivo}>
                     <MenuItem value="cliente">Cliente</MenuItem>
                     <MenuItem value="lead">Lead</MenuItem>
                   </Field.Select>
                 </Grid>
                 <Grid xs={12}>
-                  <Field.Text name="razaoSocial" label="Razão Social" fullWidth />
+                  <Field.Text name="razaoSocial" label="Razão Social" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12} sm={3}>
-                  <Field.Text name="cnpj" label="CNPJ" fullWidth />
+                  <Field.Text name="cnpj" label="CNPJ" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12} sm={4}>
-                  <Field.Text name="nome" label="Nome" fullWidth />
+                  <Field.Text name="nome" label="Nome" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12} sm={5}>
-                  <Field.Text name="nomeFantasia" label="Nome Fantasia" fullWidth />
+                  <Field.Text name="nomeFantasia" label="Nome Fantasia" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12}>
                   <Divider sx={{ my: 1 }} />
                   <Typography variant="subtitle2" sx={{ mb: 1 }}>Contato</Typography>
                 </Grid>
                 <Grid xs={12} sm={4}>
-                  <Field.Text name="email" label="Email" fullWidth />
+                  <Field.Text name="email" label="Email" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12} sm={4}>
-                  <Field.Text name="emailFinanceiro" label="Email Financeiro" fullWidth />
+                  <Field.Text name="emailFinanceiro" label="Email Financeiro" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12} sm={4}>
-                  <Field.Phone name="whatsapp" label="Whatsapp" fullWidth />
+                  <Field.Phone name="whatsapp" label="Whatsapp" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12} sm={4}>
-                  <Field.Phone name="telefoneComercial" label="Telefone Comercial" fullWidth />
+                  <Field.Phone name="telefoneComercial" label="Telefone Comercial" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12}>
                   <Divider sx={{ my: 1 }} />
@@ -563,6 +602,7 @@ const onSubmit = handleSubmit(
                           value={formatCep(field.value)}
                           onChange={handleChange}
                           onBlur={handleBlur}
+                          disabled={!statusAtivo}
                           error={!!errors.endereco?.[index]?.cep}
                           helperText={errors.endereco?.[index]?.cep?.message}
                           inputProps={{ inputMode: 'numeric' }}
@@ -580,7 +620,7 @@ const onSubmit = handleSubmit(
                             {...field}
                             label="Rua"
                             fullWidth
-                            disabled={loadingCep}
+                            disabled={!statusAtivo || loadingCep}
                             error={!!errors.endereco?.[index]?.rua}
                             helperText={errors.endereco?.[index]?.rua?.message}
                           />
@@ -596,6 +636,7 @@ const onSubmit = handleSubmit(
                             {...field}
                             label="Número"
                             fullWidth
+                            disabled={!statusAtivo}
                             error={!!errors.endereco?.[index]?.numero}
                             helperText={errors.endereco?.[index]?.numero?.message}
                           />
@@ -611,6 +652,7 @@ const onSubmit = handleSubmit(
                             {...field}
                             label="Complemento"
                             fullWidth
+                            disabled={!statusAtivo}
                             error={!!errors.endereco?.[index]?.complemento}
                             helperText={errors.endereco?.[index]?.complemento?.message}
                           />
@@ -626,7 +668,7 @@ const onSubmit = handleSubmit(
                             {...field}
                             label="Bairro"
                             fullWidth
-                            disabled={loadingCep}
+                            disabled={!statusAtivo || loadingCep}
                             error={!!errors.endereco?.[index]?.bairro}
                             helperText={errors.endereco?.[index]?.bairro?.message}
                           />
@@ -642,7 +684,7 @@ const onSubmit = handleSubmit(
                             {...field}
                             label="Cidade"
                             fullWidth
-                            disabled={loadingCep}
+                            disabled={!statusAtivo || loadingCep}
                             error={!!errors.endereco?.[index]?.cidade}
                             helperText={errors.endereco?.[index]?.cidade?.message}
                           />
@@ -658,7 +700,7 @@ const onSubmit = handleSubmit(
                             {...field}
                             label="Estado"
                             fullWidth
-                            disabled={loadingCep}
+                            disabled={!statusAtivo || loadingCep}
                             error={!!errors.endereco?.[index]?.estado}
                             helperText={errors.endereco?.[index]?.estado?.message}
                           />
@@ -669,19 +711,19 @@ const onSubmit = handleSubmit(
                 ))}
 
                 <Grid xs={12} sm={2}>
-                  <Field.Select name="clienteVip" label="Cliente VIP" fullWidth>
+                  <Field.Select name="clienteVip" label="Cliente VIP" fullWidth disabled={!statusAtivo}>
                     <MenuItem value>Sim</MenuItem>
                     <MenuItem value={false}>Não</MenuItem>
                   </Field.Select>
                 </Grid>
                 <Grid xs={12} sm={4}>
-                  <Field.Text name="im" label="Inscrição Municipal" fullWidth />
+                  <Field.Text name="im" label="Inscrição Municipal" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12} sm={6}>
-                  <Field.Text name="ie" label="Inscrição Estadual" fullWidth />
+                  <Field.Text name="ie" label="Inscrição Estadual" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid xs={12} sm={6}>
-                  <Field.Select name="regimeTributario" label="Regime Tributário" fullWidth>
+                  <Field.Select name="regimeTributario" label="Regime Tributário" fullWidth disabled={!statusAtivo}>
                     {['simples', 'presumido', 'real', 'pf'].map((option) => (
                       <MenuItem key={option} value={option}>
                         {option}
@@ -690,7 +732,7 @@ const onSubmit = handleSubmit(
                   </Field.Select>
                 </Grid>
                 <Grid xs={12} sm={6}>
-                  <Field.Select name="planoEmpresa" label="Plano Empresa" fullWidth>
+                  <Field.Select name="planoEmpresa" label="Plano Empresa" fullWidth disabled={!statusAtivo}>
                     {['carneleao', 'mei', 'start', 'pleno', 'premium', 'plus'].map((option) => (
                       <MenuItem key={option} value={option}>
                         {option}
@@ -715,7 +757,7 @@ const onSubmit = handleSubmit(
                   />
                 </Grid>
                 <Grid xs={12} sm={12}>
-                  <Field.Select name="contadorResponsavel" label="Contador Responsável" fullWidth>
+                  <Field.Select name="contadorResponsavel" label="Contador Responsável" fullWidth disabled={!statusAtivo}>
                     {['anne', 'semresponsavel'].map((option) => (
                       <MenuItem key={option} value={option}>
                         {option}
@@ -726,7 +768,7 @@ const onSubmit = handleSubmit(
                 {/* <Grid xs={12} sm={6}>
                 </Grid> */}
                 <Grid xs={12}>
-                  <Field.Editor name="observacao" label="Observação" fullWidth />
+                  <Field.Editor name="observacao" label="Observação" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid container spacing={2} xs={12} sx={{ mt: 1 }}>
                 <Grid item xs={12}>
@@ -737,6 +779,7 @@ const onSubmit = handleSubmit(
                     name="contratoSocialFile"
                     label="Contrato Social"
                     existingFileUrl={watch('contratoSocialUrl')}
+                    disabled={!statusAtivo}
                   />
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -744,6 +787,7 @@ const onSubmit = handleSubmit(
                     name="cartaoCnpjFile"
                     label="Cartão CNPJ"
                     existingFileUrl={watch('cartaoCnpjUrl')}
+                    disabled={!statusAtivo}
                   />
                 </Grid>
               </Grid>
@@ -758,10 +802,12 @@ const onSubmit = handleSubmit(
                         onChange={(newValue) => {
                           field.onChange(newValue ? newValue.toDate() : null); // Converte `dayjs` de volta para `Date`
                         }}
+                        disabled={!statusAtivo}
                         renderInput={(params) => (
                           <TextField
                             {...params}
                             fullWidth
+                            disabled={!statusAtivo}
                             error={!!errors.dataEntrada}
                             helperText={errors.dataEntrada ? errors.dataEntrada.message : ''}
                           />
@@ -781,10 +827,12 @@ const onSubmit = handleSubmit(
                         onChange={(newValue) => {
                           field.onChange(newValue ? newValue.toDate() : null); // Convertendo de volta para Date
                         }}
+                        disabled={!statusAtivo}
                         renderInput={(params) => (
                           <TextField
                             {...params}
                             fullWidth
+                            disabled={!statusAtivo}
                             error={!!errors.dataSaida}
                             helperText={errors.dataSaida ? errors.dataSaida.message : ''}
                           />
@@ -879,7 +927,7 @@ const onSubmit = handleSubmit(
                   <Divider sx={{ my: 1 }} />
                 </Grid>
                 <Grid xs={12}>
-                  <Field.Editor name="dadosFiscal" label="Dados Fiscais" fullWidth />
+                  <Field.Editor name="dadosFiscal" label="Dados Fiscais" fullWidth disabled={!statusAtivo} />
                 </Grid>
               </Grid>
             </Card>
@@ -917,7 +965,7 @@ const onSubmit = handleSubmit(
                   <Divider sx={{ my: 2 }} />
                 </Grid>
                 <Grid xs={12}>
-                  <Field.Editor name="dadosContabil" label="Dados Contábeis" fullWidth />
+                  <Field.Editor name="dadosContabil" label="Dados Contábeis" fullWidth disabled={!statusAtivo} />
                 </Grid>
               </Grid>
             </Card>
@@ -944,6 +992,7 @@ const onSubmit = handleSubmit(
                     name="dadosDepartamentoPessoal"
                     label="Dados do Departamento Pessoal"
                     fullWidth
+                    disabled={!statusAtivo}
                   />
                 </Grid>
               </Grid>

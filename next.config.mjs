@@ -16,6 +16,33 @@ const nextConfig = {
     '@mui/lab': {
       transform: '@mui/lab/{{member}}',
     },
+    '@iconify/react': {
+      transform: '@iconify/react/dist/iconify.js',
+      skipDefaultConversion: true,
+    },
+    'date-fns': {
+      transform: 'date-fns/{{member}}',
+    },
+    'lodash': {
+      transform: 'lodash/{{member}}',
+    },
+  },
+  experimental: {
+    optimizePackageImports: [
+      '@mui/material',
+      '@mui/icons-material',
+      '@mui/lab',
+      '@iconify/react',
+      'date-fns',
+    ],
+    turbotrace: {
+      logLevel: 'error',
+    },
+  },
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
   },
   // Otimização de imagens
   images: {
