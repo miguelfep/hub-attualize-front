@@ -32,7 +32,7 @@ import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downl
 import { Iconify } from 'src/components/iconify';
 
 // Componente de Card de Documento (movido para fora para evitar re-render)
-function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDeleteClick }) {
+function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDeleteClick, readOnly }) {
     return (
         <Box
             sx={{
@@ -47,23 +47,27 @@ function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDe
                 <strong>{label}</strong>
             </Typography>
             <Box>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    sx={{ mb: 1 }}
-                    onClick={onUploadClick}
-                >
-                    Enviar Anexo
-                </Button>
-                <Button
-                    variant="outlined"
-                    fullWidth
-                    onClick={onDeleteClick}
-                    disabled={!value}
-                >
-                    Deletar
-                </Button>
+                {!readOnly && (
+                    <>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            fullWidth
+                            sx={{ mb: 1 }}
+                            onClick={onUploadClick}
+                        >
+                            Enviar Anexo
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            onClick={onDeleteClick}
+                            disabled={!value}
+                        >
+                            Deletar
+                        </Button>
+                    </>
+                )}
                 {value && (
                     <Button
                         variant="outlined"
@@ -96,7 +100,7 @@ const SITUACOES_ALTERACAO = [
     { value: 8, label: 'Alteração concluída' },
 ];
 
-export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvanceStatus }) {
+export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvanceStatus, isArchived = false }) {
     const loading = useBoolean();
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
@@ -159,7 +163,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
     const { control, handleSubmit, reset, getValues, watch, setValue } = useForm({
         defaultValues: {
             id: currentAlteracao?._id || '',
-            alteracoes: currentAlteracao?.alteracoes || [],
+            alteracoes: currentAlteracao?.alteracoes || '',
             statusAlteracao: currentAlteracao?.statusAlteracao || '',
             situacaoAlteracao: currentAlteracao?.situacaoAlteracao || 0,
             razaoSocial: currentAlteracao?.razaoSocial || '',
@@ -228,7 +232,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
             setActiveTab(0);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentAlteracao?._id]);
+    }, [currentAlteracao]);
 
     const handleCepBlur = async () => {
         const cep = getValues('enderecoComercial.cep')?.replace('-', '') || '';
@@ -265,10 +269,10 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
 
         setSaving(true);
         try {
-            // Atualiza a situação da alteração
+            // Atualiza a situação da alteração (situação 8 = concluída, mas continua em em_alteracao)
             await updateAlteracao(currentAlteracao._id, {
                 situacaoAlteracao: novaSituacao,
-                statusAlteracao: novaSituacao === 8 ? 'finalizado' : 'em_alteracao',
+                statusAlteracao: 'em_alteracao',
                 somenteAtualizar: false,
                 notificarWhats,
             });
@@ -297,11 +301,6 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
 
             setSituacaoAlteracao(novaSituacao);
             setEtapasCompletadas(novasEtapasCompletadas);
-
-            // Se finalizou, avança o status
-            if (novaSituacao === 8 && handleAdvanceStatus) {
-                handleAdvanceStatus('finalizado');
-            }
 
             toast.success(
                 notificarWhats
@@ -451,16 +450,16 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
     return (
         <Card sx={{ p: 3, mb: 3 }}>
             <Tabs value={activeTab} onChange={handleTabChange} centered sx={{ mb: 3 }}>
-                <Tab label="Acompanhamento de Etapas" />
+                <Tab label={isArchived ? 'Etapas da Alteração concluídas' : 'Acompanhamento de Etapas'} />
                 <Tab label="Dados da Alteração" />
                 <Tab label="Documentos" />
             </Tabs>
 
-            {/* ========== ABA 0: Acompanhamento de Etapas ========== */}
+            {/* ========== ABA 0: Acompanhamento de Etapas / Etapas concluídas ========== */}
             {activeTab === 0 && (
                 <Box>
                     <Typography variant="h6" sx={{ mb: 3 }}>
-                        Em Alteração - Acompanhamento de Etapas
+                        {isArchived ? 'Etapas da Alteração concluídas' : 'Em Alteração - Acompanhamento de Etapas'}
                     </Typography>
 
                     {/* Barra de Progresso */}
@@ -476,7 +475,8 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         <LinearProgress variant="determinate" value={progresso} sx={{ height: 8, borderRadius: 1 }} />
                     </Box>
 
-                    {/* Select de Situação + Switch de Notificação */}
+                    {/* Select de Situação + Switch de Notificação (oculto quando arquivado) */}
+                    {!isArchived && (
                     <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-start">
                         <Grid item xs={12} md={6}>
                             <TextField
@@ -536,6 +536,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                             </Box>
                         </Grid>
                     </Grid>
+                    )}
 
                     <Box sx={{ mt: 3 }}>
                         <Typography variant="subtitle2" sx={{ mb: 2 }}>
@@ -614,7 +615,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         </Stack>
                     </Box>
 
-                    {saving && (
+                    {!isArchived && saving && (
                         <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <CircularProgress size={16} />
                             <Typography variant="body2" color="text.secondary">
@@ -623,7 +624,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         </Box>
                     )}
 
-                    {!todasCompletas && (
+                    {!isArchived && !todasCompletas && (
                         <Box
                             sx={{
                                 mt: 3,
@@ -644,7 +645,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         </Box>
                     )}
 
-                    {todasCompletas && (
+                    {(todasCompletas || isArchived) && (
                         <Box
                             sx={{
                                 mt: 3,
@@ -660,7 +661,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         >
                             <Iconify icon="eva:checkmark-circle-2-fill" width={24} sx={{ color: 'success.main' }} />
                             <Typography variant="body2" sx={{ color: 'success.darker' }}>
-                                Todas as etapas foram concluídas! Alteração finalizada.
+                                {isArchived ? 'Alteração arquivada. Etapas concluídas.' : 'Todas as etapas foram concluídas! Alteração finalizada.'}
                             </Typography>
                         </Box>
                     )}
@@ -883,26 +884,34 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         <Controller
                                             name={`socios[${index}].cpf`}
                                             control={control}
-                                            render={({ field }) => (
-                                                <InputMask {...field} mask="999.999.999-99">
-                                                    {(inputProps) => (
-                                                        <TextField {...inputProps} label="CPF" fullWidth variant="outlined" />
-                                                    )}
-                                                </InputMask>
-                                            )}
+                                            render={({ field }) => {
+                                                const { disabled: _no, ...f } = field;
+                                                return (
+                                                    <InputMask {...f} mask="999.999.999-99" disabled={false}>
+                                                        {(inputProps) => {
+                                                            const { disabled: _omit, ...safeProps } = inputProps;
+                                                            return <TextField {...safeProps} label="CPF" fullWidth variant="outlined" />;
+                                                        }}
+                                                    </InputMask>
+                                                );
+                                            }}
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={4}>
                                         <Controller
                                             name={`socios[${index}].rg`}
                                             control={control}
-                                            render={({ field }) => (
-                                                <InputMask {...field} mask="99.999.999-9">
-                                                    {(inputProps) => (
-                                                        <TextField {...inputProps} label="RG" fullWidth variant="outlined" />
-                                                    )}
-                                                </InputMask>
-                                            )}
+                                            render={({ field }) => {
+                                                const { disabled: _no, ...f } = field;
+                                                return (
+                                                    <InputMask {...f} mask="99.999.999-9" disabled={false}>
+                                                        {(inputProps) => {
+                                                            const { disabled: _omit, ...safeProps } = inputProps;
+                                                            return <TextField {...safeProps} label="RG" fullWidth variant="outlined" />;
+                                                        }}
+                                                    </InputMask>
+                                                );
+                                            }}
                                         />
                                     </Grid>
                                     <Grid item xs={12} sm={4}>
@@ -1010,18 +1019,29 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 )}
                             />
                         </Grid>
+                        <Grid item xs={12}>
+                            <Controller
+                                name="urlMeetKickoff"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField {...field} label="URL do Meet Kickoff" fullWidth variant="outlined" />
+                                )}
+                            />
+                        </Grid>
                     </Grid>
 
-                    <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
-                        <Button
-                            variant="contained"
-                            onClick={handleSubmit(onSave)}
-                            disabled={loading.value}
-                            startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
-                        >
-                            Salvar Dados
-                        </Button>
-                    </Stack>
+                    {!isArchived && (
+                        <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
+                            <Button
+                                variant="contained"
+                                onClick={handleSubmit(onSave)}
+                                disabled={loading.value}
+                                startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+                            >
+                                Salvar Dados
+                            </Button>
+                        </Stack>
+                    )}
                 </Box>
             )}
 
@@ -1043,6 +1063,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 onUploadClick={() => handleUpload('iptuAnexo')}
                                 onDownloadClick={() => handleDownload('iptuAnexo')}
                                 onDeleteClick={() => handleDelete('iptuAnexo')}
+                                readOnly={isArchived}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6} md={4}>
@@ -1052,6 +1073,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 onUploadClick={() => handleUpload('rgAnexo')}
                                 onDownloadClick={() => handleDownload('rgAnexo')}
                                 onDeleteClick={() => handleDelete('rgAnexo')}
+                                readOnly={isArchived}
                             />
                         </Grid>
                         <Grid item xs={12} sm={6} md={4}>
@@ -1061,6 +1083,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 onUploadClick={() => handleUpload('documentoRT')}
                                 onDownloadClick={() => handleDownload('documentoRT')}
                                 onDeleteClick={() => handleDelete('documentoRT')}
+                                readOnly={isArchived}
                             />
                         </Grid>
                     </Grid>
@@ -1084,6 +1107,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         onUploadClick={() => handleUpload('cnhAnexo', index)}
                                         onDownloadClick={() => handleDownload('cnhAnexo', index)}
                                         onDeleteClick={() => handleDelete('cnhAnexo', index)}
+                                        readOnly={isArchived}
                                     />
                                 </Grid>
                                 <Grid item xs={12} sm={6}>
@@ -1093,6 +1117,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         onUploadClick={() => handleUpload('comprovanteEnderecoAnexo', index)}
                                         onDownloadClick={() => handleDownload('comprovanteEnderecoAnexo', index)}
                                         onDeleteClick={() => handleDelete('comprovanteEnderecoAnexo', index)}
+                                        readOnly={isArchived}
                                     />
                                 </Grid>
                             </Grid>

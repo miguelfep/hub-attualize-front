@@ -72,7 +72,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
     const { control, handleSubmit, reset, getValues, watch } = useForm({
         defaultValues: {
             id: currentAlteracao?._id || '',
-            alteracoes: currentAlteracao?.alteracoes || [],
+            alteracoes: currentAlteracao?.alteracoes || '',
             statusAlteracao: currentAlteracao?.statusAlteracao || '',
             situacaoAlteracao: currentAlteracao?.situacaoAlteracao || 0,
             razaoSocial: currentAlteracao?.razaoSocial || '',

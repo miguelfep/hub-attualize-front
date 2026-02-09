@@ -36,13 +36,19 @@ export function AlteracaoTableRow({
   
   const handleAction = () => {
     if (row.status) {
-      // Caso esteja ativo, inativar o cliente
       onDeleteRow();
     } else {
-      // Caso esteja inativo, ativar o cliente
       onActivateRow();
     }
     confirm.onFalse();
+  };
+
+  const statusAlteracaoMap = {
+    iniciado: { label: 'Iniciado', color: 'warning' },
+    em_validacao: { label: 'Validação', color: 'info' },
+    kickoff: { label: 'Kickoff', color: 'primary' },
+    em_alteracao: { label: 'Em Alteração', color: 'secondary' },
+    finalizado: { label: 'Finalizado', color: 'success' },
   };
 
   return (
@@ -79,9 +85,9 @@ export function AlteracaoTableRow({
         <TableCell>
           <Label
             variant="soft"
-            color={(row.status === true && 'success') || (row.status === false && 'warning')}
+            color={statusAlteracaoMap[row.statusAlteracao]?.color || 'default'}
           >
-            {(row.status === true && 'Ativo') || (row.status === false && 'Inativo')}
+            {statusAlteracaoMap[row.statusAlteracao]?.label || row.statusAlteracao || '-'}
           </Label>
         </TableCell>
         <TableCell>
@@ -105,10 +111,10 @@ export function AlteracaoTableRow({
               confirm.onTrue();
               popover.onClose();
             }}
-            sx={{ color: row.status ? 'warning.main' : 'success.main' }} // Muda a cor conforme o status
+            sx={{ color: row.status ? 'warning.main' : 'success.main' }}
           >
-            <Iconify icon={row.status ? 'lets-icons:remove-duotone' : 'solar:tick-bold'} />
-            {row.status ? 'Inativar' : 'Ativar'}
+            <Iconify icon={row.status ? 'solar:archive-down-bold' : 'solar:tick-bold'} />
+            {row.status ? 'Arquivar' : 'Ativar'}
           </MenuItem>
 
           <MenuItem
@@ -135,15 +141,15 @@ export function AlteracaoTableRow({
       <ConfirmDialog
         open={confirm.value}
         onClose={confirm.onFalse}
-        title={row.status ? 'Inativar' : 'Ativar'}
-        content={`Tem certeza que deseja ${row.status ? 'inativar' : 'ativar'} esse cliente?`}
+        title={row.status ? 'Arquivar' : 'Ativar'}
+        content={`Tem certeza que deseja ${row.status ? 'arquivar' : 'ativar'} esta alteração?`}
         action={
           <Button
             variant="contained"
             color={row.status ? 'warning' : 'success'}
             onClick={handleAction}
           >
-            {row.status ? 'Inativar' : 'Ativar'}
+            {row.status ? 'Arquivar' : 'Ativar'}
           </Button>
         }
       />

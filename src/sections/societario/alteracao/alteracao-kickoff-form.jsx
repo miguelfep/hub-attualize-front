@@ -191,7 +191,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
     const { control, handleSubmit, reset, getValues, watch, setValue } = useForm({
         defaultValues: {
             id: currentAlteracao?._id || '',
-            alteracoes: currentAlteracao?.alteracoes || [],
+            alteracoes: currentAlteracao?.alteracoes || '',
             razaoSocial: currentAlteracao?.nomeEmpresarial || '',
             nomeFantasia: currentAlteracao?.nomeFantasia || '',
             email: currentAlteracao?.email || '',

@@ -283,11 +283,10 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
               const data = prepareData(rawData);
               await handleSave(data);
             }}
-            // Envia os dados para aprovação depois de validar e finalizar o formulário
-            onApproval={handleSubmit((rawData) => {
+            onApproval={handleSubmit(async (rawData) => {
               const data = prepareData(rawData);
-              handleApproval(data);
-              setIsValidating(true);
+              await updateAlteracao(alteracaoData._id, data);
+              await handleApproval(data);
               router.refresh();
             })}
           />

@@ -41,24 +41,26 @@ export function AlteracaoFormWizard({ formData, onSave, onApproval }) {
 
           <Box display="flex" justifyContent="space-between" mt={3}>
             <Button
+              type="button"
               variant="contained"
               color="secondary"
               onClick={(e) => {
                 e.preventDefault();
                 onSave();
-              }
-              }
+              }}
               disabled={isSubmitting}
             >
               Salvar Alterações
             </Button>
             <Button
+              type="button"
               variant="contained"
               color="primary"
               onClick={async (e) => {
+                e.preventDefault();
                 setLoadingApproval(true);
                 try {
-                  const result = await onApproval();
+                  await onApproval();
                 } catch (error) {
                   toast.error('Erro ao solicitar aprovação.');
                 } finally {
