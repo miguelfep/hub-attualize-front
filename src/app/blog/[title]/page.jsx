@@ -11,7 +11,17 @@ import { PostDetailsHomeView } from 'src/sections/blog/view';
 
 export async function generateMetadata({ params }) {
   try {
-    const { title } = params;
+    // No Next.js 15, params pode ser uma Promise
+    const resolvedParams = await params;
+    const { title } = resolvedParams;
+
+    // Validar se o title existe
+    if (!title) {
+      return {
+        title: `Blog - ${CONFIG.site.name}`,
+        description: 'Blog da Attualize Contábil',
+      };
+    }
 
     // Fetch the post based on the slug
     const post = await getPostBySlug(title);
@@ -95,7 +105,22 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function Page({ params }) {
-  const { title } = params;
+  // No Next.js 15, params pode ser uma Promise
+  const resolvedParams = await params;
+  const { title } = resolvedParams;
+
+  // Validar se o title existe
+  if (!title) {
+    console.error('Title não fornecido nos parâmetros da rota');
+    return (
+      <PostDetailsHomeView 
+        post={null} 
+        latestPosts={[]} 
+        initialComments={[]}
+        initialTotalComments={0}
+      />
+    );
+  }
 
   try {
     // Buscar o post primeiro para obter o ID
