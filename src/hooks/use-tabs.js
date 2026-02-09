@@ -12,10 +12,20 @@ export function useTabs(defaultValue, validValues = null) {
   const [value, setValue] = useState(() => {
     // Validação adicional na inicialização do estado
     // Garantir que o valor inicial seja sempre válido
-    if (validValues && !validValues.includes(safeDefaultValue)) {
-      return validValues[0] || defaultValue;
+    // CRÍTICO: Nunca permitir "Standard" ou qualquer valor inválido
+    let initialValue = safeDefaultValue;
+    
+    // Se o valor for "Standard" ou inválido, forçar o primeiro valor válido
+    if (initialValue === 'Standard' || (validValues && !validValues.includes(initialValue))) {
+      initialValue = validValues?.[0] || defaultValue;
     }
-    return safeDefaultValue;
+    
+    // Validação final: garantir que o valor nunca seja "Standard"
+    if (initialValue === 'Standard') {
+      initialValue = validValues?.[0] || defaultValue || 'Start';
+    }
+    
+    return initialValue;
   });
 
   // Validar valor se validValues for fornecido
