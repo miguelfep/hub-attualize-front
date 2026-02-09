@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect } from 'react';
 import { m } from 'framer-motion';
+import React, { useMemo, useEffect } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import { Box, Tab, Tabs, Stack, Button, Divider, Container, Typography } from '@mui/material';
@@ -21,22 +21,53 @@ import { FloatLine, FloatXIcon } from './components/svg-elements';
 export function HomePricing({ sx, ...other }) {
   const theme = useTheme();
   
-  // Valores válidos dos planos
-  const validValues = ['Start', 'Pleno', 'Premium', 'Plus'];
+  // Valores válidos dos planos - memoizado para evitar recriação a cada render
+  const validValues = useMemo(() => ['Start', 'Pleno', 'Premium', 'Plus'], []);
   
   // Garantir que o valor inicial seja sempre válido - passar validValues para o hook
   const tabs = useTabs('Start', validValues);
-
+  
   // Valor seguro para o Tabs - sempre válido
   // Garante que nunca passe um valor inválido para o componente Tabs
-  const safeTabValue = validValues.includes(tabs.value) ? tabs.value : 'Start';
+  // Validação rigorosa: se o valor não for válido, forçar 'Start' imediatamente
+  const safeTabValue = useMemo(() => {
+    const currentValue = tabs.value;
+    
+    // Validação rigorosa: garantir que o valor seja sempre válido
+    // Se o valor for "Standard" ou qualquer outro valor inválido, forçar 'Start'
+    if (!currentValue || typeof currentValue !== 'string' || !validValues.includes(currentValue)) {
+      // Corrigir imediatamente no estado se inválido
+      if (currentValue && currentValue !== 'Start') {
+        // Usar setTimeout com 0 para garantir que a correção aconteça após o render atual
+        setTimeout(() => {
+          tabs.setValue('Start');
+        }, 0);
+      }
+      // Retornar 'Start' imediatamente para evitar passar valor inválido ao Tabs
+      return 'Start';
+    }
+    return currentValue;
+  }, [tabs, validValues]);
   
-  // Corrigir valor no estado se for inválido (executa uma vez no mount)
+  // Validação adicional: garantir que o valor seja sempre válido antes de renderizar
+  // Isso força a correção mesmo se o valor inválido vier de cache
   useEffect(() => {
-    if (!validValues.includes(tabs.value)) {
+    const currentValue = tabs.value;
+    if (currentValue && !validValues.includes(currentValue)) {
+      // Forçar correção imediata
       tabs.setValue('Start');
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tabs.value, validValues, tabs.setValue, tabs]);
+  
+  // Corrigir valor no estado se for inválido (executa imediatamente e no mount)
+  useEffect(() => {
+    const currentValue = tabs.value;
+    // Validação adicional: garantir que o valor seja sempre válido
+    if (currentValue && !validValues.includes(currentValue)) {
+      // Forçar correção imediata
+      tabs.setValue('Start');
+    }
+  }, [tabs.value, validValues, tabs]);
 
   const renderDescription = (
     <SectionTitle
@@ -75,8 +106,26 @@ export function HomePricing({ sx, ...other }) {
   const renderContentMobile = (
     <Stack spacing={5} alignItems="center" sx={{ display: { md: 'none' } }}>
       <Tabs
-        value={safeTabValue}
-        onChange={tabs.onChange}
+        value={(() => {
+          // Validação inline: garantir que o valor seja sempre válido antes de passar ao Tabs
+          // Especialmente importante: nunca passar "Standard" ou qualquer valor inválido
+          const currentValue = safeTabValue || tabs.value || 'Start';
+          
+          // Validação rigorosa: se o valor não for válido OU for "Standard", forçar 'Start'
+          if (!currentValue || currentValue === 'Standard' || !validValues.includes(currentValue)) {
+            // Corrigir no estado se necessário
+            if (tabs.value && tabs.value !== 'Start') {
+              setTimeout(() => tabs.setValue('Start'), 0);
+            }
+            return 'Start';
+          }
+          return currentValue;
+        })()}
+        onChange={(event, newValue) => {
+          // Validar antes de atualizar - garantir que seja sempre um valor válido
+          const validatedValue = validValues.includes(newValue) ? newValue : 'Start';
+          tabs.onChange(event, validatedValue);
+        }}
         sx={{
           boxShadow: `0px -2px 0px 0px ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)} inset`,
         }}

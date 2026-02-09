@@ -1,4 +1,5 @@
-import { Box, Chip, List, alpha, Stack, Avatar, ListItem, useTheme, Typography } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+import { Box, Chip, List, Stack, Avatar, ListItem, Typography } from "@mui/material";
 
 import { Iconify } from "src/components/iconify";
 

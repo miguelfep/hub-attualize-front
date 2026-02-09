@@ -5,7 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
 
-import { useTheme } from '@mui/material/styles';
+import { useTheme, alpha } from '@mui/material/styles';
 import {
   Timeline,
   TimelineDot,
@@ -21,7 +21,6 @@ import {
   Chip,
   Link,
   Stack,
-  alpha,
   Button,
   Dialog,
   Typography,

@@ -19,12 +19,10 @@ const CheckoutProvider = dynamic(() => import('src/sections/checkout/context').t
 
 export function ClientComponents({ children }) {
   return (
-    <>
-      <CheckoutProvider>
+    <CheckoutProvider>
         <Snackbar />
         <SettingsDrawer />
         {children}
       </CheckoutProvider>
-    </>
   );
 }

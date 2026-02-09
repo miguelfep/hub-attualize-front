@@ -10,11 +10,11 @@ import { LocalizationProvider } from 'src/locales';
 import { detectLanguage } from 'src/locales/server';
 import { I18nProvider } from 'src/locales/i18n-provider';
 import { ThemeProvider } from 'src/theme/theme-provider';
-import { InitColorSchemeScript } from 'src/components/color-scheme-script';
 
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { detectSettings } from 'src/components/settings/server';
+import { InitColorSchemeScript } from 'src/components/color-scheme-script';
 // import { MercadoPagoProvider } from 'src/components/mercado-pago'; // Removido temporariamente - será implementado depois
 import { defaultSettings, SettingsProvider } from 'src/components/settings';
 
