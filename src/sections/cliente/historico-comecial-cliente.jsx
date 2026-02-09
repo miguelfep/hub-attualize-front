@@ -5,16 +5,7 @@ import { ptBR } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
 import { PDFViewer } from '@react-pdf/renderer';
 
-import { useTheme, alpha } from '@mui/material/styles';
-import {
-  Timeline,
-  TimelineDot,
-  TimelineItem,
-  TimelineContent,
-  TimelineSeparator,
-  TimelineConnector,
-  TimelineOppositeContent,
-} from '@mui/lab';
+import { alpha, useTheme } from '@mui/material/styles';
 import {
   Box,
   Card,
@@ -28,6 +19,15 @@ import {
   DialogActions,
   CircularProgress,
 } from '@mui/material';
+import {
+  Timeline,
+  TimelineDot,
+  TimelineItem,
+  TimelineContent,
+  TimelineSeparator,
+  TimelineConnector,
+  TimelineOppositeContent,
+} from '@mui/lab';
 
 import { useHistoricoCliente } from 'src/routes/hooks/use-historico-cliente';
 

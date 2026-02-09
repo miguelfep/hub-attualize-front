@@ -25,14 +25,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { fDate } from 'src/utils/format-time';
-
 import { getLeads } from 'src/actions/lead';
 import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
 import { TableNoData, TableHeadCustom } from 'src/components/table';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
@@ -40,10 +37,8 @@ import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 const TABLE_HEAD = [
   { id: 'nome', label: 'Nome', width: 200 },
-  { id: 'createdAt', label: 'Data Criação', width: 160 },
   { id: 'segment', label: 'Segmento', width: 120 },
-  { id: 'origem', label: 'Origem', width: 300 },
-  { id: 'local', label: 'Local', width: 140 },
+  { id: 'origem', label: 'Origem', width: 250 },
   { id: 'statusLead', label: 'Status', width: 140 },
   { id: 'owner', label: 'Responsável', width: 140 },
   { id: '', width: 50 },
@@ -198,35 +193,33 @@ export function LeadsListView() {
 
       {/* Tabela */}
       <Card>
-        <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
-          <Scrollbar>
-            <Table sx={{ minWidth: 960 }}>
-              <TableHeadCustom headLabel={TABLE_HEAD} />
+        <TableContainer>
+          <Table>
+            <TableHeadCustom headLabel={TABLE_HEAD} />
 
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} align="center" sx={{ py: 10 }}>
-                      <CircularProgress />
-                    </TableCell>
-                  </TableRow>
-                ) : paginatedLeads.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8}>
-                      <TableNoData
-                        title="Nenhum lead encontrado"
-                        description="Tente ajustar os filtros ou aguarde novos leads chegarem"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  paginatedLeads.map((row) => (
-                    <LeadTableRow key={row._id} row={row} onUpdate={carregarLeads} />
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </Scrollbar>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 10 }}>
+                    <CircularProgress />
+                  </TableCell>
+                </TableRow>
+              ) : paginatedLeads.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6}>
+                    <TableNoData
+                      title="Nenhum lead encontrado"
+                      description="Tente ajustar os filtros ou aguarde novos leads chegarem"
+                    />
+                  </TableCell>
+                </TableRow>
+              ) : (
+                paginatedLeads.map((row) => (
+                  <LeadTableRow key={row._id} row={row} onUpdate={carregarLeads} />
+                ))
+              )}
+            </TableBody>
+          </Table>
         </TableContainer>
 
         <TablePagination
@@ -294,7 +287,7 @@ function LeadTableRow({ row, onUpdate }) {
   return (
     <>
       <TableRow hover>
-        <TableCell sx={{ width: 200 }}>
+        <TableCell>
           <Stack spacing={0.5}>
             <Typography variant="subtitle2">{row.nome}</Typography>
             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
@@ -303,21 +296,7 @@ function LeadTableRow({ row, onUpdate }) {
           </Stack>
         </TableCell>
 
-        <TableCell sx={{ width: 160, maxWidth: 160 }}>
-          <Typography
-            variant="body2"
-            sx={{
-              fontSize: '0.875rem',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap'
-            }}
-          >
-            {fDate(row.createdAt)}
-          </Typography>
-        </TableCell>
-
-        <TableCell sx={{ width: 120 }}>
+        <TableCell>
           <Chip
             label={row.segment || '-'}
             size="small"
@@ -326,7 +305,7 @@ function LeadTableRow({ row, onUpdate }) {
           />
         </TableCell>
 
-        <TableCell sx={{ width: 300, maxWidth: 300 }}>
+        <TableCell>
           {row.origem ? (
             <Tooltip title={row.origem} arrow placement="top">
               <Typography
@@ -337,7 +316,7 @@ function LeadTableRow({ row, onUpdate }) {
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                   display: 'block',
-                  textDecoration: 'none',
+                  maxWidth: 250,
                 }}
               >
                 {row.origem}
@@ -358,19 +337,13 @@ function LeadTableRow({ row, onUpdate }) {
           )}
         </TableCell>
 
-        <TableCell sx={{ width: 140 }}>
-          <Typography variant="body2">
-            {row.cidade ? `${row.cidade} - ${row.estado}` : '-'}
-          </Typography>
-        </TableCell>
-
-        <TableCell sx={{ width: 140 }}>
+        <TableCell>
           <Label variant="soft" color={getStatusColor(row.statusLead || 'novo')}>
             {getStatusLabel(row.statusLead || 'novo')}
           </Label>
         </TableCell>
 
-        <TableCell sx={{ width: 140 }}>
+        <TableCell>
           <Stack direction="row" spacing={0.5} alignItems="center">
             <Iconify icon="solar:user-bold" width={16} sx={{ color: 'text.disabled' }} />
             <Typography variant="body2" sx={{ fontSize: '0.875rem' }}>
@@ -379,7 +352,7 @@ function LeadTableRow({ row, onUpdate }) {
           </Stack>
         </TableCell>
 
-        <TableCell align="right" sx={{ width: 50 }}>
+        <TableCell align="right">
           <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
             <Iconify icon="eva:more-vertical-fill" />
           </IconButton>

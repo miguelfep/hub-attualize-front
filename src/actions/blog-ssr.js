@@ -77,7 +77,8 @@ export async function getPostBySlug(slug) {
     // Remover duplicatas
     const uniqueSlugs = [...new Set(slugVariations)];
 
-    for (const slugToTry of uniqueSlugs) {
+    // Função auxiliar para tentar buscar um post com um slug específico
+    const tryFetchPostWithSlug = async (slugToTry) => {
       try {
         const params = new URLSearchParams({
           slug: slugToTry,
@@ -100,7 +101,7 @@ export async function getPostBySlug(slug) {
 
         if (!res.ok) {
           console.warn(`Resposta não OK para slug "${slugToTry}":`, res.status, res.statusText);
-          continue; // Tentar próxima variação
+          return null;
         }
 
         const data = await res.json();
@@ -116,9 +117,21 @@ export async function getPostBySlug(slug) {
           });
           return data[0]; // Retorna o primeiro post correspondente ao slug
         }
+
+        return null;
       } catch (error) {
         console.warn(`Erro ao buscar post com slug "${slugToTry}":`, error);
-        continue; // Tentar próxima variação
+        return null;
+      }
+    };
+
+    // Tentar cada slug sequencialmente até encontrar um resultado
+    // eslint-disable-next-line no-restricted-syntax
+    for (const slugToTry of uniqueSlugs) {
+      // eslint-disable-next-line no-await-in-loop
+      const result = await tryFetchPostWithSlug(slugToTry);
+      if (result) {
+        return result;
       }
     }
 

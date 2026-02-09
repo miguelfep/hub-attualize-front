@@ -8,11 +8,22 @@ import { ClienteEditView } from 'src/sections/cliente/view';
 export const metadata = { title: `Editar cliente | Dashboard - ${CONFIG.site.name}` };
 
 export default async function Page({ params }) {
-  const { id } = params;
+  // No Next.js 16, params é uma Promise e precisa ser aguardado
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
-  const currentCliente = await getClienteById(id);
+  try {
+    const currentCliente = await getClienteById(id);
 
-  return <ClienteEditView cliente={currentCliente} />;
+    if (!currentCliente) {
+      throw new Error('Cliente não encontrado');
+    }
+
+    return <ClienteEditView cliente={currentCliente} />;
+  } catch (error) {
+    console.error('Erro ao carregar cliente:', error);
+    throw error;
+  }
 }
 
 // ----------------------------------------------------------------------

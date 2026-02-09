@@ -253,10 +253,8 @@ export default function DashboardAdminView() {
               </Typography>
           </SimplePaper>
         </Grid>
-        <Grid xs={12} justifyContent="center" spacing={3}>
-          <Grid>
-            <DashboardFiltros onFilterChange={handleFilterChange} />
-          </Grid>
+        <Grid xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <DashboardFiltros onFilterChange={handleFilterChange} />
         </Grid>
 
         <Grid xs={12} md={3}>

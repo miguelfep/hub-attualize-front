@@ -9,19 +9,60 @@ import { OrcamentoView } from 'src/sections/orcamento/orcamento-view';
 export const metadata = { title: `Orçamento attualize - ${CONFIG.site.name}` };
 
 export default async function Page({ params }) {
-  const { id } = params;
+  // No Next.js 16, params é uma Promise e precisa ser aguardado
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
-  const {invoice, nfses} = await getInvoiceById(id);
+  try {
+    const data = await getInvoiceById(id);
+    
+    // Garantir que data é um objeto válido
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new Error('Resposta inválida da API');
+    }
 
-  if (!invoice) {
-    throw new Error('Invoice not found');
+    // Extrair invoice e nfses com valores padrão seguros
+    let invoice = data.invoice || data;
+    const {nfses} = data;
+
+    // Se invoice ainda não for um objeto válido, usar data diretamente
+    if (!invoice || typeof invoice !== 'object' || Array.isArray(invoice)) {
+      if (data && typeof data === 'object' && !Array.isArray(data) && ('_id' in data || 'id' in data)) {
+        invoice = data;
+      } else {
+        throw new Error('Invoice não encontrada');
+      }
+    }
+
+    // Garantir que nfses é um array válido
+    const safeNfses = Array.isArray(nfses) 
+      ? nfses 
+      : (invoice?.nfses && Array.isArray(invoice.nfses) ? invoice.nfses : []);
+
+    // Criar uma cópia serializável do invoice
+    let safeInvoice = invoice;
+    if (invoice && typeof invoice === 'object' && !Array.isArray(invoice)) {
+      try {
+        safeInvoice = { ...invoice};
+      } catch (e) {
+        console.warn('Não foi possível criar cópia do invoice:', e);
+        safeInvoice = invoice;
+      }
+    }
+
+    if (!safeInvoice) {
+      throw new Error('Invoice não encontrada');
+    }
+
+    return (
+      <InvoiceProvider initialInvoice={safeInvoice}>
+        <OrcamentoView invoice={safeInvoice} nfses={safeNfses} />
+      </InvoiceProvider>
+    );
+  } catch (error) {
+    console.error('Erro ao carregar orçamento:', error);
+    throw error;
   }
-
-  return (
-    <InvoiceProvider initialInvoice={invoice}>
-      <OrcamentoView invoice={invoice} nfses={nfses} />
-    </InvoiceProvider>
-  );
 }
 
 // ----------------------------------------------------------------------

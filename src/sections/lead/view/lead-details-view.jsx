@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, isValidElement } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
@@ -71,29 +71,39 @@ export function LeadDetailsView({ id }) {
         getInvoicesByLeadId(id),
       ]);
 
-      if (leadResult.success) {
-        setLead(leadResult.lead);
+      // Ajustar para lidar com diferentes formatos de resposta
+      const leadData = leadResult?.lead || leadResult?.data || leadResult;
+      
+      if (leadData && !leadResult?.message && !leadResult?.response) {
+        setLead(leadData);
         setCrmForm({
-          statusLead: leadResult.lead.statusLead || '',
-          owner: leadResult.lead.owner || user?.name || '',
-          nextFollowUpAt: leadResult.lead.nextFollowUpAt
-            ? leadResult.lead.nextFollowUpAt.split('T')[0]
+          statusLead: leadData.statusLead || '',
+          owner: leadData.owner || user?.name || '',
+          nextFollowUpAt: leadData.nextFollowUpAt
+            ? leadData.nextFollowUpAt.split('T')[0]
             : '',
         });
+      } else {
+        toast.error('Lead não encontrado');
       }
 
-      if (contatosResult.success) {
+      if (contatosResult?.success) {
         setContatos(contatosResult.contatos || []);
+      } else if (contatosResult?.data) {
+        setContatos(contatosResult.data || []);
       }
 
       if (orcamentosResult?.invoices) {
         setOrcamentos(orcamentosResult.invoices || []);
+      } else if (orcamentosResult?.data) {
+        setOrcamentos(orcamentosResult.data || []);
       }
     } catch (error) {
       console.error('Erro ao carregar lead:', error);
       toast.error('Erro ao carregar dados do lead');
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [id, user?.name]);
 
   useEffect(() => {
@@ -254,7 +264,7 @@ export function LeadDetailsView({ id }) {
               <InfoRow label="Data de Nascimento" value={lead.additionalInfo?.dataNascimento ? fDate(lead.additionalInfo.dataNascimento) : '-'} />
               <InfoRow label="Segmento" value={lead.segment || '-'} />
               <InfoRow label="Origem" value={lead.origem || '-'} />
-              <InfoRow label="Criado em" value={fDateTime(lead.createdAt)} />
+              <InfoRow label="Criado em" value={lead.createdAt ? fDateTime(lead.createdAt) : '-'} />
               <InfoRow label="Última Atualização" value={lead.additionalInfo?.ultimaAtualizacao ? fDateTime(lead.additionalInfo.ultimaAtualizacao) : '-'} />
             </InfoCard>
           </Grid>
@@ -427,7 +437,7 @@ export function LeadDetailsView({ id }) {
                   <Divider />
                   <InfoRow label="Motivo" value={lead.additionalInfo.analiseComercial.motivo || '-'} />
                   <InfoRow label="Plano Detectado" value={lead.additionalInfo.analiseComercial.planoDetectado || '-'} />
-                  <InfoRow label="Solicitado em" value={fDateTime(lead.additionalInfo.analiseComercial.solicitadoEm)} />
+                  <InfoRow label="Solicitado em" value={lead.additionalInfo.analiseComercial.solicitadoEm ? fDateTime(lead.additionalInfo.analiseComercial.solicitadoEm) : '-'} />
                   <InfoRow
                     label="Status"
                     value={
@@ -645,7 +655,7 @@ export function LeadDetailsView({ id }) {
                             </Typography>
                           </Stack>
                           <Typography variant="caption" color="text.secondary">
-                            {fDateTime(contato.date)}
+                            {contato.date ? fDateTime(contato.date) : '-'}
                           </Typography>
                         </Stack>
 
@@ -706,7 +716,7 @@ export function LeadDetailsView({ id }) {
                             />
                           </Stack>
                           <Typography variant="caption" color="text.secondary">
-                            {fDateTime(orcamento.createdAt)}
+                            {orcamento.createdAt ? fDateTime(orcamento.createdAt) : '-'}
                           </Typography>
                         </Stack>
 
@@ -718,7 +728,7 @@ export function LeadDetailsView({ id }) {
                               Valor Total
                             </Typography>
                             <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
-                              {fCurrency(orcamento.total)}
+                              {orcamento.total != null ? fCurrency(orcamento.total) : '-'}
                             </Typography>
                           </Box>
 
@@ -737,7 +747,7 @@ export function LeadDetailsView({ id }) {
                                 Desconto
                               </Typography>
                               <Typography variant="body2" sx={{ fontWeight: 500, color: 'error.main' }}>
-                                - {fCurrency(orcamento.desconto)}
+                                - {orcamento.desconto != null ? fCurrency(orcamento.desconto) : '-'}
                               </Typography>
                             </Box>
                           )}
@@ -813,14 +823,61 @@ function InfoCard({ title, icon, children }) {
 }
 
 function InfoRow({ label, value }) {
+  // Verifica se o value é um elemento React de forma segura
+  let isReactElement = false;
+  let isPrimitive = true;
+  let displayValue = value ?? '-';
+  
+  try {
+    // Verifica se é um valor primitivo
+    if (value === null || value === undefined) {
+      isPrimitive = true;
+      displayValue = '-';
+    } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+      isPrimitive = true;
+      displayValue = value;
+    } else {
+      // Pode ser um elemento React
+      isPrimitive = false;
+      try {
+        isReactElement = isValidElement(value);
+        if (!isReactElement && typeof value === 'object') {
+          // Verifica propriedades comuns de elementos React
+          isReactElement = 'type' in value || '$$typeof' in value || 'props' in value;
+        }
+      } catch (e) {
+        // Se houver erro ao verificar, trata como primitivo
+        isPrimitive = true;
+        isReactElement = false;
+        displayValue = String(value);
+      }
+    }
+  } catch (error) {
+    // Em caso de erro, trata como primitivo
+    isPrimitive = true;
+    isReactElement = false;
+    displayValue = value != null ? String(value) : '-';
+  }
+  
   return (
     <Stack direction="row" justifyContent="space-between" alignItems="center">
       <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 140 }}>
         {label}:
       </Typography>
-      <Typography variant="body2" sx={{ fontWeight: 500, textAlign: 'right', flex: 1 }}>
-        {value || '-'}
-      </Typography>
+      <Box 
+        component="div"
+        sx={{ 
+          textAlign: 'right', 
+          flex: 1, 
+          display: 'flex', 
+          justifyContent: 'flex-end', 
+          alignItems: 'center',
+          fontWeight: isPrimitive ? 500 : 'normal',
+          fontSize: isPrimitive ? '0.875rem' : 'inherit',
+        }}
+      >
+        {isReactElement ? value : displayValue}
+      </Box>
     </Stack>
   );
 }

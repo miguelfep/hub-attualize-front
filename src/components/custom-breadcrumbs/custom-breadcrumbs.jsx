@@ -9,7 +9,7 @@ import { BreadcrumbsLink } from './breadcrumb-link';
 // ----------------------------------------------------------------------
 
 export function CustomBreadcrumbs({
-  links,
+  links = [],
   action,
   heading,
   moreLink,
@@ -18,7 +18,9 @@ export function CustomBreadcrumbs({
   sx,
   ...other
 }) {
-  const lastLink = links[links.length - 1].name;
+  // Garantir que links é um array válido
+  const validLinks = Array.isArray(links) ? links : [];
+  const lastLink = validLinks.length > 0 ? validLinks[validLinks.length - 1]?.name : undefined;
 
   const renderHeading = (
     <Typography variant="h4" sx={{ mb: 2, ...slotProps?.heading }}>
@@ -28,12 +30,12 @@ export function CustomBreadcrumbs({
 
   const renderLinks = (
     <Breadcrumbs separator={<Separator />} sx={slotProps?.breadcrumbs} {...other}>
-      {links.map((link, index) => (
+      {validLinks.map((link, index) => (
         <BreadcrumbsLink
-          key={link.name ?? index}
+          key={link?.name ?? index}
           link={link}
           activeLast={activeLast}
-          disabled={link.name === lastLink}
+          disabled={link?.name === lastLink}
         />
       ))}
     </Breadcrumbs>
@@ -59,7 +61,7 @@ export function CustomBreadcrumbs({
         <Box sx={{ flexGrow: 1 }}>
           {heading && renderHeading}
 
-          {!!links.length && renderLinks}
+          {!!validLinks.length && renderLinks}
         </Box>
 
         {action && renderAction}
