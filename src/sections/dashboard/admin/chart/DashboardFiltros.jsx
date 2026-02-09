@@ -2,7 +2,8 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
 import { useState, useEffect } from 'react';
 
-import { Box, Stack, useTheme } from '@mui/material';
+import { Box, Stack } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';

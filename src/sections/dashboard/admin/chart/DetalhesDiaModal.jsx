@@ -7,9 +7,7 @@ import {
   Card,
   Grid,
   Stack,
-  alpha,
   Dialog,
-  useTheme,
   CardHeader,
   Typography,
   IconButton,
@@ -17,6 +15,7 @@ import {
   ListItemText,
   ListItemButton,
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import { toTitleCase } from 'src/utils/helper';
 import { categoriasDespesas } from 'src/utils/constants/categorias';

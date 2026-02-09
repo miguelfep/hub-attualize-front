@@ -8,7 +8,8 @@ import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import { alpha, CardContent } from '@mui/material';
+import { CardContent } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 
 import { Iconify } from 'src/components/iconify';
 import { formatToCurrency } from 'src/components/animate';

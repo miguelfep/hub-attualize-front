@@ -5,17 +5,16 @@ import {
   Chip,
   List,
   Stack,
-  alpha,
   Drawer,
   Divider,
   Tooltip,
   ListItem,
-  useTheme,
   IconButton,
   Typography,
   ListItemText,
   ListItemIcon, 
 } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 
 import { toTitleCase } from 'src/utils/helper';
 

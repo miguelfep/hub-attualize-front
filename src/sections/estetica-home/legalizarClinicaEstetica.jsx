@@ -21,11 +21,10 @@ import {
   Accordion,
   AlertTitle,
   Typography,
-  StepConnector,
   AccordionSummary,
   AccordionDetails,
-  stepConnectorClasses,
 } from '@mui/material';
+import StepConnector, { stepConnectorClasses } from '@mui/material/StepConnector';
 
 import { criarLead } from 'src/actions/lead';
 

@@ -45,7 +45,6 @@
     "@mercadopago/sdk-react": "^1.0.6",
     "@mui/lab": "^5.0.0-alpha.170",
     "@mui/material": "^5.15.20",
-    "@mui/material-nextjs": "^5.15.11",
     "@mui/x-data-grid": "^7.7.0",
     "@mui/x-date-pickers": "^7.7.0",
     "@mui/x-tree-view": "^7.7.0",
@@ -143,5 +142,8 @@
     "eslint-plugin-unused-imports": "^3.2.0",
     "prettier": "^3.3.2",
     "typescript": "^5.4.5"
+  },
+  "overrides": {
+    "@mui/material-nextjs": false
   }
 }

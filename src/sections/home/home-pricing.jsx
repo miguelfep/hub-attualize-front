@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect } from 'react';
 import { m } from 'framer-motion';
 
 import { useTheme } from '@mui/material/styles';
@@ -18,7 +20,23 @@ import { FloatLine, FloatXIcon } from './components/svg-elements';
 
 export function HomePricing({ sx, ...other }) {
   const theme = useTheme();
-  const tabs = useTabs('Standard');
+  
+  // Valores válidos dos planos
+  const validValues = ['Start', 'Pleno', 'Premium', 'Plus'];
+  
+  // Garantir que o valor inicial seja sempre válido - passar validValues para o hook
+  const tabs = useTabs('Start', validValues);
+
+  // Valor seguro para o Tabs - sempre válido
+  // Garante que nunca passe um valor inválido para o componente Tabs
+  const safeTabValue = validValues.includes(tabs.value) ? tabs.value : 'Start';
+  
+  // Corrigir valor no estado se for inválido (executa uma vez no mount)
+  useEffect(() => {
+    if (!validValues.includes(tabs.value)) {
+      tabs.setValue('Start');
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const renderDescription = (
     <SectionTitle
@@ -57,7 +75,7 @@ export function HomePricing({ sx, ...other }) {
   const renderContentMobile = (
     <Stack spacing={5} alignItems="center" sx={{ display: { md: 'none' } }}>
       <Tabs
-        value={tabs.value}
+        value={safeTabValue}
         onChange={tabs.onChange}
         sx={{
           boxShadow: `0px -2px 0px 0px ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)} inset`,

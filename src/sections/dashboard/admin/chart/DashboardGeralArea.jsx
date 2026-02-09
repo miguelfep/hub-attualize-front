@@ -1,4 +1,5 @@
-import { Box, Card, useTheme, CardHeader  } from '@mui/material';
+import { Box, Card, CardHeader } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 
 import { Chart, useChart } from 'src/components/chart';
 

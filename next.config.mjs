@@ -121,6 +121,19 @@ const nextConfig = {
       };
     }
 
+    // Configuração para framer-motion no Next.js 16
+    // Resolver framer-motion para evitar problemas com HMR
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'framer-motion': require.resolve('framer-motion'),
+    };
+
+    // Configuração para evitar problemas com HMR e módulos ESM
+    config.experiments = {
+      ...config.experiments,
+      topLevelAwait: true,
+    };
+
     return config;
   },
   ...(isStaticExport === 'true' && {

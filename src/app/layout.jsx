@@ -1,7 +1,6 @@
 import 'src/global.css';
 
 import Script from 'next/script';
-import dynamic from 'next/dynamic';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -11,7 +10,7 @@ import { LocalizationProvider } from 'src/locales';
 import { detectLanguage } from 'src/locales/server';
 import { I18nProvider } from 'src/locales/i18n-provider';
 import { ThemeProvider } from 'src/theme/theme-provider';
-import { getInitColorSchemeScript } from 'src/theme/color-scheme-script';
+import { InitColorSchemeScript } from 'src/components/color-scheme-script';
 
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
@@ -26,19 +25,7 @@ import { AuthProvider as SupabaseAuthProvider } from 'src/auth/context/supabase'
 import { AuthProvider as FirebaseAuthProvider } from 'src/auth/context/firebase';
 
 import ClientAnalytics from './client-analytics';
-
-// Lazy load de componentes não críticos para melhorar performance inicial
-const Snackbar = dynamic(() => import('src/components/snackbar').then((mod) => ({ default: mod.Snackbar })), {
-  ssr: false,
-});
-
-const SettingsDrawer = dynamic(() => import('src/components/settings').then((mod) => ({ default: mod.SettingsDrawer })), {
-  ssr: false,
-});
-
-const CheckoutProvider = dynamic(() => import('src/sections/checkout/context').then((mod) => ({ default: mod.CheckoutProvider })), {
-  ssr: false,
-});
+import { ClientComponents } from './client-components';
 
 // ----------------------------------------------------------------------
 
@@ -140,6 +127,7 @@ export default async function RootLayout({ children }) {
           href={`${basePath}/assets/images/about/banner-6-mobile.png`}
           fetchPriority="high"
         />
+        <InitColorSchemeScript />
       </head>
       <body>
         {/* Google Analytics - Carregado com lazyOnload para não bloquear renderização inicial */}
@@ -161,7 +149,6 @@ export default async function RootLayout({ children }) {
             `,
           }}
         />
-        {getInitColorSchemeScript}
         <I18nProvider lang={CONFIG.isStaticExport ? undefined : lang}>
           <LocalizationProvider>
             <AuthProvider>
@@ -173,14 +160,12 @@ export default async function RootLayout({ children }) {
                   <SpeedInsights />
                   <MotionLazy>
                     {/* <MercadoPagoProvider> Removido temporariamente - será implementado depois */}
-                      <CheckoutProvider>
-                        <Snackbar />
+                      <ClientComponents>
                         <ProgressBar />
-                        <SettingsDrawer />
                         <Analytics />
                         <ClientAnalytics />
                         {children}
-                      </CheckoutProvider>
+                      </ClientComponents>
                     {/* </MercadoPagoProvider> */}
                   </MotionLazy>
                 </ThemeProvider>
