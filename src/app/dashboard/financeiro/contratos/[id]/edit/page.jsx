@@ -7,11 +7,22 @@ import { ContratoEditView } from 'src/sections/financeiro/contrato/view/crontrat
 export const metadata = { title: `Editar Venda | Dashboard - ${CONFIG.site.name}` };
 
 export default async function Page({ params }) {
-  const { id } = params;
+  // No Next.js 16, params é uma Promise e precisa ser aguardado
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
-  const currentContrato = await getContratoPorId(id);
+  try {
+    const currentContrato = await getContratoPorId(id);
 
-  return <ContratoEditView contrato={currentContrato} />;
+    if (!currentContrato) {
+      throw new Error('Contrato não encontrado');
+    }
+
+    return <ContratoEditView contrato={currentContrato} />;
+  } catch (error) {
+    console.error('Erro ao carregar contrato:', error);
+    throw error;
+  }
 }
 
 // ----------------------------------------------------------------------

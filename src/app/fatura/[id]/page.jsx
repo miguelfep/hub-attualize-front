@@ -8,15 +8,22 @@ import FaturaViewPage from 'src/sections/faturas/fatura-view';
 export const metadata = { title: `Fatura attualize - ${CONFIG.site.name}` };
 
 export default async function Page({ params }) {
-  const { id } = params;
+  // No Next.js 16, params é uma Promise e precisa ser aguardado
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
-  const currenteFature = await getFaturaPorId(id);
+  try {
+    const currenteFature = await getFaturaPorId(id);
 
-  if (!currenteFature) {
-    throw new Error('Fatura Não encontrada');
+    if (!currenteFature) {
+      throw new Error('Fatura Não encontrada');
+    }
+
+    return <FaturaViewPage faturaData={currenteFature} />;
+  } catch (error) {
+    console.error('Erro ao carregar fatura:', error);
+    throw error;
   }
-
-  return <FaturaViewPage faturaData={currenteFature} />;
 }
 
 // ----------------------------------------------------------------------
