@@ -94,6 +94,10 @@ const nextConfig = {
       },
     ];
   },
+  // Configuração do Turbopack (Next.js 16 usa Turbopack por padrão)
+  turbopack: {
+    // Configurações do Turbopack podem ser adicionadas aqui se necessário
+  },
   webpack(config, { isServer }) {
     config.module.rules.push(
       {
