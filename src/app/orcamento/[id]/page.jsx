@@ -30,7 +30,7 @@ export default async function Page({ params }) {
  * [1] Default
  * Remove [1] and [2] if not using [2]
  */
-export const dynamic = CONFIG.isStaticExport ? 'auto' : 'force-dynamic';
+export const dynamic = 'force-dynamic';
 
 /**
  * [2] Static exports
