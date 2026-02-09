@@ -144,6 +144,11 @@
     "typescript": "^5.4.5"
   },
   "overrides": {
-    "@mui/material-nextjs": false
+    "@mui/material-nextjs": {
+      "next": "^16.1.6"
+    },
+    "@mui/material-nextjs@*": {
+      "next": "^16.1.6"
+    }
   }
 }
