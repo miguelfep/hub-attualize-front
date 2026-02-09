@@ -10,8 +10,13 @@ export async function getContratos() {
 
 // Função para obter contrato por ID
 export async function getContratoPorId(id) {
-  const res = await axios.get(`${endpoints.contratos.get}/${id}`);
-  return res.data;
+  try {
+    const res = await axios.get(`${endpoints.contratos.get}/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error('Erro ao buscar contrato por ID:', error);
+    throw error;
+  }
 }
 
 // Função para criar um novo contrato
@@ -82,10 +87,15 @@ export async function deletarCobrancaPorId(id) {
   return res.data;
 }
 
-// Função para deletar uma cobrança por ID
+// Função para obter uma cobrança por ID
 export async function getCobrancaPorId(id) {
-  const res = await axios.delete(`${endpoints.contratos.deleteCobranca}/${id}`);
-  return res.data;
+  try {
+    const res = await axios.get(`${endpoints.contratos.update}/cobrancas/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error('Erro ao buscar cobrança por ID:', error);
+    throw error;
+  }
 }
 
 // Função para gerar um boleto por ID de cobrança
@@ -95,8 +105,13 @@ export async function gerarBoletoPorId(id) {
 
 // Função para buscar fatura por ID
 export async function getFaturaPorId(id) {
-  const res = await axios.get(`${endpoints.contratos.fatura}/${id}`);
-  return res.data;
+  try {
+    const res = await axios.get(`${endpoints.contratos.fatura}/${id}`);
+    return res.data;
+  } catch (error) {
+    console.error('Erro ao buscar fatura por ID:', error);
+    throw error;
+  }
 }
 
 // Função para enviar boleto por mensagem (ex. WhatsApp)
