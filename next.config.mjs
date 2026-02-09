@@ -12,6 +12,7 @@ const nextConfig = {
     },
     '@mui/material': {
       transform: '@mui/material/{{member}}',
+      skipDefaultConversion: false,
     },
     '@mui/lab': {
       transform: '@mui/lab/{{member}}',
@@ -20,24 +21,16 @@ const nextConfig = {
       transform: '@iconify/react/dist/iconify.js',
       skipDefaultConversion: true,
     },
-    'date-fns': {
-      transform: 'date-fns/{{member}}',
-    },
     'lodash': {
       transform: 'lodash/{{member}}',
     },
   },
   experimental: {
     optimizePackageImports: [
-      '@mui/material',
       '@mui/icons-material',
       '@mui/lab',
       '@iconify/react',
-      'date-fns',
     ],
-    turbotrace: {
-      logLevel: 'error',
-    },
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
@@ -101,6 +94,10 @@ const nextConfig = {
       },
     ];
   },
+  // Configuração do Turbopack (Next.js 16 usa Turbopack por padrão)
+  turbopack: {
+    // Configurações do Turbopack podem ser adicionadas aqui se necessário
+  },
   webpack(config, { isServer }) {
     config.module.rules.push(
       {
@@ -125,13 +122,25 @@ const nextConfig = {
       };
     }
 
+    // Configuração para framer-motion no Next.js 16
+    // Resolver framer-motion para evitar problemas com HMR
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'framer-motion': require.resolve('framer-motion'),
+    };
+
+    // Configuração para evitar problemas com HMR e módulos ESM
+    config.experiments = {
+      ...config.experiments,
+      topLevelAwait: true,
+    };
+
     return config;
   },
   ...(isStaticExport === 'true' && {
     output: 'export',
   }),
   reactStrictMode: true,
-  swcMinify: true,
 };
 
 export default nextConfig;

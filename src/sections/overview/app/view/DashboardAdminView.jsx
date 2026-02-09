@@ -193,7 +193,7 @@ export default function DashboardAdminView() {
   if (loading) {
     return (
       <DashboardContent maxWidth="xl">
-        <Grid container spacing={3}>
+        <Grid spacing={3}>
           <Grid xs={12}>
             <Skeleton variant="rounded" height={80} />
           </Grid>
@@ -253,11 +253,11 @@ export default function DashboardAdminView() {
               </Typography>
           </SimplePaper>
         </Grid>
-        <Grid container xs={12} justifyContent="center" spacing={3}>
-        <Grid item>
-          <DashboardFiltros onFilterChange={handleFilterChange} />
+        <Grid xs={12} justifyContent="center" spacing={3}>
+          <Grid>
+            <DashboardFiltros onFilterChange={handleFilterChange} />
+          </Grid>
         </Grid>
-      </Grid>
 
         <Grid xs={12} md={3}>
           <AppWidgetSummary

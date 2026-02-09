@@ -42,7 +42,7 @@ export const metadata = {
  * Revalida a página a cada 1 hora (3600 segundos)
  * Isso permite cache estático com atualização periódica
  */
-export const revalidate = CONFIG.isStaticExport ? false : 3600;
+export const revalidate = 3600;
 
 export default function Page() {
   return (

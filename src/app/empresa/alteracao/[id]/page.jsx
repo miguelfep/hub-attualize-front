@@ -9,7 +9,7 @@ export const metadata = {
   title: `Alteração de empresa - ${CONFIG.site.name}`,
 };
 
-export const dynamic = CONFIG.isStaticExport ? 'auto' : 'force-dynamic';
+export const dynamic = 'force-dynamic';
 
 export default async function Page({ params }) {
 

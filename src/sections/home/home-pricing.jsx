@@ -1,5 +1,7 @@
-import React from 'react';
+'use client';
+
 import { m } from 'framer-motion';
+import React, { useMemo, useEffect } from 'react';
 
 import { useTheme } from '@mui/material/styles';
 import { Box, Tab, Tabs, Stack, Button, Divider, Container, Typography } from '@mui/material';
@@ -18,7 +20,68 @@ import { FloatLine, FloatXIcon } from './components/svg-elements';
 
 export function HomePricing({ sx, ...other }) {
   const theme = useTheme();
-  const tabs = useTabs('Standard');
+  
+  // Valores válidos dos planos - memoizado para evitar recriação a cada render
+  const validValues = useMemo(() => ['Start', 'Pleno', 'Premium', 'Plus'], []);
+  
+  // Garantir que o valor inicial seja sempre válido - passar validValues para o hook
+  const tabs = useTabs('Start', validValues);
+  
+  // Validação imediata e agressiva: forçar correção se o valor for inválido ANTES de qualquer cálculo
+  // Isso garante que "Standard" nunca seja passado ao Tabs
+  // IMPORTANTE: Esta validação deve executar ANTES de qualquer uso do tabs.value
+  // Usar uma constante para evitar múltiplas leituras do valor
+  const currentTabValue = tabs.value;
+  
+  // Validação crítica: se o valor for "Standard" ou inválido, forçar 'Start' IMEDIATAMENTE
+  if (currentTabValue === 'Standard' || (currentTabValue && !validValues.includes(currentTabValue))) {
+    // Corrigir imediatamente no estado - SEMPRE forçar 'Start' se inválido
+    if (currentTabValue !== 'Start') {
+      tabs.setValue('Start');
+    }
+  }
+  
+  // Valor seguro para o Tabs - sempre válido
+  // Garante que nunca passe um valor inválido para o componente Tabs
+  // Validação rigorosa: se o valor não for válido, forçar 'Start' imediatamente
+  const safeTabValue = useMemo(() => {
+    const currentValue = tabs.value;
+    
+    // Validação rigorosa: garantir que o valor seja sempre válido
+    // Se o valor for "Standard" ou qualquer outro valor inválido, forçar 'Start'
+    if (!currentValue || currentValue === 'Standard' || typeof currentValue !== 'string' || !validValues.includes(currentValue)) {
+      // Corrigir imediatamente no estado se inválido
+      if (currentValue && currentValue !== 'Start') {
+        // Usar setTimeout com 0 para garantir que a correção aconteça após o render atual
+        setTimeout(() => {
+          tabs.setValue('Start');
+        }, 0);
+      }
+      // Retornar 'Start' imediatamente para evitar passar valor inválido ao Tabs
+      return 'Start';
+    }
+    return currentValue;
+  }, [tabs, validValues]);
+  
+  // Validação adicional: garantir que o valor seja sempre válido antes de renderizar
+  // Isso força a correção mesmo se o valor inválido vier de cache
+  useEffect(() => {
+    const currentValue = tabs.value;
+    if (currentValue && !validValues.includes(currentValue)) {
+      // Forçar correção imediata
+      tabs.setValue('Start');
+    }
+  }, [tabs.value, validValues, tabs.setValue, tabs]);
+  
+  // Corrigir valor no estado se for inválido (executa imediatamente e no mount)
+  useEffect(() => {
+    const currentValue = tabs.value;
+    // Validação adicional: garantir que o valor seja sempre válido
+    if (currentValue && !validValues.includes(currentValue)) {
+      // Forçar correção imediata
+      tabs.setValue('Start');
+    }
+  }, [tabs.value, validValues, tabs]);
 
   const renderDescription = (
     <SectionTitle
@@ -57,8 +120,40 @@ export function HomePricing({ sx, ...other }) {
   const renderContentMobile = (
     <Stack spacing={5} alignItems="center" sx={{ display: { md: 'none' } }}>
       <Tabs
-        value={tabs.value}
-        onChange={tabs.onChange}
+        value={(() => {
+          // Validação inline: garantir que o valor seja sempre válido antes de passar ao Tabs
+          // Especialmente importante: nunca passar "Standard" ou qualquer valor inválido
+          // Esta é a ÚLTIMA camada de proteção antes do Tabs receber o valor
+          const currentValue = safeTabValue || tabs.value || 'Start';
+          
+          // Validação rigorosa: se o valor não for válido OU for "Standard", forçar 'Start'
+          // NUNCA passar "Standard" ao Tabs, mesmo que venha do estado
+          // Esta validação é CRÍTICA e deve SEMPRE retornar um valor válido
+          if (
+            !currentValue || 
+            currentValue === 'Standard' || 
+            typeof currentValue !== 'string' || 
+            !validValues.includes(currentValue)
+          ) {
+            // Corrigir no estado imediatamente
+            if (tabs.value && tabs.value !== 'Start' && tabs.value !== currentValue) {
+              // Usar requestAnimationFrame para garantir que a correção aconteça
+              requestAnimationFrame(() => {
+                tabs.setValue('Start');
+              });
+            }
+            // SEMPRE retornar 'Start' se o valor for inválido - NUNCA passar "Standard"
+            return 'Start';
+          }
+          // Validação final: garantir que o valor retornado seja sempre válido
+          // Se por algum motivo ainda não for válido, retornar 'Start'
+          return validValues.includes(currentValue) ? currentValue : 'Start';
+        })()}
+        onChange={(event, newValue) => {
+          // Validar antes de atualizar - garantir que seja sempre um valor válido
+          const validatedValue = validValues.includes(newValue) ? newValue : 'Start';
+          tabs.onChange(event, validatedValue);
+        }}
         sx={{
           boxShadow: `0px -2px 0px 0px ${varAlpha(theme.vars.palette.grey['500Channel'], 0.08)} inset`,
         }}

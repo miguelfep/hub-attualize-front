@@ -5,6 +5,7 @@ import { m, AnimatePresence } from 'framer-motion';
 import { useForm, Controller } from 'react-hook-form';
 
 import { alpha, styled, useTheme } from '@mui/material/styles';
+import StepConnector, { stepConnectorClasses } from '@mui/material/StepConnector';
 import {
   Box,
   Step,
@@ -21,10 +22,8 @@ import {
   Accordion,
   AlertTitle,
   Typography,
-  StepConnector,
   AccordionSummary,
   AccordionDetails,
-  stepConnectorClasses,
 } from '@mui/material';
 
 import { criarLead } from 'src/actions/lead';

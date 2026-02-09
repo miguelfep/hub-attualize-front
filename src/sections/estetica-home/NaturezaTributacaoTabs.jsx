@@ -1,7 +1,8 @@
 import { m } from 'framer-motion';
 import React, { useState } from 'react';
 
-import { Box, Tab, Tabs, Stack, Paper, alpha, Button, Container, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { Box, Tab, Tabs, Stack, Paper, Button, Container, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 import { varFade } from 'src/components/animate';

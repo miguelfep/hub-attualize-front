@@ -1,8 +1,7 @@
 'use client';
 
 import * as XLSX from 'xlsx'; // Import the XLSX library
-
-import ReactApexChart from 'react-apexcharts';
+import dynamic from 'next/dynamic';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -24,6 +23,13 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { ChartPie } from 'src/sections/_examples/extra/chart-view/chart-pie';
 import { EcommerceCurrentBalance } from 'src/sections/overview/e-commerce/ecommerce-current-balance';
+
+const ReactApexChart = dynamic(
+  () => import('react-apexcharts').then((mod) => mod.default || mod),
+  {
+    ssr: false,
+  }
+);
 
 const columns = [
   { field: 'invoiceNumber', headerName: 'Venda', width: 100 },
