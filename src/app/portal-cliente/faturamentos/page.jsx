@@ -84,29 +84,13 @@ export default function PortalFaturamentoPage() {
     try {
       const numeroNota = numeroNotaDebounce || undefined;
       
-      // Ajustar datas para evitar problemas de timezone
-      // Adicionar buffer de 1 dia antes e depois para garantir que notas próximas à meia-noite sejam encontradas
-      let inicioAjustado = startDate || undefined;
-      let fimAjustado = endDate || undefined;
-      
-      if (startDate) {
-        // Subtrair 1 dia para incluir notas que podem ter sido salvas no dia anterior devido ao timezone
-        const inicioLocal = dayjs(startDate).subtract(1, 'day').format('YYYY-MM-DD');
-        inicioAjustado = inicioLocal;
-      }
-      
-      if (endDate) {
-        // Adicionar 1 dia para incluir notas que podem ter sido salvas no dia seguinte devido ao timezone
-        const fimLocal = dayjs(endDate).add(1, 'day').format('YYYY-MM-DD');
-        fimAjustado = fimLocal;
-      }
-      
+      // Usar as datas exatamente como o usuário selecionou
       const res = await listarNotasFiscaisPorCliente({
         clienteId,
         numeroNota,
         status: status || undefined,
-        inicio: inicioAjustado,
-        fim: fimAjustado,
+        inicio: startDate || undefined,
+        fim: endDate || undefined,
       });
 
       const { data } = res;
