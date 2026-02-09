@@ -44,34 +44,89 @@ export async function getPosts(page = 1, perPage = 10) {
 
 export async function getPostBySlug(slug) {
   try {
-    const params = new URLSearchParams({
-      slug,
-      _embed: 'true',
-      per_page: '1',
-    });
+    // Garantir que o slug não está vazio e está no formato correto
+    if (!slug) {
+      console.warn('getPostBySlug: Slug não fornecido ou é undefined/null');
+      return null;
+    }
 
-    // Usar fetch nativo do Next.js com cache
-    const res = await fetch(
-      `https://attualizecontabil.com.br/wp-json/wp/v2/posts?${params.toString()}`,
-      {
-        // Cache do Next.js: revalida a cada 1 hora (3600 segundos)
-        next: { revalidate: 3600 },
+    if (typeof slug !== 'string') {
+      console.warn('getPostBySlug: Slug não é uma string:', typeof slug, slug);
+      return null;
+    }
+
+    // Decodificar o slug caso esteja encoded (ex: %20 para espaços)
+    let decodedSlug = slug.trim();
+    try {
+      decodedSlug = decodeURIComponent(decodedSlug);
+    } catch (e) {
+      // Se falhar ao decodificar, usar o slug original
+      console.warn('Erro ao decodificar slug, usando original:', e);
+    }
+    
+    console.log('Buscando post com slug:', decodedSlug);
+
+    // Tentar diferentes variações do slug
+    const slugVariations = [
+      decodedSlug, // Slug original decodificado
+      slug.trim(), // Slug original sem decodificar
+      decodedSlug.toLowerCase(), // Slug em minúsculas
+      decodedSlug.replace(/-/g, ' '), // Substituir hífens por espaços
+    ];
+
+    // Remover duplicatas
+    const uniqueSlugs = [...new Set(slugVariations)];
+
+    for (const slugToTry of uniqueSlugs) {
+      try {
+        const params = new URLSearchParams({
+          slug: slugToTry,
+          _embed: 'true',
+          per_page: '1',
+        });
+
+        const apiUrl = `https://attualizecontabil.com.br/wp-json/wp/v2/posts?${params.toString()}`;
+        console.log('Tentando buscar com slug:', slugToTry, 'URL:', apiUrl);
+
+        // Usar fetch nativo do Next.js com cache
+        const res = await fetch(apiUrl, {
+          // Cache do Next.js: revalida a cada 1 hora (3600 segundos)
+          next: { revalidate: 3600 },
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+          },
+        });
+
+        if (!res.ok) {
+          console.warn(`Resposta não OK para slug "${slugToTry}":`, res.status, res.statusText);
+          continue; // Tentar próxima variação
+        }
+
+        const data = await res.json();
+
+        console.log(`Resposta da API para slug "${slugToTry}" - quantidade de posts encontrados:`, data.length);
+
+        if (data.length > 0) {
+          console.log('Post encontrado:', {
+            id: data[0].id,
+            slug: data[0].slug,
+            title: data[0].title?.rendered,
+            slugBuscado: slugToTry,
+          });
+          return data[0]; // Retorna o primeiro post correspondente ao slug
+        }
+      } catch (error) {
+        console.warn(`Erro ao buscar post com slug "${slugToTry}":`, error);
+        continue; // Tentar próxima variação
       }
-    );
-
-    if (!res.ok) {
-      throw new Error('Failed to fetch post');
     }
 
-    const data = await res.json();
-
-    if (data.length === 0) {
-      throw new Error('Post not found');
-    }
-
-    return data[0]; // Retorna o primeiro post correspondente ao slug
+    // Se nenhuma variação funcionou, retornar null
+    console.warn('Post não encontrado para nenhuma variação do slug:', decodedSlug);
+    return null;
   } catch (error) {
-    console.error('Erro ao buscar o post:', error);
+    console.error('Erro geral ao buscar o post:', error);
     return null;
   }
 }
