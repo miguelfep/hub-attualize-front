@@ -31,9 +31,6 @@ const nextConfig = {
       '@mui/lab',
       '@iconify/react',
     ],
-    turbotrace: {
-      logLevel: 'error',
-    },
   },
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production' ? {
@@ -140,7 +137,6 @@ const nextConfig = {
     output: 'export',
   }),
   reactStrictMode: true,
-  swcMinify: true,
 };
 
 export default nextConfig;
