@@ -65,13 +65,14 @@ const cobrancaStatusTexts = {
 };
 
 export function InvoiceDetails({ invoice, nfses }) {
+  // Hooks devem ser chamados antes de qualquer early return
   const [currentStatus, setCurrentStatus] = useState(invoice?.status);
   const [motivoPerda, setMotivoPerda] = useState(invoice?.motivoPerda || ''); // Estado para o motivo da perda
   const [isEditingMotivo, setIsEditingMotivo] = useState(false); // Controle para exibir o input de edição
   const [generatingNf, setGeneratingNf] = useState(false);
   const [nfseState, setNfseState] = useState(Array.isArray(nfses) && nfses.length ? nfses[0] : null);
   const [nfseList, setNfseList] = useState(Array.isArray(nfses) ? nfses : []);
-  const hasNfEmitida = nfseList.some((n) => n.status === 'emitida');
+  const hasNfEmitida = nfseList.some((n) => n?.status === 'emitida');
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -80,6 +81,11 @@ export function InvoiceDetails({ invoice, nfses }) {
   // Função para alterar o status da fatura
   const handleChangeStatus = useCallback(
     async (event) => {
+      if (!invoice?._id) {
+        toast.error('ID da invoice não encontrado');
+        return;
+      }
+
       const dataUpdate = {
         status: event.target.value,
         motivoPerda, // Enviar o motivo da perda se o status for 'perdida'
@@ -93,11 +99,29 @@ export function InvoiceDetails({ invoice, nfses }) {
         setMotivoPerda(res.motivoPerda || ''); // Atualizar o motivo da perda se o status for 'perdida'
       }
     },
-    [invoice._id, motivoPerda]
+    [invoice?._id, motivoPerda]
   );
+
+  // Verificação de segurança após os hooks
+  if (!invoice || 
+      invoice === null || 
+      invoice === undefined ||
+      typeof invoice !== 'object' || 
+      Array.isArray(invoice)) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">Invoice não encontrada ou dados inválidos</Alert>
+      </Box>
+    );
+  }
 
   // Função para salvar o motivo da perda
   const handleSaveMotivo = async () => {
+    if (!invoice?._id) {
+      toast.error('ID da invoice não encontrado');
+      return;
+    }
+
     try {
       const dataUpdate = {
         status: 'perdida',
@@ -445,6 +469,11 @@ export function InvoiceDetails({ invoice, nfses }) {
               variant="contained"
               disabled={generatingNf}
               onClick={async () => {
+                if (!invoice?._id) {
+                  toast.error('ID da invoice não encontrado');
+                  return;
+                }
+
                 try {
                   setGeneratingNf(true);
                   const res = await criarNFSeInvoice({ invoiceId: invoice._id });

@@ -8,11 +8,22 @@ import { PagarEditView } from 'src/sections/financeiro/pagar/view';
 export const metadata = { title: `Editar cliente | Dashboard - ${CONFIG.site.name}` };
 
 export default async function Page({ params }) {
-  const { id } = params;
+  // No Next.js 16, params é uma Promise e precisa ser aguardado
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
-  const currentConta = await buscarContaPagarPorId(id);
+  try {
+    const currentConta = await buscarContaPagarPorId(id);
 
-  return <PagarEditView conta={currentConta} />;
+    if (!currentConta) {
+      throw new Error('Conta não encontrada');
+    }
+
+    return <PagarEditView conta={currentConta} />;
+  } catch (error) {
+    console.error('Erro ao carregar conta:', error);
+    throw error;
+  }
 }
 
 // ----------------------------------------------------------------------

@@ -1,7 +1,5 @@
 import { Suspense } from 'react';
 
-import { CONFIG } from 'src/config-global';
-
 import { HomeEstetica } from 'src/sections/estetica-home/homeEstetica';
 
 // ----------------------------------------------------------------------

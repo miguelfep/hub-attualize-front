@@ -1,141 +1,84 @@
+'use client';
+
 import { toast } from 'sonner';
 import { useCallback } from 'react';
-import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
 
-import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import NoSsr from '@mui/material/NoSsr';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import IconButton from '@mui/material/IconButton';
-import DialogActions from '@mui/material/DialogActions';
-import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-
-import { useBoolean } from 'src/hooks/use-boolean';
 
 import { enviarPedidoOrcamento } from 'src/actions/invoices';
 
 import { Iconify } from 'src/components/iconify';
 
-import { InvoicePDF } from './invoice-pdf';
-
 // ----------------------------------------------------------------------
 
-export function InvoiceToolbar({ invoice, currentStatus, statusOptions, onChangeStatus }) {
+export function InvoiceToolbar({ invoice, currentStatus, statusOptions = [], onChangeStatus }) {
   const router = useRouter();
 
-  const view = useBoolean();
+  // Normalização do ID
+  const invoiceId = invoice?._id || invoice?.id || '';
 
   const handleEdit = useCallback(() => {
-    router.push(paths.dashboard.invoice.edit(`${invoice?._id}`));
-  }, [invoice?._id, router]);
+    if (invoiceId) {
+      router.push(paths.dashboard.invoice.edit(String(invoiceId)));
+    }
+  }, [invoiceId, router]);
 
   const handleSend = useCallback(async () => {
+    if (!invoiceId) return;
     try {
-      const res = await enviarPedidoOrcamento(invoice._id);
-      if (res.status === 200) {
+      const res = await enviarPedidoOrcamento(invoiceId);
+      if (res?.status === 200) {
         toast.success('Mensagem enviada com sucesso!');
       } else {
-        const errorMessage = res.data.message || 'Erro ao enviar mensagem';
-        toast.error(`Erro: ${errorMessage}`);
+        toast.error(res?.data?.message || 'Erro ao enviar mensagem');
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Erro ao enviar mensagem';
-      toast.error(`Erro: ${errorMessage}`);
+      toast.error(error?.message || 'Erro ao enviar mensagem');
     }
-  }, [invoice?._id]);
-
-  const renderDownload = (
-    <NoSsr>
-      <PDFDownloadLink
-        document={
-          invoice ? <InvoicePDF invoice={invoice} currentStatus={currentStatus} /> : <span />
-        }
-        fileName={invoice?.invoiceNumber}
-        style={{ textDecoration: 'none' }}
-      >
-        {({ loading }) => (
-          <Tooltip title="Download">
-            <IconButton>
-              {loading ? (
-                <CircularProgress size={24} color="inherit" />
-              ) : (
-                <Iconify icon="eva:cloud-download-fill" />
-              )}
-            </IconButton>
-          </Tooltip>
-        )}
-      </PDFDownloadLink>
-    </NoSsr>
-  );
+  }, [invoiceId]);
 
   return (
-    <>
-      <Stack
-        spacing={3}
-        direction={{ xs: 'column', sm: 'row' }}
-        alignItems={{ xs: 'flex-end', sm: 'center' }}
-        sx={{ mb: { xs: 3, md: 5 } }}
-      >
-        <Stack direction="row" spacing={1} flexGrow={1} sx={{ width: 1 }}>
-          <Tooltip title="Editar">
-            <IconButton onClick={handleEdit}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton>
-          </Tooltip>
+    <Stack
+      spacing={3}
+      direction={{ xs: 'column', sm: 'row' }}
+      alignItems={{ xs: 'flex-end', sm: 'center' }}
+      sx={{ mb: { xs: 3, md: 5 } }}
+    >
+      <Stack direction="row" spacing={1} flexGrow={1} sx={{ width: 1 }}>
+        <Tooltip title="Editar">
+          <IconButton onClick={handleEdit}>
+            <Iconify icon="solar:pen-bold" />
+          </IconButton>
+        </Tooltip>
 
-          <Tooltip title="Ver">
-            <IconButton onClick={view.onTrue}>
-              <Iconify icon="solar:eye-bold" />
-            </IconButton>
-          </Tooltip>
-
-          {renderDownload}
-          <Tooltip title="Enviar link">
-            <IconButton onClick={handleSend}>
-              <Iconify icon="iconamoon:send-fill" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
-
-        <TextField
-          fullWidth
-          select
-          label="Status"
-          value={currentStatus}
-          onChange={onChangeStatus}
-          inputProps={{ id: `status-select-label` }}
-          InputLabelProps={{ htmlFor: `status-select-label` }}
-          sx={{ maxWidth: 160 }}
-        >
-          {statusOptions.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </TextField>
+        <Tooltip title="Enviar link">
+          <IconButton onClick={handleSend}>
+            <Iconify icon="iconamoon:send-fill" />
+          </IconButton>
+        </Tooltip>
       </Stack>
 
-      <Dialog fullScreen open={view.value}>
-        <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
-          <DialogActions sx={{ p: 1.5 }}>
-            <Button color="inherit" variant="contained" onClick={view.onFalse}>
-              Fechar
-            </Button>
-          </DialogActions>
-          <Box sx={{ flexGrow: 1, height: 1, overflow: 'hidden' }}>
-            <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
-              {invoice && <InvoicePDF invoice={invoice} currentStatus={currentStatus} />}
-            </PDFViewer>
-          </Box>
-        </Box>
-      </Dialog>
-    </>
+      <TextField
+        fullWidth
+        select
+        label="Status"
+        value={currentStatus || ''}
+        onChange={onChangeStatus}
+        sx={{ maxWidth: 160 }}
+      >
+        {statusOptions.map((option) => (
+          <MenuItem key={option.value} value={option.value}>
+            {option.label}
+          </MenuItem>
+        ))}
+      </TextField>
+    </Stack>
   );
 }

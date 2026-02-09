@@ -1,43 +1,24 @@
+import { notFound } from 'next/navigation';
+
 import { CONFIG } from 'src/config-global';
-import { getInvoices, getInvoiceById } from 'src/actions/invoices';
+import { getInvoiceById } from 'src/actions/invoices';
 
 import { InvoiceDetailsView } from 'src/sections/invoice/view';
 
-// ----------------------------------------------------------------------
-
 export const metadata = { title: `Detalhes da venda | Dashboard - ${CONFIG.site.name}` };
 
-export default async function Page({ params }) {
+export default async function Page({ params: paramsPromise }) {
+  const params = await paramsPromise;
   const { id } = params;
 
   const data = await getInvoiceById(id);
-  
-  const { invoice, nfses } = data;
+  if (!data) return notFound();
 
-  return <InvoiceDetailsView invoice={invoice} nfses={nfses} />;
+  // Lavagem de JSON para garantir que nenhum Proxy do Next 16 cause conflito com o PDF
+  const safeInvoice = JSON.parse(JSON.stringify(data.invoice || data));
+  const safeNfses = JSON.parse(JSON.stringify(data.nfses || []));
+
+  return <InvoiceDetailsView invoice={safeInvoice} nfses={safeNfses} />;
 }
 
-// ----------------------------------------------------------------------
-
-/**
- * [1] Default
- * Remove [1] and [2] if not using [2]
- */
 export const dynamic = 'force-dynamic';
-
-/**
- * [2] Static exports
- * https://nextjs.org/docs/app/building-your-application/deploying/static-exports
- */
-export async function generateStaticParams() {
-  if (CONFIG.isStaticExport) {
-    try {
-      const invoices = await getInvoices(); // Assumindo que há uma função para obter todas as invoices
-      return invoices.map((invoice) => ({ id: invoice.id }));
-    } catch (error) {
-      console.error('Failed to generate static params:', error);
-      return [];
-    }
-  }
-  return [];
-}

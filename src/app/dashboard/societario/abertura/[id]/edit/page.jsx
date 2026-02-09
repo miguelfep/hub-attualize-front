@@ -8,7 +8,9 @@ import { AberturaEditView } from 'src/sections/societario/view/abertura-edit-vie
 export const metadata = { title: `Editar Abertura | Dashboard - ${CONFIG.site.name}` };
 
 export default async function Page({ params }) {
-  const { id } = params;
+  // No Next.js 16, params é uma Promise e precisa ser aguardado
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   const currentAbertura = await getAberturaById(id);
 
