@@ -51,7 +51,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
         }
       }
     } catch (error) {
-      console.error('Detalhes do erro:', error.response?.data);
+      console.error('Erro ao carregar empresas:', error.response?.data || error.message || error);
       toast.error('Erro ao carregar empresas');
     } finally {
       setLoadingEmpresas(false);
@@ -101,7 +101,7 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
         }
       }
     } catch (error) {
-      console.error('Erro ao trocar empresa:', error);
+      console.error('Erro ao trocar empresa:', error.response?.data || error.message || error);
       toast.error('Erro ao alterar empresa');
       // Reverte em caso de erro
       setEmpresaAtiva(prevEmpresaAtivaRef.current);
