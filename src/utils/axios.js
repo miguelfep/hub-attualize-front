@@ -243,4 +243,22 @@ export const endpoints = {
       download: (id) => `${baseUrl}portal/guias-fiscais/${id}/download`,
     },
   },
+  // Indicação
+  indicacao: {
+    codigo: `${baseUrl}indicacao/codigo`,
+    link: `${baseUrl}indicacao/link`,
+    criar: `${baseUrl}indicacao/criar`,
+    minhas: `${baseUrl}indicacao/minhas`,
+    detalhes: (id) => `${baseUrl}indicacao/${id}`,
+  },
+  // Recompensa
+  recompensa: {
+    conta: `${baseUrl}recompensa/conta`,
+    solicitarDesconto: `${baseUrl}recompensa/solicitar-desconto`,
+    solicitarPix: `${baseUrl}recompensa/solicitar-pix`,
+    transacoes: `${baseUrl}recompensa/transacoes`,
+    pixPendentes: `${baseUrl}recompensa/pix/pendentes`,
+    aprovarTransacao: (id) => `${baseUrl}recompensa/transacao/${id}/aprovar`,
+    rejeitarTransacao: (id) => `${baseUrl}recompensa/transacao/${id}/rejeitar`,
+  },
 };
