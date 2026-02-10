@@ -1,8 +1,9 @@
-import InputMask from 'react-input-mask'
 import { NumericFormat } from 'react-number-format';
 import { Controller, useFormContext } from "react-hook-form"
 
 import { Box, Grid, Switch, Select, MenuItem, TextField, Typography, FormControlLabel } from "@mui/material";
+
+import { formatPhone } from 'src/utils/format-input';
 
 export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
 
@@ -172,41 +173,42 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                 </Grid>
                 <Grid item xs={12} md={4}>
                     <Controller
+                        name="whatsapp"
+                        control={control}
+                        render={({ field }) => (
+                            <TextField
+                                {...field}
+                                fullWidth
+                                label="Telefone Comercial"
+                                placeholder="(00) 0 0000-0000"
+                                disabled={!watch('whatsappEnabled')}
+                                value={formatPhone(field.value || '')}
+                                onChange={(e) => {
+                                    const formatted = formatPhone(e.target.value);
+                                    field.onChange(formatted);
+                                }}
+                                inputProps={{
+                                    maxLength: 17,
+                                }}
+                            />
+                        )}
+                    />
+                    <Controller
                         name="whatsappEnabled"
                         control={control}
-                        render={({ field: switchField }) => (
-                            <>
-                                <Controller
-                                    name="whatsapp"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <InputMask
-                                            {...field}
-                                            mask="(99) 9 9999-9999"
-                                            disabled={!switchField.value}
-                                        >
-                                            {(inputProps) => (
-                                                <TextField
-                                                    {...inputProps}
-                                                    fullWidth
-                                                    label="Telefone Comercial"
-                                                    disabled={!switchField.value}
-                                                />
-                                            )}
-                                        </InputMask>
-                                    )}
-                                />
-                                <FormControlLabel
-                                    sx={{ mb: 1 }}
-                                    control={
-                                        <Switch
-                                            checked={switchField.value}
-                                            onChange={(e) => switchField.onChange(e.target.checked)}
-                                        />
-                                    }
-                                    label="Desejo alterar meu Whatsapp"
-                                />
-                            </>
+                        render={({ field }) => (
+                            <FormControlLabel
+                                sx={{ mb: 1 }}
+                                control={
+                                    <Switch
+                                        checked={field.value}
+                                        onChange={(e) => field.onChange(e.target.checked)}
+                                        name={field.name}
+                                        inputRef={field.ref}
+                                    />
+                                }
+                                label="Desejo alterar meu Whatsapp"
+                            />
                         )}
                     />
                 </Grid>

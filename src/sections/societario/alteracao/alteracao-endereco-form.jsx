@@ -1,6 +1,5 @@
 import { toast } from "sonner";
 import { useState } from "react";
-import InputMask from "react-input-mask";
 import { Controller, useFormContext } from "react-hook-form";
 
 import {
@@ -15,8 +14,9 @@ import {
   CircularProgress,
 } from "@mui/material";
 
-import { buscarCep } from "src/actions/cep";
+import { formatCep } from 'src/utils/format-input';
 
+import { buscarCep } from "src/actions/cep";
 
 export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
   const { control, watch, setValue } = useFormContext();
@@ -58,49 +58,52 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
         </Grid>
         <Grid item xs={12} md={2}>
           <Controller
+            name="cep"
+            control={control}
+            render={({ field, fieldState }) => (
+              <TextField
+                {...field}
+                fullWidth
+                label="CEP"
+                placeholder="00000-000"
+                disabled={!cepEnabled || loadingCep}
+                error={!!fieldState.error}
+                helperText={fieldState.error?.message}
+                value={formatCep(field.value || '')}
+                onChange={(e) => {
+                  const formatted = formatCep(e.target.value);
+                  field.onChange(formatted);
+                }}
+                onBlur={handleCepBlur}
+                inputProps={{
+                  maxLength: 9,
+                }}
+                InputProps={{
+                  endAdornment: loadingCep && (
+                    <InputAdornment position="end">
+                      <CircularProgress size={20} />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+            )}
+          />
+          <Controller
             name="cepEnabled"
             control={control}
-            render={({ field: switchField, fieldState }) => (
-              <>
-                <Controller
-                  name="cep"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      label="CEP"
-                      disabled={!switchField.value || loadingCep}
-                      error={!!fieldState.error}
-                      helperText={fieldState.error?.message}
-                      InputProps={{
-                        inputComponent: InputMask,
-                        inputProps: {
-                          mask: "99.999-999",
-                          value: field.value || '',
-                          onChange: (e) => field.onChange(e.target.value),
-                          onBlur: handleCepBlur,
-                        },
-                        endAdornment: loadingCep && (
-                          <InputAdornment position="end">
-                            <CircularProgress size={20} />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                />
-                <FormControlLabel
-                  sx={{ mb: 1, minWidth: '200%' }}
-                  control={
-                    <Switch
-                      checked={switchField.value}
-                      onChange={(e) => switchField.onChange(e.target.checked)}
-                    />
-                  }
-                  label="Desejo alterar meu Endereço"
-                />
-              </>
+            render={({ field }) => (
+              <FormControlLabel
+                sx={{ mb: 1, minWidth: '200%' }}
+                control={
+                  <Switch
+                    checked={field.value}
+                    onChange={(e) => field.onChange(e.target.checked)}
+                    name={field.name}
+                    inputRef={field.ref}
+                  />
+                }
+                label="Desejo alterar meu Endereço"
+              />
             )}
           />
         </Grid>

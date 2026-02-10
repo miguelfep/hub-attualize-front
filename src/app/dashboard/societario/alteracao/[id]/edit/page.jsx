@@ -8,11 +8,16 @@ import AlteracaoEditView from 'src/sections/societario/alteracao/alteracao-edit-
 export const metadata = { title: `Editar Alteração | Dashboard - ${CONFIG.site.name}` };
 
 export default async function Page({ params }) {
-  const { id } = params;
+  // No Next.js 16, params é uma Promise e precisa ser aguardado
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   const currentAlteracao = await getAlteracaoById(id);
 
-  return <AlteracaoEditView alteracaoData={currentAlteracao} />;
+  // Extrair data se a resposta vier com essa estrutura
+  const alteracaoData = currentAlteracao?.data || currentAlteracao;
+
+  return <AlteracaoEditView alteracaoData={alteracaoData} />;
 }
 
 // ----------------------------------------------------------------------

@@ -1,6 +1,5 @@
 import { toast } from "sonner";
 import React, { useState } from "react";
-import InputMask from "react-input-mask";
 import { NumericFormat } from "react-number-format";
 import { Controller, useFieldArray, useFormContext } from "react-hook-form";
 
@@ -22,6 +21,8 @@ import {
   DialogContent,
   FormControlLabel,
 } from "@mui/material";
+
+import { formatRg, formatCpf } from 'src/utils/format-input';
 
 import { uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from "src/actions/societario";
 
@@ -315,20 +316,23 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
                 name={`socios.${index}.cpf`}
                 control={control}
                 render={({ field, fieldState }) => (
-                  <InputMask
-                    mask="999.999.999-99"
-                    value={field.value}
-                    onChange={field.onChange}
+                  <TextField
+                    {...field}
+                    label="CPF"
+                    fullWidth
+                    placeholder="000.000.000-00"
                     disabled={!watch(`socios.${index}.socioEnabled`)}
                     error={!!fieldState.error}
                     helperText={fieldState.error?.message}
-                  >
-                    {(inputProps) => (
-                      <TextField {...inputProps} label="CPF" fullWidth disabled={!watch(`socios.${index}.socioEnabled`)}
-                      />
-
-                    )}
-                  </InputMask>
+                    value={formatCpf(field.value || '')}
+                    onChange={(e) => {
+                      const formatted = formatCpf(e.target.value);
+                      field.onChange(formatted);
+                    }}
+                    inputProps={{
+                      maxLength: 14,
+                    }}
+                  />
                 )}
               />
             </Grid>
@@ -338,22 +342,23 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
                 name={`socios.${index}.rg`}
                 control={control}
                 render={({ field, fieldState }) => (
-                  <InputMask
-                    mask="99.999.999-9"
-                    value={field.value}
-                    onChange={field.onChange}
+                  <TextField
+                    {...field}
+                    label="RG"
+                    fullWidth
+                    placeholder="00.000.000-0"
                     disabled={!watch(`socios.${index}.socioEnabled`)}
-                  >
-                    {(inputProps) => (
-                      <TextField {...inputProps}
-                        label="RG"
-                        fullWidth
-                        disabled={!watch(`socios.${index}.socioEnabled`)}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                      />
-                    )}
-                  </InputMask>
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    value={formatRg(field.value || '')}
+                    onChange={(e) => {
+                      const formatted = formatRg(e.target.value);
+                      field.onChange(formatted);
+                    }}
+                    inputProps={{
+                      maxLength: 12,
+                    }}
+                  />
                 )}
               />
             </Grid>
@@ -363,22 +368,23 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
                 name={`socios.${index}.cnh`}
                 control={control}
                 render={({ field, fieldState }) => (
-                  <InputMask
-                    mask="999999999"
-                    value={field.value}
-                    onChange={field.onChange}
+                  <TextField
+                    {...field}
+                    label="CNH"
+                    fullWidth
+                    placeholder="000000000"
                     disabled={!watch(`socios.${index}.socioEnabled`)}
-                  >
-                    {(inputProps) => (
-                      <TextField {...inputProps}
-                        label="CNH"
-                        fullWidth
-                        disabled={!watch(`socios.${index}.socioEnabled`)}
-                        error={!!fieldState.error}
-                        helperText={fieldState.error?.message}
-                      />
-                    )}
-                  </InputMask>
+                    error={!!fieldState.error}
+                    helperText={fieldState.error?.message}
+                    value={(field.value || '').replace(/\D/g, '')}
+                    onChange={(e) => {
+                      const numbers = e.target.value.replace(/\D/g, '');
+                      field.onChange(numbers);
+                    }}
+                    inputProps={{
+                      maxLength: 9,
+                    }}
+                  />
                 )}
               />
             </Grid>
