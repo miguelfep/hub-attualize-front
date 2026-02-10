@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { PDFViewer, PDFDownloadLink } from '@react-pdf/renderer';
 import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 
 import Dialog from '@mui/material/Dialog';
@@ -43,7 +42,6 @@ import {
   usePortalServicos,
   portalGetOrcamento,
   portalUpdateOrcamento,
-  portalDownloadOrcamentoPDF,
   portalUpdateOrcamentoStatus,
 } from 'src/actions/portal';
 
@@ -51,11 +49,10 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { OrcamentoEditPageSkeleton } from 'src/components/skeleton/VendaEditPageSkeleton';
 
-import { OrcamentoPDF } from 'src/sections/orcamento/orcamento-pdf';
-
 import { useAuthContext } from 'src/auth/hooks';
 
-export default function OrcamentoDetalhesPage({ params }) {
+export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
+  const params = React.use(paramsPromise);
   const { id } = params;
   const { user } = useAuthContext();
   const userId = user?.id || user?._id || user?.userId;
@@ -68,7 +65,6 @@ export default function OrcamentoDetalhesPage({ params }) {
   const [saving, setSaving] = React.useState(false);
   const [orcamento, setOrcamento] = React.useState(null);
   const [status, setStatus] = React.useState('');
-  const [viewOpen, setViewOpen] = React.useState(false);
   const [generatingNf, setGeneratingNf] = React.useState(false);
   const [nfseList, setNfseList] = React.useState([]);
   const [itemEdit, setItemEdit] = React.useState({
@@ -451,22 +447,6 @@ export default function OrcamentoDetalhesPage({ params }) {
     }
   };
 
-  const handleDownloadPDF = async () => {
-    try {
-      const res = await portalDownloadOrcamentoPDF(id);
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${orcamento.numero || 'orcamento'}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (e) {
-      toast.error('Erro ao gerar PDF');
-    }
-  };
-
   const getStatusColor = (st) => {
     const s = String(st || '').toLowerCase();
     if (s === 'pago') return 'success';
@@ -535,27 +515,6 @@ export default function OrcamentoDetalhesPage({ params }) {
               justifyContent={{ xs: 'flex-start', md: 'flex-end' }}
               sx={{ mt: { xs: 2, md: 0 }, width: { xs: '100%', md: 'auto' } }}
             >
-              <Button
-                onClick={() => setViewOpen(true)}
-                variant="outlined"
-                startIcon={<Iconify icon="solar:eye-bold" />}
-              >
-                Ver
-              </Button>
-              <PDFDownloadLink
-                document={<OrcamentoPDF orcamento={orcamento} settings={settings} />}
-                fileName={`${orcamento.numero || 'orcamento'}.pdf`}
-                style={{ textDecoration: 'none' }}
-              >
-                {({ loading: pdfLoading }) => (
-                  <Button
-                    variant="outlined"
-                    startIcon={<Iconify icon="solar:document-text-bold" />}
-                  >
-                    {pdfLoading ? 'Gerando...' : 'Baixar'}
-                  </Button>
-                )}
-              </PDFDownloadLink>
               {podeEmitirNFSe && !hasNFSeAutorizada && (
                 <>
                   {hasNotaProcessando ? (
@@ -588,7 +547,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                   Detalhes da Venda
                 </Typography>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={8}>
+                  <Grid xs={12} md={8}>
                     <Typography variant="subtitle2">Cliente</Typography>
                     {!orcamento?.clienteDoClienteId && (
                       <Stack spacing={0.5} sx={{ mt: 1 }}>
@@ -619,7 +578,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                       )}
                     </Stack>
                   </Grid>
-                  <Grid item xs={12} md={4}>
+                  <Grid xs={12} md={4}>
                     <Stack
                       spacing={1}
                       sx={{
@@ -666,7 +625,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                     }}
                   >
                     <Grid container spacing={2}>
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ width: 1 }}>
                           <TextField
                             fullWidth
@@ -748,7 +707,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           </TextField>
                         </Stack>
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <TextField
                           fullWidth
                           label="Descrição"
@@ -758,7 +717,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           }
                         />
                       </Grid>
-                      <Grid item xs={6} sm={4} md={3}>
+                      <Grid xs={6} sm={4} md={3}>
                         <TextField
                           fullWidth
                           type="number"
@@ -769,7 +728,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           }
                         />
                       </Grid>
-                      <Grid item xs={6} sm={4} md={3}>
+                      <Grid xs={6} sm={4} md={3}>
                         <TextField
                           fullWidth
                           label="Vlr Unit"
@@ -784,7 +743,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           }}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={4} md={3}>
+                      <Grid xs={12} sm={4} md={3}>
                         <TextField
                           fullWidth
                           label="Desconto"
@@ -795,7 +754,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           }}
                         />
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Stack direction="row" justifyContent="flex-end">
                           <LoadingButton
                             loading={saving}
@@ -860,7 +819,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                   </Tooltip>
                 </Stack>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid xs={12} md={6}>
                     <TextField
                       fullWidth
                       label="Observações"
@@ -871,7 +830,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                       disabled={!editingPedido || !canEditPedido}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid xs={12} md={6}>
                     <TextField
                       fullWidth
                       label="Condições de Pagamento"
@@ -885,7 +844,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                     />
                   </Grid>
                   {emiteNotaRetroativa && (
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <FormControlLabel
                         control={
                           <Checkbox
@@ -929,7 +888,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                       )}
                     </Grid>
                   )}
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <Stack
                       spacing={1}
                       alignItems={{ xs: 'stretch', sm: 'flex-end' }}
@@ -943,7 +902,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                       </Typography>
                     </Stack>
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <Stack direction="row" justifyContent="flex-end">
                       <LoadingButton
                         loading={saving}
@@ -1133,35 +1092,6 @@ export default function OrcamentoDetalhesPage({ params }) {
             </Stack>
           </CardContent>
         </Card>
-
-        <Dialog fullScreen open={viewOpen} onClose={() => setViewOpen(false)}>
-          <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
-            <DialogActions sx={{ p: 1.5 }}>
-              <Button color="inherit" variant="contained" onClick={() => setViewOpen(false)}>
-                Fechar
-              </Button>
-            </DialogActions>
-            <Box sx={{ flexGrow: 1, height: 1, overflow: 'hidden' }}>
-              <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
-                <OrcamentoPDF orcamento={orcamento} settings={settings} />
-              </PDFViewer>
-            </Box>
-          </Box>
-        </Dialog>
-        <Dialog fullScreen open={viewOpen} onClose={() => setViewOpen(false)}>
-          <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
-            <DialogActions sx={{ p: 1.5 }}>
-              <Button color="inherit" variant="contained" onClick={() => setViewOpen(false)}>
-                Fechar
-              </Button>
-            </DialogActions>
-            <Box sx={{ flexGrow: 1, height: 1, overflow: 'hidden' }}>
-              <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
-                <OrcamentoPDF orcamento={orcamento} settings={settings} />
-              </PDFViewer>
-            </Box>
-          </Box>
-        </Dialog>
 
         <Dialog open={cancelOpen} onClose={() => setCancelOpen(false)} maxWidth="sm" fullWidth>
           <DialogActions sx={{ px: 2, pt: 2 }}>
