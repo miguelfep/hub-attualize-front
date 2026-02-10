@@ -1,5 +1,4 @@
 import { toast } from 'sonner';
-import InputMask from 'react-input-mask';
 import React, { useEffect } from 'react';
 import { NumericFormat } from 'react-number-format';
 import { useForm, Controller } from 'react-hook-form';
@@ -9,6 +8,7 @@ import { Box, Grid, Card, Stack, Button, Switch, MenuItem, TextField, Typography
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
+import { formatRg, formatCpf } from 'src/utils/format-input';
 
 import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from 'src/actions/societario';
 
@@ -543,11 +543,21 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                         name={`socios[${index}].cpf`}
                                         control={control}
                                         render={({ field }) => (
-                                            <InputMask {...field} mask="999.999.999-99">
-                                                {(inputProps) => (
-                                                    <TextField {...inputProps} label="CPF" fullWidth variant="outlined" />
-                                                )}
-                                            </InputMask>
+                                            <TextField
+                                                {...field}
+                                                label="CPF"
+                                                fullWidth
+                                                variant="outlined"
+                                                placeholder="000.000.000-00"
+                                                value={formatCpf(field.value || '')}
+                                                onChange={(e) => {
+                                                    const formatted = formatCpf(e.target.value);
+                                                    field.onChange(formatted);
+                                                }}
+                                                inputProps={{
+                                                    maxLength: 14,
+                                                }}
+                                            />
                                         )}
                                     />
                                 </Grid>
@@ -556,11 +566,21 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                         name={`socios[${index}].rg`}
                                         control={control}
                                         render={({ field }) => (
-                                            <InputMask {...field} mask="99.999.999-9">
-                                                {(inputProps) => (
-                                                    <TextField {...inputProps} label="RG" fullWidth variant="outlined" />
-                                                )}
-                                            </InputMask>
+                                            <TextField
+                                                {...field}
+                                                label="RG"
+                                                fullWidth
+                                                variant="outlined"
+                                                placeholder="00.000.000-0"
+                                                value={formatRg(field.value || '')}
+                                                onChange={(e) => {
+                                                    const formatted = formatRg(e.target.value);
+                                                    field.onChange(formatted);
+                                                }}
+                                                inputProps={{
+                                                    maxLength: 12,
+                                                }}
+                                            />
                                         )}
                                     />
                                 </Grid>

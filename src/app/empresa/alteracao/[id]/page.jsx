@@ -12,10 +12,11 @@ export const metadata = {
 export const dynamic = 'force-dynamic';
 
 export default async function Page({ params }) {
+  // No Next.js 16, params é uma Promise e precisa ser aguardado
+  const resolvedParams = await params;
+  const { id } = resolvedParams;
 
   try {
-    const { id } = params;
-
     if (!id) {
       notFound();
     }
@@ -26,7 +27,6 @@ export default async function Page({ params }) {
     if (!currentAlteracao) {
       notFound();
     }
-
 
     return (
       <AlteracaoEmpresaViewPage
