@@ -23,12 +23,12 @@ const OthersInfo = ({ formData, setFormData }) => {
 
   return (
     <Grid container spacing={3} sx={{ mb: 4 }}>
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <Typography variant="h6">Outras Informações</Typography>
       </Grid>
 
       {/* Capital Social */}
-      <Grid item xs={12} sm={6}>
+      <Grid xs={12} sm={6}>
         <NumericFormat
           label={
             <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -53,7 +53,7 @@ const OthersInfo = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Responsável Técnico */}
-      <Grid item xs={12} sm={6}>
+      <Grid xs={12} sm={6}>
         <TextField
           select
           label="Responsável Técnico"
@@ -70,7 +70,7 @@ const OthersInfo = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Forma de Atuação */}
-      <Grid item xs={12} sm={12}>
+      <Grid xs={12} sm={12}>
         <TextField
           select
           label="Forma de Atuação"
@@ -91,7 +91,7 @@ const OthersInfo = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Descrição das Atividades */}
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <TextField
           multiline
           rows={4}
@@ -103,7 +103,7 @@ const OthersInfo = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Observações */}
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <TextField
           multiline
           rows={3}

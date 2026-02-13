@@ -35,13 +35,13 @@ export function NovoOrcamentoPageSkeleton() {
             <Box>
               <Skeleton variant="text" width={150} height={32} sx={{ mb: 2 }} />
               <Grid container spacing={2}>
-                <Grid item xs={12} md={8}>
+                <Grid xs={12} md={8}>
                   <Skeleton variant="rounded" height={56} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                   <Skeleton variant="rounded" height={56} />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                   <Skeleton variant="rounded" height={56} />
                 </Grid>
               </Grid>
@@ -56,19 +56,19 @@ export function NovoOrcamentoPageSkeleton() {
               </Stack>
               <Box sx={{ p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}>
                 <Grid container spacing={2}>
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <Skeleton variant="rounded" height={56} />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <Skeleton variant="rounded" height={56} />
                   </Grid>
-                  <Grid item xs={6} sm={4} md={3}>
+                  <Grid xs={6} sm={4} md={3}>
                     <Skeleton variant="rounded" height={56} />
                   </Grid>
-                  <Grid item xs={6} sm={4} md={3}>
+                  <Grid xs={6} sm={4} md={3}>
                     <Skeleton variant="rounded" height={56} />
                   </Grid>
-                  <Grid item xs={12} sm={4} md={3}>
+                  <Grid xs={12} sm={4} md={3}>
                     <Skeleton variant="rounded" height={56} />
                   </Grid>
                 </Grid>
@@ -80,13 +80,13 @@ export function NovoOrcamentoPageSkeleton() {
             <Box>
               <Skeleton variant="text" width={200} height={32} sx={{ mb: 2 }} />
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Skeleton variant="rounded" height={100} />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Skeleton variant="rounded" height={100} />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                    <Skeleton variant="rounded" height={80} sx={{ mt: 2 }} />
                 </Grid>
               </Grid>

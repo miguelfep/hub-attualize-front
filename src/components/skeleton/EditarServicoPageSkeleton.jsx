@@ -22,11 +22,11 @@ export function EditarServicoPageSkeleton() {
             <Skeleton variant="text" sx={{ fontSize: '1.5rem', width: 200 }} />
           </Stack>
           <Grid container spacing={2}>
-            <Grid item xs={12}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
-            <Grid item xs={12}><Skeleton variant="rectangular" height={88} sx={{ borderRadius: 1 }} /></Grid>
-            <Grid item xs={12} sm={4}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
-            <Grid item xs={12} sm={4}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
-            <Grid item xs={12} sm={4}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
+            <Grid xs={12}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
+            <Grid xs={12}><Skeleton variant="rectangular" height={88} sx={{ borderRadius: 1 }} /></Grid>
+            <Grid xs={12} sm={4}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
+            <Grid xs={12} sm={4}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
+            <Grid xs={12} sm={4}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
           </Grid>
           
           <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
@@ -37,9 +37,9 @@ export function EditarServicoPageSkeleton() {
             <Skeleton variant="text" sx={{ fontSize: '1.5rem', width: 300 }} />
           </Stack>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
-            <Grid item xs={12} sm={3}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
-            <Grid item xs={12} sm={3}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
+            <Grid xs={12} sm={6}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
+            <Grid xs={12} sm={3}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
+            <Grid xs={12} sm={3}><Skeleton variant="rectangular" height={56} sx={{ borderRadius: 1 }} /></Grid>
           </Grid>
         </CardContent>
       </Card>

@@ -168,20 +168,20 @@ return (
 
           <CardContent sx={{ p: { xs: 2, md: 4 } }}>
             <Grid container spacing={4}>
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <ProfileCover user={user} />
               </Grid>
 
-              <Grid item xs={12} md={8}>
+              <Grid xs={12} md={8}>
                 <Stack spacing={4}>
                   <Box>
                     <SectionHeader icon="solar:user-id-bold-duotone" title="Informações Pessoais" />
                     <Form methods={methods} onSubmit={onSubmit}>
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <Field.Text name="name" label="Nome Completo" fullWidth />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <Field.Text name="email" label="Email" fullWidth disabled />
                         </Grid>
                       </Grid>
@@ -198,13 +198,13 @@ return (
                     <SectionHeader icon="solar:lock-password-bold-duotone" title="Alterar Senha" />
                     <Form methods={passwordMethods} onSubmit={handlePasswordChange}>
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <Field.Text name="currentPassword" label="Senha Atual" type="password" fullWidth />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <Field.Text name="newPassword" label="Nova Senha" type="password" fullWidth />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <Field.Text name="confirmPassword" label="Confirmar Nova Senha" type="password" fullWidth />
                         </Grid>
                       </Grid>

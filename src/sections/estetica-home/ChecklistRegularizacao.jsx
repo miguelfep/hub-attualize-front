@@ -40,7 +40,7 @@ export function ChecklistRegularizacao() {
         </Stack>
 
         <Grid container spacing={4}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <m.div variants={varFade().inUp}>
               <Paper
                 sx={{
@@ -77,7 +77,7 @@ export function ChecklistRegularizacao() {
             </m.div>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <m.div variants={varFade().inUp}>
                <Paper
                 sx={{

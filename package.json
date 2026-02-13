@@ -92,6 +92,7 @@
     "nprogress": "^0.2.0",
     "ofx-parser": "^1.0.1",
     "pdfjs-dist": "^4.9.155",
+    "prop-types": "^15.8.1",
     "qrcode.react": "^4.2.0",
     "react": "^18.3.1",
     "react-apexcharts": "^1.9.0",

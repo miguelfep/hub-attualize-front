@@ -771,10 +771,10 @@ const onSubmit = handleSubmit(
                   <Field.Editor name="observacao" label="Observação" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid container spacing={2} xs={12} sx={{ mt: 1 }}>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <Typography variant="h6" sx={{ mb: -1 }}>Documentos da Empresa</Typography>
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <FileUploadField
                     name="contratoSocialFile"
                     label="Contrato Social"
@@ -782,7 +782,7 @@ const onSubmit = handleSubmit(
                     disabled={!statusAtivo}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <FileUploadField
                     name="cartaoCnpjFile"
                     label="Cartão CNPJ"

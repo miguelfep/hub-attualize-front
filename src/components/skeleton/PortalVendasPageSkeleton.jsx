@@ -58,7 +58,7 @@ export function VendasPageSkeleton() {
 
       <Grid container spacing={2} sx={{ mb: 3 }}>
         {[...Array(5)].map((_, i) => (
-          <Grid item key={`stat-sk-${i}`} xs={12} sm={6} md={2.4}>
+          <Grid key={`stat-sk-${i}`} xs={12} sm={6} md={2.4}>
             <StatCardSkeleton />
           </Grid>
         ))}
@@ -67,13 +67,13 @@ export function VendasPageSkeleton() {
       <Card sx={{ mb: 3 }}>
         <CardContent>
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <Skeleton variant="rounded" height={56} />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <Skeleton variant="rounded" height={56} />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <Skeleton variant="rounded" height={56} />
             </Grid>
           </Grid>

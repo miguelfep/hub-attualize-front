@@ -314,7 +314,7 @@ export default function GuiaIrpf2026Page() {
         </Card>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={7}>
+          <Grid xs={12} md={7}>
             <Card
               sx={{
                 height: '100%',
@@ -365,7 +365,7 @@ export default function GuiaIrpf2026Page() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={5}>
+          <Grid xs={12} md={5}>
             <Card sx={{ height: '100%', borderRadius: 3 }}>
               <CardContent>
                 <Stack spacing={2}>
@@ -433,7 +433,7 @@ export default function GuiaIrpf2026Page() {
         </Grid>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ height: '100%', borderRadius: 3 }}>
               <CardContent>
                 <Stack spacing={1.5}>
@@ -453,7 +453,7 @@ export default function GuiaIrpf2026Page() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ height: '100%', borderRadius: 3 }}>
               <CardContent>
                 <Stack spacing={1.5}>
@@ -526,7 +526,7 @@ export default function GuiaIrpf2026Page() {
         </Card>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={7}>
+          <Grid xs={12} md={7}>
             <Card sx={{ height: '100%', borderRadius: 3 }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ color: 'primary.main', textTransform: 'uppercase', fontWeight: 800 }}>
@@ -551,7 +551,7 @@ export default function GuiaIrpf2026Page() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={5}>
+          <Grid xs={12} md={5}>
             <Card
               sx={{
                 height: '100%',

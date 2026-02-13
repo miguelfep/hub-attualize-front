@@ -107,3 +107,49 @@ export async function rejeitarTransacao(id, data = {}) {
     throw error;
   }
 }
+
+/**
+ * Aprovar uma transação de desconto (Admin)
+ * @param {string} id - ID da transação de desconto
+ * @param {Object} data - Dados da aprovação
+ * @param {string} data.cobrancaId - ID da cobrança que receberá o desconto
+ */
+export async function aprovarDesconto(id, data) {
+  try {
+    const res = await axios.put(endpoints.recompensa.aprovarDesconto(id), data);
+    return res.data;
+  } catch (error) {
+    console.error('Erro ao aprovar desconto:', error);
+    throw error;
+  }
+}
+
+/**
+ * Aplicar desconto manual em um contrato (Admin)
+ * @param {Object} data - Dados do desconto
+ * @param {string} data.contratoId - ID do contrato
+ * @param {number} data.valor - Valor do desconto
+ * @param {string} [data.descricao] - Descrição do desconto
+ */
+export async function aplicarDescontoManual(data) {
+  try {
+    const res = await axios.post(endpoints.recompensa.aplicarDescontoManual, data);
+    return res.data;
+  } catch (error) {
+    console.error('Erro ao aplicar desconto manual:', error);
+    throw error;
+  }
+}
+
+/**
+ * Listar Descontos pendentes (Admin)
+ */
+export async function listarDescontosPendentes() {
+  try {
+    const res = await axios.get(endpoints.recompensa.descontosPendentes);
+    return res.data;
+  } catch (error) {
+    console.error('Erro ao listar descontos pendentes:', error);
+    throw error;
+  }
+}

@@ -1,6 +1,5 @@
 'use client';
 
-import { toast } from 'sonner';
 import { useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -49,8 +48,38 @@ export function IndicacaoShareCard() {
     );
   }
 
+  // Se não conseguiu carregar o código, mostra mensagem
+  if (!codigo && !loadingCodigo) {
+    return (
+      <Card sx={{ p: 3 }}>
+        <Stack spacing={2}>
+          <Box sx={{ textAlign: 'center', py: 3 }}>
+            <Iconify 
+              icon="solar:info-circle-bold" 
+              width={48} 
+              sx={{ color: 'warning.main', mb: 2 }} 
+            />
+            <Typography variant="h6" sx={{ mb: 1 }}>
+              Código de indicação indisponível
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              Não foi possível carregar seu código de indicação. Tente novamente.
+            </Typography>
+          </Box>
+          <Button 
+            variant="outlined" 
+            onClick={buscarCodigo}
+            fullWidth
+          >
+            Tentar Novamente
+          </Button>
+        </Stack>
+      </Card>
+    );
+  }
+
   return (
-    <Card sx={{ p: 3 }}>
+    <Card sx={{ p: 4 }}>
       <Stack spacing={3}>
         <Box>
           <Typography variant="h6" sx={{ mb: 0.5 }}>
@@ -69,7 +98,7 @@ export function IndicacaoShareCard() {
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={copiarCodigo} edge="end">
+                <IconButton onClick={copiarCodigo} edge="end" disabled={!codigo}>
                   <Iconify icon="solar:copy-bold" />
                 </IconButton>
               </InputAdornment>
@@ -85,7 +114,7 @@ export function IndicacaoShareCard() {
           InputProps={{
             endAdornment: (
               <InputAdornment position="end">
-                <IconButton onClick={copiarLink} edge="end">
+                <IconButton onClick={copiarLink} edge="end" disabled={!link}>
                   <Iconify icon="solar:copy-bold" />
                 </IconButton>
               </InputAdornment>

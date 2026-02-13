@@ -480,8 +480,9 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                           {/* Exibe mensagem de carregamento */}
                         </MenuItem>
                       ) : (
-                        <>
+                        [
                           <MenuItem
+                            key="whatsapp"
                             onClick={() => {
                               handleSendWhatsApp(cobranca);
                               handleClosePopover();
@@ -489,9 +490,9 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                           >
                             <Iconify icon="mdi:whatsapp" />
                             Enviar WhatsApp
-                          </MenuItem>
-
+                          </MenuItem>,
                           <MenuItem
+                            key="cancel"
                             onClick={() => {
                               handleCancelarBoleto(cobranca._id);
                               handleClosePopover();
@@ -499,8 +500,8 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                           >
                             <Iconify icon="mdi:cancel" />
                             Cancelar Boleto
-                          </MenuItem>
-                        </>
+                          </MenuItem>,
+                        ]
                       )}
                       {podeEmitirNotaManual && (
                         <MenuItem

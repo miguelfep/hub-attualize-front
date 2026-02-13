@@ -166,7 +166,7 @@ const DocumentsManager = ({ formData, setFormData, aberturaId, readOnly = false 
           }
 
           return (
-            <Grid item xs={12} sm={6} md={4} key={doc.name}>
+            <Grid xs={12} sm={6} md={4} key={doc.name}>
               <Box
                 sx={{
                   border: '1px solid',

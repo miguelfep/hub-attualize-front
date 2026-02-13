@@ -597,7 +597,7 @@ export function CobrancaExistente({ invoice, onPagamentoConfirmado }) {
       </Typography>
       {invoice.cobrancas.map((cobranca, index) => (
         <Grid container spacing={3} justifyContent="center" key={cobranca._id || index}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card sx={{ margin: 'auto', maxWidth: '600px' }}>
               <CardContent>
                 <Typography variant="h5" sx={{ mb: 2 }}>

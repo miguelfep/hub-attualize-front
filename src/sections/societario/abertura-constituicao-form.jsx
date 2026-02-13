@@ -300,7 +300,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
       </Tabs>
       {activeTab === 0 && (
         <Grid container spacing={2} mt={2}>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Razão Social"
               name="nomeEmpresarial"
@@ -309,7 +309,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Nome Fantasia"
               name="nomeFantasia"
@@ -319,7 +319,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <TextField
               label="Nome"
               name="nome"
@@ -328,7 +328,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid xs={12} sm={6} md={2}>
             <TextField
               label="CPF"
               name="cpf"
@@ -337,7 +337,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Email"
               name="email"
@@ -346,7 +346,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Email  Financeiro"
               name="emailFinanceiro"
@@ -355,7 +355,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <TextField
               label="Telefone"
               name="telefone"
@@ -364,7 +364,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               disabled
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <TextField
               label="Telefone Comercial"
               name="telefoneComercial"
@@ -373,7 +373,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <TextField
               label="Horário de Funcionamento"
               name="horarioFuncionamento"
@@ -382,7 +382,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Metragem do Imóvel"
               helperText="*Metragem total do imovel"
@@ -392,7 +392,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Metragem Utilizada"
               helperText="*Área construida"
@@ -402,7 +402,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <TextField
               type={values.showPassword ? 'text' : 'password'}
               label="Senha GOV"
@@ -435,11 +435,11 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
             />
           </Grid>
           {/* Endereço */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h6">Endereço Comercial</Typography>
           </Grid>
 
-          <Grid item xs={12} sm={3}>
+          <Grid xs={12} sm={3}>
             <InputMask
               mask="99999-999"
               value={formData.enderecoComercial.cep}
@@ -465,7 +465,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
             </InputMask>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Rua"
               name="enderecoComercial.logradouro"
@@ -475,7 +475,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               disabled={loadingCep}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Número"
               name="enderecoComercial.numero" // Nome correto para alterar dentro do objeto enderecoComercial
@@ -484,7 +484,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Complemento"
               name="enderecoComercial.complemento" // Nome correto para alterar dentro do objeto enderecoComercial
@@ -493,7 +493,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Bairro"
               name="enderecoComercial.bairro"
@@ -503,7 +503,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               disabled={loadingCep}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Cidade"
               name="enderecoComercial.cidade"
@@ -513,7 +513,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               disabled={loadingCep}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Estado"
               name="enderecoComercial.estado"
@@ -525,7 +525,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
 
           {/* Seletor de número de sócios */}
-          <Grid item xs={12} sm={12}>
+          <Grid xs={12} sm={12}>
             <TextField
               select
               label="Número de Sócios"
@@ -542,12 +542,12 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
 
           {/* Renderização dos sócios */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h6">Sócios</Typography>
           </Grid>
           {[...Array(numSocios).keys()].map((i) => (
             <React.Fragment key={i}>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`Nome Sócio ${i + 1}`}
                   name={`socios.${i}.nome`} // Nome ajustado para incluir o índice do sócio
@@ -556,7 +556,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`CPF Sócio ${i + 1}`}
                   name={`socios.${i}.cpf`} // Nome ajustado para incluir o índice do sócio
@@ -565,7 +565,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`RG Sócio ${i + 1}`}
                   name={`socios.${i}.rg`} // Nome ajustado para incluir o índice do sócio
@@ -574,7 +574,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`CNH Sócio ${i + 1}`}
                   name={`socios.${i}.cnh`} // Nome ajustado para incluir o índice do sócio
@@ -583,7 +583,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`Endereço Sócio ${i + 1}`}
                   name={`socios.${i}.endereco`} // Nome ajustado para incluir o índice do sócio
@@ -592,7 +592,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`Profissão Sócio ${i + 1}`}
                   name={`socios.${i}.profissao`} // Nome ajustado para incluir o índice do sócio
@@ -601,7 +601,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid xs={12} sm={6}>
                 <TextField
                   select
                   label={`Estado Civil Sócio ${i + 1}`}
@@ -619,7 +619,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               </Grid>
 
               {formData.socios[i]?.estadoCivil === 'Casado' && (
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     select
                     label={`Regime de Bens Sócio ${i + 1}`}
@@ -638,7 +638,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 </Grid>
               )}
 
-              <Grid item xs={12} sm={6}>
+              <Grid xs={12} sm={6}>
                 <TextField
                   label={`Porcentagem Sócio ${i + 1}`}
                   name={`socios.${i}.porcentagem`} // Nome ajustado para incluir o índice do sócio
@@ -651,7 +651,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={6}>
+              <Grid xs={12} sm={6} md={6}>
                 <TextField
                   label="Naturalidade"
                   name={`socios.${i}.naturalidade`}
@@ -660,7 +660,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -672,14 +672,14 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   label="É Administrador?"
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Box sx={{ mb: 3 }}>
                   <Divider />
                 </Box>
               </Grid>
             </React.Fragment>
           ))}
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <TextField
               label="Capital Social"
               customInput={TextField}
@@ -695,7 +695,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
 
           {/* Responsável na Receita Federal */}
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <TextField
               select
               label="Responsável na Receita Federal"
@@ -712,7 +712,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 ))}
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <TextField
               select
               label="Forma de Atuação"
@@ -732,7 +732,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               <MenuItem value="Outros">Outros</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <NumericFormat
               label="Valor Mensalidadel"
               name="valorMensalidade"
@@ -747,7 +747,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               fullWidth
             />
           </Grid>
-          <Grid item xs={12} sm={12} md={12}>
+          <Grid xs={12} sm={12} md={12}>
             <TextField
               select
               label="Situação da Abertura"
@@ -772,7 +772,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
 
           {/* Descrição das Atividades */}
-          <Grid item xs={12} sm={6} md={12}>
+          <Grid xs={12} sm={6} md={12}>
             <TextField
               multiline
               rows={5}
@@ -785,7 +785,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
 
           {/* Observações */}
-          <Grid item xs={12} sm={6} md={12}>
+          <Grid xs={12} sm={6} md={12}>
             <TextField
               multiline
               rows={2}
@@ -797,7 +797,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={12}>
+          <Grid xs={12} sm={6} md={12}>
             <DocumentsManager
               formData={formData}
               setFormData={setFormData}
@@ -811,12 +811,12 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
 
       {activeTab === 1 && (
         <Grid container spacing={2} mt={2}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h6">Kickoff</Typography>
           </Grid>
-          <Grid item xs={12} sm={12}>
+          <Grid xs={12} sm={12}>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   multiline
                   rows={4}
@@ -827,7 +827,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={12}>
+              <Grid xs={12} sm={12}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -840,7 +840,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 />
               </Grid>
               {formData.possuiAtividadeServico && (
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     multiline
                     rows={4}
@@ -852,7 +852,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   />
                 </Grid>
               )}
-              <Grid item xs={12} sm={12}>
+              <Grid xs={12} sm={12}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -865,7 +865,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 />
               </Grid>
               {formData.possuiAtividadeComercio && (
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     multiline
                     rows={4}
@@ -877,7 +877,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   />
                 </Grid>
               )}
-              <Grid item xs={12} sm={12}>
+              <Grid xs={12} sm={12}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -890,7 +890,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 />
               </Grid>
               {formData.possuiMaquinas && (
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     multiline
                     rows={4}
@@ -902,7 +902,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   />
                 </Grid>
               )}
-              <Grid item xs={12} sm={6}>
+              <Grid xs={12} sm={6}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -915,7 +915,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 />
               </Grid>
               {formData.possuiSistema && (
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     multiline
                     rows={3}
@@ -927,7 +927,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                   />
                 </Grid>
               )}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   label="URL da Meet Kickoff"
                   name="urlMeetKickoff"
@@ -937,7 +937,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
                 />
               </Grid>
               {/* Pro Labore */}
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <NumericFormat
                   label="Pro Labore"
                   customInput={TextField}
@@ -958,7 +958,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               </Grid>
 
               {/* Previsão de Faturamento */}
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <NumericFormat
                   label="Previsão de Faturamento"
                   customInput={TextField}
@@ -979,7 +979,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
               </Grid>
 
               {/* Regime Tributário */}
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <TextField
                   select
                   label="Regime Tributário"

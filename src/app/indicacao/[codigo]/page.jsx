@@ -1,3 +1,5 @@
+import { MainLayout } from 'src/layouts/main';
+
 import { IndicacaoFormView } from 'src/sections/indicacao/indicacao-form-view';
 
 // ----------------------------------------------------------------------
@@ -9,8 +11,13 @@ export const metadata = {
 
 // ----------------------------------------------------------------------
 
-export default function IndicacaoPage({ params }) {
-  const { codigo } = params;
+export default async function IndicacaoPage({ params }) {
 
-  return <IndicacaoFormView codigo={codigo} />;
+  const { codigo } = await params;
+
+  return (
+    <MainLayout>
+      <IndicacaoFormView codigo={codigo} />
+    </MainLayout>
+  );
 }

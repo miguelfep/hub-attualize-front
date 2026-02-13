@@ -77,7 +77,7 @@ export default function EstadoCidadeSelect() {
     <div>
       <Grid container spacing={3}>
         {/* Select para Estado */}
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           {' '}
           {/* Define o tamanho do Grid */}
           <FormControl fullWidth variant="filled">
@@ -107,7 +107,7 @@ export default function EstadoCidadeSelect() {
         </Grid>
 
         {/* Select para Cidade */}
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           {' '}
           {/* Define o tamanho do Grid */}
           <FormControl fullWidth variant="filled">

@@ -18,7 +18,7 @@ export function SaldoCards({ conta, loading }) {
     return (
       <Grid container spacing={3}>
         {[1, 2, 3, 4].map((item) => (
-          <Grid item xs={12} sm={6} md={3} key={item}>
+          <Grid xs={12} sm={6} md={3} key={item}>
             <Card sx={{ p: 3 }}>
               <Skeleton variant="circular" width={56} height={56} sx={{ mb: 2 }} />
               <Skeleton variant="text" width="40%" sx={{ mb: 1 }} />
@@ -64,7 +64,7 @@ export function SaldoCards({ conta, loading }) {
   return (
     <Grid container spacing={3}>
       {cards.map((card, index) => (
-        <Grid item xs={12} sm={6} md={3} key={index}>
+        <Grid xs={12} sm={6} md={3} key={index}>
           <Card sx={{ p: 3 }}>
             <Stack spacing={2}>
               <Box

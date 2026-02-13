@@ -55,7 +55,8 @@ import { OrcamentoPDF } from 'src/sections/orcamento/orcamento-pdf';
 
 import { useAuthContext } from 'src/auth/hooks';
 
-export default function OrcamentoDetalhesPage({ params }) {
+export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
+  const params = React.use(paramsPromise);
   const { id } = params;
   const { user } = useAuthContext();
   const userId = user?.id || user?._id || user?.userId;
@@ -588,7 +589,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                   Detalhes da Venda
                 </Typography>
                 <Grid container spacing={3}>
-                  <Grid item xs={12} md={8}>
+                  <Grid xs={12} md={8}>
                     <Typography variant="subtitle2">Cliente</Typography>
                     {!orcamento?.clienteDoClienteId && (
                       <Stack spacing={0.5} sx={{ mt: 1 }}>
@@ -619,7 +620,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                       )}
                     </Stack>
                   </Grid>
-                  <Grid item xs={12} md={4}>
+                  <Grid xs={12} md={4}>
                     <Stack
                       spacing={1}
                       sx={{
@@ -666,7 +667,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                     }}
                   >
                     <Grid container spacing={2}>
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Stack direction="row" spacing={1} alignItems="center" sx={{ width: 1 }}>
                           <TextField
                             fullWidth
@@ -748,7 +749,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           </TextField>
                         </Stack>
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <TextField
                           fullWidth
                           label="Descrição"
@@ -758,7 +759,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           }
                         />
                       </Grid>
-                      <Grid item xs={6} sm={4} md={3}>
+                      <Grid xs={6} sm={4} md={3}>
                         <TextField
                           fullWidth
                           type="number"
@@ -769,7 +770,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           }
                         />
                       </Grid>
-                      <Grid item xs={6} sm={4} md={3}>
+                      <Grid xs={6} sm={4} md={3}>
                         <TextField
                           fullWidth
                           label="Vlr Unit"
@@ -784,7 +785,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           }}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={4} md={3}>
+                      <Grid xs={12} sm={4} md={3}>
                         <TextField
                           fullWidth
                           label="Desconto"
@@ -795,7 +796,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                           }}
                         />
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Stack direction="row" justifyContent="flex-end">
                           <LoadingButton
                             loading={saving}
@@ -860,7 +861,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                   </Tooltip>
                 </Stack>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                  <Grid xs={12} md={6}>
                     <TextField
                       fullWidth
                       label="Observações"
@@ -871,7 +872,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                       disabled={!editingPedido || !canEditPedido}
                     />
                   </Grid>
-                  <Grid item xs={12} md={6}>
+                  <Grid xs={12} md={6}>
                     <TextField
                       fullWidth
                       label="Condições de Pagamento"
@@ -885,7 +886,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                     />
                   </Grid>
                   {emiteNotaRetroativa && (
-                    <Grid item xs={12} md={6}>
+                    <Grid xs={12} md={6}>
                       <FormControlLabel
                         control={
                           <Checkbox
@@ -929,7 +930,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                       )}
                     </Grid>
                   )}
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <Stack
                       spacing={1}
                       alignItems={{ xs: 'stretch', sm: 'flex-end' }}
@@ -943,7 +944,7 @@ export default function OrcamentoDetalhesPage({ params }) {
                       </Typography>
                     </Stack>
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <Stack direction="row" justifyContent="flex-end">
                       <LoadingButton
                         loading={saving}

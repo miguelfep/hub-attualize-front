@@ -188,7 +188,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
     <Card sx={{ p: 3, mb: 3 }}>
       <Typography variant="h6">Dados da Abertura</Typography>
       <Grid container spacing={2} mt={2}>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Nome Empresarial"
@@ -197,7 +197,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Nome Fantasia"
@@ -206,7 +206,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={3}>
+        <Grid xs={12} sm={3}>
           <TextField
             fullWidth
             label="Nome"
@@ -215,7 +215,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={3}>
+        <Grid xs={12} sm={3}>
           <TextField
             fullWidth
             label="CPF"
@@ -224,7 +224,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={3}>
+        <Grid xs={12} sm={3}>
           <TextField
             fullWidth
             label="Email"
@@ -233,7 +233,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={3}>
+        <Grid xs={12} sm={3}>
           <TextField
             fullWidth
             label="Email Financeiro"
@@ -242,7 +242,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <TextField
             fullWidth
             label="Telefone"
@@ -251,7 +251,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <TextField
             fullWidth
             label="Telefone Comercial"
@@ -260,7 +260,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <TextField
             fullWidth
             label="Horario"
@@ -269,7 +269,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Metragem"
@@ -278,7 +278,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Metragem Utilizada"
@@ -287,7 +287,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={12}>
+        <Grid xs={12} sm={12}>
           <TextField
             fullWidth
             label="Senha GOV"
@@ -297,10 +297,10 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
           />
         </Grid>
         {/* Endereço Comercial */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Typography variant="h6">Endereço Comercial</Typography>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <TextField
             fullWidth
             label="CEP"
@@ -310,7 +310,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={8}>
+        <Grid xs={12} sm={6} md={8}>
           <TextField
             fullWidth
             label="Logradouro"
@@ -319,7 +319,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <TextField
             fullWidth
             label="Número"
@@ -328,7 +328,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <TextField
             fullWidth
             label="Complemento"
@@ -337,7 +337,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={4}>
+        <Grid xs={12} sm={4}>
           <TextField
             fullWidth
             label="Bairro"
@@ -346,7 +346,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Cidade"
@@ -355,7 +355,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Estado"
@@ -366,12 +366,12 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
         </Grid>
 
         {/* Sócios */}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <Typography variant="h6">Informações dos Sócios</Typography>
         </Grid>
         {formData.socios.map((socio, index) => (
           <React.Fragment key={index}>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`Nome Sócio ${index + 1}`}
@@ -380,7 +380,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`CPF Sócio ${index + 1}`}
@@ -389,7 +389,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`RG Sócio ${index + 1}`}
@@ -398,7 +398,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`Estado Civil Sócio ${index + 1}`}
@@ -413,7 +413,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 <MenuItem value="Viúvo">Viúvo</MenuItem>
               </TextField>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`Naturalidade Sócio ${index + 1}`}
@@ -422,7 +422,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <NumericFormat
                 fullWidth
                 label={`Porcentagem Sócio ${index + 1}`}
@@ -440,7 +440,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`Regime de Bens Sócio ${index + 1}`}
@@ -449,7 +449,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`Endereço Sócio ${index + 1}`}
@@ -458,7 +458,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`Profissão Sócio ${index + 1}`}
@@ -467,7 +467,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 fullWidth
                 label={`CNH Sócio ${index + 1}`}
@@ -476,7 +476,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
                 margin="dense"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <FormControlLabel
                 control={
                   <Switch
@@ -492,7 +492,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
         ))}
 
         {/* Outros Campos */}
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <NumericFormat
             fullWidth
             label="Capital Social"
@@ -512,7 +512,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <NumericFormat
             fullWidth
             label="Valor Mensalidade"
@@ -532,7 +532,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             margin="dense"
           />
         </Grid>
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <TextField
             fullWidth
             multiline

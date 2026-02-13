@@ -84,7 +84,7 @@ const FaturaViewPage = ({ faturaData }) => {
 
             <Grid container spacing={2}>
               {/* Exibir o valor */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Stack direction="row" justifyContent="space-between">
                   <Typography variant="subtitle1">Valor:</Typography>
                   <Typography variant="h6" color="primary">
@@ -94,7 +94,7 @@ const FaturaViewPage = ({ faturaData }) => {
               </Grid>
 
               {/* Exibir a data de vencimento */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Stack direction="row" justifyContent="space-between">
                   <Typography variant="subtitle1">Data de Vencimento:</Typography>
                   <Typography variant="body1">{formattedDate}</Typography>
@@ -102,7 +102,7 @@ const FaturaViewPage = ({ faturaData }) => {
               </Grid>
 
               {/* Exibir observações */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Typography variant="subtitle1">Descrição:</Typography>
                 <Typography variant="body1" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
                   {observacoes}

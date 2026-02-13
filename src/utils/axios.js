@@ -250,6 +250,7 @@ export const endpoints = {
     criar: `${baseUrl}indicacao/criar`,
     minhas: `${baseUrl}indicacao/minhas`,
     detalhes: (id) => `${baseUrl}indicacao/${id}`,
+    validarCodigo: (codigo) => `${baseUrl}indicacao/validar/${codigo}`,
   },
   // Recompensa
   recompensa: {
@@ -258,7 +259,10 @@ export const endpoints = {
     solicitarPix: `${baseUrl}recompensa/solicitar-pix`,
     transacoes: `${baseUrl}recompensa/transacoes`,
     pixPendentes: `${baseUrl}recompensa/pix/pendentes`,
+    descontosPendentes: '/recompensa/descontos/pendentes',
     aprovarTransacao: (id) => `${baseUrl}recompensa/transacao/${id}/aprovar`,
     rejeitarTransacao: (id) => `${baseUrl}recompensa/transacao/${id}/rejeitar`,
+    aprovarDesconto: (id) => `${baseUrl}recompensa/desconto/${id}/aprovar`,
+    aplicarDescontoManual: `${baseUrl}recompensa/desconto/aplicar-manual`,
   },
 };

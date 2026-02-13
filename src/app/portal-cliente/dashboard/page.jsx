@@ -97,17 +97,17 @@ export default function PortalClienteDashboardView() {
         }}
       >
         <Grid container spacing={3} sx={{ width: '100%' }}>
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <AnalyticsWelcome user={user} />
           </Grid>
 
           {!isMobile && (
-            <Grid item xs={12} md={4} sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
+            <Grid xs={12} md={4} sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}>
               <BannersSection banners={banners} />
             </Grid>
           )}
 
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <AnalyticsWidgetSummary
               title="Orçamentos do Mês"
               total={dashboardData?.valorOrcamentoMensal || 0}
@@ -117,7 +117,7 @@ export default function PortalClienteDashboardView() {
               link={paths.cliente.orcamentos.root}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <AnalyticsWidgetSummary
               title="Faturamento Mensal"
               count={dashboardData?.notaFiscalMensal || 0}
@@ -128,7 +128,7 @@ export default function PortalClienteDashboardView() {
               link={paths.cliente.faturamentos.root}
             />
         </Grid>
-          <Grid item xs={12} sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}> 
+          <Grid xs={12} sx={{ width: '100%', maxWidth: '100%', overflow: 'hidden' }}> 
             <VisaoGeralOrcamentos
               height={500} 
               data={dashboardData?.visaoGeralAnual || [] }

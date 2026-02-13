@@ -22,7 +22,7 @@ import { EmptyContent } from 'src/components/empty-content';
 
 // ----------------------------------------------------------------------
 
-export function PixPendentesTable({ pixPendentes, loading, onAprovar, onRejeitar }) {
+export function DescontosPendentesTable({ descontosPendentes, loading, onAprovar, onRejeitar }) {
   const formatDate = (date) => {
     if (!date) return '-';
     return format(new Date(date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR });
@@ -36,12 +36,12 @@ export function PixPendentesTable({ pixPendentes, loading, onAprovar, onRejeitar
     );
   }
 
-  if (!pixPendentes || pixPendentes.length === 0) {
+  if (!descontosPendentes || descontosPendentes.length === 0) {
     return (
       <EmptyContent
         filled
-        title="Nenhum PIX pendente"
-        description="Não há solicitações de PIX aguardando aprovação"
+        title="Nenhum desconto pendente"
+        description="Não há solicitações de desconto aguardando aprovação"
       />
     );
   }
@@ -52,44 +52,44 @@ export function PixPendentesTable({ pixPendentes, loading, onAprovar, onRejeitar
         <TableHead>
           <TableRow>
             <TableCell>Cliente</TableCell>
-            <TableCell>Chave PIX</TableCell>
+            <TableCell>Contrato</TableCell>
             <TableCell>Valor</TableCell>
             <TableCell>Data Solicitação</TableCell>
             <TableCell align="right">Ações</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
-          {pixPendentes.map((pix) => (
-            <TableRow key={pix._id} hover>
+          {descontosPendentes.map((desconto) => (
+            <TableRow key={desconto._id} hover>
               <TableCell>
                 <Stack>
                   <Typography variant="subtitle2">
-                    {pix.cliente?.nome || pix.cliente?.razaoSocial || '-'}
+                    {desconto.cliente?.nome || desconto.cliente?.razaoSocial || '-'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {pix.cliente?.email || '-'}
+                    {desconto.cliente?.email || '-'}
                   </Typography>
                 </Stack>
               </TableCell>
 
               <TableCell>
                 <Stack direction="row" alignItems="center" spacing={1}>
-                  <Iconify icon="solar:copy-bold" width={16} />
-                  <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                    {pix.chavePix}
+                  <Iconify icon="solar:document-text-bold" width={16} />
+                  <Typography variant="body2">
+                    {`Contrato de #${desconto.cliente.razaoSocial || '-'}`}
                   </Typography>
                 </Stack>
               </TableCell>
 
               <TableCell>
                 <Typography variant="subtitle2" color="success.main">
-                  {fCurrency(pix.valor)}
+                  {fCurrency(desconto.valor)}
                 </Typography>
               </TableCell>
 
               <TableCell>
                 <Typography variant="body2" color="text.secondary">
-                  {formatDate(pix.dataSolicitacao)}
+                  {formatDate(desconto.dataSolicitacao)}
                 </Typography>
               </TableCell>
 
@@ -100,7 +100,7 @@ export function PixPendentesTable({ pixPendentes, loading, onAprovar, onRejeitar
                     color="success"
                     size="small"
                     startIcon={<Iconify icon="solar:check-circle-bold" />}
-                    onClick={() => onAprovar(pix)}
+                    onClick={() => onAprovar(desconto)}
                   >
                     Aprovar
                   </Button>
@@ -110,7 +110,7 @@ export function PixPendentesTable({ pixPendentes, loading, onAprovar, onRejeitar
                     color="error"
                     size="small"
                     startIcon={<Iconify icon="solar:close-circle-bold" />}
-                    onClick={() => onRejeitar(pix)}
+                    onClick={() => onRejeitar(desconto)}
                   >
                     Rejeitar
                   </Button>

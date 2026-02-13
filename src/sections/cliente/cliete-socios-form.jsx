@@ -178,7 +178,7 @@ function SociosForm() {
               Adicionar Sócio
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   fullWidth
                   label="Nome"
@@ -187,7 +187,7 @@ function SociosForm() {
                   onChange={(e) => setNomeSocio(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   fullWidth
                   label="CPF"
@@ -196,7 +196,7 @@ function SociosForm() {
                   onChange={(e) => setCpfSocio(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   fullWidth
                   label="RG"
@@ -205,7 +205,7 @@ function SociosForm() {
                   onChange={(e) => setRgSocio(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   fullWidth
                   label="CNH"
@@ -214,7 +214,7 @@ function SociosForm() {
                   onChange={(e) => setCnhSocio(e.target.value)}
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <FormControlLabel
                   control={
                     <Switch

@@ -26,6 +26,10 @@ const STATUS_CONFIG = {
     label: 'Em Negociação',
     color: 'secondary',
   },
+  fechado: {
+    label: 'Fechado - Aguardando Pagamento',
+    color: 'warning',
+  },
   aprovado: {
     label: 'Aprovado',
     color: 'success',

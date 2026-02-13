@@ -302,7 +302,7 @@ export default function PortalClienteEditPage({ params }) {
             <CardContent sx={{ p: { xs: 2, md: 4 } }}>
               <SectionHeader icon="solar:user-id-bold-duotone" title="Dados Básicos" />
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     select
@@ -314,7 +314,7 @@ export default function PortalClienteEditPage({ params }) {
                     <MenuItem value="juridica">Pessoa Jurídica</MenuItem>
                   </TextField>
                 </Grid>
-                <Grid item xs={12} sm={8}>
+                <Grid xs={12} sm={8}>
                   <TextField
                     fullWidth
                     label="Nome / Nome Fantasia"
@@ -325,7 +325,7 @@ export default function PortalClienteEditPage({ params }) {
                   />
                 </Grid>
                 {formData.tipoPessoa === 'juridica' && (
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <TextField
                       fullWidth
                       label="Razão Social"
@@ -336,7 +336,7 @@ export default function PortalClienteEditPage({ params }) {
                     />
                   </Grid>
                 )}
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label={formData.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ'}
@@ -348,7 +348,7 @@ export default function PortalClienteEditPage({ params }) {
                     helperText={errors.cpfCnpj}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Email"
@@ -358,7 +358,7 @@ export default function PortalClienteEditPage({ params }) {
                     helperText={errors.email}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Telefone"
@@ -375,7 +375,7 @@ export default function PortalClienteEditPage({ params }) {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Whatsapp"
@@ -398,7 +398,7 @@ export default function PortalClienteEditPage({ params }) {
 
               <SectionHeader icon="solar:map-point-bold-duotone" title="Endereço" />
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth
@@ -425,7 +425,7 @@ export default function PortalClienteEditPage({ params }) {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={8}>
+                <Grid xs={12} sm={8}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth
@@ -439,7 +439,7 @@ export default function PortalClienteEditPage({ params }) {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid xs={12} sm={3}>
                   <TextField
                     fullWidth
                     label="Número"
@@ -452,7 +452,7 @@ export default function PortalClienteEditPage({ params }) {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={5}>
+                <Grid xs={12} sm={5}>
                   <TextField
                     fullWidth
                     label="Complemento"
@@ -467,7 +467,7 @@ export default function PortalClienteEditPage({ params }) {
                     helperText={errors.complemento}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth
@@ -481,7 +481,7 @@ export default function PortalClienteEditPage({ params }) {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={8}>
+                <Grid xs={12} sm={8}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth
@@ -495,7 +495,7 @@ export default function PortalClienteEditPage({ params }) {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth

@@ -194,7 +194,7 @@ export default function AvaliacaoDetalhesPage() {
         </Stack>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={7}>
+          <Grid xs={12} md={7}>
             <Card>
               <CardContent>
                 <Stack spacing={2.5}>
@@ -254,7 +254,7 @@ export default function AvaliacaoDetalhesPage() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={5}>
+          <Grid xs={12} md={5}>
             <Card variant="outlined">
               <CardContent>
                 <Stack spacing={1.5}>

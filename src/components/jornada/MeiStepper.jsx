@@ -304,7 +304,7 @@ if(res.data.success === false){
                       {formValues.contaGovNivel && (
                         <Grid container spacing={2}>
                           {/* Nome ocupa a linha toda */}
-                          <Grid item xs={12}>
+                          <Grid xs={12}>
                             <Controller
                               name="name"
                               control={control}
@@ -322,7 +322,7 @@ if(res.data.success === false){
                           </Grid>
 
                           {/* CPF (50%) | RG (50%) */}
-                          <Grid item xs={12} sm={6}>
+                          <Grid xs={12} sm={6}>
                             <Controller
                               name="cpf"
                               control={control}
@@ -346,7 +346,7 @@ if(res.data.success === false){
                               )}
                             />
                           </Grid>
-                          <Grid item xs={12} sm={6}>
+                          <Grid xs={12} sm={6}>
                             <Controller
                               name="dataNascimento"
                               control={control}
@@ -364,7 +364,7 @@ if(res.data.success === false){
                               )}
                             />
                           </Grid>
-                          <Grid item xs={12} sm={4}>
+                          <Grid xs={12} sm={4}>
                             <Controller
                               name="rg"
                               control={control}
@@ -382,7 +382,7 @@ if(res.data.success === false){
                           </Grid>
 
                           {/* Órgão Emissor (50%) | UF Emissor (50%) */}
-                          <Grid item xs={12} sm={3}>
+                          <Grid xs={12} sm={3}>
                             <Controller
                               name="orgaoEmissor"
                               control={control}
@@ -398,7 +398,7 @@ if(res.data.success === false){
                               )}
                             />
                           </Grid>
-                          <Grid item xs={12} sm={5}>
+                          <Grid xs={12} sm={5}>
                             <Controller
                               name="ufEmissor"
                               control={control}
@@ -423,7 +423,7 @@ if(res.data.success === false){
                           </Grid>
 
                           {/* DDD (20%) | Telefone (80%) */}
-                          <Grid item xs={12} sm={2}>
+                          <Grid xs={12} sm={2}>
                             <Controller
                               name="ddd"
                               control={control}
@@ -443,7 +443,7 @@ if(res.data.success === false){
                               )}
                             />
                           </Grid>
-                          <Grid item xs={12} sm={4}>
+                          <Grid xs={12} sm={4}>
                             <Controller
                               name="phone"
                               control={control}
@@ -468,7 +468,7 @@ if(res.data.success === false){
                             />
                           </Grid>
 
-                          <Grid item xs={6}>
+                          <Grid xs={6}>
                             <Controller
                               name="email"
                               control={control}
@@ -484,7 +484,7 @@ if(res.data.success === false){
                               )}
                             />
                           </Grid>
-                          <Grid item xs={12}>
+                          <Grid xs={12}>
                             <Controller
                               name="senhaGov"
                               control={control}
@@ -515,7 +515,7 @@ if(res.data.success === false){
                       Endereço
                     </Typography>
                     <Grid container spacing={2}>
-                      <Grid item xs={12} sm={6}>
+                      <Grid xs={12} sm={6}>
                         <Controller
                           name="cep"
                           control={control}
@@ -535,7 +535,7 @@ if(res.data.success === false){
                           )}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid xs={12} sm={6}>
                         <Controller
                           name="logradouro"
                           control={control}
@@ -550,7 +550,7 @@ if(res.data.success === false){
                           )}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid xs={12} sm={6}>
                         <Controller
                           name="bairro"
                           control={control}
@@ -565,7 +565,7 @@ if(res.data.success === false){
                           )}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid xs={12} sm={6}>
                         <Controller
                           name="cidade"
                           control={control}
@@ -580,7 +580,7 @@ if(res.data.success === false){
                           )}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid xs={12} sm={6}>
                         <Controller
                           name="numero"
                           control={control}
@@ -589,7 +589,7 @@ if(res.data.success === false){
                           )}
                         />
                       </Grid>
-                      <Grid item xs={12} sm={6}>
+                      <Grid xs={12} sm={6}>
                         <Controller
                           name="complemento"
                           control={control}
@@ -607,7 +607,7 @@ if(res.data.success === false){
                       Informações do MEI
                     </Typography>
                     <Grid container spacing={2}>
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Controller
                           name="capitalSocial"
                           control={control}
@@ -636,7 +636,7 @@ if(res.data.success === false){
                           )}
                         />
                       </Grid>
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                       <Controller
                         name="atividadePrincipal"
                         control={control}
@@ -659,7 +659,7 @@ if(res.data.success === false){
                         />
                       </Grid>
 
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                       <Controller
                         name="atividadesSecundarias"
                         control={control}
@@ -680,7 +680,7 @@ if(res.data.success === false){
 
                       </Grid>
 
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                       <Controller
                         name="atuacao"
                         control={control}

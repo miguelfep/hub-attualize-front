@@ -97,7 +97,7 @@ export function ClienteBillingStats({ anoSelecionado, filtroStatus }) {
     <Stack spacing={3}>
       {/* Cards de Estatísticas */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -117,7 +117,7 @@ export function ClienteBillingStats({ anoSelecionado, filtroStatus }) {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -137,7 +137,7 @@ export function ClienteBillingStats({ anoSelecionado, filtroStatus }) {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Stack direction="row" alignItems="center" spacing={2}>
@@ -157,7 +157,7 @@ export function ClienteBillingStats({ anoSelecionado, filtroStatus }) {
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid xs={12} sm={6} md={3}>
           <Card>
             <CardContent sx={{ p: 3 }}>
               <Stack direction="row" alignItems="center" spacing={2}>

@@ -32,7 +32,7 @@ const DialogDocumentsAbertura = ({ name, id, onFileUploaded }) => {
   const handleDialogClose = () => setOpen(false);
 
   return (
-    <StyledGrid item xs={12} md={12}>
+    <StyledGrid xs={12} md={12}>
       <Box
         sx={{
           borderRadius: 1,

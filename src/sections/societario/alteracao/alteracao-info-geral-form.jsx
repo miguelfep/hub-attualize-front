@@ -59,7 +59,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                 />
             </Box>
             <Grid container spacing={3} sx={{ mt: { xs: 2, md: 2 } }}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                     <Controller
                         name="razaoSocialEnabled"
                         control={control}
@@ -91,7 +91,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                     <Controller
                         name="nomeFantasiaEnabled"
                         control={control}
@@ -123,7 +123,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                     <Controller
                         name="cnpj"
                         control={control}
@@ -139,7 +139,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                     <Controller
                         name="emailEnabled"
                         control={control}
@@ -171,7 +171,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                     <Controller
                         name="whatsapp"
                         control={control}
@@ -212,7 +212,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                     <Controller
                         name="capitalSocialEnabled"
                         control={control}
@@ -250,7 +250,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                     <Controller
                         name="regimeTributarioEnabled"
                         control={control}
@@ -290,7 +290,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                     {/* Controller para formaAtuacao */}
                     <Controller
                         name="formaAtuacao"
@@ -330,7 +330,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         )}
                     />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                     <Controller
                         name="responsavelTecnico"
                         control={control}

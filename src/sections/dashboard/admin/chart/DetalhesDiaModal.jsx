@@ -319,7 +319,7 @@ export default function DetalhesDiaModal({ isOpen, onClose, data }) {
           />
           <CardContent sx={{ flexGrow: 1, overflow: 'hidden', p: 0, '&:last-child': { pb: 0 } }}>
             <Grid container spacing={0} sx={{ height: '100%' }}>
-              <Grid item xs={12} md={6} sx={{ borderRight: { md: `1px solid ${theme.palette.divider}` } }}>
+              <Grid xs={12} md={6} sx={{ borderRight: { md: `1px solid ${theme.palette.divider}` } }}>
                 <Box sx={{
                   p: 2,
                   background: alpha(theme.palette.success.main, 0.03),
@@ -336,7 +336,7 @@ export default function DetalhesDiaModal({ isOpen, onClose, data }) {
                   {receitas.map(renderReceitaItem)}
                 </Box>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Box sx={{
                   p: 2,
                   background: alpha(theme.palette.error.main, 0.03),

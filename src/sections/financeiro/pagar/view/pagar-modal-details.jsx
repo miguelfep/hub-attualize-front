@@ -52,13 +52,13 @@ export function PagarModalDetails({ open, onClose, conta }) {
             <DialogContent sx={{ p: 2.5, pt: 0 }}>
                 <Stack spacing={2}>
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <SimpleInfo
                                 label="Valor"
                                 value={conta.valor != null ? fCurrency(conta.valor) : '-'}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <SimpleInfo
                                 label="Status"
                                 value={
@@ -81,13 +81,13 @@ export function PagarModalDetails({ open, onClose, conta }) {
                                 }
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <SimpleInfo
                                 label="Tipo"
                                 value={conta.tipo || '-'}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <SimpleInfo
                                 label="Categoria"
                                 value={conta.categoria ? getCategoriaNome(conta.categoria) : '-'}
@@ -98,13 +98,13 @@ export function PagarModalDetails({ open, onClose, conta }) {
                     <Divider />
 
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <SimpleInfo
                                 label="Vencimento"
                                 value={conta.dataVencimento ? format(new Date(conta.dataVencimento), 'dd/MM/yyyy') : '-'}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <SimpleInfo
                                 label="Pagamento"
                                 value={conta.dataPagamento ? format(new Date(conta.dataPagamento), 'dd/MM/yyyy') : '-'}
@@ -114,20 +114,20 @@ export function PagarModalDetails({ open, onClose, conta }) {
 
                     <Divider />
                     <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <SimpleInfo
                                 label="Banco"
                                 value={conta.banco?.nome || '-'}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <SimpleInfo
                                 label="Conta"
                                 value={conta.banco?.conta || '-'}
                             />
                         </Grid>
                         {conta.banco?.codigo && (
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <SimpleInfo
                                     label="Código do Banco"
                                     value={conta.banco.codigo}
@@ -169,7 +169,7 @@ export function PagarModalDetails({ open, onClose, conta }) {
                             <Divider />
                             <Grid container spacing={2}>
                                 {conta.statusPagamento && (
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <SimpleInfo
                                             label="Status Pagamento"
                                             value={conta.statusPagamento}
@@ -177,7 +177,7 @@ export function PagarModalDetails({ open, onClose, conta }) {
                                     </Grid>
                                 )}
                                 {conta.codigoTransacao && (
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <SimpleInfo
                                             label="Código Transação"
                                             value={conta.codigoTransacao}

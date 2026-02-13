@@ -1,10 +1,9 @@
 import { toast } from 'sonner';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 import {
-  obterCodigoIndicacao,
-  obterLinkIndicacao,
   criarIndicacao,
+  obterCodigoIndicacao,
   listarMinhasIndicacoes,
   obterDetalhesIndicacao,
 } from 'src/actions/indicacao';
@@ -28,13 +27,15 @@ export function useIndicacoes() {
       setLoadingCodigo(true);
       const response = await obterCodigoIndicacao();
       
-      if (response.codigo) {
+      if (response && response.codigo) {
         setCodigo(response.codigo);
-        setLink(response.link);
+        setLink(response.link || '');
       }
     } catch (error) {
       console.error('Erro ao buscar código de indicação:', error);
-      toast.error('Erro ao carregar código de indicação');
+      const errorMessage = error?.response?.data?.message || 'Erro ao carregar código de indicação';
+      toast.error(errorMessage);
+      // Não lança erro para não quebrar a página
     } finally {
       setLoadingCodigo(false);
     }
@@ -46,12 +47,21 @@ export function useIndicacoes() {
       setLoading(true);
       const response = await listarMinhasIndicacoes();
       
-      if (response.success && response.indicacoes) {
+      if (response && response.success && response.indicacoes) {
         setIndicacoes(response.indicacoes);
+      } else if (response && !response.success) {
+        // Se o backend retornar sucesso false mas não erro
+        setIndicacoes([]);
+        console.warn('Resposta sem indicações:', response);
+      } else {
+        setIndicacoes([]);
       }
     } catch (error) {
       console.error('Erro ao buscar indicações:', error);
-      toast.error('Erro ao carregar indicações');
+      const errorMessage = error?.response?.data?.message || 'Erro ao carregar indicações';
+      toast.error(errorMessage);
+      // Mantém array vazio em caso de erro
+      setIndicacoes([]);
     } finally {
       setLoading(false);
     }

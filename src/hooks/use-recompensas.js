@@ -1,14 +1,17 @@
 import { toast } from 'sonner';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 
 import {
-  obterContaRecompensa,
-  solicitarDesconto,
   solicitarPix,
+  aprovarDesconto,
   listarTransacoes,
-  listarPixPendentes,
   aprovarTransacao,
+  solicitarDesconto,
   rejeitarTransacao,
+  listarPixPendentes,
+  obterContaRecompensa,
+  aplicarDescontoManual,
+  listarDescontosPendentes,
 } from 'src/actions/recompensa';
 
 // ----------------------------------------------------------------------
@@ -21,9 +24,11 @@ export function useRecompensas() {
   const [conta, setConta] = useState(null);
   const [transacoes, setTransacoes] = useState([]);
   const [pixPendentes, setPixPendentes] = useState([]);
+  const [descontosPendentes, setDescontosPendentes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingTransacoes, setLoadingTransacoes] = useState(false);
   const [loadingPixPendentes, setLoadingPixPendentes] = useState(false);
+  const [loadingDescontosPendentes, setLoadingDescontosPendentes] = useState(false);
 
   // Buscar conta de recompensa
   const buscarConta = useCallback(async () => {
@@ -130,11 +135,18 @@ export function useRecompensas() {
       setLoadingPixPendentes(true);
       const response = await listarPixPendentes();
       
-      if (response.success && response.pixPendentes) {
-        setPixPendentes(response.pixPendentes);
+      if (response?.success) {
+        // Se a resposta for bem-sucedida, atualiza a lista (mesmo que vazia)
+        setPixPendentes(response.pixPendentes || []);
+      } else {
+        // Se não houver sucesso, define array vazio
+        setPixPendentes([]);
+        console.warn('Resposta inesperada ao buscar PIX pendentes:', response);
       }
     } catch (error) {
       console.error('Erro ao buscar PIX pendentes:', error);
+      // Em caso de erro, define array vazio para não ficar em loading eterno
+      setPixPendentes([]);
       toast.error('Erro ao carregar PIX pendentes');
     } finally {
       setLoadingPixPendentes(false);
@@ -187,6 +199,68 @@ export function useRecompensas() {
     }
   }, []);
 
+  // Buscar descontos pendentes (Admin) - filtra transações do tipo desconto com status pendente
+  const buscarDescontosPendentes = useCallback(async () => {
+    try {
+      setLoadingDescontosPendentes(true);
+      const response = await listarDescontosPendentes({ tipo: 'desconto', status: 'pendente' });
+      
+      if (response?.success && response.solicitacoes) {
+        setDescontosPendentes(response.solicitacoes || []);
+      } else {
+        setDescontosPendentes([]);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar descontos pendentes:', error);
+      setDescontosPendentes([]);
+      toast.error('Erro ao carregar descontos pendentes');
+    } finally {
+      setLoadingDescontosPendentes(false);
+    }
+  }, []);
+
+  // Aprovar desconto (Admin)
+  const aprovarDescontoRecompensa = useCallback(async (transacaoId, cobrancaId) => {
+    try {
+      const response = await aprovarDesconto(transacaoId, { cobrancaId });
+      
+      if (response.success) {
+        toast.success('Desconto aprovado e aplicado com sucesso!');
+        
+        // Remover da lista de pendentes
+        setDescontosPendentes((prev) => prev.filter((desc) => desc._id !== transacaoId));
+        
+        return response;
+      }
+      
+      throw new Error(response.message || 'Erro ao aprovar desconto');
+    } catch (error) {
+      console.error('Erro ao aprovar desconto:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Erro ao aprovar desconto';
+      toast.error(errorMessage);
+      throw error;
+    }
+  }, []);
+
+  // Aplicar desconto manual (Admin)
+  const aplicarDescontoManualRecompensa = useCallback(async (contratoId, valor, descricao = '') => {
+    try {
+      const response = await aplicarDescontoManual({ contratoId, valor, descricao });
+      
+      if (response.success) {
+        toast.success('Desconto aplicado manualmente com sucesso!');
+        return response;
+      }
+      
+      throw new Error(response.message || 'Erro ao aplicar desconto manual');
+    } catch (error) {
+      console.error('Erro ao aplicar desconto manual:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Erro ao aplicar desconto manual';
+      toast.error(errorMessage);
+      throw error;
+    }
+  }, []);
+
   // Verificar se tem saldo suficiente
   const temSaldoSuficiente = useCallback((valor) => {
     if (!conta) return false;
@@ -198,9 +272,11 @@ export function useRecompensas() {
     conta,
     transacoes,
     pixPendentes,
+    descontosPendentes,
     loading,
     loadingTransacoes,
     loadingPixPendentes,
+    loadingDescontosPendentes,
     
     // Funções Cliente
     buscarConta,
@@ -211,12 +287,16 @@ export function useRecompensas() {
     
     // Funções Admin
     buscarPixPendentes,
+    buscarDescontosPendentes,
     aprovar,
     rejeitar,
+    aprovarDesconto: aprovarDescontoRecompensa,
+    aplicarDescontoManual: aplicarDescontoManualRecompensa,
     
     // Funções de refetch
     refetch: buscarConta,
     refetchTransacoes: buscarTransacoes,
     refetchPixPendentes: buscarPixPendentes,
+    refetchDescontosPendentes: buscarDescontosPendentes,
   };
 }

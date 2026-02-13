@@ -106,7 +106,7 @@ export function StepOne() {
       </Typography>
       <Grid container spacing={2}>
         {/* Campo Nome ocupando metade da largura em telas grandes */}
-        <Grid item xs={12} md={12}>
+        <Grid xs={12} md={12}>
           <Field.Text
             name="stepOne.nome"
             label="Nome"
@@ -117,7 +117,7 @@ export function StepOne() {
         </Grid>
 
         {/* Campo Email ocupando metade da largura em telas grandes */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Field.Text
             name="stepOne.email"
             label="Email"
@@ -128,7 +128,7 @@ export function StepOne() {
         </Grid>
 
         {/* Campo Telefone ocupando um terço da largura em telas grandes */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Field.Phone
             name="stepOne.telefone"
             label="Telefone"
@@ -156,7 +156,7 @@ export function StepTwo() {
         render={({ field: { value, onChange } }) => (
           <Grid container spacing={2}>
             {businessSegments.map((segment) => (
-              <Grid item xs={12} sm={6} md={3} key={segment.id}>
+              <Grid xs={12} sm={6} md={3} key={segment.id}>
                 <ComponentCardAbertura
                   item={segment}
                   selected={value === segment.id}

@@ -178,12 +178,12 @@ export default function SolicitarMedPassPage() {
           <Grid container spacing={4}>
 
           {/* Principais Benefícios */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
               Benefícios completos para sua equipe
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -198,7 +198,7 @@ export default function SolicitarMedPassPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -213,7 +213,7 @@ export default function SolicitarMedPassPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -228,7 +228,7 @@ export default function SolicitarMedPassPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -243,7 +243,7 @@ export default function SolicitarMedPassPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -258,7 +258,7 @@ export default function SolicitarMedPassPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -277,7 +277,7 @@ export default function SolicitarMedPassPage() {
           </Grid>
 
           {/* Formulário */}
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <Card>
               <CardContent sx={{ p: 4 }}>
                 <Typography variant="h6" sx={{ mb: 3 }}>
@@ -298,7 +298,7 @@ export default function SolicitarMedPassPage() {
                         Dados de Contato
                       </Typography>
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <TextField
                             fullWidth
                             label="Nome/Razão Social"
@@ -309,7 +309,7 @@ export default function SolicitarMedPassPage() {
                             helperText={user ? 'Pré-preenchido com seus dados' : ''}
                           />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <TextField
                             fullWidth
                             label="Email"
@@ -321,7 +321,7 @@ export default function SolicitarMedPassPage() {
                             helperText={user ? 'Pré-preenchido com seus dados' : ''}
                           />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <TextField
                             fullWidth
                             label="Telefone"
@@ -382,7 +382,7 @@ export default function SolicitarMedPassPage() {
           </Grid>
 
           {/* Informações sobre o MedPass */}
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <Stack spacing={2}>
               <Card>
                 <CardContent>

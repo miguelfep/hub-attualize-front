@@ -14,7 +14,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
   return (
     <Grid container spacing={3} sx={{ mb: 4 }}>
       {/* Primeira linha: Razão Social e Nome Fantasia */}
-      <Grid item xs={12} sm={6}>
+      <Grid xs={12} sm={6}>
         <TextField
           label={
             <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -32,7 +32,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           fullWidth
         />
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid xs={12} sm={6}>
         <TextField
           label="Nome Fantasia"
           name="nomeFantasia"
@@ -43,7 +43,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Segunda linha: Nome, CPF, Email e Email Financeiro */}
-      <Grid item xs={12} sm={3}>
+      <Grid xs={12} sm={3}>
         <TextField
           label="Nome"
           name="nome"
@@ -52,7 +52,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           fullWidth
         />
       </Grid>
-      <Grid item xs={12} sm={3}>
+      <Grid xs={12} sm={3}>
         <TextField
           label="CPF"
           name="cpf"
@@ -62,7 +62,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           disabled
         />
       </Grid>
-      <Grid item xs={12} sm={3}>
+      <Grid xs={12} sm={3}>
         <TextField
           label="E-mail"
           name="email"
@@ -71,7 +71,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           fullWidth
         />
       </Grid>
-      <Grid item xs={12} sm={3}>
+      <Grid xs={12} sm={3}>
         <TextField
           label="E-mail Financeiro"
           name="emailFinanceiro"
@@ -82,7 +82,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Terceira linha: Telefone, Telefone Comercial e Horário de Funcionamento */}
-      <Grid item xs={12} sm={4}>
+      <Grid xs={12} sm={4}>
         <TextField
           label="Telefone"
           name="telefone"
@@ -92,7 +92,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           disabled
         />
       </Grid>
-      <Grid item xs={12} sm={4}>
+      <Grid xs={12} sm={4}>
         <InputMask
           mask="(99) 9999-9999"
           maskChar={null}
@@ -109,7 +109,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           )}
         </InputMask>
       </Grid>
-      <Grid item xs={12} sm={4}>
+      <Grid xs={12} sm={4}>
         <TextField
           label="Horário de Funcionamento"
           name="horarioFuncionamento"
@@ -120,7 +120,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Quarta linha: Metragem do Imóvel e Metragem Utilizada */}
-      <Grid item xs={12} sm={6}>
+      <Grid xs={12} sm={6}>
         <TextField
           label={
             <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -138,7 +138,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           fullWidth
         />
       </Grid>
-      <Grid item xs={12} sm={6}>
+      <Grid xs={12} sm={6}>
         <TextField
           label={
             <span style={{ display: 'flex', alignItems: 'center' }}>
@@ -158,7 +158,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Quinta linha: Senha GOV */}
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <TextField
           type="password"
           label="Senha GOV"

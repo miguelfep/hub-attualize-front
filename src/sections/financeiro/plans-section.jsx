@@ -172,7 +172,7 @@ export function PlansSection({ currentPlan, onPlanChange, planData, loading }) {
 
   const renderSkeletons = () => (
     [...Array(4)].map((_, index) => (
-      <Grid item xs={12} sm={6} md={3} key={`skeleton-${index}`}>
+      <Grid xs={12} sm={6} md={3} key={`skeleton-${index}`}>
         <PlanCardSkeleton isCurrentPlan={index === 0} />
       </Grid>
     ))

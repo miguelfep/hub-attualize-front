@@ -300,7 +300,7 @@ export default function PortalClienteNovoPage() {
             <CardContent sx={{ p: { xs: 2, md: 4 } }}>
               <SectionHeader icon="solar:user-id-bold-duotone" title="Dados Básicos" />
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     select
@@ -312,7 +312,7 @@ export default function PortalClienteNovoPage() {
                     <MenuItem value="juridica">Pessoa Jurídica</MenuItem>
                   </TextField>
                 </Grid>
-                <Grid item xs={12} sm={8}>
+                <Grid xs={12} sm={8}>
                   <TextField
                     fullWidth
                     label="Nome / Nome Fantasia"
@@ -323,7 +323,7 @@ export default function PortalClienteNovoPage() {
                   />
                 </Grid>
                 {formData.tipoPessoa === 'juridica' && (
-                  <Grid item xs={12}>
+                  <Grid xs={12}>
                     <TextField
                       fullWidth
                       label="Razão Social"
@@ -334,7 +334,7 @@ export default function PortalClienteNovoPage() {
                     />
                   </Grid>
                 )}
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label={formData.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ'}
@@ -346,7 +346,7 @@ export default function PortalClienteNovoPage() {
                     helperText={errors.cpfCnpj}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Email"
@@ -356,7 +356,7 @@ export default function PortalClienteNovoPage() {
                     helperText={errors.email}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Telefone"
@@ -373,7 +373,7 @@ export default function PortalClienteNovoPage() {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     fullWidth
                     label="Whatsapp"
@@ -397,7 +397,7 @@ export default function PortalClienteNovoPage() {
               {/* SEÇÃO 2: ENDEREÇO */}
               <SectionHeader icon="solar:map-point-bold-duotone" title="Endereço" />
               <Grid container spacing={2}>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="CEP"
@@ -423,7 +423,7 @@ export default function PortalClienteNovoPage() {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={8}>
+                <Grid xs={12} sm={8}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth
@@ -437,7 +437,7 @@ export default function PortalClienteNovoPage() {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={3}>
+                <Grid xs={12} sm={3}>
                   <TextField
                     // required
                     disabled={fetchingCep}
@@ -452,7 +452,7 @@ export default function PortalClienteNovoPage() {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={5}>
+                <Grid xs={12} sm={5}>
                   <TextField
                     fullWidth
                     label="Complemento"
@@ -467,7 +467,7 @@ export default function PortalClienteNovoPage() {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth
@@ -481,7 +481,7 @@ export default function PortalClienteNovoPage() {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={8}>
+                <Grid xs={12} sm={8}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth
@@ -495,7 +495,7 @@ export default function PortalClienteNovoPage() {
                     }
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     disabled={fetchingCep}
                     fullWidth

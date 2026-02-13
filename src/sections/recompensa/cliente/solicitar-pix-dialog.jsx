@@ -1,6 +1,7 @@
 'use client';
 
 import * as zod from 'zod';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -8,28 +9,46 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import DialogTitle from '@mui/material/DialogTitle';
 import LoadingButton from '@mui/lab/LoadingButton';
+import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
-import { fCurrency } from 'src/utils/format-number';
-
 import { useRecompensas } from 'src/hooks/use-recompensas';
+
+import { fCurrency } from 'src/utils/format-number';
+import { formatChavePix } from 'src/utils/formatters';
+import { validarChavePix, getPlaceholderChavePix } from 'src/utils/validators';
 
 // ----------------------------------------------------------------------
 
+const TIPOS_CHAVE_PIX = [
+  { value: 'cpf', label: 'CPF' },
+  { value: 'cnpj', label: 'CNPJ' },
+  { value: 'email', label: 'Email' },
+  { value: 'telefone', label: 'Telefone' },
+  { value: 'aleatoria', label: 'Chave Aleatória' },
+];
+
 const PixSchema = zod.object({
   valor: zod.number().min(1, { message: 'Valor deve ser maior que zero' }),
+  tipoChave: zod.string().min(1, { message: 'Selecione o tipo de chave' }),
   chavePix: zod.string().min(1, { message: 'Chave PIX é obrigatória' }),
 });
 
 // ----------------------------------------------------------------------
 
 export function SolicitarPixDialog({ open, onClose, saldoDisponivel }) {
-  const { solicitarPix, temSaldoSuficiente } = useRecompensas();
+  const { solicitarPix, temSaldoSuficiente, buscarConta, conta } = useRecompensas();
+
+  useEffect(() => {
+    if (open) {
+      buscarConta();
+    }
+  }, [open, buscarConta]);
 
   const {
     register,
@@ -38,22 +57,37 @@ export function SolicitarPixDialog({ open, onClose, saldoDisponivel }) {
     watch,
     reset,
     setValue,
+    setError,
+    clearErrors,
   } = useForm({
     resolver: zodResolver(PixSchema),
     defaultValues: {
       valor: 0,
+      tipoChave: 'email',
       chavePix: '',
     },
   });
 
   const valorWatch = watch('valor');
+  const tipoChaveWatch = watch('tipoChave');
+  const chavePixWatch = watch('chavePix');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      if (!temSaldoSuficiente(data.valor)) {
-        throw new Error('Saldo insuficiente');
+      // Use a prop saldoDisponivel diretamente. É mais garantido!
+      if (data.valor > saldoDisponivel) {
+        setError('valor', { message: 'Saldo insuficiente' });
+        return;
       }
-
+  
+      // Validar chave PIX conforme tipo
+      if (!validarChavePix(data.chavePix, data.tipoChave)) {
+        setError('chavePix', { 
+          message: `Chave PIX inválida para o tipo ${TIPOS_CHAVE_PIX.find(t => t.value === data.tipoChave)?.label}` 
+        });
+        return;
+      }
+  
       await solicitarPix(data.valor, data.chavePix);
       reset();
       onClose();
@@ -133,12 +167,32 @@ export function SolicitarPixDialog({ open, onClose, saldoDisponivel }) {
           </Stack>
 
           <TextField
+            {...register('tipoChave')}
+            select
+            label="Tipo de Chave PIX"
+            fullWidth
+            error={!!errors.tipoChave}
+            helperText={errors.tipoChave?.message}
+          >
+            {TIPOS_CHAVE_PIX.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          <TextField
             {...register('chavePix')}
             label="Chave PIX"
             fullWidth
-            placeholder="Email, CPF, CNPJ ou chave aleatória"
+            placeholder={getPlaceholderChavePix(tipoChaveWatch)}
             error={!!errors.chavePix}
             helperText={errors.chavePix?.message || 'Informe a chave PIX onde deseja receber o valor'}
+            onChange={(e) => {
+              const formatted = formatChavePix(e.target.value, tipoChaveWatch);
+              setValue('chavePix', formatted);
+              clearErrors('chavePix');
+            }}
           />
         </Stack>
       </DialogContent>

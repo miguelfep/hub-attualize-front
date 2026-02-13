@@ -249,7 +249,7 @@ export default function PortalClienteSettingsView() {
 
             <CardContent sx={{ p: { xs: 2, md: 4 } }}>
               <Grid container spacing={5}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <SectionHeader icon="solar:user-circle-bold-duotone" title="Minha Conta" />
                   <Stack spacing={2}>
                     <InfoItem label="Tipo de Usuário">Cliente</InfoItem>
@@ -259,7 +259,7 @@ export default function PortalClienteSettingsView() {
                   </Stack>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <SectionHeader icon="solar:bell-bing-bold-duotone" title="Notificações" />
                   <Stack spacing={2} divider={<Divider />}>
                     <NotificationSwitch checked={notifications.email} onChange={(e) => handleNotificationChange('email', e.target.checked)} title="Notificações por Email" subheader="Receba avisos sobre faturas e documentos." />

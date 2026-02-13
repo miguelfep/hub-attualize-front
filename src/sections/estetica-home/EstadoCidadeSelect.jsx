@@ -65,7 +65,7 @@ export default function EstadoCidadeSelect({ estadoName = 'estado', cidadeName =
   return (
     <Box sx={{ width: '100%' }}>
       <Grid container spacing={2}>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <Controller
             name={estadoName}
             control={control}
@@ -85,7 +85,7 @@ export default function EstadoCidadeSelect({ estadoName = 'estado', cidadeName =
           />
         </Grid>
 
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <Controller
             name={cidadeName}
             control={control}

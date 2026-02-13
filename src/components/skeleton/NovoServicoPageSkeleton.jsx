@@ -13,11 +13,11 @@ export function NovoServicoPageSkeleton() {
         <CardContent sx={{ p: { xs: 2, md: 4 } }}>
           <Skeleton variant="text" sx={{ fontSize: '1.5rem', width: 200, mb: 3 }} />
           <Grid container spacing={2}>
-            <Grid item xs={12}><Skeleton variant="rectangular" height={56} /></Grid>
-            <Grid item xs={12}><Skeleton variant="rectangular" height={80} /></Grid>
-            <Grid item xs={12} sm={4}><Skeleton variant="rectangular" height={56} /></Grid>
-            <Grid item xs={12} sm={4}><Skeleton variant="rectangular" height={56} /></Grid>
-            <Grid item xs={12} sm={4}><Skeleton variant="rectangular" height={56} /></Grid>
+            <Grid xs={12}><Skeleton variant="rectangular" height={56} /></Grid>
+            <Grid xs={12}><Skeleton variant="rectangular" height={80} /></Grid>
+            <Grid xs={12} sm={4}><Skeleton variant="rectangular" height={56} /></Grid>
+            <Grid xs={12} sm={4}><Skeleton variant="rectangular" height={56} /></Grid>
+            <Grid xs={12} sm={4}><Skeleton variant="rectangular" height={56} /></Grid>
           </Grid>
         </CardContent>
       </Card>

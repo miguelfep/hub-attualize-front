@@ -317,7 +317,7 @@ function PaymentBillingAddress({
         Detalhes do Cliente
       </Typography>
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Nome"
@@ -328,7 +328,7 @@ function PaymentBillingAddress({
             helperText={errors.nome}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Email"
@@ -339,7 +339,7 @@ function PaymentBillingAddress({
             helperText={errors.email}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Telefone"
@@ -351,7 +351,7 @@ function PaymentBillingAddress({
             inputProps={{ maxLength: 15 }}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="CPF/CNPJ"
@@ -363,7 +363,7 @@ function PaymentBillingAddress({
             inputProps={{ maxLength: 18 }}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="CEP"
@@ -378,7 +378,7 @@ function PaymentBillingAddress({
             inputProps={{ maxLength: 8 }}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Endereço"
@@ -390,7 +390,7 @@ function PaymentBillingAddress({
             helperText={errors.endereco}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Número"
@@ -401,7 +401,7 @@ function PaymentBillingAddress({
             helperText={errors.numero}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Complemento"
@@ -412,7 +412,7 @@ function PaymentBillingAddress({
             helperText={errors.complemento}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Bairro"
@@ -424,7 +424,7 @@ function PaymentBillingAddress({
             helperText={errors.bairro}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Cidade"
@@ -436,7 +436,7 @@ function PaymentBillingAddress({
             helperText={errors.cidade}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Estado"

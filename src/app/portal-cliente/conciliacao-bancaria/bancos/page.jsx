@@ -376,7 +376,7 @@ export default function GestaoBancosPage() {
 
           <form onSubmit={handleSubmit}>
             <Grid container spacing={3}>
-              <Grid item xs={12} md={12}>
+              <Grid xs={12} md={12}>
                 <Autocomplete
                   options={instituicoes}
                   value={instituicoes.find((inst) => inst.codigo === formData.codigo) || null}
@@ -451,7 +451,7 @@ export default function GestaoBancosPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Grid xs={12} md={4}>
                 <TextField
                   fullWidth
                   label="Agência"
@@ -462,7 +462,7 @@ export default function GestaoBancosPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <TextField
                   fullWidth
                   required
@@ -473,7 +473,7 @@ export default function GestaoBancosPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={2}>
+              <Grid xs={12} md={2}>
                 <TextField
                   fullWidth
                   label="Dígito"
@@ -485,7 +485,7 @@ export default function GestaoBancosPage() {
                 />
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <FormControl fullWidth>
                   <InputLabel>Tipo de Conta</InputLabel>
                   <Select
@@ -502,7 +502,7 @@ export default function GestaoBancosPage() {
               </Grid>
 
               {/* ✅ NOVO: Data de Início (Obrigatório) */}
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <TextField
                   fullWidth
                   required
@@ -521,7 +521,7 @@ export default function GestaoBancosPage() {
               </Grid>
 
               {/* ✅ NOVO: Saldo Inicial (Obrigatório) */}
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <NumericFormat
                   customInput={TextField}
                   fullWidth
@@ -542,7 +542,7 @@ export default function GestaoBancosPage() {
               </Grid>
 
               {/* ✅ NOVO: Conta Contábil do Banco (Opcional) */}
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Box>
                   <Typography variant="subtitle2" gutterBottom>
                     Conta Contábil do Banco
@@ -623,7 +623,7 @@ export default function GestaoBancosPage() {
                     </Typography>
                     <Grid container spacing={3}>
                       {bancosAtivos.map((banco) => (
-                <Grid item xs={12} md={6} lg={4} key={banco._id}>
+                <Grid xs={12} md={6} lg={4} key={banco._id}>
                   <Card sx={{ p: 3, height: '100%' }}>
                     <Stack spacing={2}>
                       <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -793,7 +793,7 @@ export default function GestaoBancosPage() {
                     </Typography>
                     <Grid container spacing={3}>
                       {bancosInativos.map((banco) => (
-                        <Grid item xs={12} md={6} lg={4} key={banco._id}>
+                        <Grid xs={12} md={6} lg={4} key={banco._id}>
                           <Card sx={{ p: 3, height: '100%', opacity: 0.7, bgcolor: 'grey.50' }}>
                             <Stack spacing={2}>
                               <Stack direction="row" alignItems="center" justifyContent="space-between">
@@ -938,7 +938,7 @@ export default function GestaoBancosPage() {
               )}
 
               <Grid container spacing={2}>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                   <TextField
                     fullWidth
                     label="Agência"
@@ -948,7 +948,7 @@ export default function GestaoBancosPage() {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <TextField
                     fullWidth
                     required
@@ -959,7 +959,7 @@ export default function GestaoBancosPage() {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={2}>
+                <Grid xs={12} md={2}>
                   <TextField
                     fullWidth
                     label="Dígito"
@@ -970,7 +970,7 @@ export default function GestaoBancosPage() {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <FormControl fullWidth>
                     <InputLabel>Tipo de Conta</InputLabel>
                     <Select
@@ -986,7 +986,7 @@ export default function GestaoBancosPage() {
                   </FormControl>
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <TextField
                     fullWidth
                     required
@@ -1004,7 +1004,7 @@ export default function GestaoBancosPage() {
                   />
                 </Grid>
 
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <NumericFormat
                     customInput={TextField}
                     fullWidth
@@ -1024,7 +1024,7 @@ export default function GestaoBancosPage() {
                   />
                 </Grid>
 
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <Box>
                     <Typography variant="subtitle2" gutterBottom>
                       Conta Contábil do Banco
