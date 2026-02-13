@@ -77,7 +77,6 @@ export function IndicacaoFormView({ codigo }) {
           setIndicadorInfo({ codigo, nomeEmpresa: null });
         } else {
           // Para outros erros, mostra mensagem mas permite continuar
-          toast.info('Não foi possível validar o código, mas você pode continuar');
           setIndicadorInfo({ codigo, nomeEmpresa: null });
         }
       } finally {
@@ -601,8 +600,7 @@ export function IndicacaoFormView({ codigo }) {
                   <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                     &quot;Reduzi meus custos em 35% e ainda ganhei um time que me ajuda com estratégia. 
                     Melhor decisão que tomei para minha empresa!&quot;
-                  </Typography>
-                  
+                  </Typography>                  
                   <Stack direction="row" spacing={0.5}>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Iconify key={star} icon="solar:star-bold" width={20} sx={{ color: 'warning.main' }} />

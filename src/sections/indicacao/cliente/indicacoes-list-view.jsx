@@ -88,20 +88,22 @@ export function IndicacoesListView() {
 
   return (
     <Stack spacing={3}>
-      {/* Banner Indique e Ganhe */}
-      <Box
+{/* Banner Indique e Ganhe - Versão Compacta */}
+<Box
         sx={{
           position: 'relative',
           borderRadius: 2,
           overflow: 'hidden',
-          minHeight: { xs: 180, md: 240 },
+          // Definimos uma altura pequena e fixa para o banner não ocupar a tela toda
+          height: { xs: 190, md: 300 }, 
+          width: '100%',
           display: 'flex',
           alignItems: 'center',
           backgroundImage: 'url(/assets/background/indiqueeganhe.webp)',
-          backgroundSize: 'contain', // Mostra a imagem completa sem cortar
+          // '100% 100%' faz a imagem esticar para preencher exatamente o Box
+          backgroundSize: '100% 100%', 
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
-          backgroundColor: '#667eea', // Cor de fundo para preencher espaços
           '&::before': {
             content: '""',
             position: 'absolute',
@@ -109,7 +111,8 @@ export function IndicacoesListView() {
             left: 0,
             right: 0,
             bottom: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.3)', // Overlay escuro
+            // Escurecemos um pouco para o texto saltar, já que o banner é menor
+            backgroundColor: 'rgba(0, 0, 0, 0.4)', 
             zIndex: 0,
           },
         }}
@@ -119,43 +122,45 @@ export function IndicacoesListView() {
             position: 'relative',
             zIndex: 1,
             px: { xs: 3, md: 5 },
-            py: 3,
-            maxWidth: { xs: '100%', md: '60%' },
+            width: '100%',
           }}
         >
           <Typography 
             variant="h3" 
             sx={{ 
               color: 'white', 
-              fontWeight: 'bold', 
-              mb: 2,
-              fontSize: { xs: '1.75rem', md: '3rem' },
-              textShadow: '2px 2px 4px rgba(0,0,0,0.5)',
+              fontWeight: 800,
+              fontSize: { xs: '1.2rem', sm: '1.8rem', md: '2.2rem' }, // Fontes menores para o banner pequeno
+              textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
+              lineHeight: 1,
+              mb: 0.5
             }}
           >
             INDIQUE & GANHE
           </Typography>
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              color: 'white', 
-              mb: 1,
-              fontSize: { xs: '1rem', md: '1.25rem' },
-              textShadow: '1px 1px 3px rgba(0,0,0,0.5)',
-            }}
-          >
-            Descontos na mensalidade
-          </Typography>
-          <Typography 
-            variant="h6" 
-            sx={{ 
-              color: 'white',
-              fontSize: { xs: '1rem', md: '1.25rem' },
-              textShadow: '1px 1px 3px rgba(0,0,0,0.5)',
-            }}
-          >
-            ou Pix na conta!
-          </Typography>
+          
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0, sm: 2 }}>
+            <Typography 
+              sx={{ 
+                color: 'white', 
+                fontWeight: 'medium',
+                fontSize: { xs: '0.75rem', md: '1rem' },
+                textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+              }}
+            >
+              • Descontos na mensalidade
+            </Typography>
+            <Typography 
+              sx={{ 
+                color: 'white',
+                fontWeight: 'medium',
+                fontSize: { xs: '0.75rem', md: '1rem' },
+                textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
+              }}
+            >
+              • Ou Pix na conta!
+            </Typography>
+          </Stack>
         </Box>
       </Box>
 
