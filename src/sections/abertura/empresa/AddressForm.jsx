@@ -56,7 +56,7 @@ const AddressForm = ({ formData, setFormData }) => {
       {' '}
       {/* Adicionado margem inferior */}
       {/* Campo de CEP */}
-      <Grid item xs={12} sm={3}>
+      <Grid xs={12} sm={3}>
         <TextField
           label="CEP"
           name="cep"
@@ -74,7 +74,7 @@ const AddressForm = ({ formData, setFormData }) => {
         />
       </Grid>
       {/* Outros campos de endereço */}
-      <Grid item xs={12} sm={7}>
+      <Grid xs={12} sm={7}>
         <TextField
           label="Logradouro"
           name="logradouro"
@@ -84,7 +84,7 @@ const AddressForm = ({ formData, setFormData }) => {
           disabled={loadingCep}
         />
       </Grid>
-      <Grid item xs={12} sm={2}>
+      <Grid xs={12} sm={2}>
         <TextField
           label="Número"
           name="numero"
@@ -93,7 +93,7 @@ const AddressForm = ({ formData, setFormData }) => {
           fullWidth
         />
       </Grid>
-      <Grid item xs={12} sm={3}>
+      <Grid xs={12} sm={3}>
         <TextField
           label="Complemento"
           name="complemento"
@@ -103,7 +103,7 @@ const AddressForm = ({ formData, setFormData }) => {
           disabled={loadingCep}
         />
       </Grid>
-      <Grid item xs={12} sm={3}>
+      <Grid xs={12} sm={3}>
         <TextField
           label="Bairro"
           name="bairro"
@@ -113,7 +113,7 @@ const AddressForm = ({ formData, setFormData }) => {
           disabled={loadingCep}
         />
       </Grid>
-      <Grid item xs={12} sm={4}>
+      <Grid xs={12} sm={4}>
         <TextField
           label="Cidade"
           name="cidade"
@@ -123,7 +123,7 @@ const AddressForm = ({ formData, setFormData }) => {
           disabled={loadingCep}
         />
       </Grid>
-      <Grid item xs={12} sm={2}>
+      <Grid xs={12} sm={2}>
         <TextField
           label="Estado"
           name="estado"

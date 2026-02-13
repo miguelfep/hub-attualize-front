@@ -17,10 +17,10 @@ export default function ChartCardSkeleton({ chartType = 'rectangular' }) {
     case 'circular':
       chartContent = (
         <Grid container spacing={3} alignItems="center">
-          <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
+          <Grid xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center' }}>
             <Skeleton variant="circular" width={240} height={240} />
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Stack spacing={2}>
               {Array.from(new Array(5)).map((_, index) => (
                 <Skeleton key={index} variant="rounded" height={20} />

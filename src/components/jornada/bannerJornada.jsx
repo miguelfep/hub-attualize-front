@@ -39,7 +39,7 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
       <Container sx={{ position: 'relative', zIndex: 2 }}>
         <Grid container spacing={2} justifyContent="center" alignItems="center">
           {/* Logos centralizadas */}
-          <Grid item xs={12} sx={{ textAlign: 'center', mb: 3 }}>
+          <Grid xs={12} sx={{ textAlign: 'center', mb: 3 }}>
             <Box
               sx={{
                 display: 'flex',
@@ -57,7 +57,7 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
           </Grid>
 
           {/* Texto principal */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h2" sx={{ fontWeight: 700 }}>
               {title}
             </Typography>
@@ -69,7 +69,7 @@ export function BannerJornada({ title, subtitle, backgroundImage, logoAttualize,
           </Grid>
 
           {/* Botões de ação */}
-          <Grid item xs={12} sx={{ mt: 3 }}>
+          <Grid xs={12} sx={{ mt: 3 }}>
             <Box sx={{ display: 'flex', justifyContent: 'center', gap: 2 }}>
               <Button variant="contained" color="primary" size="large" onClick={() => scrollToSection('presente')}>
                 Quero meu presente

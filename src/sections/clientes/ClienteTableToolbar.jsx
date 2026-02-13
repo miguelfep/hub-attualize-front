@@ -10,7 +10,7 @@ export function ClienteTableToolbar({ filters, onFilters }) {
   return (
     <Stack spacing={2} sx={{ p: 2.5, borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
       <Grid container spacing={2}>
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <TextField
             fullWidth
             value={filters.search}
@@ -25,7 +25,7 @@ export function ClienteTableToolbar({ filters, onFilters }) {
             }}
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <TextField
             fullWidth
             select
@@ -38,7 +38,7 @@ export function ClienteTableToolbar({ filters, onFilters }) {
             <MenuItem value="false">Inativos</MenuItem>
           </TextField>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <TextField
             fullWidth
             select

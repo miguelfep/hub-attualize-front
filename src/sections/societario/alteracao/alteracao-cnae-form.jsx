@@ -19,7 +19,7 @@ export default function AlteracaoCnaeForm({ atividadeAlteracao, atividadeCliente
                     Abaixo, você verá suas atividades comerciais. Caso deseje adicionar uma nova, habilite a opção, <strong>Desejo adicionar Novas Atividades</strong> e descrever a sua nova atividade.
                 </Typography>
             </Box>
-            <Grid item xs={12} md={12}>
+            <Grid xs={12} md={12}>
                 <Controller
                     name="novasAtividadesEnabled"
                     control={control}

@@ -79,7 +79,7 @@ const SociosForm = ({ formData, setFormData }) => {
   return (
     <Grid container spacing={3} sx={{ mb: 4 }}>
       {/* Campo para selecionar o número de sócios */}
-      <Grid item xs={12}>
+      <Grid xs={12}>
         <TextField
           select
           label="Número de Sócios"
@@ -99,11 +99,11 @@ const SociosForm = ({ formData, setFormData }) => {
       {/* Renderização dinâmica dos campos dos sócios */}
       {formData.socios.map((socio, index) => (
         <React.Fragment key={index}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h6">{`Dados do Sócio ${index + 1}`}</Typography>
           </Grid>
 
-          <Grid item xs={12} sm={4}>
+          <Grid xs={12} sm={4}>
             <TextField
               label="Nome"
               value={socio.nome || ''}
@@ -112,7 +112,7 @@ const SociosForm = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={4}>
+          <Grid xs={12} sm={4}>
             <InputMask
               mask="999.999.999-99"
               value={socio.cpf || ''}
@@ -122,7 +122,7 @@ const SociosForm = ({ formData, setFormData }) => {
             </InputMask>
           </Grid>
 
-          <Grid item xs={12} sm={4}>
+          <Grid xs={12} sm={4}>
             <InputMask
               mask="99.999.999-*"
               value={socio.rg || ''}
@@ -132,7 +132,7 @@ const SociosForm = ({ formData, setFormData }) => {
             </InputMask>
           </Grid>
 
-          <Grid item xs={12} sm={4}>
+          <Grid xs={12} sm={4}>
             <InputMask
               mask="99999999999"
               value={socio.cnh || ''}
@@ -142,7 +142,7 @@ const SociosForm = ({ formData, setFormData }) => {
             </InputMask>
           </Grid>
 
-          <Grid item xs={12} sm={8}>
+          <Grid xs={12} sm={8}>
             <TextField
               label="Endereço"
               value={socio.endereco || ''}
@@ -151,7 +151,7 @@ const SociosForm = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Naturalidade"
               value={socio.naturalidade || ''}
@@ -160,7 +160,7 @@ const SociosForm = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Profissão"
               value={socio.profissao || ''}
@@ -169,7 +169,7 @@ const SociosForm = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Porcentagem"
               type="number"
@@ -179,7 +179,7 @@ const SociosForm = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               select
               label="Estado Civil"
@@ -196,7 +196,7 @@ const SociosForm = ({ formData, setFormData }) => {
           </Grid>
 
           {socio.estadoCivil === 'Casado' && (
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 select
                 label="Regime de Bens"
@@ -211,7 +211,7 @@ const SociosForm = ({ formData, setFormData }) => {
             </Grid>
           )}
 
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <FormControlLabel
               control={
                 <Switch
@@ -225,7 +225,7 @@ const SociosForm = ({ formData, setFormData }) => {
 
           {/* Divider entre sócios */}
           {index < formData.socios.length - 1 && (
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Box sx={{ mt: 2, mb: 2 }}>
                 <Divider />
               </Box>

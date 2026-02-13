@@ -27,7 +27,7 @@ export function LicencaRowSkeleton() {
 
       <Grid container spacing={2}>
         {[...Array(4)].map((_, index) => (
-          <Grid item xs={6} sm={3} key={index}>
+          <Grid xs={6} sm={3} key={index}>
             <Skeleton variant="text" width="50%" sx={{ fontSize: '0.7rem' }} />
             <Skeleton variant="text" width="80%" sx={{ fontSize: '0.9rem' }} />
           </Grid>

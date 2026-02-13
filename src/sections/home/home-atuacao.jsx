@@ -77,7 +77,7 @@ const HomeServicesSection = () => {
           </Stack>
           <Grid container spacing={4} justifyContent="center" sx={{ mt: 5 }}>
             {services.map((service, index) => (
-              <Grid item xs={12} sm={6} md={4} lg={4} key={index}>
+              <Grid xs={12} sm={6} md={4} lg={4} key={index}>
                 <ServiceCard {...service} />
               </Grid>
             ))}

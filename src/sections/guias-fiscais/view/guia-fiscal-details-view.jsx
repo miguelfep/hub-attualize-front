@@ -91,6 +91,7 @@ export function GuiaFiscalDetailsView({ id }) {
 
   const { data: guia, isLoading, error } = useGetGuiaFiscalById(id);
 
+
   const handleDownload = async () => {
     try {
       await downloadGuiaFiscal(id, guia?.nomeArquivo || 'guia-fiscal.pdf');
@@ -108,6 +109,7 @@ export function GuiaFiscalDetailsView({ id }) {
       </DashboardContent>
     );
   }
+  
 
   if (error || !guia) {
     return (

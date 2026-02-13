@@ -46,7 +46,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
   return (
     <>
       <Grid container spacing={3} sx={{ mt: { xs: 2, md: 2 } }}>
-        <Grid item xs={12} md={12}>
+        <Grid xs={12} md={12}>
           <Typography variant="h5" sx={{ mb: 2 }} gutterBottom>
             Endereço Comercial
           </Typography>
@@ -56,7 +56,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
             </Typography>
           </Box>
         </Grid>
-        <Grid item xs={12} md={2}>
+        <Grid xs={12} md={2}>
           <Controller
             name="cep"
             control={control}
@@ -107,7 +107,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
             )}
           />
         </Grid>
-        <Grid item xs={12} md={3}>
+        <Grid xs={12} md={3}>
           <Controller
             name="logradouro"
             control={control}
@@ -116,7 +116,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
             )}
           />
         </Grid>
-        <Grid item xs={12} md={2}>
+        <Grid xs={12} md={2}>
           <Controller
             name="bairro"
             control={control}
@@ -125,7 +125,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
             )}
           />
         </Grid>
-        <Grid item xs={12} md={2}>
+        <Grid xs={12} md={2}>
           <Controller
             name="cidade"
             control={control}
@@ -134,7 +134,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
             )}
           />
         </Grid>
-        <Grid item xs={12} md={1}>
+        <Grid xs={12} md={1}>
           <Controller
             name="numero"
             control={control}
@@ -144,7 +144,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
           />
 
         </Grid>
-        <Grid item xs={12} md={2}>
+        <Grid xs={12} md={2}>
           <Controller
             name="complemento"
             control={control}

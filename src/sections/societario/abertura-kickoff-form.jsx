@@ -249,7 +249,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
       </Tabs>
       {activeTab === 0 && (
         <Grid container spacing={2} mt={2}>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Razão Social"
               name="nomeEmpresarial"
@@ -258,7 +258,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Nome Fantasia"
               name="nomeFantasia"
@@ -268,7 +268,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <TextField
               label="Nome"
               name="nome"
@@ -277,7 +277,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={2}>
+          <Grid xs={12} sm={6} md={2}>
             <TextField
               label="CPF"
               name="cpf"
@@ -286,7 +286,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Email"
               name="email"
@@ -295,7 +295,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Email Financeiro"
               name="emailFinanceiro"
@@ -304,7 +304,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <TextField
               label="Telefone"
               name="telefone"
@@ -313,7 +313,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               disabled
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <TextField
               label="Telefone Comercial"
               name="telefoneComercial"
@@ -322,7 +322,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={4}>
+          <Grid xs={12} sm={6} md={4}>
             <TextField
               label="Horário de Funcionamento"
               name="horarioFuncionamento"
@@ -331,7 +331,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Metragem do Imóvel"
               helperText="*Metragem total do imovel"
@@ -341,7 +341,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Metragem Utilizada"
               helperText="*Área construida"
@@ -351,7 +351,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <TextField
               type={values.showPassword ? 'text' : 'password'}
               label="Senha GOV"
@@ -384,11 +384,11 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
           {/* Endereço */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h6">Endereço Comercial</Typography>
           </Grid>
 
-          <Grid item xs={12} sm={3}>
+          <Grid xs={12} sm={3}>
             <InputMask
               mask="99999-999"
               value={formData.enderecoComercial.cep}
@@ -414,7 +414,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
             </InputMask>
           </Grid>
 
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <TextField
               label="Rua"
               name="enderecoComercial.logradouro"
@@ -424,7 +424,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               disabled={loadingCep}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Número"
               name="enderecoComercial.numero"
@@ -433,7 +433,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Complemento"
               name="enderecoComercial.complemento"
@@ -442,7 +442,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               onChange={handleChange}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Bairro"
               name="enderecoComercial.bairro"
@@ -452,7 +452,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               disabled={loadingCep}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Cidade"
               name="enderecoComercial.cidade"
@@ -462,7 +462,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               disabled={loadingCep}
             />
           </Grid>
-          <Grid item xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <TextField
               label="Estado"
               name="enderecoComercial.estado"
@@ -474,7 +474,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
 
           {/* Seletor de número de sócios */}
-          <Grid item xs={12} sm={12}>
+          <Grid xs={12} sm={12}>
             <TextField
               select
               label="Número de Sócios"
@@ -491,12 +491,12 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
 
           {/* Renderização dos sócios */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h6">Sócios</Typography>
           </Grid>
           {[...Array(numSocios).keys()].map((i) => (
             <React.Fragment key={i}>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`Nome Sócio ${i + 1}`}
                   name={`socios.${i}.nome`}
@@ -505,7 +505,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`CPF Sócio ${i + 1}`}
                   name={`socios.${i}.cpf`}
@@ -514,7 +514,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`RG Sócio ${i + 1}`}
                   name={`socios.${i}.rg`}
@@ -523,7 +523,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`CNH Sócio ${i + 1}`}
                   name={`socios.${i}.cnh`}
@@ -532,7 +532,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`Endereço Sócio ${i + 1}`}
                   name={`socios.${i}.endereco`}
@@ -541,7 +541,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   label={`Profissão Sócio ${i + 1}`}
                   name={`socios.${i}.profissao`}
@@ -550,7 +550,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid xs={12} sm={6}>
                 <TextField
                   select
                   label={`Estado Civil Sócio ${i + 1}`}
@@ -568,7 +568,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               </Grid>
 
               {formData.socios[i]?.estadoCivil === 'Casado' && (
-                <Grid item xs={12} sm={6}>
+                <Grid xs={12} sm={6}>
                   <TextField
                     select
                     label={`Regime de Bens Sócio ${i + 1}`}
@@ -587,7 +587,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                 </Grid>
               )}
 
-              <Grid item xs={12} sm={6}>
+              <Grid xs={12} sm={6}>
                 <TextField
                   label={`Porcentagem Sócio ${i + 1}`}
                   name={`socios.${i}.porcentagem`}
@@ -600,7 +600,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   }}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={6}>
+              <Grid xs={12} sm={6} md={6}>
                 <TextField
                   label="Naturalidade"
                   name={`socios.${i}.naturalidade`}
@@ -609,7 +609,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   onChange={handleChange}
                 />
               </Grid>
-              <Grid item xs={12} sm={6} md={4}>
+              <Grid xs={12} sm={6} md={4}>
                 <FormControlLabel
                   control={
                     <Switch
@@ -621,14 +621,14 @@ export function AberturaKickoffForm({ currentAbertura }) {
                   label="É Administrador?"
                 />
               </Grid>
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Box sx={{ mb: 3 }}>
                   <Divider />
                 </Box>
               </Grid>
             </React.Fragment>
           ))}
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <NumericFormat
               label="Capital Social"
               customInput={TextField}
@@ -644,7 +644,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
 
           {/* Responsável na Receita Federal */}
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <TextField
               select
               label="Responsável na Receita Federal"
@@ -661,7 +661,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
                 ))}
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6} md={6}>
+          <Grid xs={12} sm={6} md={6}>
             <TextField
               select
               label="Forma de Atuação"
@@ -681,7 +681,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               <MenuItem value="Outros">Outros</MenuItem>
             </TextField>
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid xs={12} sm={6}>
             <NumericFormat
               label="Valor Mensalidade"
               name="valorMensalidade"
@@ -698,7 +698,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
 
           {/* Descrição das Atividades */}
-          <Grid item xs={12} sm={6} md={12}>
+          <Grid xs={12} sm={6} md={12}>
             <TextField
               multiline
               rows={5}
@@ -711,7 +711,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
 
           {/* Observações */}
-          <Grid item xs={12} sm={6} md={12}>
+          <Grid xs={12} sm={6} md={12}>
             <TextField
               multiline
               rows={2}
@@ -723,7 +723,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
 
-          <Grid item xs={12} sm={6} md={12}>
+          <Grid xs={12} sm={6} md={12}>
             <DocumentsManager
               formData={formData}
               setFormData={setFormData}
@@ -735,7 +735,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
 
       {activeTab === 1 && (
         <Grid container spacing={2} mt={2}>
-          <Grid item xs={12}>
+          <Grid xs={12}>
           <TextField
             multiline
             rows={4}
@@ -746,7 +746,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
             onChange={handleChange}
           />
         </Grid>
-        <Grid item xs={12} sm={12}>
+        <Grid xs={12} sm={12}>
           <FormControlLabel
             control={
               <Switch
@@ -759,7 +759,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           />
         </Grid>
         {formData.possuiAtividadeServico && (
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               multiline
               rows={4}
@@ -771,7 +771,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
         )}
-        <Grid item xs={12} sm={12}>
+        <Grid xs={12} sm={12}>
           <FormControlLabel
             control={
               <Switch
@@ -784,7 +784,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           />
         </Grid>
         {formData.possuiAtividadeComercio && (
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               multiline
               rows={4}
@@ -796,7 +796,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
         )}
-        <Grid item xs={12} sm={12}>
+        <Grid xs={12} sm={12}>
           <FormControlLabel
             control={
               <Switch
@@ -809,7 +809,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           />
         </Grid>
         {formData.possuiMaquinas && (
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               multiline
               rows={4}
@@ -821,7 +821,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
         )}
-        <Grid item xs={12} sm={12}>
+        <Grid xs={12} sm={12}>
           <FormControlLabel
             control={
               <Switch
@@ -834,7 +834,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           />
         </Grid>
         {formData.possuiSistema && (
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <TextField
               multiline
               rows={3}
@@ -846,7 +846,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
         )}
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <TextField
             label="URL da Meet Kickoff"
             name="urlMeetKickoff"
@@ -856,7 +856,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           />
         </Grid>
         {/* Pro Labore */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <NumericFormat
             label="Pro Labore"
             customInput={TextField}
@@ -877,7 +877,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
         </Grid>
 
         {/* Previsão de Faturamento */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <NumericFormat
             label="Previsão de Faturamento"
             customInput={TextField}
@@ -898,7 +898,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
         </Grid>
 
         {/* Regime Tributário */}
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <TextField
             select
             label="Regime Tributário"

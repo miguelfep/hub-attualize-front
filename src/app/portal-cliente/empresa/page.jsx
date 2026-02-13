@@ -605,7 +605,7 @@ export default function MinhaEmpresaView() {
           {/* SEÇÃO 1: DADOS CADASTRAIS E CONTATO */}
           <Section icon="mdi:office-building-outline" title="Dados Cadastrais e Contato">
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Stack divider={<CustomDivider />}>
                   <InfoRow
                     icon="mdi:card-account-details-outline"
@@ -634,7 +634,7 @@ export default function MinhaEmpresaView() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Stack divider={<CustomDivider />}>
                   <InfoRow
                     icon="mdi:email-outline"
@@ -657,7 +657,7 @@ export default function MinhaEmpresaView() {
                 </Stack>
               </Grid>
 
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Typography
                   variant="subtitle2"
                   sx={{ mt: 2, mb: 1.5, px: 2, color: 'text.secondary', fontWeight: 600 }}
@@ -683,14 +683,14 @@ export default function MinhaEmpresaView() {
           {/* SEÇÃO 2: ATIVIDADES */}
           <Section icon="mdi:briefcase-outline" title="Atividades da Empresa">
             <Grid container spacing={3}>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <ActivitySection
                   title="Atividade Principal"
                   activities={empresaData.atividade_principal}
                   color="primary"
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <ActivitySection
                   title="Atividades Secundárias"
                   activities={empresaData.atividades_secundarias}

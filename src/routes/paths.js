@@ -273,6 +273,9 @@ export const paths = {
       details: (id) => `${ROOTS.DASHBOARD}/guias-fiscais/${id}`,
       edit: (id) => `${ROOTS.DASHBOARD}/guias-fiscais/${id}/edit`,
     },
+    recompensas: {
+      root: `${ROOTS.DASHBOARD}/recompensas`,
+    },
   },
   // CLIENTE AREA
   cliente: {
@@ -319,6 +322,16 @@ export const paths = {
       calendar: `${ROOTS.CLIENTE}/guias-fiscais/calendario`,
       details: (id) => `${ROOTS.CLIENTE}/guias-fiscais/${id}`,
     },
+    indicacoes: {
+      root: `${ROOTS.CLIENTE}/indicacoes`,
+    },
+    recompensas: {
+      root: `${ROOTS.CLIENTE}/recompensas`,
+    },
+  },
+  // INDICAÇÃO PÚBLICA
+  indicacao: {
+    public: (codigo) => `/indicacao/${codigo}`,
   },
   // PUBLIC BENEFITS
   vrVa: {

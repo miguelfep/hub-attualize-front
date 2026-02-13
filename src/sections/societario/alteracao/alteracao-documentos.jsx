@@ -129,7 +129,7 @@ export default function AlteracaoDocumentos({ alteracaoId }) {
 
                 <Divider sx={{ mb: 3 }} />
                 <Grid container spacing={3}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                         <Box sx={{ mb: 1 }}>
                             <FormControlLabel
                                 control={
@@ -165,7 +165,7 @@ export default function AlteracaoDocumentos({ alteracaoId }) {
                             />
                         </Box>
                     </Grid>
-                    <Grid item xs={12} sm={6} sx={{ textAlign: 'end' }} >
+                    <Grid xs={12} sm={6} sx={{ textAlign: 'end' }} >
                         <Box>
                             <FormControlLabel
                                 control={
@@ -190,7 +190,7 @@ export default function AlteracaoDocumentos({ alteracaoId }) {
                         if (doc.toggle && !possuiRT) return null;
                         const file = getValues(doc.name);
                         return (
-                            <Grid item xs={12} sm={6} md={6} key={doc.name}>
+                            <Grid xs={12} sm={6} md={6} key={doc.name}>
                                 <Box
                                     sx={{
                                         border: '1px solid',

@@ -383,7 +383,7 @@ export default function PortalOrcamentosPage() {
 
           <Box sx={{ p: 2.5, borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <TextField
                   fullWidth
                   select

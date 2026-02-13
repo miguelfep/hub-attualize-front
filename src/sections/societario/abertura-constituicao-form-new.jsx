@@ -193,7 +193,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
 
           {/* Select de Situação */}
           <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-start">
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <TextField
                 select
                 fullWidth
@@ -214,7 +214,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 ))}
               </TextField>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid xs={12} md={6}>
               <Box
                 sx={{
                   display: 'flex',
@@ -395,7 +395,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
           </Typography>
 
           <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Razão Social"
                 fullWidth
@@ -404,7 +404,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Nome Fantasia"
                 fullWidth
@@ -414,7 +414,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
               />
             </Grid>
 
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4}>
               <TextField
                 label="Nome"
                 fullWidth
@@ -423,7 +423,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4}>
               <TextField
                 label="CPF"
                 fullWidth
@@ -432,7 +432,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4}>
               <TextField
                 label="Email"
                 fullWidth
@@ -441,7 +441,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4}>
               <TextField
                 label="Email Financeiro"
                 fullWidth
@@ -450,7 +450,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4}>
               <TextField
                 label="Telefone"
                 fullWidth
@@ -459,7 +459,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4}>
               <TextField
                 label="Telefone Comercial"
                 fullWidth
@@ -470,13 +470,13 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
             </Grid>
 
             {/* Endereço Comercial */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 Endereço Comercial
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid xs={12} sm={3}>
               <TextField
                 label="CEP"
                 fullWidth
@@ -485,7 +485,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Logradouro"
                 fullWidth
@@ -494,7 +494,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={3}>
+            <Grid xs={12} sm={3}>
               <TextField
                 label="Número"
                 fullWidth
@@ -503,7 +503,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <TextField
                 label="Complemento"
                 fullWidth
@@ -512,7 +512,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <TextField
                 label="Bairro"
                 fullWidth
@@ -521,7 +521,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <TextField
                 label="Cidade"
                 fullWidth
@@ -530,7 +530,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <TextField
                 label="Estado"
                 fullWidth
@@ -543,7 +543,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
             {/* Sócios */}
             {currentAbertura?.socios && currentAbertura.socios.length > 0 && (
               <>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <Divider sx={{ my: 2 }} />
                   <Typography variant="subtitle1" sx={{ mb: 2 }}>
                     Sócios ({currentAbertura.socios.length})
@@ -551,12 +551,12 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 </Grid>
                 {currentAbertura.socios.map((socio, index) => (
                   <React.Fragment key={index}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
                         Sócio {index + 1}
                       </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid xs={12} sm={4}>
                       <TextField
                         label="Nome"
                         fullWidth
@@ -565,7 +565,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                         variant="outlined"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid xs={12} sm={4}>
                       <TextField
                         label="CPF"
                         fullWidth
@@ -574,7 +574,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                         variant="outlined"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid xs={12} sm={4}>
                       <TextField
                         label="RG"
                         fullWidth
@@ -583,7 +583,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                         variant="outlined"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid xs={12} sm={4}>
                       <TextField
                         label="Porcentagem"
                         fullWidth
@@ -592,7 +592,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                         variant="outlined"
                       />
                     </Grid>
-                    <Grid item xs={12} sm={4}>
+                    <Grid xs={12} sm={4}>
                       <TextField
                         label="Administrador"
                         fullWidth
@@ -602,7 +602,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                       />
                     </Grid>
                     {index < currentAbertura.socios.length - 1 && (
-                      <Grid item xs={12}>
+                      <Grid xs={12}>
                         <Divider sx={{ my: 1 }} />
                       </Grid>
                     )}
@@ -612,13 +612,13 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
             )}
 
             {/* Outras Informações */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle1" sx={{ mb: 2 }}>
                 Outras Informações
               </Typography>
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Capital Social"
                 fullWidth
@@ -627,7 +627,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Valor Mensalidade"
                 fullWidth
@@ -636,7 +636,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Pro Labore"
                 fullWidth
@@ -645,7 +645,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Previsão de Faturamento"
                 fullWidth
@@ -654,7 +654,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Regime Tributário"
                 fullWidth
@@ -663,7 +663,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <TextField
                 label="Forma de Atuação"
                 fullWidth
@@ -673,7 +673,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
               />
             </Grid>
             {currentAbertura?.descricaoAtividades && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   label="Descrição das Atividades"
                   fullWidth
@@ -686,7 +686,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
               </Grid>
             )}
             {currentAbertura?.observacoes && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <TextField
                   label="Observações"
                   fullWidth
@@ -700,7 +700,7 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
             )}
 
             {/* Documentos */}
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Divider sx={{ my: 2 }} />
               <DocumentsManager
                 formData={documentosData}

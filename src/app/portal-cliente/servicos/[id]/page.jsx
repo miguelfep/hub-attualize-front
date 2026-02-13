@@ -265,7 +265,7 @@ const handleSubmit = useCallback(async (e) => {
             <CardContent sx={{ p: { xs: 2, md: 4 } }}>
               <SectionHeader icon="solar:document-add-bold-duotone" title="Dados do Serviço" />
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     fullWidth
                     label="Nome do Serviço"
@@ -273,7 +273,7 @@ const handleSubmit = useCallback(async (e) => {
                     onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     fullWidth
                     multiline
@@ -283,7 +283,7 @@ const handleSubmit = useCallback(async (e) => {
                     onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Valor"
@@ -301,7 +301,7 @@ const handleSubmit = useCallback(async (e) => {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Unidade"
@@ -309,7 +309,7 @@ const handleSubmit = useCallback(async (e) => {
                     onChange={(e) => setForm((f) => ({ ...f, unidade: e.target.value }))}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Categoria (Opcional)"
@@ -327,7 +327,7 @@ const handleSubmit = useCallback(async (e) => {
                     title="Informações Fiscais (NFSe)"
                   />
                   <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <TextField
                         fullWidth
                         select
@@ -352,7 +352,7 @@ const handleSubmit = useCallback(async (e) => {
                       </TextField>
                     </Grid>
                     
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                       <TextField
                         fullWidth
                         label="Código do Serviço no Município"
@@ -363,7 +363,7 @@ const handleSubmit = useCallback(async (e) => {
                       />
                     </Grid>
                     
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                       <TextField
                         fullWidth
                         label="Item Lista Serviço LC 116/2003"

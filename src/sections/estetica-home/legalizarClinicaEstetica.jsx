@@ -376,7 +376,7 @@ export function LegalizarClinicaEsteticaStepper() {
         </Stack>
 
         <Grid container spacing={{ xs: 3, md: 6 }}>
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <m.div variants={varFade().inLeft}>
               <Stepper
                 activeStep={activeStep}
@@ -415,7 +415,7 @@ export function LegalizarClinicaEsteticaStepper() {
             </m.div>
           </Grid>
 
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <Paper
               elevation={3}
               sx={{

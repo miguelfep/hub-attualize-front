@@ -718,7 +718,7 @@ export default function StatusConciliacaoPage() {
                 const segundos = tempoDecorrido ? tempoDecorrido % 60 : null;
 
                 return (
-                  <Grid item xs={12} sm={6} md={4} key={conciliacaoId}>
+                  <Grid xs={12} sm={6} md={4} key={conciliacaoId}>
                     <Card 
                       sx={{ 
                         p: 2.5,
@@ -1044,7 +1044,7 @@ export default function StatusConciliacaoPage() {
                       const status = obterStatusMes(banco._id, mes.mesAno);
                       
                       return (
-                        <Grid item xs={12} sm={6} md={4} lg={3} key={mes.mesAno}>
+                        <Grid xs={12} sm={6} md={4} lg={3} key={mes.mesAno}>
                           <Card
                             sx={{
                               p: 2.5,

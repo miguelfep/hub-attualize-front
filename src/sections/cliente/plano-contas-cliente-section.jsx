@@ -144,7 +144,7 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
       {/* Estatísticas */}
       {estatisticas && (
         <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'primary.lighter' }}>
               <Typography variant="h4" color="primary.main">
                 {estatisticas.totalContas}
@@ -154,7 +154,7 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
               </Typography>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'info.lighter' }}>
               <Typography variant="h4" color="info.main">
                 {estatisticas.contasSinteticas}
@@ -164,7 +164,7 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
               </Typography>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'success.lighter' }}>
               <Typography variant="h4" color="success.main">
                 {estatisticas.contasAnaliticas}
@@ -174,7 +174,7 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
               </Typography>
             </Card>
           </Grid>
-          <Grid item xs={6} sm={3}>
+          <Grid xs={6} sm={3}>
             <Card sx={{ p: 2, textAlign: 'center', bgcolor: 'warning.lighter' }}>
               <Typography variant="h4" color="warning.main">
                 {estatisticas.contasInativas}

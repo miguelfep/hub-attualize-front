@@ -147,27 +147,27 @@ export function OrcamentoView({ invoice: initialInvoice, nfses }) {
               </Stack>
             </Stack>
             <Grid container spacing={1}>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>Número</Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{nfseAtiva.numeroNota || '-'}</Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>Série</Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{nfseAtiva.serie || '-'}</Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>Código Verificação</Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{nfseAtiva.codigoVerificacao || '-'}</Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>Valor Serviços</Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{(nfseAtiva.valorServicos ?? nfseAtiva.valorTotal ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>Valor ISS</Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{(nfseAtiva.valorIss ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
               </Grid>
-              <Grid item xs={12} sm={4}>
+              <Grid xs={12} sm={4}>
                 <Typography variant="caption" sx={{ color: 'text.secondary' }}>Valor Líquido</Typography>
                 <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>{(nfseAtiva.valorLiquido ?? nfseAtiva.valorTotal ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}</Typography>
               </Grid>
@@ -177,7 +177,7 @@ export function OrcamentoView({ invoice: initialInvoice, nfses }) {
       })()}
 
       <Grid container spacing={2} justifyContent="center">
-        <Grid item xs={12}>
+        <Grid xs={12}>
           <CheckoutSteps activeStep={activeStep} steps={ORCAMENTO_CHECKOUT_STEPS} />
         </Grid>
       </Grid>

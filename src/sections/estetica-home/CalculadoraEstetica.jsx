@@ -131,7 +131,7 @@ export function Calculadora() {
           <Stack spacing={3}>
             {/* CEP e Município */}
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <TextField
                   label="CEP"
                   value={cep}
@@ -140,7 +140,7 @@ export function Calculadora() {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <TextField
                   label="Município"
                   value={municipio}
@@ -153,7 +153,7 @@ export function Calculadora() {
 
             {/* Faturamento e Despesas */}
             <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <TextField
                   label="Faturamento Mensal (R$)"
                   value={faturamento}
@@ -162,7 +162,7 @@ export function Calculadora() {
                   variant="outlined"
                 />
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <TextField
                   label="Despesas Mensais (R$)"
                   value={despesas}

@@ -48,7 +48,7 @@ export function OrcamentoPendente({ invoice }) {
     <Box sx={{ my: { xs: 2, md: 3 } }}>
       {/* Informações da Contratada e Contratante */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Stack spacing={1} sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Contratada
@@ -62,7 +62,7 @@ export function OrcamentoPendente({ invoice }) {
             Telefone: (41) 9 9698-2267
           </Stack>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Stack spacing={1} sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Contratante
@@ -74,7 +74,7 @@ export function OrcamentoPendente({ invoice }) {
             Telefone: {invoice?.cliente?.whatsapp || invoice?.lead.telefone}
           </Stack>
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid xs={12} sm={6} md={4}>
           <Stack spacing={1} sx={{ typography: 'body2' }}>
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Proposta válida até

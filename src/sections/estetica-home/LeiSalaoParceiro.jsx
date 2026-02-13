@@ -230,7 +230,7 @@ export function LeiSalaoParceiro() {
             </Typography>
             <Grid container spacing={4} alignItems="stretch">
               {comparativoEmpresas.map((empresa) => (
-                <Grid item xs={12} md={6} key={empresa.titulo}>
+                <Grid xs={12} md={6} key={empresa.titulo}>
                   <Card sx={{ height: '100%',  }}>
                     <CardHeader title={empresa.titulo} titleTypographyProps={{ variant: 'h4', align: 'center' }} sx={{ bgcolor: 'action.hover' }}/>
                     <Divider />

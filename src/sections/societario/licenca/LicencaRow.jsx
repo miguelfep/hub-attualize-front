@@ -135,19 +135,19 @@ export function LicencaRow({ licenca, onDownload }) {
       <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
       <Grid container spacing={2} rowSpacing={1}>
-        <Grid item xs={6} sm={3}>
+        <Grid xs={6} sm={3}>
           <Typography variant="caption" color="text.secondary">Início</Typography>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>{formatDate(licenca.dataInicio)}</Typography>
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid xs={6} sm={3}>
           <Typography variant="caption" color="text.secondary">Vencimento</Typography>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>{formatDate(licenca.dataVencimento)}</Typography>
         </Grid>
-        <Grid item xs={6} sm={3}>
+        <Grid xs={6} sm={3}>
           <Typography variant="caption" color="text.secondary">Cidade</Typography>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>{licenca?.cidade || '-'}</Typography>
         </Grid>
-        <Grid item xs={6} sm={1}>
+        <Grid xs={6} sm={1}>
           <Typography variant="caption" color="text.secondary">UF</Typography>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>{licenca?.estado || '-'}</Typography>
         </Grid>

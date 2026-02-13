@@ -200,6 +200,12 @@ export const navData = [
         roles: ['admin'],
       },
       {
+        title: 'Recompensas',
+        path: paths.dashboard.recompensas.root,
+        icon: ICONS.banking,
+        roles: ['admin', 'financeiro'],
+      },
+      {
         title: 'Relatórios',
         path: paths.dashboard.aberturas.root,
         icon: ICONS.analytics,

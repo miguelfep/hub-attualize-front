@@ -96,7 +96,7 @@ function ContentCard({ content }) {
 
         <Grid container spacing={2}>
           {content.items.map((item, index) => (
-            <Grid item xs={12} sm={6} key={index}>
+            <Grid xs={12} sm={6} key={index}>
               <Stack direction="row" spacing={1.5} alignItems="center">
                 <Iconify icon="mdi:check-circle" width={20} color="primary.main" />
                 <Typography variant="body2">{item}</Typography>
@@ -134,7 +134,7 @@ export function InformacoesEssenciais() {
         </Stack>
 
         <Grid container spacing={{ xs: 5, md: 8 }}>
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <m.div variants={varFade().inLeft}>
               <Stack spacing={2}>
                 {informacoesData.map((info, index) => (
@@ -169,7 +169,7 @@ export function InformacoesEssenciais() {
             </m.div>
           </Grid>
 
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <Box sx={{ minHeight: { md: 480 } }}>
               <AnimatePresence mode="wait">
                 <m.div

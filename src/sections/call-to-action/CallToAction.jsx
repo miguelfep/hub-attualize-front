@@ -77,7 +77,7 @@ export function CallToAction({ pageSource }) {
             </IconButton>
 
             <Grid container>
-              <Grid item xs={12} md={6}>
+              <Grid xs={12} md={6}>
                 <Box sx={{ p: { xs: 3, sm: 4 } }}>
                   <Typography id="contact-modal-title" variant="h5" sx={{ mb: 1 }}>
                     Solicite o contato
@@ -117,7 +117,7 @@ export function CallToAction({ pageSource }) {
                 </Box>
               </Grid>
 
-              <Grid item md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
+              <Grid md={6} sx={{ display: { xs: 'none', md: 'block' } }}>
                 <Box
                   component="img"
                   src="/assets/images/estetica/operacao-att.webp"

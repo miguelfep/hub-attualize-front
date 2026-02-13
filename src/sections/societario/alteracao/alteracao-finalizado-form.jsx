@@ -230,7 +230,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                 <>
                     {currentAlteracao.statusAlteracao === 'em_alteracao' && (
                         <Grid container spacing={2} mt={2}>
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Controller
                                     name="situacaoAlteracao"
                                     control={control}
@@ -255,7 +255,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
+                            <Grid xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
                                 <Button
                                     variant="contained"
                                     onClick={handleSave}
@@ -271,12 +271,12 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                     )}
 
                     <Grid container spacing={2} mt={2}>
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Typography variant="h4" align="center" gutterBottom>
                                 Dados da Alteração
                             </Typography>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Controller
                                 name="alteracoes"
                                 control={control}
@@ -292,7 +292,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="razaoSocial"
                                 control={control}
@@ -301,7 +301,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="nomeFantasia"
                                 control={control}
@@ -310,7 +310,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="email"
                                 control={control}
@@ -319,7 +319,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="whatsapp"
                                 control={control}
@@ -328,7 +328,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="capitalSocial"
                                 control={control}
@@ -348,7 +348,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="regimeTributario"
                                 control={control}
@@ -369,7 +369,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="formaAtuacao"
                                 control={control}
@@ -390,7 +390,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="responsavelTecnico"
                                 control={control}
@@ -413,10 +413,10 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                             />
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Typography variant="h6">Endereço Comercial</Typography>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <Controller
                                 name="enderecoComercial.cep"
                                 control={control}
@@ -431,7 +431,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6} md={8}>
+                        <Grid xs={12} sm={6} md={8}>
                             <Controller
                                 name="enderecoComercial.logradouro"
                                 control={control}
@@ -440,7 +440,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid xs={12} sm={4}>
                             <Controller
                                 name="enderecoComercial.numero"
                                 control={control}
@@ -449,7 +449,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid xs={12} sm={4}>
                             <Controller
                                 name="enderecoComercial.complemento"
                                 control={control}
@@ -458,7 +458,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={4}>
+                        <Grid xs={12} sm={4}>
                             <Controller
                                 name="enderecoComercial.bairro"
                                 control={control}
@@ -467,7 +467,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="enderecoComercial.cidade"
                                 control={control}
@@ -476,7 +476,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                             <Controller
                                 name="enderecoComercial.estado"
                                 control={control}
@@ -486,7 +486,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                             />
                         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Typography variant="h6">Informações dos Sócios</Typography>
                         </Grid>
 
@@ -494,7 +494,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                             const estadoCivilValue = watch(`socios[${index}].estadoCivil`);
                             return (
                                 <React.Fragment key={index}>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].nome`}
                                             control={control}
@@ -503,7 +503,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].cpf`}
                                             control={control}
@@ -526,7 +526,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].rg`}
                                             control={control}
@@ -549,7 +549,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].naturalidade`}
                                             control={control}
@@ -563,7 +563,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].porcentagem`}
                                             control={control}
@@ -582,7 +582,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].estadoCivil`}
                                             control={control}
@@ -604,7 +604,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                         />
                                     </Grid>
                                     {estadoCivilValue === 'Casado' && (
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].regimeBens`}
                                                 control={control}
@@ -626,7 +626,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             />
                                         </Grid>
                                     )}
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].endereco`}
                                             control={control}
@@ -640,7 +640,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].profissao`}
                                             control={control}
@@ -654,7 +654,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].cnh`}
                                             control={control}
@@ -668,7 +668,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].etnia`}
                                             control={control}
@@ -689,7 +689,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].grau_escolaridade`}
                                             control={control}
@@ -710,7 +710,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                             )}
                                         />
                                     </Grid>
-                                    <Grid item xs={12} sm={6}>
+                                    <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios[${index}].administrador`}
                                             control={control}
@@ -726,11 +726,11 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                             );
                         })}
 
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Typography variant="h6">Atividades Econômicas</Typography>
                         </Grid>
                     </Grid>
-                    <Grid item xs={12} mb={2} mt={2}>
+                    <Grid xs={12} mb={2} mt={2}>
                         <Controller
                             name='novasAtividades'
                             control={control}
@@ -782,7 +782,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
 
             {activeTab === 1 && (
                 <Grid container spacing={2} mt={2}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                         <Controller
                             name="anotacoes"
                             control={control}
@@ -798,7 +798,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                             )}
                         />
                     </Grid>
-                    <Grid item xs={12} sm={12}>
+                    <Grid xs={12} sm={12}>
                         <Controller
                             name="urlMeetKickoff"
                             control={control}

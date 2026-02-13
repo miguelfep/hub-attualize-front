@@ -246,7 +246,7 @@ export default function ReformaTributariaPage() {
         </Card>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={7}>
+          <Grid xs={12} md={7}>
             <Card
               sx={{
                 height: '100%',
@@ -293,7 +293,7 @@ export default function ReformaTributariaPage() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={5}>
+          <Grid xs={12} md={5}>
             <Card sx={{ height: '100%', borderRadius: 3 }}>
               <CardContent>
                 <Stack spacing={2}>
@@ -326,7 +326,7 @@ export default function ReformaTributariaPage() {
         </Grid>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Stack spacing={1.5}>
@@ -342,7 +342,7 @@ export default function ReformaTributariaPage() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Stack spacing={1.5}>
@@ -378,7 +378,7 @@ export default function ReformaTributariaPage() {
                 3) A solução — unificação em dois tributos
               </Typography>
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Card
                     sx={{
                       height: '100%',
@@ -395,7 +395,7 @@ export default function ReformaTributariaPage() {
                     </CardContent>
                   </Card>
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Card
                     sx={{
                       height: '100%',
@@ -423,7 +423,7 @@ export default function ReformaTributariaPage() {
         </Card>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Stack spacing={1.5}>
@@ -446,7 +446,7 @@ export default function ReformaTributariaPage() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Stack spacing={1.5}>
@@ -465,7 +465,7 @@ export default function ReformaTributariaPage() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card sx={{ borderRadius: 3 }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ color: 'primary.main', textTransform: 'uppercase', fontWeight: 800 }}>
@@ -556,7 +556,7 @@ export default function ReformaTributariaPage() {
         </Card>
 
         <Grid container spacing={3}>
-          <Grid item xs={12} md={7}>
+          <Grid xs={12} md={7}>
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
                 <Typography variant="subtitle2" sx={{ color: 'primary.main', textTransform: 'uppercase', fontWeight: 800 }}>
@@ -575,7 +575,7 @@ export default function ReformaTributariaPage() {
               </CardContent>
             </Card>
           </Grid>
-          <Grid item xs={12} md={5}>
+          <Grid xs={12} md={5}>
             <Card
               sx={{
                 borderRadius: 3,

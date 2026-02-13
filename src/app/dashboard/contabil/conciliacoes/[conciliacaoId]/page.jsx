@@ -503,7 +503,7 @@ export default function DetalhesConciliacaoPage() {
 
       {/* Informações da Conciliação */}
       <Grid container spacing={3} mb={3}>
-        <Grid item xs={12} lg={6}>
+        <Grid xs={12} lg={6}>
           <Card sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
               ℹ️ Informações da Conciliação
@@ -559,7 +559,7 @@ export default function DetalhesConciliacaoPage() {
         </Grid>
 
         {/* Resumo Financeiro */}
-        <Grid item xs={12} lg={6}>
+        <Grid xs={12} lg={6}>
           <Card sx={{ p: 3, bgcolor: 'primary.lighter' }}>
             <Typography variant="h6" gutterBottom>
               💰 Resumo Financeiro

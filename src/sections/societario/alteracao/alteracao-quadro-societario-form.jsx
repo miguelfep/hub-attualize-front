@@ -271,7 +271,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
         </Typography>
       </Box>
       <Grid container spacing={3} sx={{ mt: 1 }}>
-        <Grid item xs={12} md={12}>
+        <Grid xs={12} md={12}>
           <TextField
             select
             fullWidth
@@ -290,11 +290,11 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
 
         {fields.map((socio, index) => (
           <React.Fragment key={socio.id}>
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Typography variant="h6">{`Dados do Sócio ${index + 1}`}</Typography>
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <Controller
                 name={`socios.${index}.nome`}
                 control={control}
@@ -311,7 +311,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <Controller
                 name={`socios.${index}.cpf`}
                 control={control}
@@ -337,7 +337,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <Controller
                 name={`socios.${index}.rg`}
                 control={control}
@@ -363,7 +363,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={4}>
+            <Grid xs={12} sm={4}>
               <Controller
                 name={`socios.${index}.cnh`}
                 control={control}
@@ -389,7 +389,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={8}>
+            <Grid xs={12} sm={8}>
               <Controller
                 name={`socios.${index}.endereco`}
                 control={control}
@@ -406,7 +406,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Controller
                 name={`socios.${index}.profissao`}
                 control={control}
@@ -423,7 +423,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Controller
                 name={`socios.${index}.porcentagem`}
                 control={control}
@@ -446,7 +446,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Controller
                 name={`socios.${index}.naturalidade`}
                 control={control}
@@ -463,7 +463,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Controller
                 name={`socios.${index}.estadoCivil`}
                 control={control}
@@ -496,7 +496,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
             </Grid>
 
             {watch(`socios.${index}.estadoCivil`) === "Casado" && (
-              <Grid item xs={12} sm={6}>
+              <Grid xs={12} sm={6}>
                 <Controller
                   name={`socios.${index}.regimeBens`}
                   control={control}
@@ -520,7 +520,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               </Grid>
             )}
 
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Controller
                 name={`socios.${index}.etnia`}
                 control={control}
@@ -552,7 +552,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Controller
                 name={`socios.${index}.grau_escolaridade`}
                 control={control}
@@ -584,7 +584,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={6}>
+            <Grid xs={12} sm={6}>
               <Controller
                 name={`socios.${index}.administrador`}
                 control={control}
@@ -603,7 +603,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               />
             </Grid>
 
-            <Grid item xs={12} sm={12}>
+            <Grid xs={12} sm={12}>
               <Box sx={{ display: "flex", justifyContent: 'space-between', alignContent: "center" }}>
                 <Controller
                   name={`socios.${index}.socioEnabled`}
@@ -632,7 +632,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               </Box>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid xs={12}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 Para modificar as informações de um sócio e fazer upload dos documentos, habilite o campo <strong>Editar Sócio</strong>
               </Typography>
@@ -641,7 +641,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
             {/* Aqui está a seção corrigida para upload de documentos */}
             <Grid container spacing={2} sx={{ mt: 2, mb: 4, px: 2 }}>
               {/* Bloco para CNH */}
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Controller
                   name={`socios.${index}.cnhAnexo`}
                   control={control}
@@ -701,7 +701,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               </Grid>
 
               {/* Bloco para Comprovante de Endereço */}
-              <Grid item xs={6}>
+              <Grid xs={6}>
                 <Controller
                   name={`socios.${index}.comprovanteEnderecoAnexo`}
                   control={control}
@@ -762,7 +762,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
             </Grid>
 
             {index < fields.length - 1 && (
-              <Grid item xs={12}>
+              <Grid xs={12}>
                 <Box sx={{ mt: 2, mb: 2 }}>
                   <Divider />
                 </Box>

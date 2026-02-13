@@ -302,7 +302,7 @@ export default function EditarServicoAdminPage() {
 
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <Card>
               <CardContent sx={{ p: 3 }}>
                 <SectionHeader
@@ -331,7 +331,7 @@ export default function EditarServicoAdminPage() {
                   />
 
                   <Grid container spacing={2}>
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                       <TextField
                         fullWidth
                         required
@@ -344,7 +344,7 @@ export default function EditarServicoAdminPage() {
                       />
                     </Grid>
 
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                       <TextField
                         select
                         fullWidth
@@ -409,7 +409,7 @@ export default function EditarServicoAdminPage() {
             </Card>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <Stack spacing={3}>
               <Card>
                 <CardContent sx={{ p: 3 }}>

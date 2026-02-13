@@ -9,14 +9,14 @@ import { DatePicker } from '@mui/x-date-pickers';
 import {
   Card,
   Grid,
+  Stack,
   Button,
   Select,
   MenuItem,
   TextField,
   InputLabel,
-  CardHeader,
+  Typography,
   FormControl,
-  CardContent,
   Autocomplete,
   CircularProgress,
 } from '@mui/material';
@@ -36,12 +36,36 @@ import { toast } from 'src/components/snackbar';
 import { Form } from 'src/components/hook-form';
 
 const decodificarLinhaDigitavel = (codigoBarras) => {
-  const valor = parseFloat(codigoBarras.substring(37, 47)) / 100;
-  const fatorVencimento = parseInt(codigoBarras.substring(33, 37), 10);
-  const dataBase = new Date(1997, 9, 7);
-  const dataVencimento = new Date(dataBase.getTime() + fatorVencimento * 24 * 60 * 60 * 1000);
+  // Remove tudo que não for número caso venha com pontos ou espaços
+  const apenasNumeros = codigoBarras.replace(/\D/g, '');
+  
+  // O valor continua igual
+  const valor = parseFloat(apenasNumeros.substring(37, 47)) / 100;
+  
+  // Fator de vencimento (posições 33 a 37)
+  const fatorVencimento = parseInt(apenasNumeros.substring(33, 37), 10);
+  
+  /**
+   * LÓGICA DE REVALIDAÇÃO DO FATOR (FEBRABAN):
+   * Se o fator for para datas após 22/02/2025, a base muda.
+   */
+  const dataBase = dayjs('1997-10-07');
+  
+  // Se o fator for "baixo" em relação ao reset de 2025, 
+  // somamos o fator à nova base de 2025
+  const dataVencimento = fatorVencimento >= 1000 
+    ? dataBase.add(fatorVencimento, 'day')
+    : dataBase.add(fatorVencimento + 9000, 'day'); // Ajuste para o overflow
 
-  return { valor, dataVencimento };
+  // Mas a regra simplificada para boletos atuais (pós-reset) é:
+  // Se a data calculada for menor que 2025, adicionamos 9000 dias (o ciclo completo)
+  let dataFinal = dataBase.add(fatorVencimento, 'day');
+  
+  if (dataFinal.isBefore(dayjs('2025-02-22'))) {
+    dataFinal = dataFinal.add(9000, 'day');
+  }
+
+  return { valor, dataVencimento: dataFinal.toDate() };
 };
 
 export const ContaPagarSchema = zod.object({
@@ -71,7 +95,6 @@ export function PagarNewEditForm({ currentConta }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Ordenar as categorias por ordem alfabética
     const categorias = [...categoriasDespesas].sort((a, b) => a.nome.localeCompare(b.nome));
     setCategoriasOrdenadas(categorias);
   }, []);
@@ -81,12 +104,8 @@ export function PagarNewEditForm({ currentConta }) {
       descricao: currentConta?.descricao || '',
       nome: currentConta?.nome || '',
       valor: currentConta?.valor ? currentConta.valor.toFixed(2).replace('.', ',') : '',
-      dataVencimento: currentConta?.dataVencimento
-        ? dayjs(currentConta.dataVencimento).format('DD/MM/YYYY')
-        : '',
-      dataPagamento: currentConta?.dataPagamento
-        ? dayjs(currentConta.dataPagamento).format('DD/MM/YYYY')
-        : '',
+      dataVencimento: currentConta?.dataVencimento ? dayjs(currentConta.dataVencimento).format('DD/MM/YYYY') : '',
+      dataPagamento: currentConta?.dataPagamento ? dayjs(currentConta.dataPagamento).format('DD/MM/YYYY') : '',
       codigoBarras: currentConta?.codigoBarras || '',
       tipo: currentConta?.tipo || 'AVULSA',
       parcelas: currentConta?.parcelas || 1,
@@ -107,8 +126,7 @@ export function PagarNewEditForm({ currentConta }) {
 
   const { control, handleSubmit, setValue, watch } = methods;
   const values = watch();
-
-  const tipo = watch('tipo'); // Observa o valor do campo `tipo`
+  const tipo = watch('tipo');
 
   useEffect(() => {
     const fetchBancos = async () => {
@@ -119,7 +137,7 @@ export function PagarNewEditForm({ currentConta }) {
           acc[banco.codigo] = banco._id;
           return acc;
         }, {});
-        setBancoMap(novoBancoMap); // Mantenha o setBancoMap usando o novo nome
+        setBancoMap(novoBancoMap);
       } catch (error) {
         toast.error('Erro ao buscar bancos');
       }
@@ -127,7 +145,6 @@ export function PagarNewEditForm({ currentConta }) {
     fetchBancos();
   }, []);
 
-  // Formata o valor enquanto o usuário digita
   const handleValorChange = (event) => {
     const inputValue = event.target.value;
     const apenasNumeros = inputValue.replace(/\D/g, '');
@@ -144,24 +161,17 @@ export function PagarNewEditForm({ currentConta }) {
 
     if (codigoBarras.replace(/[^\d]/g, '').length === 47) {
       const { valor, dataVencimento } = decodificarLinhaDigitavel(codigoBarras);
-
-      const valorFormatado = valor.toLocaleString('pt-BR', {
-        style: 'currency',
-        currency: 'BRL',
-      });
+      const valorFormatado = valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
       setValue('valor', valorFormatado, { shouldValidate: true });
-      setValue('dataVencimento', dayjs(dataVencimento).format('DD/MM/YYYY'), {
-        shouldValidate: true,
-      });
+      setValue('dataVencimento', dayjs(dataVencimento).format('DD/MM/YYYY'), { shouldValidate: true });
+      toast.info('Dados extraídos do código de barras!');
     }
   };
 
   const handleAgendarPagamento = async () => {
     try {
-      const { statusPagamento, codigoTransacao } = await registrarContaNoBancoInter(
-        currentConta._id
-      );
+      const { statusPagamento, codigoTransacao } = await registrarContaNoBancoInter(currentConta._id);
       setValue('statusPagamento', statusPagamento);
       setValue('codigoTransacao', codigoTransacao);
       toast.success('Pagamento agendado com sucesso');
@@ -173,16 +183,9 @@ export function PagarNewEditForm({ currentConta }) {
   const onSubmit = async (data) => {
     try {
       setLoading(true);
-
-      // Converter o valor de 'banco' para o ID correto
       const bancoId = bancoMap[data.banco];
+      const valor = parseFloat(data.valor.replace(/\./g, '').replace(',', '.').replace('R$', '').trim());
 
-      // Converter o valor do campo 'valor' de string para número
-      const valor = parseFloat(
-        data.valor.replace(/\./g, '').replace(',', '.').replace('R$', '').trim()
-      );
-
-      // Converter as datas de DD/MM/YYYY para objetos Date
       const [vencDay, vencMonth, vencYear] = data.dataVencimento.split('/');
       const dataVencimentoISO = new Date(`${vencYear}-${vencMonth}-${vencDay}T10:00:00.000Z`);
 
@@ -192,272 +195,250 @@ export function PagarNewEditForm({ currentConta }) {
         dataPagamentoISO = new Date(`${pagYear}-${pagMonth}-${pagDay}T10:00:00.000Z`);
       }
 
-      // Preparar os dados atualizados
       const updatedData = {
         ...data,
         banco: bancoId,
         valor,
-        parcelas: Number(data.parcelas), // Certifique-se de que parcelas seja um número
+        parcelas: Number(data.parcelas),
         dataVencimento: dataVencimentoISO,
         dataPagamento: dataPagamentoISO,
       };
 
-      // Verificar se estamos criando ou atualizando uma conta
       if (currentConta) {
         await atualizarContaPagarPorId(currentConta._id, updatedData);
         toast.success('Conta atualizada com sucesso');
       } else {
         await criarContaPagar(updatedData);
-        await router.push('/dashboard/financeiro/pagar');
         toast.success('Conta criada com sucesso');
+        router.push('/dashboard/financeiro/pagar');
       }
     } catch (error) {
-      console.log(error);
       toast.error('Erro ao processar conta');
     } finally {
       setLoading(false);
     }
   };
 
-  const onError = (errors) => {
-    console.log('Validation Errors:', errors);
-  };
-
   return (
-    <Form methods={methods} onSubmit={handleSubmit(onSubmit, onError)}>
-      <Card>
-        <CardHeader title={currentConta ? 'Atualizar Despesa' : 'Cadastre uma Nova Despesa'} />
-        <CardContent>
-          <Grid container spacing={3}>
-            {/* Código de Barras */}
-            <Grid item xs={12}>
-              <Controller
-                name="codigoBarras"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Código de Barras"
-                    fullWidth
-                    onChange={handleCodigoBarrasChange}
-                  />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Controller
-                name="categoria"
-                control={control}
-                render={({ field }) => (
-                  <Autocomplete
-                    {...field}
-                    options={categoriasOrdenadas} // Lista ordenada
-                    getOptionLabel={(option) => option.nome} // Mostra o nome da categoria
-                    isOptionEqualToValue={(option, value) => option._id === value} // Verifica igualdade
-                    value={categoriasOrdenadas.find((cat) => cat._id === field.value) || null}
-                    onChange={
-                      (event, newValue) => setValue('categoria', newValue?._id || '') // Salva apenas o ID da categoria
-                    }
-                    renderInput={(params) => (
-                      <TextField {...params} label="Categoria" fullWidth required />
-                    )}
-                  />
-                )}
-              />
-            </Grid>
-            {/* Descrição */}
-            <Grid item xs={12}>
-              <Controller
-                name="nome"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} label="Nome Despesa" fullWidth required />
-                )}
-              />
-            </Grid>
-            <Grid item xs={12}>
-              <Controller
-                name="descricao"
-                control={control}
-                render={({ field }) => (
-                  <TextField {...field} label="Descrição" fullWidth rows={4} multiline required />
-                )}
-              />
-            </Grid>
-            {/* Valor */}
-            <Grid item xs={12}>
-              <Controller
-                name="valor"
-                control={control}
-                render={({ field }) => (
-                  <TextField
-                    {...field}
-                    label="Valor"
-                    value={field.value}
-                    onChange={handleValorChange}
-                    fullWidth
-                    required
-                  />
-                )}
-              />
-            </Grid>
-            {/* Labels e Data de Vencimento / Pagamento */}
-            <Grid item xs={12}>
+    <Form methods={methods} onSubmit={handleSubmit(onSubmit)}>
+      <Grid container spacing={3}>
+        
+        {/* COLUNA ESQUERDA: Identificação */}
+        <Grid item xs={12} md={8}>
+          <Stack spacing={3}>
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3 }}>Dados do Documento</Typography>
               <Grid container spacing={2}>
-                {/* Data de Vencimento */}
-                <Grid item xs={6}>
+                <Grid item xs={12}>
                   <Controller
-                    name="dataVencimento"
+                    name="codigoBarras"
                     control={control}
-                    render={({ field }) => (
-                      <DatePicker
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField
                         {...field}
-                        label="Data Vencimento"
-                        value={
-                          dayjs(field.value, 'DD/MM/YYYY').isValid()
-                            ? dayjs(field.value, 'DD/MM/YYYY')
-                            : null
-                        }
-                        onChange={(date) =>
-                          setValue('dataVencimento', dayjs(date).format('DD/MM/YYYY'))
-                        }
-                        format="DD/MM/YYYY"
-                        renderInput={(params) => (
-                          <TextField {...params} label="Data de Vencimento" fullWidth required />
-                        )}
+                        label="Código de Barras / Linha Digitável"
+                        fullWidth
+                        onChange={handleCodigoBarrasChange}
+                        error={!!error}
+                        helperText={error?.message || "Cole o código para preenchimento automático"}
                       />
                     )}
                   />
                 </Grid>
-                {/* Data de Pagamento */}
-                <Grid item xs={6}>
+
+                <Grid item xs={12}>
                   <Controller
-                    name="dataPagamento"
+                    name="nome"
+                    control={control}
+                    render={({ field, fieldState: { error } }) => (
+                      <TextField {...field} label="Nome da Despesa" fullWidth required error={!!error} />
+                    )}
+                  />
+                </Grid>
+
+                <Grid item xs={12}>
+                  <Controller
+                    name="descricao"
                     control={control}
                     render={({ field }) => (
-                      <DatePicker
-                        {...field}
-                        label="Data Pagamento"
-                        value={
-                          dayjs(field.value, 'DD/MM/YYYY').isValid()
-                            ? dayjs(field.value, 'DD/MM/YYYY')
-                            : null
-                        }
-                        onChange={(date) =>
-                          setValue('dataPagamento', dayjs(date).format('DD/MM/YYYY'))
-                        }
-                        format="DD/MM/YYYY"
-                        renderInput={(params) => (
-                          <TextField {...params} label="Data de Pagamento" fullWidth />
-                        )}
-                      />
+                      <TextField {...field} label="Descrição / Observações" fullWidth rows={4} multiline required />
                     )}
                   />
                 </Grid>
               </Grid>
-            </Grid>
-            {/* Banco */}
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Banco</InputLabel>
-                <Controller
-                  name="banco"
-                  control={control}
-                  render={({ field }) => (
-                    <Select {...field} label="Banco" fullWidth>
-                      {bancos.map((banco) => (
-                        <MenuItem key={banco._id} value={banco.codigo}>
-                          {banco.nome}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  )}
-                />
-              </FormControl>
-            </Grid>
-            {/* Status */}
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Controller
-                  name="status"
-                  control={control}
-                  render={({ field }) => (
-                    <Select {...field} label="Status">
-                      <MenuItem value="PENDENTE">Pendente</MenuItem>
-                      <MenuItem value="PAGO">Pago</MenuItem>
-                      <MenuItem value="CANCELADO">Cancelado</MenuItem>
-                      <MenuItem value="AGENDADO">Agendado</MenuItem>
-                    </Select>
-                  )}
-                />
-              </FormControl>
-            </Grid>
-            {/* Tipo */}
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <InputLabel>Tipo</InputLabel>
-                <Controller
-                  name="tipo"
-                  control={control}
-                  render={({ field }) => (
-                    <Select {...field} label="Tipo">
-                      <MenuItem value="AVULSA">Avulsa</MenuItem>
-                      <MenuItem value="RECORRENTE">Recorrente</MenuItem>
-                    </Select>
-                  )}
-                />
-              </FormControl>
-            </Grid>
-            {/* Parcelas - Exibir apenas se tipo for 'RECORRENTE' */}
-            {tipo === 'RECORRENTE' && (
-              <Grid item xs={12}>
-                <Controller
-                  name="parcelas"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField {...field} label="Parcelas" fullWidth type="number" />
-                  )}
-                />
+            </Card>
+
+            <Card sx={{ p: 3 }}>
+              <Typography variant="h6" sx={{ mb: 3 }}>Classificação</Typography>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={6}>
+                  <Controller
+                    name="categoria"
+                    control={control}
+                    render={({ field }) => (
+                      <Autocomplete
+                        {...field}
+                        options={categoriasOrdenadas}
+                        getOptionLabel={(option) => option.nome || ''}
+                        isOptionEqualToValue={(option, value) => option._id === value}
+                        value={categoriasOrdenadas.find((cat) => cat._id === field.value) || null}
+                        onChange={(event, newValue) => setValue('categoria', newValue?._id || '')}
+                        renderInput={(params) => <TextField {...params} label="Categoria" fullWidth required />}
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth>
+                    <InputLabel>Banco para Pagamento</InputLabel>
+                    <Controller
+                      name="banco"
+                      control={control}
+                      render={({ field }) => (
+                        <Select {...field} label="Banco para Pagamento">
+                          {bancos.map((banco) => (
+                            <MenuItem key={banco._id} value={banco.codigo}>{banco.nome}</MenuItem>
+                          ))}
+                        </Select>
+                      )}
+                    />
+                  </FormControl>
+                </Grid>
               </Grid>
-            )}
-            {values.codigoTransacao && (
-              <Grid item xs={12}>
+            </Card>
+          </Stack>
+        </Grid>
+
+        {/* COLUNA DIREITA: Valores e Status */}
+        <Grid item xs={12} md={4}>
+          <Stack spacing={3}>
+            <Card sx={{ p: 3, bgcolor: 'background.neutral' }}>
+              <Typography variant="h6" sx={{ mb: 3 }}>Financeiro</Typography>
+              
+              <Stack spacing={2.5}>
                 <Controller
-                  name="codigoTransacao"
+                  name="valor"
                   control={control}
                   render={({ field }) => (
                     <TextField
                       {...field}
-                      label="Código da Transação"
+                      label="Valor da Conta"
+                      onChange={handleValorChange}
                       fullWidth
+                      required
                       InputProps={{
-                        readOnly: true, // Campo apenas para leitura
+                        sx: { typography: 'h5', fontWeight: 'bold', color: 'primary.main' }
                       }}
                     />
                   )}
                 />
-              </Grid>
+
+                <Controller
+                  name="dataVencimento"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Vencimento"
+                      value={dayjs(field.value, 'DD/MM/YYYY').isValid() ? dayjs(field.value, 'DD/MM/YYYY') : null}
+                      onChange={(date) => setValue('dataVencimento', dayjs(date).format('DD/MM/YYYY'), { shouldValidate: true })}
+                      slotProps={{ textField: { fullWidth: true, required: true } }}
+                    />
+                  )}
+                />
+
+                <Controller
+                  name="dataPagamento"
+                  control={control}
+                  render={({ field }) => (
+                    <DatePicker
+                      label="Data do Pagamento"
+                      value={dayjs(field.value, 'DD/MM/YYYY').isValid() ? dayjs(field.value, 'DD/MM/YYYY') : null}
+                      onChange={(date) => setValue('dataPagamento', dayjs(date).format('DD/MM/YYYY'))}
+                      slotProps={{ textField: { fullWidth: true } }}
+                    />
+                  )}
+                />
+
+                <FormControl fullWidth>
+                  <InputLabel>Status</InputLabel>
+                  <Controller
+                    name="status"
+                    control={control}
+                    render={({ field }) => (
+                      <Select {...field} label="Status">
+                        <MenuItem value="PENDENTE">⏳ Pendente</MenuItem>
+                        <MenuItem value="PAGO">✅ Pago</MenuItem>
+                        <MenuItem value="AGENDADO">📅 Agendado</MenuItem>
+                        <MenuItem value="CANCELADO">🚫 Cancelado</MenuItem>
+                      </Select>
+                    )}
+                  />
+                </FormControl>
+
+                <FormControl fullWidth>
+                  <InputLabel>Tipo</InputLabel>
+                  <Controller
+                    name="tipo"
+                    control={control}
+                    render={({ field }) => (
+                      <Select {...field} label="Tipo">
+                        <MenuItem value="AVULSA">Avulsa</MenuItem>
+                        <MenuItem value="RECORRENTE">Recorrente</MenuItem>
+                      </Select>
+                    )}
+                  />
+                </FormControl>
+
+                {tipo === 'RECORRENTE' && (
+                  <Controller
+                    name="parcelas"
+                    control={control}
+                    render={({ field }) => (
+                      <TextField {...field} label="Quantidade de Parcelas" fullWidth type="number" />
+                    )}
+                  />
+                )}
+              </Stack>
+            </Card>
+
+            {values.codigoTransacao && (
+              <Card sx={{ p: 2, borderLeft: (theme) => `4px solid ${theme.palette.success.main}` }}>
+                <Typography variant="overline" color="text.secondary">Código de Transação Inter</Typography>
+                <Typography variant="subtitle2">{values.codigoTransacao}</Typography>
+              </Card>
             )}
-            {values.banco === '77' && (
-              <Grid item xs={12}>
+
+            <Stack spacing={2}>
+              {values.banco === '77' && (
                 <Button
+                  fullWidth
+                  size="large"
                   onClick={handleAgendarPagamento}
-                  variant="contained"
+                  variant="outlined"
+                  color="warning"
                   disabled={!values.codigoBarras || !!values.codigoTransacao}
                 >
-                  Agendar Pagamento
+                  Agendar no Banco Inter
                 </Button>
-              </Grid>
-            )}
-            <Grid item xs={12}>
-              <Button type="submit" variant="contained" disabled={loading}>
-                {loading ? <CircularProgress size={24} /> : 'Salvar'}
+              )}
+              
+              <Button 
+                fullWidth
+                type="submit" 
+                variant="contained" 
+                size="large"
+                disabled={loading}
+              >
+                {loading ? <CircularProgress size={24} color="inherit" /> : currentConta ? 'Salvar Alterações' : 'Cadastrar Conta'}
               </Button>
-            </Grid>
-          </Grid>
-        </CardContent>
-      </Card>
+              
+              <Button fullWidth color="inherit" onClick={() => router.back()}>
+                Voltar para Listagem
+              </Button>
+            </Stack>
+          </Stack>
+        </Grid>
+      </Grid>
     </Form>
   );
 }

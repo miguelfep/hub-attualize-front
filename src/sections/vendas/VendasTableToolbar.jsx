@@ -20,7 +20,7 @@ export function OrcamentoTableToolbar({ filters, onFilters }) {
       }}
     >
       <Grid container spacing={2} alignItems="center">
-        <Grid item xs={12} md={4}>
+        <Grid xs={12} md={4}>
           <TextField
             fullWidth
             value={filters.search || ''}
@@ -36,7 +36,7 @@ export function OrcamentoTableToolbar({ filters, onFilters }) {
           />
         </Grid>
 
-        <Grid item xs={12} sm={4} md={3}>
+        <Grid xs={12} sm={4} md={3}>
           <TextField
             fullWidth
             select
@@ -55,7 +55,7 @@ export function OrcamentoTableToolbar({ filters, onFilters }) {
           </TextField>
         </Grid>
 
-        <Grid item xs={6} sm={4} md={2.5}>
+        <Grid xs={6} sm={4} md={2.5}>
           <TextField
             fullWidth
             type="date"
@@ -67,7 +67,7 @@ export function OrcamentoTableToolbar({ filters, onFilters }) {
         </Grid>
 
         {/* Filtro de Data Fim */}
-        <Grid item xs={6} sm={4} md={2.5}>
+        <Grid xs={6} sm={4} md={2.5}>
           <TextField
             fullWidth
             type="date"

@@ -497,7 +497,7 @@ export default function UploadExtratoPage() {
       <Card sx={{ p: 3, mb: 3 }}>
         <Grid container spacing={3}>
           {/* Coluna 1: Seletor de Banco */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Stack spacing={2}>
               <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Typography variant="subtitle1" fontWeight="bold">
@@ -545,7 +545,7 @@ export default function UploadExtratoPage() {
           </Grid>
 
           {/* Coluna 2: Seletor de Período */}
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <Stack spacing={2}>
               <Typography variant="subtitle1" fontWeight="bold">
                 📅 Período do Extrato *

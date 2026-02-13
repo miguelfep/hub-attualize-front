@@ -224,7 +224,7 @@ export default function NovoServicoPage() {
             <CardContent sx={{ p: { xs: 2, md: 4 } }}>
               <SectionHeader icon="solar:document-add-bold-duotone" title="Dados do Serviço" />
               <Grid container spacing={2}>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     fullWidth
                     label="Nome do Serviço"
@@ -232,7 +232,7 @@ export default function NovoServicoPage() {
                     onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
                   />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <TextField
                     fullWidth
                     multiline
@@ -242,7 +242,7 @@ export default function NovoServicoPage() {
                     onChange={(e) => setForm((f) => ({ ...f, descricao: e.target.value }))}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Valor"
@@ -260,7 +260,7 @@ export default function NovoServicoPage() {
                     }}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Unidade"
@@ -268,7 +268,7 @@ export default function NovoServicoPage() {
                     onChange={(e) => setForm((f) => ({ ...f, unidade: e.target.value }))}
                   />
                 </Grid>
-                <Grid item xs={12} sm={4}>
+                <Grid xs={12} sm={4}>
                   <TextField
                     fullWidth
                     label="Categoria (Opcional)"
@@ -287,7 +287,7 @@ export default function NovoServicoPage() {
                     title="Informações Fiscais (NFSe)"
                   />
                   <Grid container spacing={2}>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                       <TextField
                         fullWidth
                         select
@@ -312,7 +312,7 @@ export default function NovoServicoPage() {
                       </TextField>
                     </Grid>
                     
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                       <TextField
                         fullWidth
                         label="Código do Serviço no Município"
@@ -323,7 +323,7 @@ export default function NovoServicoPage() {
                       />
                     </Grid>
                     
-                    <Grid item xs={12} sm={6}>
+                    <Grid xs={12} sm={6}>
                       <TextField
                         fullWidth
                         label="Item Lista Serviço LC 116/2003"

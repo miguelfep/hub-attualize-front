@@ -1095,7 +1095,7 @@ export default function ValidacaoConciliacaoPage() {
       {/* Resumo Header */}
       <Grid container spacing={3} mb={3}>
         {/* Informações Gerais */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom>
               📋 Informações da Conciliação
@@ -1143,7 +1143,7 @@ export default function ValidacaoConciliacaoPage() {
         </Grid>
 
         {/* Resumo Financeiro */}
-        <Grid item xs={12} md={6}>
+        <Grid xs={12} md={6}>
           <Card sx={{ p: 3, height: '100%', bgcolor: 'primary.lighter' }}>
             <Typography variant="h6" gutterBottom>
               💰 Resumo Financeiro

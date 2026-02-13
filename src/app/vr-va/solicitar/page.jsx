@@ -172,12 +172,12 @@ export default function SolicitarVrVaPage() {
           <Grid container spacing={4}>
 
           {/* Principais Vantagens */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Typography variant="h5" sx={{ mb: 3, fontWeight: 600 }}>
               Mais praticidade para a rotina do trabalhador
             </Typography>
             <Grid container spacing={2}>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -192,7 +192,7 @@ export default function SolicitarVrVaPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -207,7 +207,7 @@ export default function SolicitarVrVaPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -222,7 +222,7 @@ export default function SolicitarVrVaPage() {
                   </CardContent>
                 </Card>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <Card sx={{ height: '100%' }}>
                   <CardContent>
                     <Stack spacing={2}>
@@ -241,7 +241,7 @@ export default function SolicitarVrVaPage() {
           </Grid>
 
           {/* Informação sobre TotalPass */}
-          <Grid item xs={12}>
+          <Grid xs={12}>
             <Card
               sx={{
                 bgcolor: alpha(theme.palette.info.main, 0.08),
@@ -265,7 +265,7 @@ export default function SolicitarVrVaPage() {
           </Grid>
 
           {/* Formulário */}
-          <Grid item xs={12} md={8}>
+          <Grid xs={12} md={8}>
             <Card>
               <CardContent sx={{ p: 4 }}>
                 <Typography variant="h6" sx={{ mb: 3 }}>
@@ -286,7 +286,7 @@ export default function SolicitarVrVaPage() {
                         Dados de Contato
                       </Typography>
                       <Grid container spacing={2}>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <TextField
                             fullWidth
                             label="Nome/Razão Social"
@@ -297,7 +297,7 @@ export default function SolicitarVrVaPage() {
                             helperText={user ? 'Pré-preenchido com seus dados' : ''}
                           />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <TextField
                             fullWidth
                             label="Email"
@@ -309,7 +309,7 @@ export default function SolicitarVrVaPage() {
                             helperText={user ? 'Pré-preenchido com seus dados' : ''}
                           />
                         </Grid>
-                        <Grid item xs={12} sm={6}>
+                        <Grid xs={12} sm={6}>
                           <TextField
                             fullWidth
                             label="Telefone"
@@ -385,7 +385,7 @@ export default function SolicitarVrVaPage() {
           </Grid>
 
           {/* Informações sobre SuperApp e SuperPortal */}
-          <Grid item xs={12} md={4}>
+          <Grid xs={12} md={4}>
             <Stack spacing={2}>
               <Card>
                 <CardContent>

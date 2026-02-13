@@ -40,14 +40,14 @@ export function OrcamentoEditPageSkeleton() {
             <Box>
               <Skeleton variant="text" width={180} height={32} sx={{ mb: 2 }} />
               <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
+                <Grid xs={12} md={8}>
                   <Stack spacing={1}>
                     <Skeleton variant="text" width="60%" />
                     <Skeleton variant="text" width="40%" />
                     <Skeleton variant="text" width="50%" />
                   </Stack>
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid xs={12} md={4}>
                   <Stack alignItems={{ xs: 'flex-start', md: 'flex-end' }} spacing={1}>
                     <Skeleton variant="text" width={80} />
                     <Skeleton variant="rounded" height={40} sx={{ width: { xs: '100%', sm: 220 } }} />
@@ -70,13 +70,13 @@ export function OrcamentoEditPageSkeleton() {
             <Box>
               <Skeleton variant="text" width={200} height={32} sx={{ mb: 2 }} />
               <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Skeleton variant="rounded" height={100} />
                 </Grid>
-                <Grid item xs={12} md={6}>
+                <Grid xs={12} md={6}>
                   <Skeleton variant="rounded" height={100} />
                 </Grid>
-                <Grid item xs={12}>
+                <Grid xs={12}>
                   <Skeleton variant="rounded" height={80} sx={{ mt: 2 }} />
                 </Grid>
               </Grid>

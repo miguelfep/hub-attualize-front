@@ -47,7 +47,7 @@ export function ImportanciaContabilidadeEstetica() {
         </m.div>
 
         <Grid container spacing={{ xs: 8, md: 4 }} alignItems="center" direction={{ xs: 'column-reverse', md: 'row' }}>
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <m.div variants={varFade().inLeft}>
               <Box
                 sx={{
@@ -82,7 +82,7 @@ export function ImportanciaContabilidadeEstetica() {
             </m.div>
           </Grid>
 
-          <Grid item xs={12} md={6}>
+          <Grid xs={12} md={6}>
             <m.div variants={varFade().inRight}>
               <Stack spacing={3} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
                 <Typography variant="body1" sx={{ color: 'text.secondary' }}>
