@@ -14,6 +14,8 @@ import { updateAlteracao } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
 
+import { prepareDataForAlteracao } from './prepare-alteracao-payload';
+
 export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanceStatus }) {
     const loading = useBoolean();
 
@@ -72,7 +74,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
     const { control, handleSubmit, reset, getValues, watch } = useForm({
         defaultValues: {
             id: currentAlteracao?._id || '',
-            alteracoes: currentAlteracao?.alteracoes || [],
+            alteracoes: currentAlteracao?.alteracoes || '',
             statusAlteracao: currentAlteracao?.statusAlteracao || '',
             situacaoAlteracao: currentAlteracao?.situacaoAlteracao || 0,
             razaoSocial: currentAlteracao?.razaoSocial || '',
@@ -83,13 +85,13 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
             regimeTributario: currentAlteracao?.regimeTributario || '',
             formaAtuacao: currentAlteracao?.formaAtuacao || '',
             enderecoComercial: {
-                cep: currentAlteracao?.cep || '',
-                logradouro: currentAlteracao?.logradouro || '',
-                numero: currentAlteracao?.numero || '',
-                complemento: currentAlteracao?.complemento || '',
-                bairro: currentAlteracao?.bairro || '',
-                cidade: currentAlteracao?.cidade || '',
-                estado: currentAlteracao?.estado || '',
+                cep: currentAlteracao?.enderecoComercial?.cep ?? currentAlteracao?.cep ?? '',
+                logradouro: (typeof currentAlteracao?.enderecoComercial?.logradouro === 'string' ? currentAlteracao?.enderecoComercial?.logradouro : currentAlteracao?.enderecoComercial?.logradouro?.logradouro) ?? currentAlteracao?.logradouro ?? '',
+                numero: currentAlteracao?.enderecoComercial?.numero ?? currentAlteracao?.numero ?? '',
+                complemento: currentAlteracao?.enderecoComercial?.complemento ?? currentAlteracao?.complemento ?? '',
+                bairro: currentAlteracao?.enderecoComercial?.bairro ?? currentAlteracao?.bairro ?? '',
+                cidade: currentAlteracao?.enderecoComercial?.cidade ?? currentAlteracao?.cidade ?? '',
+                estado: currentAlteracao?.enderecoComercial?.estado ?? currentAlteracao?.estado ?? '',
             },
             novasAtividades: currentAlteracao?.novasAtividades || '',
             socios: currentAlteracao?.socios?.length > 0
@@ -114,7 +116,6 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
             responsavelTecnico: currentAlteracao?.responsavelTecnico || '',
             possuiRT: currentAlteracao?.possuiRT || false,
             marcaRegistrada: currentAlteracao?.marcaRegistrada || false,
-            interesseRegistroMarca: currentAlteracao?.interesseRegistroMarca || false,
             notificarWhats: currentAlteracao?.notificarWhatsapp || false,
             anotacoes: currentAlteracao?.anotacoes || '',
             urlMeetKickoff: currentAlteracao?.urlMeetKickoff || '',
@@ -162,7 +163,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
     const handleSave = async () => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, getValues());
+            await updateAlteracao(currentAlteracao._id, prepareDataForAlteracao(getValues()));
             toast.success("Dados salvos com sucesso!");
         } catch (error) {
             toast.error("Erro ao salvar os dados");
@@ -174,7 +175,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
     const onSave = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, data);
+            await updateAlteracao(currentAlteracao._id, prepareDataForAlteracao(data));
             toast.success('Dados salvos com sucesso!');
         } catch (error) {
             toast.error('Erro ao salvar os dados');
@@ -186,12 +187,12 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
     const onApprove = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, {
+            await updateAlteracao(currentAlteracao._id, prepareDataForAlteracao({
                 ...data,
                 statusAlteracao: 'em_alteracao',
                 somenteAtualizar: false,
                 notificarWhats: false,
-            });
+            }));
             toast.success('Alteração reaberta!');
             if (handleAdvanceStatus) handleAdvanceStatus('em_alteracao');
         } catch (error) {
@@ -204,12 +205,12 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
     const onReject = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, {
+            await updateAlteracao(currentAlteracao._id, prepareDataForAlteracao({
                 ...data,
                 statusAlteracao: 'iniciado',
                 somenteAtualizar: false,
                 notificarWhats: false,
-            });
+            }));
             toast.error('Alteração reiniciada!');
             if (handleAdvanceStatus) handleAdvanceStatus('iniciado');
         } catch (error) {

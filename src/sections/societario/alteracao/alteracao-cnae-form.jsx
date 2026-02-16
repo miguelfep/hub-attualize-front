@@ -16,7 +16,9 @@ export default function AlteracaoCnaeForm({ atividadeAlteracao, atividadeCliente
             </Box>
             <Box>
                 <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Abaixo, você verá suas atividades comerciais. Caso deseje adicionar uma nova, habilite a opção, <strong>Desejo adicionar Novas Atividades</strong> e descrever a sua nova atividade.
+                    Use este campo para descrever as novas atividades que deseja incluir no seu negócio.
+                    Para preencher, habilite a opção <strong>Desejo adicionar Novas Atividades</strong>.
+                    Se souber o CNAE, você pode informar o código e a descrição, caso contrário, basta descrever a atividade.
                 </Typography>
             </Box>
             <Grid xs={12} md={12}>
