@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 import React, { useState, useEffect } from 'react';
-import { NumericFormat } from 'react-number-format';
 import { useForm, Controller } from 'react-hook-form';
+import { NumericFormat, PatternFormat } from 'react-number-format';
 
 import {
     Box,
@@ -25,14 +25,15 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
-import { formatRg, formatCpf } from 'src/utils/format-input';
 
 import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
 
+import { prepareDataForAlteracao } from './prepare-alteracao-payload';
+
 // Componente de Card de Documento (movido para fora para evitar re-render)
-function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDeleteClick }) {
+function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDeleteClick, readOnly }) {
     return (
         <Box
             sx={{
@@ -47,23 +48,27 @@ function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDe
                 <strong>{label}</strong>
             </Typography>
             <Box>
-                <Button
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    sx={{ mb: 1 }}
-                    onClick={onUploadClick}
-                >
-                    Enviar Anexo
-                </Button>
-                <Button
-                    variant="outlined"
-                    fullWidth
-                    onClick={onDeleteClick}
-                    disabled={!value}
-                >
-                    Deletar
-                </Button>
+                {!readOnly && (
+                    <>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            fullWidth
+                            sx={{ mb: 1 }}
+                            onClick={onUploadClick}
+                        >
+                            Enviar Anexo
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            fullWidth
+                            onClick={onDeleteClick}
+                            disabled={!value}
+                        >
+                            Deletar
+                        </Button>
+                    </>
+                )}
                 {value && (
                     <Button
                         variant="outlined"
@@ -85,18 +90,18 @@ function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDe
 }
 
 const SITUACOES_ALTERACAO = [
-    { value: 0, label: 'Solicitando Viabilidade' },
-    { value: 1, label: 'Aprovação da Viabilidade' },
-    { value: 2, label: 'Pagamento taxas de registro' },
-    { value: 3, label: 'Assinatura do processo' },
-    { value: 4, label: 'Protocolo do processo' },
-    { value: 5, label: 'Aguardando deferimento' },
-    { value: 6, label: 'Processo deferido' },
-    { value: 7, label: 'Início de licenças e alvarás' },
-    { value: 8, label: 'Alteração concluída' },
+    { value: 0, label: 'Solicitando Viabilidade', notificaCliente: true },
+    { value: 1, label: 'Aprovação da Viabilidade', notificaCliente: false },
+    { value: 2, label: 'Pagamento taxas de registro', notificaCliente: true },
+    { value: 3, label: 'Assinatura do processo', notificaCliente: false },
+    { value: 4, label: 'Protocolo do processo', notificaCliente: true },
+    { value: 5, label: 'Aguardando deferimento', notificaCliente: false },
+    { value: 6, label: 'Processo deferido', notificaCliente: true },
+    { value: 7, label: 'Início de licenças e alvarás', notificaCliente: true },
+    { value: 8, label: 'Alteração concluída', notificaCliente: true },
 ];
 
-export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvanceStatus }) {
+export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvanceStatus, isArchived = false }) {
     const loading = useBoolean();
     const [saving, setSaving] = useState(false);
     const [activeTab, setActiveTab] = useState(0);
@@ -159,7 +164,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
     const { control, handleSubmit, reset, getValues, watch, setValue } = useForm({
         defaultValues: {
             id: currentAlteracao?._id || '',
-            alteracoes: currentAlteracao?.alteracoes || [],
+            alteracoes: currentAlteracao?.alteracoes || '',
             statusAlteracao: currentAlteracao?.statusAlteracao || '',
             situacaoAlteracao: currentAlteracao?.situacaoAlteracao || 0,
             razaoSocial: currentAlteracao?.razaoSocial || '',
@@ -201,7 +206,6 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
             responsavelTecnico: currentAlteracao?.responsavelTecnico || '',
             possuiRT: currentAlteracao?.possuiRT || false,
             marcaRegistrada: currentAlteracao?.marcaRegistrada || false,
-            interesseRegistroMarca: currentAlteracao?.interesseRegistroMarca || false,
             anotacoes: currentAlteracao?.anotacoes || '',
             urlMeetKickoff: currentAlteracao?.urlMeetKickoff || '',
             iptuAnexo: currentAlteracao?.iptuAnexo || '',
@@ -228,7 +232,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
             setActiveTab(0);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentAlteracao?._id]);
+    }, [currentAlteracao]);
 
     const handleCepBlur = async () => {
         const cep = getValues('enderecoComercial.cep')?.replace('-', '') || '';
@@ -244,7 +248,6 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         enderecoComercial: {
                             ...prev.enderecoComercial,
                             logradouro: data.logradouro || '',
-                            complemento: data.complemento || '',
                             bairro: data.bairro || '',
                             cidade: data.localidade || '',
                             estado: data.uf || '',
@@ -268,7 +271,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
             // Atualiza a situação da alteração
             await updateAlteracao(currentAlteracao._id, {
                 situacaoAlteracao: novaSituacao,
-                statusAlteracao: novaSituacao === 8 ? 'finalizado' : 'em_alteracao',
+                statusAlteracao: 'em_alteracao',
                 somenteAtualizar: false,
                 notificarWhats,
             });
@@ -297,11 +300,6 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
 
             setSituacaoAlteracao(novaSituacao);
             setEtapasCompletadas(novasEtapasCompletadas);
-
-            // Se finalizou, avança o status
-            if (novaSituacao === 8 && handleAdvanceStatus) {
-                handleAdvanceStatus('finalizado');
-            }
 
             toast.success(
                 notificarWhats
@@ -355,6 +353,17 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                     if (validationError) {
                         toast.error(validationError);
                         return;
+                    }
+
+                    if (index != null) {
+                        try {
+                            toast.loading('Salvando dados do sócio...', { id: 'save-socio' });
+                            await updateAlteracao(currentAlteracao._id, prepareDataForAlteracao({ ...getValues(), somenteAtualizar: true }));
+                            toast.success('Dados salvos.', { id: 'save-socio' });
+                        } catch (saveErr) {
+                            toast.error('Erro ao salvar dados do sócio. Salve o formulário antes de enviar o documento.', { id: 'save-socio' });
+                            return;
+                        }
                     }
 
                     const response = await uploadArquivoAlteracao(
@@ -436,7 +445,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
     const onSave = async (data) => {
         loading.onTrue();
         try {
-            await updateAlteracao(currentAlteracao._id, { ...data, somenteAtualizar: true });
+            await updateAlteracao(currentAlteracao._id, prepareDataForAlteracao({ ...data, somenteAtualizar: true }));
             toast.success('Dados salvos com sucesso!');
         } catch (error) {
             toast.error('Erro ao salvar os dados');
@@ -450,17 +459,17 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
 
     return (
         <Card sx={{ p: 3, mb: 3 }}>
-            <Tabs value={activeTab} onChange={handleTabChange} centered sx={{ mb: 3 }}>
-                <Tab label="Acompanhamento de Etapas" />
+            <Tabs value={activeTab} onChange={handleTabChange} variant="standard" sx={{ mb: 3 }}>
+                <Tab label={isArchived ? 'Alteração concluída' : 'Acompanhamento de Etapas'} />
                 <Tab label="Dados da Alteração" />
                 <Tab label="Documentos" />
             </Tabs>
 
-            {/* ========== ABA 0: Acompanhamento de Etapas ========== */}
+            {/* ========== ABA 0: Acompanhamento de Etapas / Etapas concluídas ========== */}
             {activeTab === 0 && (
                 <Box>
                     <Typography variant="h6" sx={{ mb: 3 }}>
-                        Em Alteração - Acompanhamento de Etapas
+                        {isArchived ? 'Etapas da Alteração concluídas' : 'Em Alteração - Acompanhamento de Etapas'}
                     </Typography>
 
                     {/* Barra de Progresso */}
@@ -476,66 +485,73 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         <LinearProgress variant="determinate" value={progresso} sx={{ height: 8, borderRadius: 1 }} />
                     </Box>
 
-                    {/* Select de Situação + Switch de Notificação */}
-                    <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-start">
-                        <Grid xs={12} md={6}>
-                            <TextField
-                                select
-                                fullWidth
-                                label="Situação da Alteração"
-                                value={situacaoAlteracao}
-                                onChange={handleSituacaoChange}
-                                disabled={saving || loading.value}
-                                helperText={
-                                    notificarWhats
-                                        ? 'Ao alterar a situação, uma mensagem será enviada automaticamente ao cliente'
-                                        : 'Notificação WhatsApp desativada - cliente não será notificado'
-                                }
-                            >
-                                {SITUACOES_ALTERACAO.map((situacao) => (
-                                    <MenuItem key={situacao.value} value={situacao.value}>
-                                        {situacao.value}. {situacao.label}
-                                    </MenuItem>
-                                ))}
-                            </TextField>
-                        </Grid>
-                        <Grid xs={12} md={6}>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 1,
-                                    p: 2,
-                                    borderRadius: 1,
-                                    bgcolor: notificarWhats ? 'success.lighter' : 'grey.100',
-                                    border: '1px solid',
-                                    borderColor: notificarWhats ? 'success.light' : 'grey.300',
-                                }}
-                            >
-                                <Iconify
-                                    icon={notificarWhats ? 'ic:baseline-whatsapp' : 'ic:baseline-notifications-off'}
-                                    width={24}
-                                    sx={{ color: notificarWhats ? 'success.main' : 'grey.500', alignSelf: 'center' }}
-                                />
-                                <FormControlLabel
-                                    control={
-                                        <Switch
-                                            checked={notificarWhats}
-                                            onChange={(e) => setNotificarWhats(e.target.checked)}
-                                            disabled={saving || loading.value}
-                                            color="success"
-                                        />
+                    {/* Select de Situação + Switch de Notificação (oculto quando arquivado) */}
+                    {!isArchived && (
+                        <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-start">
+                            <Grid item xs={12} md={6}>
+                                <TextField
+                                    select
+                                    fullWidth
+                                    label="Situação da Alteração"
+                                    value={situacaoAlteracao}
+                                    onChange={handleSituacaoChange}
+                                    disabled={saving || loading.value}
+                                    helperText={
+                                        notificarWhats
+                                            ? 'Ao alterar a situação, uma mensagem será enviada automaticamente ao cliente'
+                                            : 'Notificação WhatsApp desativada - cliente não será notificado'
                                     }
-                                    label={
-                                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                                            {notificarWhats ? 'Notificar cliente via WhatsApp' : 'Notificação WhatsApp desativada'}
-                                        </Typography>
-                                    }
-                                    sx={{ m: 0 }}
-                                />
-                            </Box>
+                                >
+                                    {SITUACOES_ALTERACAO.map((situacao) => (
+                                        <MenuItem key={situacao.value} value={situacao.value}>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                                <span>{situacao.value}. {situacao.label}</span>
+                                                {situacao.notificaCliente ? (
+                                                    <Iconify icon="ic:baseline-whatsapp" width={18} sx={{ color: 'success.main', ml: 1 }} />
+                                                ) : null}
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </TextField>
+                            </Grid>
+                            <Grid item xs={12} md={6}>
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: 1,
+                                        p: 2,
+                                        borderRadius: 1,
+                                        bgcolor: notificarWhats ? 'success.lighter' : 'grey.100',
+                                        border: '1px solid',
+                                        borderColor: notificarWhats ? 'success.light' : 'grey.300',
+                                    }}
+                                >
+                                    <Iconify
+                                        icon={notificarWhats ? 'ic:baseline-whatsapp' : 'ic:baseline-notifications-off'}
+                                        width={24}
+                                        sx={{ color: notificarWhats ? 'success.main' : 'grey.500', alignSelf: 'center' }}
+                                    />
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                checked={notificarWhats}
+                                                onChange={(e) => setNotificarWhats(e.target.checked)}
+                                                disabled={saving || loading.value}
+                                                color="success"
+                                            />
+                                        }
+                                        label={
+                                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                                {notificarWhats ? 'Notificar cliente via WhatsApp' : 'Notificação WhatsApp desativada'}
+                                            </Typography>
+                                        }
+                                        sx={{ m: 0 }}
+                                    />
+                                </Box>
+                            </Grid>
                         </Grid>
-                    </Grid>
+                    )}
 
                     <Box sx={{ mt: 3 }}>
                         <Typography variant="subtitle2" sx={{ mb: 2 }}>
@@ -614,7 +630,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         </Stack>
                     </Box>
 
-                    {saving && (
+                    {!isArchived && saving && (
                         <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
                             <CircularProgress size={16} />
                             <Typography variant="body2" color="text.secondary">
@@ -623,7 +639,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         </Box>
                     )}
 
-                    {!todasCompletas && (
+                    {!isArchived && !todasCompletas && (
                         <Box
                             sx={{
                                 mt: 3,
@@ -644,7 +660,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         </Box>
                     )}
 
-                    {todasCompletas && (
+                    {(todasCompletas || isArchived) && (
                         <Box
                             sx={{
                                 mt: 3,
@@ -660,7 +676,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         >
                             <Iconify icon="eva:checkmark-circle-2-fill" width={24} sx={{ color: 'success.main' }} />
                             <Typography variant="body2" sx={{ color: 'success.darker' }}>
-                                Todas as etapas foram concluídas! Alteração finalizada.
+                                {isArchived ? 'Alteração arquivada. Etapas concluídas.' : 'Todas as etapas foram concluídas! Alteração finalizada.'}
                             </Typography>
                         </Box>
                     )}
@@ -867,7 +883,12 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                             const estadoCivilValue = watch(`socios[${index}].estadoCivil`);
                             return (
                                 <React.Fragment key={index}>
-                                    <Grid xs={12}>
+                                    {index > 0 && (
+                                        <Grid item xs={12}>
+                                            <Divider sx={{ my: 2 }} />
+                                        </Grid>
+                                    )}
+                                    <Grid item xs={12}>
                                         <Typography variant="subtitle2" sx={{ mt: 1 }}>Sócio {index + 1}</Typography>
                                     </Grid>
                                     <Grid xs={12} sm={6}>
@@ -884,20 +905,17 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                             name={`socios[${index}].cpf`}
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField
-                                                    {...field}
+                                                <PatternFormat
+                                                    format="###.###.###-##"
+                                                    customInput={TextField}
                                                     label="CPF"
                                                     fullWidth
                                                     variant="outlined"
-                                                    placeholder="000.000.000-00"
-                                                    value={formatCpf(field.value || '')}
-                                                    onChange={(e) => {
-                                                        const formatted = formatCpf(e.target.value);
-                                                        field.onChange(formatted);
-                                                    }}
-                                                    inputProps={{
-                                                        maxLength: 14,
-                                                    }}
+                                                    value={field.value ?? ''}
+                                                    onValueChange={(values) => field.onChange(values.formattedValue)}
+                                                    onBlur={field.onBlur}
+                                                    name={field.name}
+                                                    getInputRef={field.ref}
                                                 />
                                             )}
                                         />
@@ -907,20 +925,17 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                             name={`socios[${index}].rg`}
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField
-                                                    {...field}
+                                                <PatternFormat
+                                                    format="##.###.###-#"
+                                                    customInput={TextField}
                                                     label="RG"
                                                     fullWidth
                                                     variant="outlined"
-                                                    placeholder="00.000.000-0"
-                                                    value={formatRg(field.value || '')}
-                                                    onChange={(e) => {
-                                                        const formatted = formatRg(e.target.value);
-                                                        field.onChange(formatted);
-                                                    }}
-                                                    inputProps={{
-                                                        maxLength: 12,
-                                                    }}
+                                                    value={field.value ?? ''}
+                                                    onValueChange={(values) => field.onChange(values.formattedValue)}
+                                                    onBlur={field.onBlur}
+                                                    name={field.name}
+                                                    getInputRef={field.ref}
                                                 />
                                             )}
                                         />
@@ -1012,7 +1027,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         {/* Anotações */}
                         <Grid xs={12}>
                             <Divider sx={{ my: 2 }} />
-                            <Typography variant="subtitle1">Anotações Internas</Typography>
+                            <Typography variant="subtitle1">Anotações Internas (Kickoff)</Typography>
                         </Grid>
                         <Grid xs={12}>
                             <Controller
@@ -1030,39 +1045,54 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 )}
                             />
                         </Grid>
+                        <Grid item xs={12}>
+                            <Controller
+                                name="urlMeetKickoff"
+                                control={control}
+                                render={({ field }) => (
+                                    <TextField {...field} label="URL do Meet Kickoff" fullWidth variant="outlined" />
+                                )}
+                            />
+                        </Grid>
                     </Grid>
 
-                    <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
-                        <Button
-                            variant="contained"
-                            onClick={handleSubmit(onSave)}
-                            disabled={loading.value}
-                            startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
-                        >
-                            Salvar Dados
-                        </Button>
-                    </Stack>
+                    {!isArchived && (
+                        <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
+                            <Button
+                                variant="contained"
+                                onClick={handleSubmit(onSave)}
+                                disabled={loading.value}
+                                startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+                            >
+                                Salvar Dados
+                            </Button>
+                        </Stack>
+                    )}
                 </Box>
             )}
 
             {activeTab === 2 && (
-                <Box>
-                    <Typography variant="h6" sx={{ mb: 3 }}>
-                        Documentos da Alteração
-                    </Typography>
-
-                    {/* Documentos Gerais */}
-                    <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                        Documentos Gerais
-                    </Typography>
-                    <Grid container spacing={2} sx={{ mb: 4 }}>
-                        <Grid xs={12} sm={6} md={4}>
+                <Box sx={{ mt: 3 }}>
+                    <Grid container spacing={2} mt={2}>
+                        <Grid item xs={12}>
+                            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Iconify icon="eva:file-text-fill" width={24} />
+                                Documentos da Alteração
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12}>
+                            <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                                Documentos Gerais
+                            </Typography>
+                        </Grid>
+                        <Grid item xs={12} sm={6} md={4}>
                             <DocumentCard
                                 label="IPTU do Imóvel"
                                 value={watch('iptuAnexo')}
                                 onUploadClick={() => handleUpload('iptuAnexo')}
                                 onDownloadClick={() => handleDownload('iptuAnexo')}
                                 onDeleteClick={() => handleDelete('iptuAnexo')}
+                                readOnly={isArchived}
                             />
                         </Grid>
                         <Grid xs={12} sm={6} md={4}>
@@ -1072,6 +1102,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 onUploadClick={() => handleUpload('rgAnexo')}
                                 onDownloadClick={() => handleDownload('rgAnexo')}
                                 onDeleteClick={() => handleDelete('rgAnexo')}
+                                readOnly={isArchived}
                             />
                         </Grid>
                         <Grid xs={12} sm={6} md={4}>
@@ -1081,19 +1112,20 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 onUploadClick={() => handleUpload('documentoRT')}
                                 onDownloadClick={() => handleDownload('documentoRT')}
                                 onDeleteClick={() => handleDelete('documentoRT')}
+                                readOnly={isArchived}
                             />
                         </Grid>
                     </Grid>
 
                     {/* Documentos dos Sócios */}
                     <Divider sx={{ my: 3 }} />
-                    <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                    <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                         Documentos dos Sócios
                     </Typography>
 
                     {getValues('socios')?.map((socio, index) => (
                         <Box key={index} sx={{ mb: 4 }}>
-                            <Typography variant="subtitle2" sx={{ mb: 2 }}>
+                            <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
                                 Sócio {index + 1}: {socio.nome || 'Sem nome'}
                             </Typography>
                             <Grid container spacing={2}>
@@ -1104,6 +1136,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         onUploadClick={() => handleUpload('cnhAnexo', index)}
                                         onDownloadClick={() => handleDownload('cnhAnexo', index)}
                                         onDeleteClick={() => handleDelete('cnhAnexo', index)}
+                                        readOnly={isArchived}
                                     />
                                 </Grid>
                                 <Grid xs={12} sm={6}>
@@ -1113,6 +1146,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         onUploadClick={() => handleUpload('comprovanteEnderecoAnexo', index)}
                                         onDownloadClick={() => handleDownload('comprovanteEnderecoAnexo', index)}
                                         onDeleteClick={() => handleDelete('comprovanteEnderecoAnexo', index)}
+                                        readOnly={isArchived}
                                     />
                                 </Grid>
                             </Grid>

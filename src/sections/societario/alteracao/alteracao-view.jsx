@@ -39,7 +39,6 @@ const AlteracaoSchema = z.object({
   iptuAnexo: z.any().optional(),
   documentoRT: z.any().optional(),
   marcaRegistrada: z.boolean().optional(),
-  interesseRegistroMarca: z.boolean().optional(),
   cep: z.string().optional(),
   cepEnabled: z.boolean(),
   logradouro: z.string().optional(),
@@ -56,6 +55,7 @@ const AlteracaoSchema = z.object({
       cpf: z.string().optional(),
       cnh: z.string().optional(),
       cnhAnexo: z.any().optional(),
+      comprovanteEnderecoAnexo: z.any().optional(),
       rg: z.string().optional(),
       estadoCivil: z.string().optional(),
       porcentagem: z.union([z.string(), z.number()]).transform((value) => {
@@ -105,7 +105,7 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
       documentoRT: alteracaoData?.documentoRT || null,
       formaAtuacao: alteracaoData?.formaAtuacao ?? alteracaoData?.cliente?.formaAtuacao ?? '',
       formaAtuacaoEnabled: false,
-      interesseRegistroMarca: alteracaoData?.interesseRegistroMarca || false,
+      marcaRegistrada: alteracaoData?.marcaRegistrada || false,
       cep: alteracaoData?.enderecoComercial?.cep || alteracaoData?.cliente?.endereco?.[0]?.cep || '',
       cepEnabled: false,
       logradouro: alteracaoData?.enderecoComercial?.logradouro || alteracaoData?.cliente?.endereco?.[0]?.rua || '',
@@ -116,6 +116,7 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
       complemento: alteracaoData?.enderecoComercial?.complemento || alteracaoData?.cliente?.endereco?.[0]?.complemento || '',
       complementoEnabled: false,
       responsavelTecnico: alteracaoData?.responsavelTecnico ?? alteracaoData?.cliente?.responsavelReceitaFederal ?? '',
+      responsavelTecnicoEnabled: false,
       novasAtividades: alteracaoData?.novasAtividades || '',
       novasAtividadesEnabled: false,
       socios: (alteracaoData?.socios?.length > 0
@@ -203,11 +204,14 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
   }, [errors]);
 
   function prepararSocios(socios) {
-    return socios.map((socio) => ({
-      ...socio,
-      cpf: formatCpfCnpj(socio.cpf),
-      porcentagem: parseFloat(String(socio.porcentagem).replace('%', '').replace(',', '.')) || 0,
-    }));
+    return (socios || []).map((socio) => {
+      const { socioEnabled, porcentagem, ...rest } = socio ?? {};
+      return {
+        ...rest,
+        cpf: formatCpfCnpj(rest.cpf),
+        porcentagem: parseFloat(String(porcentagem ?? '').replace('%', '').replace(',', '.')) || 0,
+      };
+    });
   }
 
   function prepareData(valores) {
@@ -220,11 +224,10 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
         ? valores.regimeTributario
         : 'simples',
       possuiRT: Boolean(valores.possuiRT),
-      interesseRegistroMarca: Boolean(valores.interesseRegistroMarca),
       marcaRegistrada: Boolean(valores.marcaRegistrada),
       editarDocs: Boolean(valores.editarDocs),
       statusAlteracao: valores.statusAlteracao || 'iniciado',
-      situcaoAlteracao: Number(valores.situcaoAlteracao) || 0,
+      situacaoAlteracao: Number(valores.situacaoAlteracao ?? valores.situcaoAlteracao) || 0,
       enderecoComercial: {
         cep: valores.cep,
         logradouro: valores.logradouro,
@@ -283,11 +286,10 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
               const data = prepareData(rawData);
               await handleSave(data);
             }}
-            // Envia os dados para aprovação depois de validar e finalizar o formulário
-            onApproval={handleSubmit((rawData) => {
+            onApproval={handleSubmit(async (rawData) => {
               const data = prepareData(rawData);
-              handleApproval(data);
-              setIsValidating(true);
+              await updateAlteracao(alteracaoData._id, data);
+              await handleApproval(data);
               router.refresh();
             })}
           />

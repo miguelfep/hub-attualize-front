@@ -24,7 +24,9 @@ import {
 
 import { formatRg, formatCpf } from 'src/utils/format-input';
 
-import { uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from "src/actions/societario";
+import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from "src/actions/societario";
+
+import { prepareDataForAlteracao } from "./prepare-alteracao-payload";
 
 export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
   const { control, watch, setValue, getValues } = useFormContext();
@@ -110,6 +112,15 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
             toast.error(validationError);
             return;
           }
+          try {
+            toast.loading('Salvando dados do sócio...', { id: 'save-socio' });
+            await updateAlteracao(alteracaoId, prepareDataForAlteracao({ ...getValues(), somenteAtualizar: true }));
+            toast.success('Dados salvos.', { id: 'save-socio' });
+          } catch (saveErr) {
+            toast.error('Erro ao salvar dados do sócio. Salve o formulário antes de enviar o documento.', { id: 'save-socio' });
+            return;
+          }
+
           try {
             const response = await uploadArquivoAlteracao(
               alteracaoId,

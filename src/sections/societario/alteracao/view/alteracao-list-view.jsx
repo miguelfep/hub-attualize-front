@@ -119,7 +119,7 @@ export default function AlteracaoListView() {
     async (id) => {
       try {
         await updateAlteracao(id, { status: false });
-        toast.success('Alteração inativada!');
+        toast.success('Alteração arquivada!');
         await fetchAlteracoes();
       } catch (error) {
         const msg = error?.response?.data?.message || 'Erro ao inativar alteração';
@@ -154,10 +154,10 @@ export default function AlteracaoListView() {
       await Promise.all(
         table.selected.map((_id) => updateAlteracao(_id, { status: false }))
       );
-      toast.success('Alterações inativadas!');
+      toast.success('Alterações arquivadas!');
       fetchAlteracoes();
     } catch (error) {
-      toast.error('Erro ao inativar alterações');
+      toast.error('Erro ao arquivar alterações');
     } finally {
       confirm.onFalse();
     }
@@ -233,9 +233,11 @@ export default function AlteracaoListView() {
                       'soft'
                     }
                     color={
-                      (tab.value === true && 'success') ||
-                      (tab.value === false && 'warning') ||
-                      (tab.value === 'lead' && 'info') ||
+                      (tab.value === 'iniciado' && 'warning') ||
+                      (tab.value === 'em_validacao' && 'info') ||
+                      (tab.value === 'kickoff' && 'primary') ||
+                      (tab.value === 'em_alteracao' && 'secondary') ||
+                      (tab.value === 'finalizado' && 'success') ||
                       'default'
                     }
                   >
@@ -270,9 +272,9 @@ export default function AlteracaoListView() {
                 )
               }
               action={
-                <Tooltip title="Delete">
+                <Tooltip title="Arquivar">
                   <IconButton color="primary" onClick={confirm.onTrue}>
-                    <Iconify icon="solar:trash-bin-trash-bold" />
+                    <Iconify icon="solar:archive-down-bold" />
                   </IconButton>
                 </Tooltip>
               }
@@ -385,22 +387,22 @@ export default function AlteracaoListView() {
       <ConfirmDialog
         open={confirm.value}
         onClose={confirm.onFalse}
-        title="Delete"
+        title="Arquivar"
         content={
           <>
-            Tem certeza que quer deletar <strong> {table.selected.length} </strong> itens?
+            Tem certeza que deseja arquivar <strong>{table.selected.length}</strong> alteração(ões)?
           </>
         }
         action={
           <Button
             variant="contained"
-            color="error"
+            color="warning"
             onClick={() => {
               handleDeleteRows();
               confirm.onFalse();
             }}
           >
-            Deletar
+            Arquivar
           </Button>
         }
       />

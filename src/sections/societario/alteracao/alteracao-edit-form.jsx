@@ -2,11 +2,12 @@
 
 import { z as zod } from 'zod';
 import { toast } from 'sonner';
-import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
+import { useMemo, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { Box, Chip, Stack, Button } from '@mui/material';
+import { Box, Chip, Stack, Button, Typography } from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
@@ -21,7 +22,6 @@ import AlteracaoValidacaoForm from 'src/sections/societario/alteracao/alteracao-
 import AlteracaoKickoffForm from './alteracao-kickoff-form';
 import AlteracaoIniciadoForm from './alteracao-iniciado-form';
 import AlteracaoEmAlteracaoForm from './alteracao-em-alteracao';
-import AlteracaoFinalizadoForm from './alteracao-finalizado-form';
 
 // Definir o esquema de validação usando Zod
 const AlteracaoSchema = zod.object({
@@ -66,6 +66,7 @@ const statusDisplayMap = {
 
 export default function AlteracaoEditForm({ alteracaoData }) {
   const loading = useBoolean();
+  const router = useRouter();
 
   const defaultValues = useMemo(
     () => ({
@@ -85,13 +86,23 @@ export default function AlteracaoEditForm({ alteracaoData }) {
   const { watch, setValue } = methods;
   const statusAlteracao = watch('statusAlteracao');
 
+  useEffect(() => {
+    if (alteracaoData?.statusAlteracao != null) {
+      setValue('statusAlteracao', alteracaoData.statusAlteracao);
+    }
+  }, [alteracaoData?.statusAlteracao, setValue]);
+
+  useEffect(() => {
+    router.refresh();
+  }, [router]);
+
   const handleAdvanceStatus = async (customStatus) => {
     const nextStatus = customStatus || statusMap[statusAlteracao];
     if (nextStatus) {
       loading.onTrue();
       try {
-        await updateAlteracao(alteracaoData._id, { 
-          statusAlteracao: nextStatus, 
+        await updateAlteracao(alteracaoData._id, {
+          statusAlteracao: nextStatus,
           somenteAtualizar: false,
           notificarWhats: true,
         });
@@ -110,7 +121,7 @@ export default function AlteracaoEditForm({ alteracaoData }) {
     if (previousStatus) {
       loading.onTrue();
       try {
-        await updateAlteracao(alteracaoData._id, { 
+        await updateAlteracao(alteracaoData._id, {
           statusAlteracao: previousStatus,
           somenteAtualizar: false,
           notificarWhats: false,
@@ -125,24 +136,79 @@ export default function AlteracaoEditForm({ alteracaoData }) {
     }
   };
 
+  const handleArquivar = async () => {
+    loading.onTrue();
+    try {
+      await updateAlteracao(alteracaoData._id, { status: false });
+      toast.success('Alteração arquivada com sucesso!');
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      toast.error('Erro ao arquivar alteração');
+    } finally {
+      loading.onFalse();
+    }
+  };
+
+  const setStatusLocal = (newStatus) => setValue('statusAlteracao', newStatus);
+
+  if (alteracaoData?.status === false) {
+    return (
+      <Form methods={methods}>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+          <Chip
+            label="Inativo"
+            color="default"
+            sx={{ fontSize: '1rem', fontWeight: 'bold' }}
+          />
+        </Box>
+        <AlteracaoEmAlteracaoForm currentAlteracao={alteracaoData} isArchived />
+      </Form>
+    );
+  }
+
   const renderStatusComponent = () => {
     switch (statusAlteracao) {
       case 'iniciado':
         return <AlteracaoIniciadoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'em_validacao':
-        return <AlteracaoValidacaoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
+        return <AlteracaoValidacaoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} statusAlteracao={statusAlteracao} setStatusLocal={setStatusLocal} />;
       case 'kickoff':
         return <AlteracaoKickoffForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'em_alteracao':
         return <AlteracaoEmAlteracaoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
       case 'finalizado':
-        return <AlteracaoFinalizadoForm currentAlteracao={alteracaoData} handleAdvanceStatus={handleAdvanceStatus} />;
+        return (
+          <Box sx={{ p: 3, textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Alteração Finalizada
+            </Typography>
+            <Stack direction="row" spacing={2} justifyContent="center" sx={{ mt: 3 }}>
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleGoBackStatus}
+                disabled={loading.value}
+              >
+                Voltar
+              </Button>
+              <Button
+                variant="contained"
+                color="error"
+                onClick={handleArquivar}
+                disabled={loading.value}
+              >
+                Arquivar Alteração
+              </Button>
+            </Stack>
+          </Box>
+        );
       default:
         return null;
     }
   };
 
-  const shouldShowAdvanceButton = ['Iniciado', 'kickoff', 'em_validacao'].includes(statusAlteracao);
+  const shouldShowAdvanceButton = ['iniciado', 'kickoff', 'em_alteracao', 'finalizado'].includes(statusAlteracao);
 
   return (
     <Form methods={methods}>
@@ -155,27 +221,28 @@ export default function AlteracaoEditForm({ alteracaoData }) {
       </Box>
       <>{renderStatusComponent()}</>
 
-      <Stack justifyContent="space-between" direction="row" spacing={2} sx={{ mt: 3 }}>
-        {shouldShowAdvanceButton && (
-          <Button
-            variant="outlined"
-            disabled={!reverseStatusMap[statusAlteracao]}
-            onClick={handleGoBackStatus}
-            loading={loading.value}
-          >
-            Voltar
-          </Button>
-        )}
-        {shouldShowAdvanceButton && (
-          <Button
-            variant="contained"
-            onClick={() => handleAdvanceStatus(statusMap[statusAlteracao])}
-            loading={loading.value}
-          >
-            Avançar
-          </Button>
-        )}
-      </Stack>
+      {statusAlteracao !== 'finalizado' && (
+        <Stack justifyContent="space-between" direction="row" spacing={2} sx={{ mt: 3 }}>
+          {shouldShowAdvanceButton && (
+            <Button
+              variant="outlined"
+              disabled={!reverseStatusMap[statusAlteracao] || loading.value}
+              onClick={handleGoBackStatus}
+            >
+              Voltar
+            </Button>
+          )}
+          {shouldShowAdvanceButton && (
+            <Button
+              variant="contained"
+              onClick={() => handleAdvanceStatus(statusMap[statusAlteracao])}
+              disabled={loading.value}
+            >
+              Avançar
+            </Button>
+          )}
+        </Stack>
+      )}
     </Form>
   );
 }

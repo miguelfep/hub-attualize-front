@@ -187,8 +187,8 @@ export default function AlteracaoDocumentos({ alteracaoId }) {
                 </Grid>
                 <Grid container spacing={3} sx={{ mt: 1 }}>
                     {documents.map((doc) => {
-                        if (doc.toggle && !possuiRT) return null;
                         const file = getValues(doc.name);
+                        if (doc.toggle && !possuiRT && !file) return null;
                         return (
                             <Grid xs={12} sm={6} md={6} key={doc.name}>
                                 <Box
