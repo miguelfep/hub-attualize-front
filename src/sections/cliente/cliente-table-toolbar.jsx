@@ -19,7 +19,7 @@ export function ClienteTableToolbar({ filters, onResetPage, tableData }) {
   const handleFilterSearch = useCallback(
     (event) => {
       onResetPage();
-      filters.setState({ razaoSocial: event.target.value || '' }); // Busca em nome, razão social e email
+      filters.setState({ search: event.target.value || '' }); // Busca em nome, razão social e email
     },
     [filters, onResetPage]
   );
@@ -57,7 +57,7 @@ export function ClienteTableToolbar({ filters, onResetPage, tableData }) {
         <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
           <TextField
             fullWidth
-            value={filters.state.razaoSocial || ''}
+            value={filters.state.search || ''}
             onChange={handleFilterSearch}
             placeholder="Buscar por nome, razão social ou email..."
             InputProps={{

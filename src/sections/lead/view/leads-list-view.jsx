@@ -59,6 +59,7 @@ const STATUS_OPTIONS = [
 
 export function LeadsListView() {
   const theme = useTheme();
+  const router = useRouter();
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -71,13 +72,18 @@ export function LeadsListView() {
   const carregarLeads = useCallback(async () => {
     setLoading(true);
     try {
-      const result = await getLeads();
-      console.log(result);
-      setLeads(result.leads || []);
+      // Incluir todos os leads (incluindo convertidos) para a página de gerenciamento
+      const result = await getLeads({ incluirConvertidos: true });
+      
+      // getLeads já normaliza a resposta, então deve retornar um array
+      setLeads(Array.isArray(result) ? result : []);
     } catch (error) {
       console.error('Erro ao carregar leads:', error);
+      setLeads([]);
+      // Não mostrar toast aqui para não poluir a UI, apenas log
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -131,14 +137,24 @@ export function LeadsListView() {
           </Typography>
         </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="solar:refresh-bold" />}
-          onClick={carregarLeads}
-          sx={{ bgcolor: '#0096D9' }}
-        >
-          Atualizar
-        </Button>
+        <Stack direction="row" spacing={2}>
+          <Button
+            variant="outlined"
+            startIcon={<Iconify icon="solar:check-circle-bold" />}
+            onClick={() => router.push(paths.dashboard.comercial.leadsConvertidos)}
+            sx={{ borderColor: 'success.main', color: 'success.main' }}
+          >
+            Ver Convertidos
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<Iconify icon="solar:refresh-bold" />}
+            onClick={carregarLeads}
+            sx={{ bgcolor: '#0096D9' }}
+          >
+            Atualizar
+          </Button>
+        </Stack>
       </Stack>
 
       {/* Filtros */}

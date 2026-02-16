@@ -193,6 +193,7 @@ export const paths = {
     comercial: {
       leads: `${ROOTS.DASHBOARD}/comercial/leads`,
       leadDetails: (id) => `${ROOTS.DASHBOARD}/comercial/leads/${id}`,
+      leadsConvertidos: `${ROOTS.DASHBOARD}/comercial/leads/convertidos`,
       funil: `${ROOTS.DASHBOARD}/comercial/vendas`,
     },
     servicos: `${ROOTS.DASHBOARD}/servicos`,

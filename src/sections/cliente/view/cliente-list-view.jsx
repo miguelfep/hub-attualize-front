@@ -8,9 +8,13 @@ import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
+import Select from '@mui/material/Select';
 import Tooltip from '@mui/material/Tooltip';
+import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import FormControl from '@mui/material/FormControl';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -42,6 +46,7 @@ import {
 } from 'src/components/table';
 
 import { ClienteTableRow } from '../cliente-table-row';
+import { ImportLeadDialog } from '../import-lead-dialog';
 import { ClienteTableToolbar } from '../cliente-table-toolbar';
 import { ClienteTableFiltersResult } from '../cliente-table-filters-result';
 
@@ -51,6 +56,8 @@ const TABLE_HEAD = [
   { id: 'codigo', label: 'Código', width: 20 },
   { id: 'name', label: 'Nome', width: 50 },
   { id: 'razaoSocial', label: 'Razão Social', width: 130 },
+  { id: 'regimeTributario', label: 'Regime Tributário', width: 100 },
+  { id: 'tributacao', label: 'Plano Tributação', width: 120 },
   { id: 'status', label: 'Status', width: 80 },
   { id: '', width: 8 },
 ];
@@ -65,9 +72,30 @@ export const CLIENTE_STATUS_OPTIONS = [
   { value: STATUS_INACTIVE, label: 'Inativo' },
 ];
 
+export const REGIME_TRIBUTARIO_OPTIONS = [
+  { value: 'all', label: 'Todos' },
+  { value: 'simples', label: 'Simples Nacional' },
+  { value: 'presumido', label: 'Lucro Presumido' },
+  { value: 'real', label: 'Lucro Real' },
+  { value: 'pf', label: 'Pessoa Física' },
+];
+
+export const PLANO_TRIBUTACAO_OPTIONS = [
+  { value: 'all', label: 'Todos' },
+  { value: 'anexo1', label: 'Anexo I' },
+  { value: 'anexo2', label: 'Anexo II' },
+  { value: 'anexo3', label: 'Anexo III' },
+  { value: 'anexo4', label: 'Anexo IV' },
+  { value: 'anexo5', label: 'Anexo V' },
+  { value: 'simei', label: 'SIMEI' },
+  { value: 'autonomo', label: 'Autônomo' },
+];
+
 const DEFAULT_FILTERS = {
-  razaoSocial: '',
+  search: '',
   status: STATUS_ALL,
+  regimeTributario: 'all',
+  planoTributacao: 'all',
 };
 
 // ----------------------------------------------------------------------
@@ -106,7 +134,7 @@ function getStatusCount(statusValue, counts) {
  * Aplica filtros e ordenação aos dados
  */
 function applyFilter({ inputData, comparator, filters }) {
-  const { razaoSocial, status } = filters || {};
+  const { search, status, regimeTributario, planoTributacao } = filters || {};
 
   // Ordenação estável
   const stabilizedThis = inputData.map((el, index) => [el, index]);
@@ -129,9 +157,9 @@ function applyFilter({ inputData, comparator, filters }) {
 
   let filteredData = stabilizedThis.map((el) => el[0]);
 
-  // Filtro por nome, razão social ou email
-  if (razaoSocial?.trim()) {
-    const searchLower = razaoSocial.toLowerCase().trim();
+  // Filtro por busca (nome, razão social ou email)
+  if (search?.trim()) {
+    const searchLower = search.toLowerCase().trim();
     filteredData = filteredData.filter(
       (cliente) =>
         cliente.nome?.toLowerCase().includes(searchLower) ||
@@ -151,6 +179,21 @@ function applyFilter({ inputData, comparator, filters }) {
     }
   }
 
+  // Filtro por regime tributário
+  if (regimeTributario && regimeTributario !== 'all') {
+    filteredData = filteredData.filter(
+      (cliente) => cliente.regimeTributario === regimeTributario
+    );
+  }
+
+  // Filtro por plano de tributação
+  if (planoTributacao && planoTributacao !== 'all') {
+    filteredData = filteredData.filter((cliente) => {
+      const tributacoes = Array.isArray(cliente.tributacao) ? cliente.tributacao : [];
+      return tributacoes.includes(planoTributacao);
+    });
+  }
+
   return filteredData;
 }
 
@@ -162,6 +205,7 @@ export function ClienteListView() {
   const router = useRouter();
 
   const confirm = useBoolean();
+  const importLeadDialog = useBoolean();
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -185,7 +229,11 @@ export function ClienteListView() {
 
   // Memoizar se pode resetar filtros
   const canReset = useMemo(
-    () => !!filters.state.razaoSocial?.trim() || filters.state.status !== STATUS_ALL,
+    () =>
+      !!filters.state.search?.trim() ||
+      filters.state.status !== STATUS_ALL ||
+      filters.state.regimeTributario !== 'all' ||
+      filters.state.planoTributacao !== 'all',
     [filters.state]
   );
 
@@ -304,6 +352,12 @@ export function ClienteListView() {
     [filters, table]
   );
 
+  // Handler para importar lead
+  const handleImportLeadSuccess = useCallback(() => {
+    fetchClientes();
+    importLeadDialog.onFalse();
+  }, [fetchClientes, importLeadDialog]);
+
   return (
     <>
       <DashboardContent>
@@ -315,14 +369,23 @@ export function ClienteListView() {
             { name: 'Todos' },
           ]}
           action={
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.cliente.new}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
-              Novo Cliente
-            </Button>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button
+                variant="outlined"
+                startIcon={<Iconify icon="solar:import-bold" />}
+                onClick={importLeadDialog.onTrue}
+              >
+                Importar Lead
+              </Button>
+              <Button
+                component={RouterLink}
+                href={paths.dashboard.cliente.new}
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+              >
+                Novo Cliente
+              </Button>
+            </Box>
           }
           sx={{ mb: { xs: 3, md: 5 } }}
         />
@@ -362,6 +425,45 @@ export function ClienteListView() {
             onResetPage={table.onResetPage}
             tableData={dataFiltered}
           />
+
+          {/* Filtros adicionais */}
+          <Box sx={{ px: 2.5, pb: 2, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Regime Tributário</InputLabel>
+              <Select
+                value={filters.state.regimeTributario || 'all'}
+                label="Regime Tributário"
+                onChange={(e) => {
+                  table.onResetPage();
+                  filters.setState({ regimeTributario: e.target.value });
+                }}
+              >
+                {REGIME_TRIBUTARIO_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Plano de Tributação</InputLabel>
+              <Select
+                value={filters.state.planoTributacao || 'all'}
+                label="Plano de Tributação"
+                onChange={(e) => {
+                  table.onResetPage();
+                  filters.setState({ planoTributacao: e.target.value });
+                }}
+              >
+                {PLANO_TRIBUTACAO_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
 
           {canReset && (
             <ClienteTableFiltersResult
@@ -503,6 +605,12 @@ export function ClienteListView() {
             Inativar
           </Button>
         }
+      />
+
+      <ImportLeadDialog
+        open={importLeadDialog.value}
+        onClose={importLeadDialog.onFalse}
+        onSuccess={handleImportLeadSuccess}
       />
     </>
   );

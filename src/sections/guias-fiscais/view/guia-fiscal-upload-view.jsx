@@ -152,6 +152,13 @@ export function GuiaFiscalUploadView() {
       if (response.success) {
         setUploadResult(response.data);
         
+        // 🔥 NOVA ESTRUTURA: Verificar warnings (não bloqueiam, mas informam)
+        if (response.warnings && response.warnings.length > 0) {
+          response.warnings.forEach((warning) => {
+            toast.warning(warning, { duration: 5000 });
+          });
+        }
+        
         // Mostrar resumo
         const { processadas, erros, duplicatas, resumo, clientesNaoEncontrados, errosDetalhados } = response.data;
         
@@ -188,12 +195,61 @@ export function GuiaFiscalUploadView() {
           }, 1500);
         }
       } else {
+        // 🔥 NOVA ESTRUTURA: Tratar errors e warnings
+        const errorMessage = response.errors && response.errors.length > 0
+          ? response.errors[0]
+          : (response.message || 'Erro ao processar documentos');
+        
         console.error('❌ Erro no upload:', response);
-        toast.error(response.message || 'Erro ao processar documentos');
+        toast.error(errorMessage);
+        
+        // Exibir warnings mesmo em caso de erro
+        if (response.warnings && response.warnings.length > 0) {
+          response.warnings.forEach((warning) => {
+            toast.warning(warning, { duration: 5000 });
+          });
+        }
       }
     } catch (error) {
       console.error('❌ Erro ao fazer upload:', error);
-      toast.error(error?.message || 'Erro ao fazer upload dos documentos');
+      
+      // 🔥 NOVA ESTRUTURA: Tratar errors, warnings e codes
+      let errorMessage = 'Erro ao fazer upload dos documentos';
+      let warnings = [];
+      
+      if (error?.response?.data) {
+        const errorData = error.response.data;
+        
+        // Verificar se é nova estrutura
+        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+          errorMessage = errorData.errors[0];
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        
+        // Capturar warnings
+        if (errorData.warnings && Array.isArray(errorData.warnings)) {
+          warnings = errorData.warnings;
+        }
+        
+        // Tratamento específico por código
+        if (errorData.code === 'LIMIT_FILE_SIZE') {
+          errorMessage = errorData.message || 'Arquivo muito grande. Verifique o tamanho máximo permitido.';
+        } else if (errorData.code === 'LIMIT_FILE_COUNT') {
+          errorMessage = errorData.message || 'Muitos arquivos enviados. Verifique o limite permitido.';
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
+      
+      // Exibir warnings
+      warnings.forEach((warning) => {
+        toast.warning(warning, { duration: 5000 });
+      });
     } finally {
       setLoading(false);
     }
