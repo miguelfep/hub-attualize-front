@@ -197,26 +197,52 @@ export const usePlanoContas = (clienteId) => {
 
   // Importar plano de contas
   const importarPlanoContas = useCallback(async (arquivo) => {
-    if (!clienteId || !arquivo) {
-      toast.error('Cliente e arquivo são obrigatórios.');
+    if (!arquivo) {
+      toast.error('Arquivo é obrigatório.');
       return null;
     }
 
-    console.log('Hook: Iniciando importação', { clienteId, arquivo });
+    if (!clienteId) {
+      toast.error('Cliente não identificado.');
+      return null;
+    }
+
+    // Validação de extensão - apenas PDF
+    const extension = arquivo.name.toLowerCase().split('.').pop();
+    if (extension !== 'pdf') {
+      toast.error('Apenas arquivos PDF são aceitos');
+      return null;
+    }
+
+    // Validação de tamanho (20MB)
+    const maxSize = 20 * 1024 * 1024;
+    if (arquivo.size > maxSize) {
+      const sizeMB = (arquivo.size / 1024 / 1024).toFixed(2);
+      toast.error(`Arquivo muito grande: ${sizeMB}MB. Tamanho máximo: 20MB`);
+      return null;
+    }
+
+    console.log('Hook: Iniciando importação', { 
+      arquivo: arquivo.name, 
+      tamanho: arquivo.size,
+      extensao: extension,
+      clienteId
+    });
 
     setLoading(true);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append('clienteId', clienteId);
       formData.append('file', arquivo);
+      formData.append('clienteId', clienteId);
 
       console.log('FormData criado:', {
-        clienteId,
         fileName: arquivo.name,
         fileSize: arquivo.size,
-        fileType: arquivo.type
+        fileType: arquivo.type,
+        extension,
+        clienteId
       });
 
       const url = `${baseUrl}plano-contas/importar`;
@@ -231,7 +257,10 @@ export const usePlanoContas = (clienteId) => {
       console.log('Resposta da API:', response.data);
 
       if (response.data.success) {
-        toast.success(response.data.message || 'Plano de contas importado com sucesso!');
+        toast.success(
+          response.data.message || 'Plano de contas importado com sucesso!',
+          { duration: 5000 }
+        );
         
         // 🔥 Invalidar cache antes de recarregar
         if (cache.contasAnaliticas.has(clienteId)) {
@@ -266,7 +295,7 @@ export const usePlanoContas = (clienteId) => {
     } finally {
       setLoading(false);
     }
-  }, [clienteId, baseUrl, carregarContas, carregarContasAnaliticas, carregarEstatisticas]);
+  }, [baseUrl, carregarContas, carregarContasAnaliticas, carregarEstatisticas, clienteId]);
 
   // Atualizar conta
   const atualizarConta = useCallback(async (codigo, dados) => {

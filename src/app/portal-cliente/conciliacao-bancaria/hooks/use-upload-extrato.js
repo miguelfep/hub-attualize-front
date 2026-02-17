@@ -15,6 +15,7 @@ export function useUploadExtrato() {
   const [resultado, setResultado] = useState(null);
   const [error, setError] = useState(null);
   const [errorData, setErrorData] = useState(null); // 🔥 NOVO: objeto completo do erro
+  const [warnings, setWarnings] = useState([]); // 🔥 NOVO: avisos do backend (não bloqueiam)
   
   // 🔥 NOVOS ESTADOS: Processamento assíncrono
   const [processandoStatus, setProcessandoStatus] = useState(null); // 'processando' | 'pendente' | 'concluida' | 'erro' | null
@@ -100,6 +101,7 @@ export function useUploadExtrato() {
     setLoading(true);
     setError(null);
     setErrorData(null);
+    setWarnings([]); // 🔥 Limpar warnings
     setResultado(null);
     setUploadProgress(0);
     // 🔥 Limpar estados de processamento
@@ -181,53 +183,111 @@ export function useUploadExtrato() {
       let errorMessage = '';
       let errorObj = null;
       
-      // 🔥 CORREÇÃO: Verificar se err JÁ É o objeto de erro (por causa do interceptor)
+      // 🔥 NOVA ESTRUTURA: Backend agora retorna { success, message, errors, warnings, code }
+      // Verificar se err JÁ É o objeto de erro (por causa do interceptor)
+      let errorDataFromBackend = null;
+      
       if (err?.erro) {
-        // O interceptor retornou error.response.data diretamente
-        errorObj = err.erro;
-        console.log('✅ errorObj extraído de err.erro (interceptor)');
+        // O interceptor retornou error.response.data diretamente (estrutura antiga)
+        errorDataFromBackend = err.erro;
+        console.log('✅ errorData extraído de err.erro (interceptor - estrutura antiga)');
       } else if (err?.response?.data?.erro) {
-        // Caso normal (sem interceptor)
-        errorObj = err.response.data.erro;
-        console.log('✅ errorObj extraído de err.response.data.erro');
-      } else if (err?.tipo) {
-        // err já é o objeto de erro diretamente
-        errorObj = err;
-        console.log('✅ errorObj é o próprio err');
+        // Caso normal (sem interceptor - estrutura antiga)
+        errorDataFromBackend = err.response.data.erro;
+        console.log('✅ errorData extraído de err.response.data.erro (estrutura antiga)');
       } else if (err?.response?.data) {
-        errorObj = err.response.data;
-        console.log('✅ errorObj extraído de err.response.data');
+        // Nova estrutura do backend: { success, message, errors, warnings, code }
+        errorDataFromBackend = err.response.data;
+        console.log('✅ errorData extraído de err.response.data (nova estrutura)');
+      } else if (err?.tipo) {
+        // err já é o objeto de erro diretamente (estrutura antiga)
+        errorDataFromBackend = err;
+        console.log('✅ errorData é o próprio err (estrutura antiga)');
       } else if (typeof err === 'string') {
-        errorObj = { tipo: 'ERRO_GENERICO', mensagem: err };
-        console.log('✅ errorObj criado a partir de string');
+        errorDataFromBackend = { tipo: 'ERRO_GENERICO', mensagem: err };
+        console.log('✅ errorData criado a partir de string');
       } else if (err?.response) {
-        errorObj = { tipo: 'ERRO_HTTP', mensagem: err.response.statusText };
-        console.log('✅ errorObj extraído de err.response');
+        errorDataFromBackend = { tipo: 'ERRO_HTTP', mensagem: err.response.statusText };
+        console.log('✅ errorData extraído de err.response');
       } else {
-        errorObj = { tipo: 'ERRO_REDE', mensagem: err?.message || 'Erro desconhecido' };
-        console.log('✅ errorObj criado a partir de err.message');
+        errorDataFromBackend = { tipo: 'ERRO_REDE', mensagem: err?.message || 'Erro desconhecido' };
+        console.log('✅ errorData criado a partir de err.message');
       }
+      
+      console.log('🔴 errorDataFromBackend final:', errorDataFromBackend);
+      
+      // 🔥 NOVA ESTRUTURA: Tratar errors, warnings e code
+      let errors = [];
+      let warningsFromBackend = [];
+      let code = null;
+      
+      // Verificar se é nova estrutura (tem errors/warnings/code)
+      if (errorDataFromBackend?.errors && Array.isArray(errorDataFromBackend.errors)) {
+        errors = errorDataFromBackend.errors;
+        warningsFromBackend = errorDataFromBackend.warnings || [];
+        code = errorDataFromBackend.code;
+        console.log('✅ Nova estrutura detectada - errors:', errors, 'warnings:', warningsFromBackend, 'code:', code);
+      } else if (errorDataFromBackend?.warnings && Array.isArray(errorDataFromBackend.warnings)) {
+        // Pode ter apenas warnings
+        warningsFromBackend = errorDataFromBackend.warnings;
+        code = errorDataFromBackend.code;
+        console.log('✅ Nova estrutura detectada (apenas warnings)');
+      }
+      
+      // Construir errorObj para compatibilidade com código existente
+      errorObj = {
+        ...errorDataFromBackend,
+        errors,
+        warnings: warningsFromBackend,
+        code,
+        // Manter compatibilidade com estrutura antiga
+        tipo: errorDataFromBackend?.tipo || code || 'ERRO_GENERICO',
+        mensagem: errorDataFromBackend?.message || errorDataFromBackend?.mensagem || errorDataFromBackend?.error || errorDataFromBackend?.message || 'Erro ao fazer upload',
+      };
       
       console.log('🔴 errorObj final:', errorObj);
       console.log('🔴 errorObj?.tipo:', errorObj?.tipo);
       console.log('🔴 errorObj?.mensagem:', errorObj?.mensagem);
+      console.log('🔴 errorObj?.errors:', errorObj?.errors);
+      console.log('🔴 errorObj?.warnings:', errorObj?.warnings);
+      console.log('🔴 errorObj?.code:', errorObj?.code);
       
       // 🔥 SALVAR O OBJETO COMPLETO DO ERRO (garantir que não seja undefined)
       setErrorData(errorObj || null);
+      // 🔥 SALVAR WARNINGS SEPARADAMENTE (para exibição na UI)
+      setWarnings(warningsFromBackend || []);
       console.log('🔴 setErrorData chamado com:', errorObj || null);
+      console.log('🔴 setWarnings chamado com:', warningsFromBackend || []);
       
-      if (errorObj?.tipo === 'PERIODO_INVALIDO') {
+      // Tratar erros específicos (estrutura antiga e nova)
+      if (errorObj?.tipo === 'PERIODO_INVALIDO' || errorObj?.code === 'PERIODO_INVALIDO') {
         // Erro de período inválido
-        errorMessage = errorObj.mensagem || 'O arquivo contém transações de outro período';
+        errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'O arquivo contém transações de outro período');
         console.log('✅ Detectado PERIODO_INVALIDO');
-      } else if (errorObj?.tipo === 'CONCILIACAO_EXISTENTE') {
+      } else if (errorObj?.tipo === 'CONCILIACAO_EXISTENTE' || errorObj?.code === 'CONCILIACAO_EXISTENTE') {
         // Erro de conciliação existente
-        errorMessage = errorObj.mensagem || 'Já existe conciliação para este período';
+        errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Já existe conciliação para este período');
         console.log('✅ Detectado CONCILIACAO_EXISTENTE');
-      } else if (errorObj?.tipo === 'OFX_INVALIDO') {
+      } else if (errorObj?.tipo === 'OFX_INVALIDO' || errorObj?.code === 'OFX_INVALIDO') {
         // Erro de OFX inválido
-        errorMessage = errorObj.mensagem || 'Arquivo OFX inválido ou corrompido';
+        errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Arquivo OFX inválido ou corrompido');
         console.log('✅ Detectado OFX_INVALIDO');
+      } else if (errorObj?.code === 'LIMIT_FILE_SIZE') {
+        // Erro de arquivo muito grande (nova estrutura)
+        errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Arquivo muito grande');
+        console.log('✅ Detectado LIMIT_FILE_SIZE');
+      } else if (errorObj?.code === 'LIMIT_FILE_COUNT') {
+        // Erro de muitos arquivos (nova estrutura)
+        errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Muitos arquivos enviados');
+        console.log('✅ Detectado LIMIT_FILE_COUNT');
+      } else if (errorObj?.code === 'LIMIT_UNEXPECTED_FILE') {
+        // Erro de campo de arquivo inesperado (nova estrutura)
+        errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Campo de arquivo inesperado');
+        console.log('✅ Detectado LIMIT_UNEXPECTED_FILE');
+      } else if (errors.length > 0) {
+        // Nova estrutura: usar primeiro erro da lista
+        errorMessage = errors[0];
+        console.log('✅ Usando primeiro erro da lista (nova estrutura)');
       } else {
         // Erro genérico
         errorMessage = errorObj?.mensagem || errorObj?.error || errorObj?.message || err.message || 'Erro ao fazer upload';
@@ -258,6 +318,7 @@ export function useUploadExtrato() {
     setResultado(null);
     setError(null);
     setErrorData(null);
+    setWarnings([]); // 🔥 Limpar warnings
     // 🔥 Limpar estados de processamento
     setProcessandoStatus(null);
     setProgressoProcessamento(0);
@@ -271,6 +332,7 @@ export function useUploadExtrato() {
     resultado, 
     error,
     errorData,
+    warnings, // 🔥 NOVO: avisos do backend
     // 🔥 NOVOS RETORNOS: Estados de processamento assíncrono
     processandoStatus,
     progressoProcessamento,

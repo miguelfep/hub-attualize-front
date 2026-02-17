@@ -21,9 +21,70 @@ export async function atualizarLead(id, leadData) {
   return res.data;
 }
 
-export async function getLeads() {
-  const res = await axios.get(`${endpoints.marketing.getLeads}`);
-  return res.data;
+/**
+ * Buscar leads
+ * @param {Object} params - Parâmetros de busca
+ * @param {boolean} params.incluirConvertidos - Incluir leads convertidos (default: false)
+ * @param {string} params.statusLead - Filtrar por status específico ('novo', 'contatado', 'convertido', etc.)
+ * @returns {Promise<Object>} Resposta com lista de leads
+ */
+export async function getLeads(params = {}) {
+  const queryParams = {};
+  
+  if (params.incluirConvertidos) {
+    queryParams.incluirConvertidos = 'true';
+  }
+  
+  if (params.statusLead) {
+    queryParams.statusLead = params.statusLead;
+  }
+
+  try {
+    const res = await axios.get(`${endpoints.marketing.getLeads}`, { params: queryParams });
+    
+    // Normalizar resposta da API (pode vir em diferentes formatos)
+    const data = res.data || res;
+    
+    // Se for array direto, retornar
+    if (Array.isArray(data)) {
+      return data;
+    }
+    
+    // Se for objeto com success e leads
+    if (data?.success && Array.isArray(data.leads)) {
+      return data.leads;
+    }
+    
+    // Se for objeto com leads
+    if (Array.isArray(data?.leads)) {
+      return data.leads;
+    }
+    
+    // Se for objeto com data
+    if (Array.isArray(data?.data)) {
+      return data.data;
+    }
+    
+    // Se não conseguir normalizar, retornar array vazio
+    console.warn('Formato de resposta inesperado da API de leads:', data);
+    return [];
+  } catch (error) {
+    console.error('Erro ao buscar leads:', error);
+    
+    // Se o erro vier do interceptor (já processado), pode ser string
+    if (typeof error === 'string') {
+      console.error('Erro do interceptor:', error);
+      return [];
+    }
+    
+    // Se for objeto de erro, logar detalhes
+    if (error?.response) {
+      console.error('Erro HTTP:', error.response.status, error.response.data);
+    }
+    
+    // Retornar array vazio em caso de erro para não quebrar o código
+    return [];
+  }
 }
 
 export async function buscarDashboardFinanceiroPagar(params = {}) {
@@ -251,5 +312,69 @@ export async function getAllLeadsOrigens() {
   } catch (error) {
     console.error('❌ Erro ao buscar origens:', error);
     return [];
+  }
+}
+
+// ----------------------------------------------------------------------
+
+/**
+ * Buscar leads convertidos com paginação
+ * @param {Object} params - Parâmetros de paginação
+ * @param {number} params.page - Número da página (default: 1)
+ * @param {number} params.limit - Itens por página (default: 50)
+ * @returns {Promise<Object>} Resposta com leads convertidos e paginação
+ */
+export async function buscarLeadsConvertidos(params = {}) {
+  const queryParams = {
+    page: params.page || 1,
+    limit: params.limit || 50,
+  };
+
+  const res = await axios.get(`${endpoints.marketing.getLeads}/convertidos`, {
+    params: queryParams,
+  });
+  return res.data;
+}
+
+/**
+ * Buscar contatos de todos os leads convertidos
+ * @returns {Promise<Object>} Resposta com contatos de todos os leads convertidos
+ */
+export async function buscarContatosLeadsConvertidos() {
+  try {
+    const res = await axios.get(`${endpoints.marketing.getLeads.replace('/leads', '/lead')}/convertidos/contacts`);
+    return res.data;
+  } catch (error) {
+    console.error('❌ Erro ao buscar contatos de leads convertidos:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Erro ao buscar contatos';
+    return {
+      success: false,
+      error: errorMessage,
+      data: [],
+      total: 0,
+    };
+  }
+}
+
+/**
+ * Buscar invoices de todos os leads convertidos
+ * @returns {Promise<Object>} Resposta com invoices de todos os leads convertidos
+ */
+export async function buscarInvoicesLeadsConvertidos() {
+  try {
+    // Usar a URL completa da API conforme documentação
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const res = await axios.get(`${baseUrl}financeiro/invoices/lead/convertidos`);
+    return res.data;
+  } catch (error) {
+    console.error('❌ Erro ao buscar invoices de leads convertidos:', error);
+    const errorMessage = error.response?.data?.message || error.message || 'Erro ao buscar invoices';
+    return {
+      success: false,
+      error: errorMessage,
+      invoices: [],
+      total: 0,
+      totalLeads: 0,
+    };
   }
 }

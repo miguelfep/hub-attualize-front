@@ -110,7 +110,8 @@ export default function UploadExtratoPage() {
     uploadProgress, 
     resultado, 
     error: uploadError, 
-    errorData, 
+    errorData,
+    warnings, // 🔥 NOVO: avisos do backend
     processandoStatus,
     progressoProcessamento,
     conciliacaoId,
@@ -121,6 +122,14 @@ export default function UploadExtratoPage() {
   useEffect(() => {
     console.log('🔍 useEffect - uploadError:', uploadError);
     console.log('🔍 useEffect - errorData:', errorData);
+    console.log('🔍 useEffect - warnings:', warnings);
+    
+    // 🔥 NOVA ESTRUTURA: Exibir warnings (não bloqueiam)
+    if (warnings && warnings.length > 0) {
+      warnings.forEach((warning) => {
+        toast.warning(warning, { duration: 5000 });
+      });
+    }
     
     if (uploadError && errorData?.tipo) {
       console.log('🔥 Erro detectado! Tipo:', errorData.tipo);
@@ -132,7 +141,7 @@ export default function UploadExtratoPage() {
       console.log('⚠️ Erro sem errorData, modal será aberto pelo handleUpload');
       // Não mostrar toast aqui - o erro será tratado no handleUpload ou modal
     }
-  }, [uploadError, errorData]);
+  }, [uploadError, errorData, warnings]);
 
   // Buscar dados da empresa
   useEffect(() => {
@@ -669,7 +678,7 @@ export default function UploadExtratoPage() {
                 Formatos aceitos: <strong>OFX, PDF, XLSX, CSV</strong>
               </Typography>
               <Typography variant="caption" color="text.disabled">
-                Tamanho máximo: 10 MB
+                Tamanho máximo: 20 MB
               </Typography>
             </Stack>
           )}

@@ -102,3 +102,15 @@ export async function atualizarDadosCliente(id) {
   const res = await axios.put(`${endpoints.clientes.atualizarDados}/${id}`);
   return res.data;
 }
+
+// ----------------------------------------------------------------------
+
+/**
+ * Importar/Converter um lead em cliente
+ * @param {string} leadId - ID do lead a ser convertido
+ * @returns {Promise<Object>} Resposta com cliente criado e lead atualizado
+ */
+export async function importarLeadComoCliente(leadId) {
+  const res = await axios.post(`${endpoints.clientes.list}/importar-lead/${leadId}`);
+  return res.data;
+}

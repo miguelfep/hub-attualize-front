@@ -66,8 +66,17 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
       'application/pdf': ['.pdf'],
     },
     maxFiles: 1,
-    maxSize: 10 * 1024 * 1024, // 10MB
-    onDrop: (acceptedFiles) => {
+    maxSize: 20 * 1024 * 1024, // 20MB
+    onDrop: (acceptedFiles, rejectedFiles) => {
+      if (rejectedFiles.length > 0) {
+        const rejection = rejectedFiles[0];
+        if (rejection.errors.some((e) => e.code === 'file-invalid-type')) {
+          toast.error('Apenas arquivos PDF são aceitos');
+        } else if (rejection.errors.some((e) => e.code === 'file-too-large')) {
+          toast.error('Arquivo muito grande. Tamanho máximo: 20MB');
+        }
+        return;
+      }
       if (acceptedFiles.length > 0) {
         setFile(acceptedFiles[0]);
         setResultado(null);
@@ -78,6 +87,18 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
   const handleImport = async () => {
     if (!file) {
       toast.error('Selecione um arquivo PDF');
+      return;
+    }
+
+    if (!clienteId) {
+      toast.error('Cliente não identificado.');
+      return;
+    }
+
+    // Validação adicional de extensão
+    const extension = file.name.toLowerCase().split('.').pop();
+    if (extension !== 'pdf') {
+      toast.error('Apenas arquivos PDF são aceitos');
       return;
     }
 
@@ -96,6 +117,7 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
       nome: file.name,
       tipo: file.type,
       tamanho: file.size,
+      extensao: extension,
       clienteId
     });
 
@@ -114,7 +136,10 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
   };
 
   const handleDownloadTemplate = () => {
-    toast.info('O arquivo PDF deve conter uma tabela com: Código T, Classificação, Nome e Grau.');
+    toast.info(
+      'O arquivo PDF deve conter o plano de contas.\n' +
+      'O cliente será identificado automaticamente.'
+    );
   };
 
   // Filtrar contas pela busca
@@ -199,7 +224,7 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
             onClick={handleDownloadTemplate}
             startIcon={<Iconify icon="solar:info-circle-bold-duotone" />}
           >
-            Formato do PDF
+            Formato do Arquivo
           </Button>
         </Stack>
 
@@ -243,7 +268,10 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
               : 'Arraste e solte o arquivo PDF aqui, ou clique para selecionar'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Formato aceito: PDF (até 10MB)
+            Formato aceito: PDF (até 20MB)
+          </Typography>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+            O cliente será identificado automaticamente
           </Typography>
         </Box>
 
@@ -255,6 +283,7 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
                 KB)
               </Typography>
             </Alert>
+
             <Button
               variant="contained"
               color="primary"
@@ -423,10 +452,13 @@ export default function PlanoContasClienteSection({ clienteId, possuiExtrato }) 
             <strong>Nenhum plano de contas cadastrado ainda.</strong>
           </Typography>
           <Typography variant="body2">
-            Faça o upload de um arquivo PDF com o plano de contas do cliente para começar.
+            Faça o upload de um arquivo PDF com o plano de contas para começar.
           </Typography>
           <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-            💡 O PDF deve conter uma tabela com: Código T, Classificação, Nome e Grau
+            📋 <strong>PDF:</strong> Arquivo PDF contendo o plano de contas
+          </Typography>
+          <Typography variant="caption" display="block" sx={{ mt: 0.5 }}>
+            ✅ O cliente será identificado automaticamente
           </Typography>
         </Alert>
       )}

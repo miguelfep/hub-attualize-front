@@ -113,6 +113,60 @@ export function ClienteTableRow({
           </Box>
         </TableCell>
         <TableCell>
+          {row.regimeTributario ? (
+            <Label variant="soft" color="info">
+              {row.regimeTributario === 'simples' && 'Simples'}
+              {row.regimeTributario === 'presumido' && 'Presumido'}
+              {row.regimeTributario === 'real' && 'Real'}
+              {row.regimeTributario === 'pf' && 'PF'}
+              {!['simples', 'presumido', 'real', 'pf'].includes(row.regimeTributario) && row.regimeTributario}
+            </Label>
+          ) : (
+            <Box
+              component="span"
+              sx={{
+                typography: 'body2',
+                color: 'text.disabled',
+              }}
+            >
+              -
+            </Box>
+          )}
+        </TableCell>
+        <TableCell>
+          {row.tributacao && Array.isArray(row.tributacao) && row.tributacao.length > 0 ? (
+            <Stack direction="row" spacing={0.5} flexWrap="wrap">
+              {row.tributacao.slice(0, 2).map((trib, index) => (
+                <Label key={index} variant="soft" size="small" color="secondary">
+                  {trib === 'anexo1' && 'Anexo I'}
+                  {trib === 'anexo2' && 'Anexo II'}
+                  {trib === 'anexo3' && 'Anexo III'}
+                  {trib === 'anexo4' && 'Anexo IV'}
+                  {trib === 'anexo5' && 'Anexo V'}
+                  {trib === 'simei' && 'SIMEI'}
+                  {trib === 'autonomo' && 'Autônomo'}
+                  {!['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'simei', 'autonomo'].includes(trib) && trib}
+                </Label>
+              ))}
+              {row.tributacao.length > 2 && (
+                <Label variant="soft" size="small" color="default">
+                  {`+${row.tributacao.length - 2}`}
+                </Label>
+              )}
+            </Stack>
+          ) : (
+            <Box
+              component="span"
+              sx={{
+                typography: 'body2',
+                color: 'text.disabled',
+              }}
+            >
+              -
+            </Box>
+          )}
+        </TableCell>
+        <TableCell>
           <Label
             variant="soft"
             color={(row.status === true && 'success') || (row.status === false && 'warning')}

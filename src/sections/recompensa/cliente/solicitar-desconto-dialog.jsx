@@ -1,10 +1,10 @@
 'use client';
 
 import * as zod from 'zod';
-import { useForm } from 'react-hook-form';
-import { useState, useEffect, useMemo } from 'react';
-import { zodResolver } from '@hookform/resolvers/zod';
 import Cookies from 'js-cookie';
+import { useForm } from 'react-hook-form';
+import { useMemo, useState, useEffect } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
 
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -18,6 +18,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
 import { useRecompensas } from 'src/hooks/use-recompensas';
+
 import axios from 'src/utils/axios';
 import { fCurrency } from 'src/utils/format-number';
 
