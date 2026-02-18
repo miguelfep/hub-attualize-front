@@ -95,6 +95,23 @@ export function usePortalNavData() {
       icon: <Iconify icon="solar:wallet-money-bold-duotone" />,
     },
     {
+      title: 'Comunidade',
+      path: paths.cliente.comunidade.materiais.root,
+      icon: <Iconify icon="solar:book-bookmark-bold-duotone" />,
+      children: [
+        {
+          title: 'Materiais',
+          path: paths.cliente.comunidade.materiais.root,
+          icon: <Iconify icon="solar:book-bookmark-bold-duotone" />,
+        },
+        {
+          title: 'Cursos',
+          path: paths.cliente.comunidade.cursos.root,
+          icon: <Iconify icon="solar:graduation-bold-duotone" />,
+        },
+      ],
+    },
+    {
       title: 'Meus Documentos',
       path: '#',
       icon: <Iconify icon="solar:documents-bold-duotone" />,
