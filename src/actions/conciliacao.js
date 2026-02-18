@@ -209,3 +209,57 @@ export async function exportarCSVMes(clienteId, bancoId, mesAno) {
 export function obterUrlDownloadCSV(downloadUrl) {
   return `${baseUrl}conciliacao${downloadUrl}`;
 }
+
+// ========== NOVAS APIs PARA DASHBOARD ==========
+
+/**
+ * 🎯 Buscar gastos agrupados por conta contábil
+ * @param {string} clienteId - ID do cliente
+ * @param {string|null} bancoId - ID do banco (opcional, null ou "Todos" para todos)
+ * @param {string} mesAno - Mês/ano no formato YYYY-MM (ex: 2025-01)
+ * @returns {Promise<{success: boolean, data: Array}>}
+ */
+export async function buscarGastosPorContaContabil(clienteId, bancoId, mesAno) {
+  const params = {};
+  if (bancoId && bancoId !== 'null' && bancoId !== 'Todos') {
+    params.bancoId = bancoId;
+  }
+  params.mesAno = mesAno;
+
+  return axios.get(`${baseUrl}conciliacao/gastos-por-conta-contabil/${clienteId}`, { params });
+}
+
+/**
+ * 🎯 Buscar resumo de mês/banco (KPIs)
+ * @param {string} clienteId - ID do cliente
+ * @param {string|null} bancoId - ID do banco (opcional, null ou "Todos" para todos)
+ * @param {string} mesAno - Mês/ano no formato YYYY-MM (ex: 2025-01)
+ * @returns {Promise<{success: boolean, data: Object}>}
+ */
+export async function buscarResumoMesBanco(clienteId, bancoId, mesAno) {
+  const params = {};
+  if (bancoId && bancoId !== 'null' && bancoId !== 'Todos') {
+    params.bancoId = bancoId;
+  }
+  params.mesAno = mesAno;
+
+  return axios.get(`${baseUrl}conciliacao/resumo-mes-banco/${clienteId}`, { params });
+}
+
+/**
+ * 🎯 Buscar transações de uma conta contábil específica
+ * @param {string} clienteId - ID do cliente
+ * @param {string} contaContabilId - ID da conta contábil
+ * @param {string|null} bancoId - ID do banco (opcional, null ou "Todos" para todos)
+ * @param {string} mesAno - Mês/ano no formato YYYY-MM (ex: 2025-01)
+ * @returns {Promise<{success: boolean, data: Array}>}
+ */
+export async function buscarTransacoesPorConta(clienteId, contaContabilId, bancoId, mesAno) {
+  const params = {};
+  if (bancoId && bancoId !== 'null' && bancoId !== 'Todos') {
+    params.bancoId = bancoId;
+  }
+  params.mesAno = mesAno;
+
+  return axios.get(`${baseUrl}conciliacao/transacoes-por-conta/${clienteId}/${contaContabilId}`, { params });
+}

@@ -125,12 +125,22 @@ export const merge = (target, ...sources) => {
 };
 
 export function getMonthName(monthIndex) {
-    const meses = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    return meses[monthIndex];
-  }
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  return meses[monthIndex];
+}
+
+export function getMonthNumber(monthLabel) {
+  const meses = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  // Retorna o índice + 1 (ex: Janeiro é 0 + 1 = 1)
+  const index = meses.indexOf(monthLabel);
+  return index !== -1 ? index + 1 : null;
+}
 
 export function toTitleCase(name) {
   if (!name || typeof name !== 'string') {
