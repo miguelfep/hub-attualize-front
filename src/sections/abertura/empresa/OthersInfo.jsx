@@ -1,9 +1,8 @@
 import React from 'react';
 import { NumericFormat } from 'react-number-format';
 
-import { Box, Divider, Grid, Tooltip, MenuItem, TextField, Typography, IconButton } from '@mui/material';
+import { Box, Grid, Divider, MenuItem, TextField, Typography } from '@mui/material';
 
-import { Iconify } from 'src/components/iconify';
 
 const OthersInfo = ({ formData, setFormData }) => {
   const handleChange = (field, value) => {

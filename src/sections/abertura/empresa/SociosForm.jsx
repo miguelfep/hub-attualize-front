@@ -12,7 +12,7 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
-import { formatCpf, formatRg, formatCnh } from 'src/utils/format-input';
+import { formatRg, formatCpf, formatCnh } from 'src/utils/format-input';
 
 const SociosForm = ({ formData, setFormData }) => {
   // Inicializa com 1 sócio por padrão

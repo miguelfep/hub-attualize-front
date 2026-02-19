@@ -159,6 +159,11 @@ import Image from 'next/image'; // Usando next/image para otimização de imagem
 
 
 
+
+
+
+
+
 import { useTheme } from '@mui/material/styles';
 import { Box, Stack, Button, Container, Typography } from '@mui/material';
 import styles from './HomeBanner.module.css';

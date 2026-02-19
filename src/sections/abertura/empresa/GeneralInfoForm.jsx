@@ -1,9 +1,10 @@
 import React from 'react';
 
-import { Box, Divider, Grid, Tooltip, TextField, IconButton, Typography } from '@mui/material';
+import { Box, Grid, Divider, Tooltip, TextField, IconButton, Typography } from '@mui/material';
+
+import { formatCpf, formatPhone } from 'src/utils/format-input';
 
 import { Iconify } from 'src/components/iconify';
-import { formatPhone, formatCpf } from 'src/utils/format-input';
 
 const GeneralInfoForm = ({ formData, setFormData }) => {
   const handleChange = (e) => {
