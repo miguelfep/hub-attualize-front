@@ -10,6 +10,7 @@ import { m, LazyMotion, domAnimation } from 'framer-motion';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Grid from '@mui/material/Grid';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Switch from '@mui/material/Switch';
 import Dialog from '@mui/material/Dialog';
@@ -26,7 +27,14 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 
 import axios from 'src/utils/axios';
 
-import { uploadCertificado, downloadCertificado, getCertificadoAtivo, desativarCertificado, getCertificadosCliente, validarArquivoCertificado } from 'src/actions/certificados';
+import {
+  uploadCertificado,
+  getCertificadoAtivo,
+  desativarCertificado,
+  getCertificadosCliente,
+  validarSenhaCertificado,
+  validarArquivoCertificado,
+} from 'src/actions/certificados';
 
 import { Iconify } from 'src/components/iconify';
 import { RHFTextField } from 'src/components/hook-form';
@@ -38,7 +46,10 @@ import { ActiveCertificateCard } from 'src/sections/configuracoes/ActiveCertific
 import { useAuthContext } from 'src/auth/hooks';
 
 const CertificateSchema = zod.object({
-  password: zod.string().min(1, 'Senha do certificado é obrigatória'),
+  password: zod
+    .string()
+    .min(1, 'Senha do certificado é obrigatória')
+    .refine((val) => val.trim().length >= 4, 'Senha deve ter no mínimo 4 caracteres'),
   confirmPassword: zod.string().min(1, 'Confirmação da senha é obrigatória'),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Senhas não coincidem',
@@ -47,18 +58,22 @@ const CertificateSchema = zod.object({
 
 
 const SectionHeader = ({ icon, title }) => (
-    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-      <Box sx={{ width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) }}>
+    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3, minWidth: 0 }}>
+      <Box sx={{ flexShrink: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) }}>
         <Iconify icon={icon} width={24} color="primary.main" />
       </Box>
-      <Typography variant="h6" sx={{ fontWeight: 700 }}>{title}</Typography>
+      <Typography variant="h6" sx={{ fontWeight: 700, wordBreak: 'break-word' }}>{title}</Typography>
     </Stack>
 );
 
 const InfoItem = ({ label, children }) => (
-  <Box>
-    <Typography variant="caption" color="text.secondary" component="p">{label}</Typography>
-    <Typography variant="body2" sx={{ fontWeight: 500 }}>{children}</Typography>
+  <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+    <Typography variant="caption" color="text.secondary" component="p" sx={{ display: 'block', wordBreak: 'break-word' }}>
+      {label}
+    </Typography>
+    <Typography variant="body2" sx={{ fontWeight: 500, wordBreak: 'break-word' }} component="span">
+      {children}
+    </Typography>
   </Box>
 );
 
@@ -176,26 +191,56 @@ export default function PortalClienteSettingsView() {
   };
 
   const handleCertificateUpload = handleCertificateSubmit(async (data) => {
+    if (!empresa?.empresaAtiva) {
+      toast.error('ID do cliente não disponível. Faça login novamente.');
+      return;
+    }
+    const pwdValidation = validarSenhaCertificado(data.password);
+    if (!pwdValidation.isValid) {
+      toast.error(pwdValidation.error);
+      return;
+    }
     try {
       setUploadingCertificate(true);
-      const response = await uploadCertificado(certificateFile, data.password, empresa.empresaAtiva);
-      if (response.data.success) {
-        toast.success('Certificado digital enviado com sucesso!');
+      const response = await uploadCertificado(
+        certificateFile,
+        data.password.trim(),
+        empresa.empresaAtiva
+      );
+      const resData = response.data;
+      if (resData.success) {
+        toast.success(resData.message || 'Certificado digital enviado com sucesso!');
         setCertificateDialogOpen(false);
         setCertificateFile(null);
         certificateMethods.reset();
         await fetchCertificados();
-      } else if (response.data.message?.includes('Senha do certificado inválida')) {
-        toast.error('❌ Senha incorreta! Verifique a senha do certificado e tente novamente.');
+        if (resData.data?.enotasEnviado === false && resData.data?.enotasErro) {
+          toast.warning(
+            `Certificado salvo, mas não foi possível vincular ao eNotas: ${resData.data.enotasErro}`,
+            { duration: 6000 }
+          );
+        }
       } else {
-        toast.error(response.data.message || 'Erro ao enviar certificado');
+        const msg = resData.message || 'Erro ao enviar certificado';
+        if (msg.toLowerCase().includes('senha') && (msg.includes('incorreta') || msg.includes('inválida'))) {
+          toast.error('Senha incorreta. Verifique a senha do certificado e tente novamente.');
+        } else {
+          toast.error(msg);
+        }
       }
     } catch (error) {
-      console.error('Erro ao enviar certificado:', error);
-      if (error.response?.data?.message?.includes('Senha do certificado inválida')) {
-        toast.error('❌ Senha incorreta! Verifique a senha do certificado e tente novamente.');
+      const status = error.response?.status;
+      const msg = error.response?.data?.message || error.message || 'Erro ao enviar certificado digital';
+      if (status === 401) {
+        toast.error('Sessão expirada. Faça login novamente.');
+      } else if (status === 403) {
+        toast.error('Você não tem permissão para enviar certificado.');
+      } else if (status === 404) {
+        toast.error(msg || 'Cliente não encontrado.');
+      } else if (msg.toLowerCase().includes('senha') && (msg.includes('incorreta') || msg.includes('inválida'))) {
+        toast.error('Senha incorreta. Verifique a senha do certificado e tente novamente.');
       } else {
-        toast.error(error.response?.data?.message || 'Erro ao enviar certificado digital');
+        toast.error(msg);
       }
     } finally {
       setUploadingCertificate(false);
@@ -217,77 +262,117 @@ export default function PortalClienteSettingsView() {
     }
   };
 
-  const handleDownloadCertificado = async (certificadoId, fileName) => {
-    try {
-      const response = await downloadCertificado(certificadoId);
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', fileName || 'certificado.pfx');
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success('Download iniciado com sucesso!');
-    } catch (error) {
-      console.error('Erro ao fazer download do certificado:', error);
-      toast.error('Erro ao fazer download do certificado');
-    }
-  };
-  
   const inativos = certificados.filter(c => c._id !== certificadoAtivo?._id);
 
   return (
     <>
       <LazyMotion features={domAnimation}>
         <m.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
-          <Card sx={{ borderRadius: 3 }}>
-            <Box sx={{ p: 4, bgcolor: 'background.neutral', borderRadius: '16px 16px 0 0', background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})` }}>
-              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>Configurações</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>Gerencie suas preferências e segurança da conta.</Typography>
-            </Box>
+          <Card sx={{ borderRadius: 3, overflow: 'hidden' }}>
+            <CardContent sx={{ p: 0 }}>
+              {/* Cabeçalho da página - dentro do fluxo para não sobrepor */}
+              <Box
+                sx={{
+                  p: { xs: 2.5, md: 4 },
+                  pb: { xs: 2, md: 3 },
+                  bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
+                  borderBottom: (t) => `1px solid ${t.palette.divider}`,
+                }}
+              >
+                <Typography variant="h4" component="h1" sx={{ fontWeight: 700, wordBreak: 'break-word' }}>
+                  Configurações
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5, wordBreak: 'break-word' }}>
+                  Gerencie suas preferências e segurança da conta.
+                </Typography>
+              </Box>
 
-            <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-              <Grid container spacing={5}>
-                <Grid xs={12} md={6}>
-                  <SectionHeader icon="solar:user-circle-bold-duotone" title="Minha Conta" />
-                  <Stack spacing={2}>
-                    <InfoItem label="Tipo de Usuário">Cliente</InfoItem>
-                    <InfoItem label="Status da Conta"><Typography component="span" variant="inherit" color={user?.status ? 'success.main' : 'error.main'}>{user?.status ? 'Ativa' : 'Inativa'}</Typography></InfoItem>
-                    <InfoItem label="Data de Criação">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '-'}</InfoItem>
-                    <InfoItem label="Último Acesso">{user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString('pt-BR') : '-'}</InfoItem>
-                  </Stack>
+              {/* Conteúdo principal */}
+              <Box sx={{ p: { xs: 2, md: 4 } }}>
+                <Grid container spacing={3}>
+                  {/* Card Minha Conta */}
+                  <Grid xs={12} md={6} sx={{ minWidth: 0 }}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        height: '100%',
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        borderRadius: 2,
+                      }}
+                    >
+                      <SectionHeader icon="solar:user-circle-bold-duotone" title="Minha Conta" />
+                      <Stack spacing={2.5} sx={{ minWidth: 0 }}>
+                        <InfoItem label="Tipo de Usuário">Cliente</InfoItem>
+                        <InfoItem label="Status da Conta">
+                          <Typography component="span" variant="body2" sx={{ fontWeight: 500, color: user?.status ? 'success.main' : 'error.main' }}>
+                            {user?.status ? 'Ativa' : 'Inativa'}
+                          </Typography>
+                        </InfoItem>
+                        <InfoItem label="Data de Criação">{user?.createdAt ? new Date(user.createdAt).toLocaleDateString('pt-BR') : '-'}</InfoItem>
+                        <InfoItem label="Último Acesso">{user?.lastLogin ? new Date(user.lastLogin).toLocaleDateString('pt-BR') : '-'}</InfoItem>
+                      </Stack>
+                    </Paper>
+                  </Grid>
+
+                  {/* Card Notificações */}
+                  <Grid xs={12} md={6} sx={{ minWidth: 0 }}>
+                    <Paper
+                      variant="outlined"
+                      sx={{
+                        p: 3,
+                        height: '100%',
+                        minWidth: 0,
+                        overflow: 'hidden',
+                        borderRadius: 2,
+                      }}
+                    >
+                      <SectionHeader icon="solar:bell-bing-bold-duotone" title="Notificações" />
+                      <Stack spacing={0} divider={<Divider />}>
+                        <NotificationSwitch checked={notifications.email} onChange={(e) => handleNotificationChange('email', e.target.checked)} title="Notificações por Email" subheader="Receba avisos sobre faturas e documentos." />
+                        <NotificationSwitch checked={notifications.whatsapp} onChange={(e) => handleNotificationChange('whatsapp', e.target.checked)} title="Notificações por Whatsapp" subheader="Receba alertas importantes no seu celular." />
+                        <NotificationSwitch checked={notifications.push} onChange={(e) => handleNotificationChange('push', e.target.checked)} title="Notificações Push" subheader="Receba notificações no navegador." />
+                      </Stack>
+                    </Paper>
+                  </Grid>
                 </Grid>
 
-                <Grid xs={12} md={6}>
-                  <SectionHeader icon="solar:bell-bing-bold-duotone" title="Notificações" />
-                  <Stack spacing={2} divider={<Divider />}>
-                    <NotificationSwitch checked={notifications.email} onChange={(e) => handleNotificationChange('email', e.target.checked)} title="Notificações por Email" subheader="Receba avisos sobre faturas e documentos." />
-                    <NotificationSwitch checked={notifications.whatsapp} onChange={(e) => handleNotificationChange('whatsapp', e.target.checked)} title="Notificações por Whatsapp" subheader="Receba alertas importantes no seu celular." />
-                    <NotificationSwitch checked={notifications.push} onChange={(e) => handleNotificationChange('push', e.target.checked)} title="Notificações Push" subheader="Receba notificações no navegador." />
-                  </Stack>
-                </Grid>
-              </Grid>
+                <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
 
-              <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
-
-              <SectionHeader icon="line-md:upload-loop" title="Certificado Digital" />
-              {loadingCertificados ? (
-                <Stack spacing={2}>
-                  <Skeleton variant="rectangular" height={150} sx={{ borderRadius: 2 }} />
-                  <Skeleton variant="text" width="30%" sx={{ fontSize: '1rem' }} />
-                  <Skeleton variant="rectangular" height={60} sx={{ borderRadius: 2 }} />
-                </Stack>
-              ) : (
-                <>
-                  {certificadoAtivo ? (
-                    <ActiveCertificateCard certificado={certificadoAtivo} onDesativar={handleDesativarCertificado} onDownload={handleDownloadCertificado} />
+                {/* Card Certificado Digital */}
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 3,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    borderRadius: 2,
+                  }}
+                >
+                  <SectionHeader icon="line-md:upload-loop" title="Certificado Digital" />
+                  {loadingCertificados ? (
+                    <Stack spacing={2}>
+                      <Skeleton variant="rectangular" height={150} sx={{ borderRadius: 2 }} />
+                      <Skeleton variant="text" width="30%" sx={{ fontSize: '1rem' }} />
+                      <Skeleton variant="rectangular" height={60} sx={{ borderRadius: 2 }} />
+                    </Stack>
                   ) : (
-                    <UploadCertificate onFileSelect={handleFileSelect} />
+                    <>
+                      {certificadoAtivo ? (
+                        <ActiveCertificateCard
+                          certificado={certificadoAtivo}
+                          onDesativar={handleDesativarCertificado}
+                          showDownload={false}
+                        />
+                      ) : (
+                        <UploadCertificate onFileSelect={handleFileSelect} />
+                      )}
+                      <CertificateList certificados={inativos} showDownload={false} />
+                    </>
                   )}
-                  <CertificateList certificados={inativos} onDownload={handleDownloadCertificado} />
-                </>
-              )}
+                </Paper>
+              </Box>
             </CardContent>
           </Card>
         </m.div>

@@ -62,23 +62,29 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
   }
 
   return (
-    <Container sx={{ mb: 10 }}>
-      <Box sx={{ textAlign: 'center', my: { xs: 2, md: 5 } }}>
+    <Container maxWidth="lg" sx={{ mb: 10, py: { xs: 2, md: 4 } }}>
+      <Box sx={{ textAlign: 'center', my: { xs: 3, md: 5 } }}>
         {/* Adição do logo */}
         <Box
           component="img"
           alt="Logo da Empresa"
-          src="/logo/hub-tt.png" // Substitua pelo caminho correto do logo
+          src="/logo/hub-tt.png"
           sx={{
-            width: 64,
-            height: 64,
+            width: { xs: 48, md: 64 },
+            height: { xs: 48, md: 64 },
             mb: 2,
           }}
         />
-        <Typography variant="h4">Preencha os dados da abertura da sua empresa</Typography>
+        <Typography variant="h4" sx={{ fontWeight: 600, mb: 1 }}>
+          Preencha os dados da abertura da sua empresa
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Preencha todos os campos abaixo para prosseguir com a abertura
+        </Typography>
       </Box>
-      <Card>
-        <CardContent>
+      
+      <Card elevation={2}>
+        <CardContent sx={{ p: { xs: 3, md: 4 } }}>
           <GeneralInfoForm formData={formData} setFormData={setFormData} />
           <AddressForm formData={formData} setFormData={setFormData} />
           <SociosForm formData={formData} setFormData={setFormData} />
@@ -88,8 +94,23 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
             setFormData={setFormData}
             aberturaId={aberturaData._id}
           />
-          <Box display="flex" justifyContent="space-between" mt={3}>
-            <Button variant="contained" color="secondary" onClick={handleSave}>
+          
+          <Box 
+            display="flex" 
+            flexDirection={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between" 
+            gap={2}
+            mt={4}
+            pt={3}
+            sx={{ borderTop: 1, borderColor: 'divider' }}
+          >
+            <Button 
+              variant="outlined" 
+              color="secondary" 
+              onClick={handleSave}
+              fullWidth={{ xs: true, sm: false }}
+              sx={{ minWidth: { sm: 180 } }}
+            >
               Salvar Alterações
             </Button>
             <Button
@@ -97,6 +118,8 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
               color="primary"
               onClick={handleApproval}
               disabled={loadingApproval}
+              fullWidth={{ xs: true, sm: false }}
+              sx={{ minWidth: { sm: 200 } }}
             >
               {loadingApproval ? 'Enviando...' : 'Enviar para Aprovação'}
             </Button>

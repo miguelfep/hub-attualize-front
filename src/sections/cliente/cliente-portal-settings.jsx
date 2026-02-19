@@ -37,6 +37,7 @@ import {
 import { useGetSettings, updateSettings } from 'src/actions/settings';
 import {
   uploadCertificado,
+  deletarCertificado,
   getCertificadoAtivo,
   downloadCertificado,
   getSenhaCertificado,
@@ -44,8 +45,9 @@ import {
   getCertificadosCliente,
   formatarDataCertificado,
   getCorStatusCertificado,
+  validarSenhaCertificado,
   validarArquivoCertificado,
-    getIconeStatusCertificado,
+  getIconeStatusCertificado,
 } from 'src/actions/certificados';
 
 import { toast } from 'src/components/snackbar';
@@ -265,6 +267,8 @@ export function ClientePortalSettings({ clienteId }) {
   const [passwordLoading, setPasswordLoading] = useState(false);
   const [passwordTimerId, setPasswordTimerId] = useState(null);
   const [passwordCertId, setPasswordCertId] = useState(null);
+  const [certificadoToDelete, setCertificadoToDelete] = useState(null);
+  const [deletingCertificado, setDeletingCertificado] = useState(false);
 
   const fetchCertificados = useCallback(async () => {
     if (!clienteId) return;
@@ -314,36 +318,53 @@ export function ClientePortalSettings({ clienteId }) {
 
   const handleCertificateUpload = async () => {
     if (!certificateFile) return;
-    if (!certificatePassword) {
-      toast.error('Informe a senha do certificado');
+    const pwdValidation = validarSenhaCertificado(certificatePassword);
+    if (!pwdValidation.isValid) {
+      toast.error(pwdValidation.error);
       return;
     }
-    if (certificatePassword !== certificatePasswordConfirm) {
+    if (certificatePassword.trim() !== certificatePasswordConfirm.trim()) {
       toast.error('Senhas não coincidem');
       return;
     }
     try {
       setUploadingCertificate(true);
-      const response = await uploadCertificado(certificateFile, certificatePassword, clienteId);
-      if (response.data.success) {
-        toast.success('Certificado digital enviado com sucesso!');
+      const response = await uploadCertificado(
+        certificateFile,
+        certificatePassword.trim(),
+        clienteId
+      );
+      const resData = response.data;
+      if (resData.success) {
+        toast.success(resData.message || 'Certificado digital enviado com sucesso!');
         setCertificateDialogOpen(false);
         setCertificateFile(null);
         setCertificatePassword('');
         setCertificatePasswordConfirm('');
         await fetchCertificados();
-      } else if (response.data.message?.includes('Senha do certificado inválida')) {
-        toast.error('Senha incorreta! Verifique a senha do certificado.');
+        if (resData.data?.enotasEnviado === false && resData.data?.enotasErro) {
+          toast.warning(
+            `Certificado salvo, mas não foi possível vincular ao eNotas: ${resData.data.enotasErro}`,
+            { duration: 6000 }
+          );
+        }
       } else {
-        toast.error(response.data.message || 'Erro ao enviar certificado');
+        const msg = resData.message || 'Erro ao enviar certificado';
+        if (msg.toLowerCase().includes('senha') && (msg.includes('incorreta') || msg.includes('inválida'))) {
+          toast.error('Senha incorreta. Verifique a senha do certificado.');
+        } else {
+          toast.error(msg);
+        }
       }
     } catch (error) {
-      if (error.response?.data?.message?.includes('Senha do certificado inválida')) {
-        toast.error('Senha incorreta! Verifique a senha do certificado.');
-      } else {
-        const errorMessage = error.response?.data?.message || 'Erro ao enviar certificado digital';
-        toast.error(errorMessage);
-      }
+      const status = error.response?.status;
+      const msg = error.response?.data?.message || error.message || 'Erro ao enviar certificado digital';
+      if (status === 401) toast.error('Sessão expirada. Faça login novamente.');
+      else if (status === 403) toast.error('Sem permissão para enviar certificado.');
+      else if (status === 404) toast.error(msg || 'Cliente não encontrado.');
+      else if (msg.toLowerCase().includes('senha') && (msg.includes('incorreta') || msg.includes('inválida'))) {
+        toast.error('Senha incorreta. Verifique a senha do certificado.');
+      } else toast.error(msg);
     } finally {
       setUploadingCertificate(false);
     }
@@ -361,6 +382,24 @@ export function ClientePortalSettings({ clienteId }) {
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Erro ao desativar certificado';
       toast.error(errorMessage);
+    }
+  };
+
+  const handleDeletarCertificado = async (certificadoId) => {
+    try {
+      setDeletingCertificado(true);
+      const response = await deletarCertificado(certificadoId);
+      if (response.data?.success !== false) {
+        toast.success('Certificado excluído permanentemente.');
+        setCertificadoToDelete(null);
+        await fetchCertificados();
+      } else {
+        toast.error(response.data?.message || 'Erro ao excluir certificado');
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Erro ao excluir certificado');
+    } finally {
+      setDeletingCertificado(false);
     }
   };
 
@@ -721,6 +760,15 @@ export function ClientePortalSettings({ clienteId }) {
                               <Iconify icon="solar:eye-bold" />
                             </IconButton>
                           </Tooltip>
+                          <Tooltip title="Excluir permanentemente">
+                            <IconButton
+                              size="small"
+                              onClick={() => setCertificadoToDelete(certificado)}
+                              sx={{ color: 'error.main' }}
+                            >
+                              <Iconify icon="solar:trash-bin-trash-bold" />
+                            </IconButton>
+                          </Tooltip>
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -781,6 +829,34 @@ export function ClientePortalSettings({ clienteId }) {
             onClick={handleCertificateUpload}
           >
             {uploadingCertificate ? 'Enviando...' : 'Enviar Certificado'}
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={!!certificadoToDelete}
+        onClose={() => setCertificadoToDelete(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>Excluir certificado?</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary">
+            O certificado &quot;{certificadoToDelete?.nome}&quot; será excluído permanentemente. Esta ação não pode ser desfeita.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={() => setCertificadoToDelete(null)}>
+            Cancelar
+          </Button>
+          <LoadingButton
+            color="error"
+            variant="contained"
+            loading={deletingCertificado}
+            startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+            onClick={() => certificadoToDelete && handleDeletarCertificado(certificadoToDelete.id)}
+          >
+            Excluir
           </LoadingButton>
         </DialogActions>
       </Dialog>

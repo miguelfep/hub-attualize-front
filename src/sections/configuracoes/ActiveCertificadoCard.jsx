@@ -1,6 +1,7 @@
 import { m } from 'framer-motion';
 
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -13,9 +14,9 @@ import { Iconify } from 'src/components/iconify';
 
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
 
-export function ActiveCertificateCard({ certificado, onDesativar, onDownload }) {
+export function ActiveCertificateCard({ certificado, onDesativar, onDownload, showDownload = true }) {
   const theme = useTheme();
-
+  const enotasVinculado = certificado?.enotasEnviado === true;
 
   return (
     <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
@@ -40,14 +41,25 @@ export function ActiveCertificateCard({ certificado, onDesativar, onDownload }) 
             <Typography variant="body2"><strong>Emitido para:</strong> {certificado.subject}</Typography>
             <Typography variant="body2"><strong>Emissor:</strong> {certificado.issuer}</Typography>
             <Typography variant="body2"><strong>Validade:</strong> {formatDate(certificado.validFrom)} até {formatDate(certificado.validTo)}</Typography>
+            {enotasVinculado && (
+              <Chip
+                size="small"
+                color="success"
+                icon={<Iconify icon="solar:link-round-bold" width={16} />}
+                label="Vinculado ao eNotas"
+                sx={{ alignSelf: 'flex-start' }}
+              />
+            )}
           </Stack>
 
           <Stack direction="row" spacing={1} justifyContent="flex-end">
-            <Tooltip title="Baixar Arquivo .pfx" arrow>
-              <IconButton onClick={() => onDownload(certificado.id, certificado.fileName)}>
-                <Iconify icon="solar:download-minimalistic-bold" />
-              </IconButton>
-            </Tooltip>
+            {showDownload && onDownload && (
+              <Tooltip title="Baixar Arquivo .pfx" arrow>
+                <IconButton onClick={() => onDownload(certificado.id, certificado.fileName || certificado.nome)}>
+                  <Iconify icon="solar:download-minimalistic-bold" />
+                </IconButton>
+              </Tooltip>
+            )}
             <Button
               color="error"
               variant="soft"

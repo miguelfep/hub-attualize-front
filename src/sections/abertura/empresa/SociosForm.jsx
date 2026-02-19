@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
-import InputMask from 'react-input-mask';
 
 import {
   Box,
+  Card,
   Grid,
   Switch,
   Divider,
@@ -11,6 +11,8 @@ import {
   Typography,
   FormControlLabel,
 } from '@mui/material';
+
+import { formatRg, formatCpf, formatCnh } from 'src/utils/format-input';
 
 const SociosForm = ({ formData, setFormData }) => {
   // Inicializa com 1 sócio por padrão
@@ -77,115 +79,131 @@ const SociosForm = ({ formData, setFormData }) => {
   };
 
   return (
-    <Grid container spacing={3} sx={{ mb: 4 }}>
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+        Quadro Societário
+      </Typography>
+      <Divider sx={{ mb: 3 }} />
+      
       {/* Campo para selecionar o número de sócios */}
-      <Grid xs={12}>
-        <TextField
-          select
-          label="Número de Sócios"
-          value={formData.socios.length}
-          onChange={(e) => handleNumSociosChange(e.target.value)}
-          fullWidth
-          required
-        >
-          {[...Array(10).keys()].map((i) => (
-            <MenuItem key={i + 1} value={i + 1}>
-              {i + 1}
-            </MenuItem>
-          ))}
-        </TextField>
+      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
+        <Grid xs={12} sm={4}>
+          <TextField
+            margin="normal"
+            fullWidth
+            select
+            label="Número de Sócios"
+            value={formData.socios.length}
+            onChange={(e) => handleNumSociosChange(e.target.value)}
+            required
+            helperText="Selecione quantos sócios a empresa terá"
+          >
+            {[...Array(10).keys()].map((i) => (
+              <MenuItem key={i + 1} value={i + 1}>
+                {i + 1}
+              </MenuItem>
+            ))}
+          </TextField>
+        </Grid>
       </Grid>
 
       {/* Renderização dinâmica dos campos dos sócios */}
       {formData.socios.map((socio, index) => (
-        <React.Fragment key={index}>
-          <Grid xs={12}>
-            <Typography variant="h6">{`Dados do Sócio ${index + 1}`}</Typography>
-          </Grid>
-
-          <Grid xs={12} sm={4}>
+        <Card key={index} sx={{ mb: 3, p: 3, bgcolor: 'background.neutral' }}>
+          <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+            {`Sócio ${index + 1}`}
+          </Typography>
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
+          <Grid xs={12} sm={4} sx={{ pr: { xs: 0, sm: 1 } }}>
             <TextField
+              margin="normal"
+              fullWidth
               label="Nome"
               value={socio.nome || ''}
               onChange={(e) => handleChange(index, 'nome', e.target.value)}
-              fullWidth
             />
           </Grid>
-
-          <Grid xs={12} sm={4}>
-            <InputMask
-              mask="999.999.999-99"
-              value={socio.cpf || ''}
-              onChange={(e) => handleChange(index, 'cpf', e.target.value)}
-            >
-              {(inputProps) => <TextField {...inputProps} label="CPF" fullWidth />}
-            </InputMask>
-          </Grid>
-
-          <Grid xs={12} sm={4}>
-            <InputMask
-              mask="99.999.999-*"
-              value={socio.rg || ''}
-              onChange={(e) => handleChange(index, 'rg', e.target.value)}
-            >
-              {(inputProps) => <TextField {...inputProps} label="RG" fullWidth />}
-            </InputMask>
-          </Grid>
-
-          <Grid xs={12} sm={4}>
-            <InputMask
-              mask="99999999999"
-              value={socio.cnh || ''}
-              onChange={(e) => handleChange(index, 'cnh', e.target.value)}
-            >
-              {(inputProps) => <TextField {...inputProps} label="CNH" fullWidth />}
-            </InputMask>
-          </Grid>
-
-          <Grid xs={12} sm={8}>
+          <Grid xs={12} sm={4} sx={{ px: { xs: 0, sm: 1 } }}>
             <TextField
+              margin="normal"
+              fullWidth
+              label="CPF"
+              value={socio.cpf || ''}
+              onChange={(e) => {
+                const formatted = formatCpf(e.target.value);
+                handleChange(index, 'cpf', formatted);
+              }}
+            />
+          </Grid>
+          <Grid xs={12} sm={4} sx={{ pl: { xs: 0, sm: 1 } }}>
+            <TextField
+              margin="normal"
+              fullWidth
+              label="RG"
+              value={socio.rg || ''}
+              onChange={(e) => {
+                const formatted = formatRg(e.target.value);
+                handleChange(index, 'rg', formatted);
+              }}
+            />
+          </Grid>
+          <Grid xs={12} sm={4} sx={{ pr: { xs: 0, sm: 1 } }}>
+            <TextField
+              margin="normal"
+              fullWidth
+              label="CNH"
+              value={socio.cnh || ''}
+              onChange={(e) => {
+                const formatted = formatCnh(e.target.value);
+                handleChange(index, 'cnh', formatted);
+              }}
+            />
+          </Grid>
+          <Grid xs={12} sm={8} sx={{ pl: { xs: 0, sm: 1 } }}>
+            <TextField
+              margin="normal"
+              fullWidth
               label="Endereço"
               value={socio.endereco || ''}
               onChange={(e) => handleChange(index, 'endereco', e.target.value)}
-              fullWidth
             />
           </Grid>
-
-          <Grid xs={12} sm={6}>
+          <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
             <TextField
+              margin="normal"
+              fullWidth
               label="Naturalidade"
               value={socio.naturalidade || ''}
               onChange={(e) => handleChange(index, 'naturalidade', e.target.value)}
-              fullWidth
             />
           </Grid>
-
-          <Grid xs={12} sm={6}>
+          <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
             <TextField
+              margin="normal"
+              fullWidth
               label="Profissão"
               value={socio.profissao || ''}
               onChange={(e) => handleChange(index, 'profissao', e.target.value)}
-              fullWidth
             />
           </Grid>
-
-          <Grid xs={12} sm={6}>
+          <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
             <TextField
+              margin="normal"
+              fullWidth
               label="Porcentagem"
               type="number"
               value={socio.porcentagem || ''}
               onChange={(e) => handleChange(index, 'porcentagem', e.target.value)}
-              fullWidth
             />
           </Grid>
-
-          <Grid xs={12} sm={6}>
+          <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
             <TextField
+              margin="normal"
+              fullWidth
               select
               label="Estado Civil"
               value={socio.estadoCivil || ''}
               onChange={(e) => handleChange(index, 'estadoCivil', e.target.value)}
-              fullWidth
             >
               <MenuItem value="Solteiro">Solteiro</MenuItem>
               <MenuItem value="Casado">Casado</MenuItem>
@@ -196,13 +214,14 @@ const SociosForm = ({ formData, setFormData }) => {
           </Grid>
 
           {socio.estadoCivil === 'Casado' && (
-            <Grid xs={12} sm={6}>
+            <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
               <TextField
+                margin="normal"
+                fullWidth
                 select
                 label="Regime de Bens"
                 value={socio.regimeBens || ''}
                 onChange={(e) => handleChange(index, 'regimeBens', e.target.value)}
-                fullWidth
               >
                 <MenuItem value="Comunhão Parcial de Bens">Comunhão Parcial de Bens</MenuItem>
                 <MenuItem value="Comunhão Universal de Bens">Comunhão Universal de Bens</MenuItem>
@@ -211,7 +230,7 @@ const SociosForm = ({ formData, setFormData }) => {
             </Grid>
           )}
 
-          <Grid xs={12}>
+          <Grid xs={12} sx={{ mt: 1, mb: 1 }}>
             <FormControlLabel
               control={
                 <Switch
@@ -223,17 +242,10 @@ const SociosForm = ({ formData, setFormData }) => {
             />
           </Grid>
 
-          {/* Divider entre sócios */}
-          {index < formData.socios.length - 1 && (
-            <Grid xs={12}>
-              <Box sx={{ mt: 2, mb: 2 }}>
-                <Divider />
-              </Box>
-            </Grid>
-          )}
-        </React.Fragment>
+          </Grid>
+        </Card>
       ))}
-    </Grid>
+    </Box>
   );
 };
 
