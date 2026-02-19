@@ -55,6 +55,17 @@ export const formatPhone = (value) => {
 };
 
 /**
+ * Formata CNH (apenas números, máximo 11 dígitos)
+ * @param {string} value - Valor a ser formatado
+ * @returns {string} - Valor formatado (apenas números)
+ */
+export const formatCnh = (value) => {
+  if (!value) return '';
+  const numbers = value.replace(/\D/g, '');
+  return numbers.slice(0, 11);
+};
+
+/**
  * Remove formatação de string (mantém apenas números)
  * @param {string} value - Valor formatado
  * @returns {string} - Apenas números

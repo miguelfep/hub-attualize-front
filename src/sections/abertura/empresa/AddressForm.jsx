@@ -1,9 +1,10 @@
 import React from 'react';
 import { toast } from 'sonner';
 
-import { Grid, TextField, InputAdornment, CircularProgress } from '@mui/material';
+import { Box, Divider, Grid, TextField, InputAdornment, CircularProgress, Typography } from '@mui/material';
 
-import { consultarCep } from 'src/utils/consultarCep'; // Substitua pelo caminho correto da sua função de consulta de CEP
+import { consultarCep } from 'src/utils/consultarCep';
+import { formatCep } from 'src/utils/format-input';
 
 const AddressForm = ({ formData, setFormData }) => {
   const [loadingCep, setLoadingCep] = React.useState(false);
@@ -19,12 +20,23 @@ const AddressForm = ({ formData, setFormData }) => {
     }));
   };
 
+  const handleCepChange = (e) => {
+    const formatted = formatCep(e.target.value);
+    setFormData((prev) => ({
+      ...prev,
+      enderecoComercial: {
+        ...prev.enderecoComercial,
+        cep: formatted,
+      },
+    }));
+  };
+
   const handleCepBlur = async () => {
-    const cep = formData.enderecoComercial.cep.replace('-', '');
+    const cep = formData.enderecoComercial.cep?.replace(/\D/g, '') || '';
     if (cep.length === 8) {
       setLoadingCep(true);
       try {
-        const data = await consultarCep(cep); // Função para buscar dados do CEP
+        const data = await consultarCep(cep);
         if (!data.erro) {
           setFormData((prev) => ({
             ...prev,
@@ -46,24 +58,30 @@ const AddressForm = ({ formData, setFormData }) => {
       } finally {
         setLoadingCep(false);
       }
-    } else {
-      toast.error('CEP inválido.');
+    } else if (cep.length > 0) {
+      toast.error('CEP deve conter 8 dígitos.');
     }
   };
 
   return (
-    <Grid container spacing={3} sx={{ mb: 4 }}>
-      {' '}
-      {/* Adicionado margem inferior */}
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+        Endereço Comercial
+      </Typography>
+      <Divider sx={{ mb: 3 }} />
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
       {/* Campo de CEP */}
-      <Grid xs={12} sm={3}>
+      <Grid xs={12} sm={3} sx={{ pr: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="CEP"
           name="cep"
           value={formData.enderecoComercial.cep || ''}
-          onChange={handleChange}
+          onChange={handleCepChange}
           onBlur={handleCepBlur}
-          fullWidth
+          placeholder="00000-000"
+          helperText="Digite o CEP para preencher automaticamente"
           InputProps={{
             endAdornment: loadingCep && (
               <InputAdornment position="end">
@@ -73,67 +91,73 @@ const AddressForm = ({ formData, setFormData }) => {
           }}
         />
       </Grid>
-      {/* Outros campos de endereço */}
-      <Grid xs={12} sm={7}>
+      <Grid xs={12} sm={7} sx={{ px: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Logradouro"
           name="logradouro"
           value={formData.enderecoComercial.logradouro || ''}
           onChange={handleChange}
-          fullWidth
           disabled={loadingCep}
         />
       </Grid>
-      <Grid xs={12} sm={2}>
+      <Grid xs={12} sm={2} sx={{ pl: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Número"
           name="numero"
           value={formData.enderecoComercial.numero || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
-      <Grid xs={12} sm={3}>
+      <Grid xs={12} sm={3} sx={{ pr: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Complemento"
           name="complemento"
           value={formData.enderecoComercial.complemento || ''}
           onChange={handleChange}
-          fullWidth
           disabled={loadingCep}
         />
       </Grid>
-      <Grid xs={12} sm={3}>
+      <Grid xs={12} sm={3} sx={{ px: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Bairro"
           name="bairro"
           value={formData.enderecoComercial.bairro || ''}
           onChange={handleChange}
-          fullWidth
           disabled={loadingCep}
         />
       </Grid>
-      <Grid xs={12} sm={4}>
+      <Grid xs={12} sm={4} sx={{ px: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Cidade"
           name="cidade"
           value={formData.enderecoComercial.cidade || ''}
           onChange={handleChange}
-          fullWidth
           disabled={loadingCep}
         />
       </Grid>
-      <Grid xs={12} sm={2}>
+      <Grid xs={12} sm={2} sx={{ pl: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Estado"
           name="estado"
           value={formData.enderecoComercial.estado || ''}
           onChange={handleChange}
-          fullWidth
           disabled={loadingCep}
         />
       </Grid>
     </Grid>
+    </Box>
   );
 };
 

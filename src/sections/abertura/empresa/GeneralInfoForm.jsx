@@ -1,9 +1,9 @@
 import React from 'react';
-import InputMask from 'react-input-mask';
 
-import { Grid, Tooltip, TextField, IconButton } from '@mui/material';
+import { Box, Divider, Grid, Tooltip, TextField, IconButton, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
+import { formatPhone, formatCpf } from 'src/utils/format-input';
 
 const GeneralInfoForm = ({ formData, setFormData }) => {
   const handleChange = (e) => {
@@ -12,10 +12,17 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
   };
 
   return (
-    <Grid container spacing={3} sx={{ mb: 4 }}>
+    <Box sx={{ mb: 4 }}>
+      <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
+        Informações Gerais
+      </Typography>
+      <Divider sx={{ mb: 3 }} />
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
       {/* Primeira linha: Razão Social e Nome Fantasia */}
-      <Grid xs={12} sm={6}>
+      <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label={
             <span style={{ display: 'flex', alignItems: 'center' }}>
               Razão Social
@@ -29,99 +36,106 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           name="nomeEmpresarial"
           value={formData.nomeEmpresarial || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
-      <Grid xs={12} sm={6}>
+      <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Nome Fantasia"
           name="nomeFantasia"
           value={formData.nomeFantasia || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
 
       {/* Segunda linha: Nome, CPF, Email e Email Financeiro */}
-      <Grid xs={12} sm={3}>
+      <Grid xs={12} sm={3} sx={{ pr: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Nome"
           name="nome"
           value={formData.nome || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
-      <Grid xs={12} sm={3}>
+      <Grid xs={12} sm={3} sx={{ px: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="CPF"
           name="cpf"
           value={formData.cpf || ''}
-          onChange={handleChange}
-          fullWidth
+          onChange={(e) => {
+            const formatted = formatCpf(e.target.value);
+            setFormData((prev) => ({ ...prev, cpf: formatted }));
+          }}
           disabled
         />
       </Grid>
-      <Grid xs={12} sm={3}>
+      <Grid xs={12} sm={3} sx={{ px: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="E-mail"
           name="email"
           value={formData.email || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
-      <Grid xs={12} sm={3}>
+      <Grid xs={12} sm={3} sx={{ pl: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="E-mail Financeiro"
           name="emailFinanceiro"
           value={formData.emailFinanceiro || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
 
       {/* Terceira linha: Telefone, Telefone Comercial e Horário de Funcionamento */}
-      <Grid xs={12} sm={4}>
+      <Grid xs={12} sm={4} sx={{ pr: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label="Telefone"
           name="telefone"
           value={formData.telefone || ''}
           onChange={handleChange}
-          fullWidth
           disabled
         />
       </Grid>
-      <Grid xs={12} sm={4}>
-        <InputMask
-          mask="(99) 9999-9999"
-          maskChar={null}
-          value={formData.telefoneComercial || ''}
-          onChange={handleChange}
-        >
-          {(inputProps) => (
-            <TextField
-              label="Telefone Comercial"
-              name="telefoneComercial"
-              fullWidth
-              {...inputProps}
-            />
-          )}
-        </InputMask>
-      </Grid>
-      <Grid xs={12} sm={4}>
+      <Grid xs={12} sm={4} sx={{ px: { xs: 0, sm: 1 } }}>
         <TextField
+          margin="normal"
+          fullWidth
+          label="Telefone Comercial"
+          name="telefoneComercial"
+          value={formData.telefoneComercial || ''}
+          onChange={(e) => {
+            const formatted = formatPhone(e.target.value);
+            setFormData((prev) => ({ ...prev, telefoneComercial: formatted }));
+          }}
+        />
+      </Grid>
+      <Grid xs={12} sm={4} sx={{ pl: { xs: 0, sm: 1 } }}>
+        <TextField
+          margin="normal"
+          fullWidth
           label="Horário de Funcionamento"
           name="horarioFuncionamento"
           value={formData.horarioFuncionamento || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
 
       {/* Quarta linha: Metragem do Imóvel e Metragem Utilizada */}
-      <Grid xs={12} sm={6}>
+      <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label={
             <span style={{ display: 'flex', alignItems: 'center' }}>
               Metragem do Imóvel
@@ -135,11 +149,12 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           name="metragemImovel"
           value={formData.metragemImovel || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
-      <Grid xs={12} sm={6}>
+      <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
         <TextField
+          margin="normal"
+          fullWidth
           label={
             <span style={{ display: 'flex', alignItems: 'center' }}>
               Metragem Utilizada
@@ -153,22 +168,24 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           name="metragemUtilizada"
           value={formData.metragemUtilizada || ''}
           onChange={handleChange}
-          fullWidth
         />
       </Grid>
 
       {/* Quinta linha: Senha GOV */}
       <Grid xs={12}>
         <TextField
+          margin="normal"
+          fullWidth
           type="password"
           label="Senha GOV"
           name="senhaGOV"
           value={formData.senhaGOV || ''}
           onChange={handleChange}
-          fullWidth
+          helperText="Senha para acesso ao portal GOV.br"
         />
       </Grid>
     </Grid>
+    </Box>
   );
 };
 
