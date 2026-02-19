@@ -1,10 +1,10 @@
 import React from 'react';
 import { toast } from 'sonner';
 
-import { Box, Divider, Grid, TextField, InputAdornment, CircularProgress, Typography } from '@mui/material';
+import { Box, Grid, Divider, TextField, Typography, InputAdornment, CircularProgress } from '@mui/material';
 
-import { consultarCep } from 'src/utils/consultarCep';
 import { formatCep } from 'src/utils/format-input';
+import { consultarCep } from 'src/utils/consultarCep';
 
 const AddressForm = ({ formData, setFormData }) => {
   const [loadingCep, setLoadingCep] = React.useState(false);

@@ -25,10 +25,11 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
 
+import { formatCpf, formatPhone } from 'src/utils/format-input';
+
 import { varAlpha } from 'src/theme/styles';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createAbertura, updateAbertura, getAberturasSocietario } from 'src/actions/societario';
-import { formatPhone, formatCpf } from 'src/utils/format-input';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';

@@ -3,21 +3,27 @@ import axios from 'src/utils/axios';
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 /**
- * Upload de certificado digital
+ * Upload de certificado digital (multipart/form-data).
+ * API: POST /api/certificados/upload
+ * Campos: certificate (arquivo), clienteId, password, observacoes (opcional).
  * @param {File} certificate - Arquivo do certificado (.pfx, .p12, .cer, .crt)
- * @param {string} password - Senha do certificado
- * @param {string} clienteId - ID do cliente
- * @returns {Promise} Resposta da API
+ * @param {string} password - Senha do certificado (será trim no backend; mín. 4 caracteres)
+ * @param {string} clienteId - ID do cliente (MongoDB ObjectId)
+ * @param {string} [observacoes] - Observações opcionais
+ * @returns {Promise} Resposta da API { success, message, data? }
  */
-export async function uploadCertificado(certificate, password, clienteId) {
+export async function uploadCertificado(certificate, password, clienteId, observacoes = '') {
   const formData = new FormData();
   formData.append('certificate', certificate);
-  formData.append('password', password);
-  formData.append('clienteId', clienteId);
+  formData.append('clienteId', String(clienteId).trim());
+  formData.append('password', String(password).trim());
+  if (observacoes && String(observacoes).trim()) {
+    formData.append('observacoes', String(observacoes).trim());
+  }
 
   return axios.post(`${baseUrl}certificados/upload`, formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      // Não definir Content-Type: o axios define multipart/form-data com boundary
     },
   });
 }
@@ -41,12 +47,21 @@ export async function getCertificadoAtivo(clienteId) {
 }
 
 /**
- * Desativar certificado
+ * Desativar certificado (mantém no banco, apenas desativa).
  * @param {string} certificadoId - ID do certificado
  * @returns {Promise} Resposta da API
  */
 export async function desativarCertificado(certificadoId) {
   return axios.put(`${baseUrl}certificados/${certificadoId}/desativar`);
+}
+
+/**
+ * Deletar certificado permanentemente (apenas admin).
+ * @param {string} certificadoId - ID do certificado
+ * @returns {Promise} Resposta da API
+ */
+export async function deletarCertificado(certificadoId) {
+  return axios.delete(`${baseUrl}certificados/${certificadoId}`);
 }
 
 /**
@@ -60,35 +75,52 @@ export async function downloadCertificado(certificadoId) {
   });
 }
 
+const CERTIFICATE_VALID_EXTENSIONS = ['.pfx', '.p12', '.cer', '.crt'];
+const CERTIFICATE_MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5MB
+
 /**
- * Validar arquivo de certificado
+ * Validar arquivo de certificado (extensão e tamanho).
+ * Tipos aceitos: .p12, .pfx, .cer, .crt. Limite: 5 MB.
  * @param {File} file - Arquivo a ser validado
- * @returns {Object} Resultado da validação
+ * @returns {{ isValid: boolean, error: string | null }}
  */
 export function validarArquivoCertificado(file) {
-  const validExtensions = ['.pfx', '.p12', '.cer', '.crt'];
-  const maxSize = 5 * 1024 * 1024; // 5MB
-  
+  if (!file || !file.name) {
+    return { isValid: false, error: 'Arquivo de certificado é obrigatório.' };
+  }
   const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-  
-  if (!validExtensions.includes(fileExtension)) {
+  if (!CERTIFICATE_VALID_EXTENSIONS.includes(fileExtension)) {
     return {
       isValid: false,
-      error: 'Tipo de arquivo não suportado. Use .pfx, .p12, .cer ou .crt'
+      error: 'Tipo de arquivo não permitido. Use .pfx, .p12, .cer ou .crt',
     };
   }
-  
-  if (file.size > maxSize) {
+  if (file.size > CERTIFICATE_MAX_SIZE_BYTES) {
     return {
       isValid: false,
-      error: 'Arquivo muito grande. Tamanho máximo: 5MB'
+      error: 'Arquivo muito grande. Tamanho máximo: 5 MB.',
     };
   }
-  
-  return {
-    isValid: true,
-    error: null
-  };
+  if (file.size === 0) {
+    return { isValid: false, error: 'Arquivo de certificado vazio.' };
+  }
+  return { isValid: true, error: null };
+}
+
+/**
+ * Validar senha do certificado no frontend (mín. 4 caracteres após trim).
+ * @param {string} password
+ * @returns {{ isValid: boolean, error: string | null }}
+ */
+export function validarSenhaCertificado(password) {
+  const trimmed = typeof password === 'string' ? password.trim() : '';
+  if (!trimmed) {
+    return { isValid: false, error: 'Senha do certificado é obrigatória.' };
+  }
+  if (trimmed.length < 4) {
+    return { isValid: false, error: 'Senha deve ter no mínimo 4 caracteres.' };
+  }
+  return { isValid: true, error: null };
 }
 
 /**

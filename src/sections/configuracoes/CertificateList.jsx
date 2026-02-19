@@ -11,7 +11,7 @@ import { Iconify } from 'src/components/iconify';
 
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
 
-function CertificateListItem({ certificado, onDownload }) {
+function CertificateListItem({ certificado, onDownload, showDownload = true }) {
   return (
     <Paper variant="outlined" sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 2 }}>
       <Iconify icon="solar:sertificate-line-duotone" width={28} sx={{ color: 'text.secondary', flexShrink: 0 }} />
@@ -19,16 +19,18 @@ function CertificateListItem({ certificado, onDownload }) {
         <Typography variant="body2" sx={{ fontWeight: 600 }}>{certificado.subject}</Typography>
         <Typography variant="caption" color="text.secondary">Validade: {formatDate(certificado.validFrom)} até {formatDate(certificado.validTo)}</Typography>
       </Stack>
-      <Tooltip title="Baixar Arquivo .pfx" arrow>
-        <IconButton onClick={() => onDownload(certificado.id, certificado.fileName)}>
-          <Iconify icon="solar:download-minimalistic-line-duotone" />
-        </IconButton>
-      </Tooltip>
+      {showDownload && onDownload && (
+        <Tooltip title="Baixar Arquivo .pfx" arrow>
+          <IconButton onClick={() => onDownload(certificado.id, certificado.fileName || certificado.nome)}>
+            <Iconify icon="solar:download-minimalistic-line-duotone" />
+          </IconButton>
+        </Tooltip>
+      )}
     </Paper>
   );
 }
 
-export function CertificateList({ certificados, onDownload }) {
+export function CertificateList({ certificados, onDownload, showDownload = true }) {
   if (!certificados || certificados.length === 0) {
     return null;
   }
@@ -40,8 +42,8 @@ export function CertificateList({ certificados, onDownload }) {
       </Typography>
       <Stack spacing={2}>
         {certificados.map((cert, index) => (
-          <m.div key={cert._id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: index * 0.1 }}>
-            <CertificateListItem certificado={cert} onDownload={onDownload} />
+          <m.div key={cert._id || cert.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: index * 0.1 }}>
+            <CertificateListItem certificado={cert} onDownload={onDownload} showDownload={showDownload} />
           </m.div>
         ))}
       </Stack>

@@ -16,8 +16,9 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
-import { updateAbertura, enviarLinkAbertura } from 'src/actions/societario';
 import { formatPhone } from 'src/utils/format-input';
+
+import { updateAbertura, enviarLinkAbertura } from 'src/actions/societario';
 
 export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvanceStatus }) {
   const { control, register, handleSubmit, getValues } = useFormContext();
