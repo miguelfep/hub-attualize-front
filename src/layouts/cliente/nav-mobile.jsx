@@ -32,7 +32,7 @@ export function ClienteNavMobile({ data, open, onClose, user, slots, sx, ...othe
           bgcolor: 'background.paper',
           borderRight: 1,
           borderColor: 'divider',
-          width: 280,
+          width: 300,
           ...sx,
         },
       }}
