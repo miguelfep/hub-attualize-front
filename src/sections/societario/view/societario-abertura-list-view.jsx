@@ -1,6 +1,5 @@
 'use client';
 
-import InputMask from 'react-input-mask';
 import { NumericFormat } from 'react-number-format';
 import { useForm, Controller } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
@@ -29,6 +28,7 @@ import { useSetState } from 'src/hooks/use-set-state';
 import { varAlpha } from 'src/theme/styles';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { createAbertura, updateAbertura, getAberturasSocietario } from 'src/actions/societario';
+import { formatPhone, formatCpf } from 'src/utils/format-input';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
@@ -370,25 +370,35 @@ export function AberturasListView() {
               control={control}
               defaultValue=""
               render={({ field }) => (
-                <InputMask
-                  mask="(99) 9 9999-9999"
-                  value={field.value}
-                  onChange={(e) => field.onChange(e.target.value)}
-                  onBlur={field.onBlur}
-                >
-                  {(inputProps) => (
-                    <TextField {...inputProps} label="Telefone" fullWidth margin="normal" />
-                  )}
-                </InputMask>
+                <TextField
+                  {...field}
+                  label="Telefone"
+                  fullWidth
+                  margin="normal"
+                  value={field.value || ''}
+                  onChange={(e) => {
+                    const formatted = formatPhone(e.target.value);
+                    field.onChange(formatted);
+                  }}
+                />
               )}
             />
             <Controller
               name="cpf"
               control={control}
+              defaultValue=""
               render={({ field }) => (
-                <InputMask mask="999.999.999-99" fullWidth label="CPF" {...field}>
-                  {(inputProps) => <TextField {...inputProps} label="CPF" margin="normal" />}
-                </InputMask>
+                <TextField
+                  {...field}
+                  label="CPF"
+                  fullWidth
+                  margin="normal"
+                  value={field.value || ''}
+                  onChange={(e) => {
+                    const formatted = formatCpf(e.target.value);
+                    field.onChange(formatted);
+                  }}
+                />
               )}
             />
 
