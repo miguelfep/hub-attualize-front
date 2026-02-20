@@ -1,193 +1,204 @@
-import React, { useState } from 'react';
+'use client';
+
+import { useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
 
-import { Box, Grid, Paper, Stack, Container, Typography  } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
+import { Box, Grid, Paper, Stack, Container, Typography, ButtonBase } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
 
-const informacoesData = [
+// ----------------------------------------------------------------------
+
+const INFORMACOES_DATA = [
   {
     label: 'Lei do Salão Parceiro',
-    icon: 'mdi:handshake-outline',
+    icon: '/logo/pid-logo.webp',
+    isCustomLogo: true,
     content: {
-      title: 'Lei do Salão Parceiro para Clínicas de Estética',
-      description:
-        'Entenda como funciona a Lei do Salão Parceiro para clínicas de estética, quem pode aderir e quais os cuidados para evitar riscos trabalhistas e fiscais.',
+      title: 'Lei do Salão Parceiro para Estética',
+      description: 'A solução definitiva para evitar o vínculo empregatício e reduzir a carga tributária da sua clínica através de contratos de parceria homologados.',
       items: [
-        'Quem pode aderir à lei',
+        'Quem pode aderir à lei legalmente',
         'Regras para repasse de valores',
-        'Modelo de contrato necessário',
-        'Responsabilidades do parceiro x sua clínica',
-        'Riscos comuns e como evitá-los',
+        'Modelo de contrato obrigatório',
+        'Responsabilidades de cada parte',
+        'Como evitar riscos trabalhistas',
       ],
     },
   },
   {
-    label: 'Tributação para Clínicas',
-    icon: 'mdi:scale-balance',
+    label: 'Tributação Especializada',
+    icon: 'solar:bill-list-bold-duotone',
+    isCustomLogo: false,
     content: {
-      title: 'Tributação para Clínicas de Estética',
-      description:
-        'Veja as opções tributárias mais comuns para clínicas e profissionais de estética e como otimizar os impostos pagos.',
+      title: 'Planejamento Tributário Estratégico',
+      description: 'Analisamos se o Simples Nacional (com Fator R) ou o Lucro Presumido trará a maior economia real para o seu faturamento.',
       items: [
-        'MEI: limitações e quando faz sentido',
-        'Simples Nacional: anexos III e V',
-        'Impacto do Fator R',
-        'Lucro Presumido em casos específicos',
-        'Alíquotas de ISS variam por município',
-        'Equiparação hospitalar'
+        'MEI: Limitações e riscos',
+        'Simples Nacional: Anexos III e V',
+        'Estratégia de Fator R (Economia)',
+        'Lucro Presumido para clínicas',
+        'Equiparação Hospitalar',
+        'ISS fixo municipal',
       ],
     },
   },
   {
-    label: 'Exigências da Vigilância',
-    icon: 'mdi:clipboard-check-outline',
+    label: 'Vigilância Sanitária',
+    icon: 'solar:shield-check-bold-duotone',
+    isCustomLogo: false,
     content: {
-      title: 'Exigências da Vigilância Sanitária',
-      description:
-        'Saiba quais documentos e condições estruturais sua clínica precisa atender para obter e manter a licença sanitária.',
+      title: 'Conformidade Sanitária e Biossegurança',
+      description: 'Cuidamos da documentação estrutural necessária para obter e renovar sua licença sem interrupções no atendimento.',
       items: [
-        'Requerimento de licença sanitária',
-        'Responsabilidade técnica (RT)',
-        'Alvará de funcionamento',
-        'Condições de biossegurança',
-        'Renovação e fiscalizações periódicas',
+        'Requerimento de Licença Sanitária',
+        'Responsabilidade Técnica (RT)',
+        'Alvará de Funcionamento',
+        'Manuais de Biossegurança (POPs)',
+        'Gestão de Resíduos (PGRSS)',
       ],
     },
   },
   {
     label: 'Natureza Jurídica',
-    icon: 'mdi:domain',
+    icon: 'solar:bill-list-bold-duotone',
+    isCustomLogo: false,
     content: {
-      title: 'Qual a melhor natureza jurídica?',
-      description:
-        'Compare os tipos mais comuns (EI, SLU e LTDA) e descubra qual se adapta melhor ao porte e objetivos da sua clínica.',
+      title: 'Qual a melhor estrutura jurídica?',
+      description: 'A escolha entre SLU, LTDA ou EI define sua proteção patrimonial e a facilidade de atrair sócios no futuro.',
       items: [
-        'Empresário Individual (EI)',
         'Sociedade Limitada Unipessoal (SLU)',
-        'LTDA com sócios',
-        'Diferenças de responsabilidade',
-        'Acordos de sócios para segurança societária',
+        'Proteção de bens pessoais',
+        'LTDA com Sócios Investidores',
+        'Diferenças de responsabilidade civil',
+        'Acordos de cotistas para segurança',
       ],
     },
   },
 ];
 
-function ContentCard({ content }) {
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: { xs: 3, md: 5 },
-        borderRadius: 2,
-        bgcolor: 'background.paper',
-      }}
-    >
-      <Stack spacing={4}>
-        <Stack spacing={2}>
-          <Typography variant="h3" sx={{ color: 'text.primary' }}>
-            {content.title}
-          </Typography>
-          <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-            {content.description}
-          </Typography>
-        </Stack>
-
-        <Grid container spacing={2}>
-          {content.items.map((item, index) => (
-            <Grid xs={12} sm={6} key={index}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
-                <Iconify icon="mdi:check-circle" width={20} color="primary.main" />
-                <Typography variant="body2">{item}</Typography>
-              </Stack>
-            </Grid>
-          ))}
-        </Grid>
-      </Stack>
-    </Paper>
-  );
-}
+// ----------------------------------------------------------------------
 
 export function InformacoesEssenciais() {
+  const theme = useTheme();
   const [activeInfo, setActiveInfo] = useState(0);
+  const isLight = theme.palette.mode === 'light';
+  const PRIMARY = theme.palette.primary.main;
 
   return (
-    <Box sx={{ bgcolor: 'background.neutral', py: { xs: 10, md: 15 } }}>
+    <Box
+      component="section"
+      sx={{
+        py: { xs: 10, md: 15 },
+        background: isLight
+          ? `linear-gradient(180deg, ${alpha(PRIMARY, 0.02)} 0%, ${alpha(theme.palette.grey[500], 0.04)} 50%, ${theme.palette.background.default} 100%)`
+          : `linear-gradient(180deg, ${alpha(PRIMARY, 0.06)} 0%, ${alpha(theme.palette.grey[900], 0.5)} 50%, ${theme.palette.background.default} 100%)`,
+      }}
+    >
       <Container component={MotionViewport} maxWidth="lg">
-        <Stack sx={{ textAlign: 'center', mb: { xs: 8, md: 10 } }}>
-          <m.div variants={varFade().inUp}>
-            <Typography
-              variant="h2"
-              component="h2"
-              sx={{ color: 'text.primary', mb: 2 }}
-            >
-              Informações Essenciais para Clínicas de Estética
-            </Typography>
-          </m.div>
-          <m.div variants={varFade().inUp}>
-            <Typography sx={{ color: 'text.secondary', maxWidth: 600, mx: 'auto' }}>
-              Tudo o que você precisa saber sobre tributação, legislação e
-              regularização para manter sua clínica em conformidade.
+        <Stack spacing={2} sx={{ textAlign: 'center', mb: 8 }}>
+          <m.div variants={varFade().inDown}>
+            <Typography variant="h2" sx={{ fontWeight: 800 }}>
+              Informações <Box component="span" sx={{ color: PRIMARY }}>Essenciais</Box>
             </Typography>
           </m.div>
         </Stack>
 
-        <Grid container spacing={{ xs: 5, md: 8 }}>
-          <Grid xs={12} md={4}>
-            <m.div variants={varFade().inLeft}>
-              <Stack spacing={2}>
-                {informacoesData.map((info, index) => (
-                  <Paper
-                    key={info.label}
-                    onClick={() => setActiveInfo(index)}
-                    variant="outlined"
-                    sx={{
-                      p: 2,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      transition: (theme) =>
-                        theme.transitions.create(['background-color', 'box-shadow']),
-                      ...(activeInfo === index && {
-                        bgcolor: 'primary.main',
-                        color: 'common.white',
-                        boxShadow: (theme) => theme.customShadows.primary,
-                      }),
-                    }}
-                  >
-                    <Iconify icon={info.icon} width={28} sx={{ mr: 2 }} />
-                    <Typography
-                      variant="subtitle1"
-                      sx={{ fontWeight: 'fontWeightBold' }}
-                    >
-                      {info.label}
-                    </Typography>
-                  </Paper>
-                ))}
-              </Stack>
-            </m.div>
+        <Grid container spacing={5}>
+          {/* Navegação Lateral */}
+          <Grid item xs={12} md={4}>
+            <Stack spacing={1.5}>
+              {INFORMACOES_DATA.map((info, index) => (
+                <ButtonBase
+                  key={info.label}
+                  onClick={() => setActiveInfo(index)}
+                  sx={{
+                    p: 2,
+                    width: 1,
+                    borderRadius: 2,
+                    justifyContent: 'flex-start',
+                    border: `1px solid ${activeInfo === index ? PRIMARY : alpha(theme.palette.divider, 0.1)}`,
+                    bgcolor: activeInfo === index ? alpha(PRIMARY, 0.08) : 'background.paper',
+                    transition: 'all 0.3s',
+                  }}
+                >
+                  {info.isCustomLogo ? (
+                    <Box
+                      component="img"
+                      src={info.icon}
+                      sx={{
+                        width: 28,
+                        height: 28,
+                        mr: 2,
+                        borderRadius: 0.5,
+                        filter: activeInfo === index ? 'none' : 'grayscale(1) opacity(0.5)',
+                        transition: 'filter 0.3s'
+                      }}
+                    />
+                  ) : (
+                    <Iconify
+                      icon={info.icon}
+                      width={28}
+                      sx={{ mr: 2, color: activeInfo === index ? PRIMARY : 'text.disabled' }}
+                    />
+                  )}
+
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                    {info.label}
+                  </Typography>
+                </ButtonBase>
+              ))}
+            </Stack>
           </Grid>
 
-          <Grid xs={12} md={8}>
-            <Box sx={{ minHeight: { md: 480 } }}>
-              <AnimatePresence mode="wait">
-                <m.div
-                  key={activeInfo}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
+          {/* Conteúdo */}
+          <Grid item xs={12} md={8}>
+            <AnimatePresence mode="wait">
+              <m.div
+                key={activeInfo}
+                initial={{ opacity: 0, x: 10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: { xs: 4, md: 6 },
+                    borderRadius: 3,
+                    bgcolor: alpha(theme.palette.background.paper, 0.8),
+                    backdropFilter: 'blur(10px)',
+                  }}
                 >
-                  <ContentCard content={informacoesData[activeInfo].content} />
-                </m.div>
-              </AnimatePresence>
-            </Box>
+                  <Typography variant="h4" sx={{ fontWeight: 800, mb: 2 }}>
+                    {INFORMACOES_DATA[activeInfo].content.title}
+                  </Typography>
+                  <Typography variant="body1" sx={{ color: 'text.secondary', mb: 4, lineHeight: 1.8 }}>
+                    {INFORMACOES_DATA[activeInfo].content.description}
+                  </Typography>
+
+                  <Box
+                    component="ul"
+                    sx={{
+                      p: 0, m: 0, listStyle: 'none',
+                      display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2
+                    }}
+                  >
+                    {INFORMACOES_DATA[activeInfo].content.items.map((item) => (
+                      <Stack key={item} component="li" direction="row" spacing={1.5}>
+                        <Iconify icon="solar:check-circle-bold" sx={{ color: PRIMARY, mt: 0.3 }} width={20} />
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>{item}</Typography>
+                      </Stack>
+                    ))}
+                  </Box>
+                </Paper>
+              </m.div>
+            </AnimatePresence>
           </Grid>
         </Grid>
       </Container>
     </Box>
   );
-
-
 }

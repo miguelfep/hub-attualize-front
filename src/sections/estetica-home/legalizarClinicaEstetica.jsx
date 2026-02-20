@@ -1,7 +1,7 @@
 import { toast } from 'sonner';
 import React, { useState } from 'react';
-import InputMask from 'react-input-mask';
 import { m, AnimatePresence } from 'framer-motion';
+import { PatternFormat } from 'react-number-format';
 import { useForm, Controller } from 'react-hook-form';
 
 import { alpha, styled, useTheme } from '@mui/material/styles';
@@ -32,11 +32,19 @@ import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
 
 const steps = [
-    {
+  {
     label: 'Viabilidade do Endereço',
     description: (
       <>
-        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+        <Typography
+          variant="body1"
+          paragraph
+          sx={{
+            color: 'text.secondary',
+            fontSize: { xs: '0.95rem', md: '1.05rem' },
+            lineHeight: 1.75,
+          }}
+        >
           Este é o ponto de partida oficial, é aqui que você descobre se seu negócio poderá existir naquele endereço.
         </Typography>
 
@@ -67,7 +75,15 @@ const steps = [
     label: 'Registro na Junta Comercial',
     description: (
       <>
-        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+        <Typography
+          variant="body1"
+          paragraph
+          sx={{
+            color: 'text.secondary',
+            fontSize: { xs: '0.95rem', md: '1.05rem' },
+            lineHeight: 1.75,
+          }}
+        >
           Este é a certidão de nascimento da sua empresa. É o que
           cria a base legal para sua clínica operar e te permite avançar para os próximos passos com
           segurança.
@@ -100,7 +116,15 @@ const steps = [
     label: 'Tipos de Empresa para Clínicas de Estética',
     description: (
       <>
-        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+        <Typography
+          variant="body1"
+          paragraph
+          sx={{
+            color: 'text.secondary',
+            fontSize: { xs: '0.95rem', md: '1.05rem' },
+            lineHeight: 1.75,
+          }}
+        >
           Essa escolha define o futuro tributário e legal do seu negócio. Pense nela como a
           escolha da fundação de uma casa. Analise cada opção para ver qual se encaixa no seu
           momento e visão.
@@ -162,13 +186,21 @@ const steps = [
     label: 'CNPJ: a identidade de sua clínica',
     description: (
       <>
-        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+        <Typography
+          variant="body1"
+          paragraph
+          sx={{
+            color: 'text.secondary',
+            fontSize: { xs: '0.95rem', md: '1.05rem' },
+            lineHeight: 1.75,
+          }}
+        >
           O CNPJ é <b>documento</b> que transforma sua clínica de estética em uma empresa formal.
           Com ele, você poderá <b>emitir notas fiscais</b>, <b>firmar contratos</b>, <b>abrir conta PJ</b> e muito mais.
         </Typography>
         <Alert severity="info" icon={<Iconify icon="solar:document-add-bold-duotone" />} sx={{ mt: 3 }}>
           <AlertTitle>Ação Necessária</AlertTitle>
-            O cadastro é feito diretamente na Receita Federal. Vinculado ao protocolo da Junta Comercial.
+          O cadastro é feito diretamente na Receita Federal. Vinculado ao protocolo da Junta Comercial.
         </Alert>
       </>
     ),
@@ -177,13 +209,22 @@ const steps = [
     label: 'Alvará de Funcionamento',
     description: (
       <>
-        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+        <Typography
+          variant="body1"
+          paragraph
+          sx={{
+            color: 'text.secondary',
+            fontSize: { xs: '0.95rem', md: '1.05rem' },
+            lineHeight: 1.75,
+          }}
+        >
           Sem o alvará, sua clínica não pode atuar legalmente. Esse documento assegura que o espaço
-          físico atende às exigências da lei e transmite <b>credibilidade aos seus clientes.</b></Typography>
+          físico atende às exigências da lei e transmite <b>credibilidade aos seus clientes.</b>
+        </Typography>
         <Alert severity="info" icon={<Iconify icon="solar:map-point-wave-bold-duotone" />} sx={{ mt: 3 }}>
           <AlertTitle>Fique Atento</AlertTitle>
-            A vistoria dos órgãos como vigilância será necessária! Por isso, garanta que sua clínica
-            esteja preparada em relação a todos os protocolos sanitários como <b>saída de emergência,
+          A vistoria dos órgãos como vigilância será necessária! Por isso, garanta que sua clínica
+          esteja preparada em relação a todos os protocolos sanitários como <b>saída de emergência,
             acessibilidade etc</b>
         </Alert>
       </>
@@ -193,7 +234,15 @@ const steps = [
     label: 'Licença da Vigilância Sanitária',
     description: (
       <>
-        <Typography variant="subtitle1" paragraph sx={{ color: 'text.secondary' }}>
+        <Typography
+          variant="body1"
+          paragraph
+          sx={{
+            color: 'text.secondary',
+            fontSize: { xs: '0.95rem', md: '1.05rem' },
+            lineHeight: 1.75,
+          }}
+        >
           Para clínicas de estética, este é um dos passos mais importantes. A licença garante aos clientes que
           sua clínica <b>segue padrões rígidos de segurança</b>, transmitindo confiança desde o primeiro atendimento.
         </Typography>
@@ -221,14 +270,22 @@ const steps = [
     label: 'Deixe em dia suas Obrigações Fiscais',
     description: (
       <>
-        <Typography variant="body1" paragraph sx={{ color: 'text.secondary' }}>
+        <Typography
+          variant="body1"
+          paragraph
+          sx={{
+            color: 'text.secondary',
+            fontSize: { xs: '0.95rem', md: '1.05rem' },
+            lineHeight: 1.75,
+          }}
+        >
           Não deixar as obrigações fiscais em dia pode gerar multas, bloqueios e até dificuldades para manter sua clínica ativa.
           Organizar essa parte é essencial para manter a <b>tranquilidade e a confiança dos seus clientes</b>.
         </Typography>
         <Alert severity="success" icon={<Iconify icon="solar:banknote-2-bold-duotone" />} sx={{ mt: 3 }}>
           <AlertTitle>Dica de Ouro</AlertTitle>
-            Ter uma contabilidade especializada em estética significa não se preocupar com prazos fiscais.
-            Ela também mantém tudo regularizado para que sua energia esteja onde deve estar: <b>cuidando dos seus clientes</b>
+          Ter uma contabilidade especializada em estética significa não se preocupar com prazos fiscais.
+          Ela também mantém tudo regularizado para que sua energia esteja onde deve estar: <b>cuidando dos seus clientes</b>
         </Alert>
       </>
     ),
@@ -236,27 +293,27 @@ const steps = [
   {
     label: 'Vamos simplificar sua contabilidade?',
     description: (
-        <Paper
-          sx={{
-            p: 3,
-            borderLeft: 4,
-            borderColor: 'primary.main',
-            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-          }}
-        >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Iconify icon="solar:chat-round-like-bold-duotone" width={40} color="primary.main" />
-            <Box>
-              <Typography variant="h6" sx={{ color: 'primary.darker' }}>Você chegou ao final!</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' , mt: 1 }}>
-                <i>Abrir e manter uma clínica de estética pode ser mais fácil do que você imagina.</i>
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
-                Preencha seus dados e descubra como pagar menos impostos, ter mais segurança e crescer com tranquilidade.
-              </Typography>
-            </Box>
-          </Stack>
-        </Paper>
+      <Paper
+        sx={{
+          p: 3,
+          borderLeft: 4,
+          borderColor: 'primary.main',
+          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
+        }}
+      >
+        <Stack direction="row" spacing={2} alignItems="center">
+          <Iconify icon="solar:chat-round-like-bold-duotone" width={40} color="primary.main" />
+          <Box>
+            <Typography variant="h6" sx={{ color: 'primary.darker' }}>Você chegou ao final!</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+              <i>Abrir e manter uma clínica de estética pode ser mais fácil do que você imagina.</i>
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 1 }}>
+              Preencha seus dados e descubra como pagar menos impostos, ter mais segurança e crescer com tranquilidade.
+            </Typography>
+          </Box>
+        </Stack>
+      </Paper>
     ),
     isFormStep: true,
   },
@@ -324,10 +381,11 @@ function ColorlibStepIcon(props) {
 
 export function LegalizarClinicaEsteticaStepper() {
   const theme = useTheme();
-
   const [activeStep, setActiveStep] = useState(0);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { handleSubmit, control, formState: { errors } } = useForm( {
+  const { handleSubmit, control, formState: { errors } } = useForm({
     defaultValues: {
       nome: '',
       email: '',
@@ -344,31 +402,60 @@ export function LegalizarClinicaEsteticaStepper() {
   const handleStep = (step) => () => setActiveStep(step);
   const handleReset = () => setActiveStep(0);
 
-
   const onSubmit = async (data) => {
+    setIsSubmitting(true);
     try {
-      const res = await criarLead(data);
-
-      if (res.status === 201) {
-        handleReset();
-      }
+      await criarLead(data);
+      setSubmitSuccess(true);
+      handleReset();
     } catch (error) {
       console.error('Erro ao enviar os dados:', error);
       toast.error('Erro ao enviar os dados');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <Box sx={{ bgcolor: 'background.neutral' }}>
-      <Container component={MotionViewport} sx={{ py: { xs: 10, md: 15 } }}>
-        <Stack spacing={4} sx={{ textAlign: 'center', mb: { xs: 8, md: 10 } }}>
+    <Box
+      component="section"
+      aria-label="Como legalizar uma clínica de estética"
+      sx={{
+        bgcolor: 'background.neutral',
+        overflow: 'hidden',
+        position: 'relative',
+        fontWeight: 800,
+        fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' },
+        lineHeight: 1.25,
+      }}
+    >
+      <Container component={MotionViewport} sx={{ py: { xs: 8, md: 12 }, position: 'relative', zIndex: 1 }}>
+        <Stack spacing={2} sx={{ textAlign: 'center', mb: { xs: 8, md: 10 } }}>
           <m.div variants={varFade().inUp}>
-            <Typography variant="h3" component="h2">
+            <Typography
+              variant="h3"
+              component="h2"
+              sx={{
+                fontWeight: 800,
+                fontSize: { xs: '1.75rem', sm: '2rem', md: '2.5rem' },
+                lineHeight: 1.25,
+                maxWidth: 720,
+                mx: 'auto',
+              }}
+            >
               Como Legalizar uma Clínica de Estética?
             </Typography>
           </m.div>
           <m.div variants={varFade().inUp}>
-            <Typography sx={{ color: 'text.secondary' }}>
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                fontSize: { xs: '0.95rem', md: '1.05rem' },
+                lineHeight: 1.75,
+                maxWidth: 640,
+                mx: 'auto',
+              }}
+            >
               Conheça os principais passos para legalizar sua clínica e operar com segurança e
               tranquilidade, transmitindo confiança para seus clientes e parceiros.
             </Typography>
@@ -392,18 +479,20 @@ export function LegalizarClinicaEsteticaStepper() {
                         cursor: 'pointer',
                         py: 1,
                         '& .MuiStepLabel-label': {
-                          transition: 'color 0.2s ease'
+                          transition: 'color 0.2s ease',
+                          fontSize: { xs: '0.875rem', md: '0.95rem' },
                         },
                         '&:hover .MuiStepLabel-label': {
-                          color: 'primary.main'
-                        }
+                          color: 'primary.main',
+                        },
                       }}
                     >
                       <Typography
                         variant="subtitle2"
                         sx={{
-                          fontWeight: activeStep === index ? 'fontWeightBold' : 'fontWeightRegular',
+                          fontWeight: activeStep === index ? 700 : 500,
                           color: activeStep === index ? 'primary.main' : 'text.primary',
+                          fontSize: { xs: '0.875rem', md: '0.95rem' },
                         }}
                       >
                         {step.label}
@@ -420,14 +509,88 @@ export function LegalizarClinicaEsteticaStepper() {
               elevation={3}
               sx={{
                 p: { xs: 3, md: 5 },
-                borderRadius: 2,
-                minHeight: 400,
+                borderRadius: 3,
+                minHeight: { xs: 400, md: 500 },
                 display: 'flex',
                 flexDirection: 'column',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                bgcolor: 'background.paper',
               }}
             >
               <AnimatePresence mode="wait">
+                {submitSuccess ? (
+                  <m.div
+                    key="success"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                    style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: '100%' }}
+                  >
+                    <Stack
+                      spacing={3}
+                      alignItems="center"
+                      justifyContent="center"
+                      sx={{ flexGrow: 1, textAlign: 'center', py: 6 }}
+                    >
+                    <Box
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        borderRadius: '50%',
+                        bgcolor: alpha(theme.palette.success.main, 0.12),
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <m.div
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{
+                          type: 'spring',
+                          stiffness: 260,
+                          damping: 20,
+                          delay: 0.1,
+                        }}
+                      >
+                        <Iconify
+                          icon="eva:checkmark-circle-2-fill"
+                          width={56}
+                          sx={{ color: 'success.main' }}
+                        />
+                      </m.div>
+                    </Box>
+                    <Typography
+                      variant="h5"
+                      sx={{
+                        fontWeight: 800,
+                        fontSize: { xs: '1.25rem', md: '1.5rem' },
+                      }}
+                    >
+                      Mensagem enviada com sucesso!
+                    </Typography>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        color: 'text.secondary',
+                        maxWidth: 360,
+                      }}
+                    >
+                      Nossa equipe entrará em contato em breve pelo telefone ou e-mail informado.
+                    </Typography>
+                    <Button
+                      variant="outlined"
+                      color="primary"
+                      onClick={() => setSubmitSuccess(false)}
+                      startIcon={<Iconify icon="solar:pen-new-round-bold-duotone" />}
+                      sx={{ borderRadius: 2, fontWeight: 700 }}
+                    >
+                      Enviar outra mensagem
+                    </Button>
+                    </Stack>
+                  </m.div>
+                ) : (
                 <m.div
                   key={activeStep}
                   initial={{ opacity: 0, y: 20 }}
@@ -437,7 +600,17 @@ export function LegalizarClinicaEsteticaStepper() {
                   style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: '100%' }}
                 >
                   <Box sx={{ flexGrow: 1 }}>
-                    <Typography variant="h5" sx={{ mb: 3, color: 'primary.main' }}>
+                    <Typography
+                      variant="h5"
+                      component="h3"
+                      sx={{
+                        mb: 3,
+                        color: 'primary.main',
+                        fontWeight: 700,
+                        fontSize: { xs: '1.5rem', md: '1.75rem' },
+                        lineHeight: 1.3,
+                      }}
+                    >
                       {steps[activeStep].label}
                     </Typography>
                     {steps[activeStep].description}
@@ -495,22 +668,20 @@ export function LegalizarClinicaEsteticaStepper() {
                             },
                           }}
                           render={({ field, fieldState: { error } }) => (
-                            <InputMask
-                              mask="(99) 9 9999-9999"
-                              value={field.value || ''}
-                              onChange={field.onChange}
+                            <PatternFormat
+                              format="(##) # ####-####"
+                              customInput={TextField}
+                              label="Telefone"
+                              fullWidth
+                              variant="outlined"
+                              value={field.value ?? ''}
+                              onValueChange={(values) => field.onChange(values.formattedValue)}
                               onBlur={field.onBlur}
-                            >
-                              {(inputProps) => (
-                                <TextField
-                                  {...inputProps}
-                                  label="Telefone"
-                                  fullWidth
-                                  error={!!error}
-                                  helperText={error?.message}
-                                />
-                              )}
-                            </InputMask>
+                              name={field.name}
+                              getInputRef={field.ref}
+                              error={!!error}
+                              helperText={error?.message}
+                            />
                           )}
                         />
                       </Stack>
@@ -529,15 +700,30 @@ export function LegalizarClinicaEsteticaStepper() {
                     </Button>
                     <Box sx={{ flexGrow: 1 }} />
                     {steps[activeStep].isFormStep ? (
-                       <Button
-                         variant="contained"
-                         color="primary"
-                         onClick={handleSubmit(onSubmit)}
-                         size="large"
-                         endIcon={<Iconify icon="eva:message-circle-fill" />}
-                       >
-                         Falar com especialista
-                       </Button>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleSubmit(onSubmit)}
+                        size="large"
+                        disabled={isSubmitting}
+                        endIcon={
+                          isSubmitting ? (
+                            <Box component="span" sx={{ display: 'inline-flex', animation: 'spin 0.8s linear infinite' }}>
+                              <Iconify icon="eos-icons:loading" width={22} />
+                            </Box>
+                          ) : (
+                            <Iconify icon="eva:message-circle-fill" />
+                          )
+                        }
+                        sx={{
+                          '@keyframes spin': {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' },
+                          },
+                        }}
+                      >
+                        {isSubmitting ? 'Enviando...' : 'Falar com especialista'}
+                      </Button>
                     ) : (
                       <Button
                         variant="contained"
@@ -549,6 +735,7 @@ export function LegalizarClinicaEsteticaStepper() {
                     )}
                   </Stack>
                 </m.div>
+                )}
               </AnimatePresence>
             </Paper>
           </Grid>

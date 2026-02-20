@@ -199,7 +199,7 @@ export function RegularizationRoadmap() {
                     {step.attualizeHelp && (
                       <Paper sx={{ p: 2, borderRadius: 2, border: 1, borderColor: 'primary.light', bgcolor: 'primary.lighter' }}>
                         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
-                           <Iconify icon="mdi:rocket-launch" color="primary.main" width={24}/>
+                          <Iconify icon="mdi:rocket-launch" color="primary.main" width={24} />
                           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: 'primary.dark' }}>
                             Como a Attualize ajuda:
                           </Typography>
@@ -217,40 +217,40 @@ export function RegularizationRoadmap() {
         </Timeline>
 
         <Stack spacing={3}>
-            <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
-                Exemplos Práticos Detalhados
+          <Typography variant="h4" component="h2" sx={{ fontWeight: 'bold', textAlign: 'center' }}>
+            Exemplos Práticos Detalhados
+          </Typography>
+          <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
+            <Typography variant="h6" component="h3" gutterBottom>
+              A - Roteiro para Viabilidade em São Paulo
             </Typography>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-                <Typography variant="h6" component="h3" gutterBottom>
-                A - Roteiro para Viabilidade em São Paulo
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 2.0 }}>
-                1. <strong>Defina os serviços:</strong> Micropigmentação + injetáveis (biomédico).<br />
-                2. <strong>CNAEs:</strong> <b>9602-5/02</b> + saúde compatível ao profissional habilitado.<br />
-                3. <strong>Documentos:</strong> Separe IPTU e endereço do imóvel (ex.: <b>Moema</b>).<br />
-                4. <strong>Ação:</strong> Entre na <b>VRE|REDESIM</b> → <b>Consulta Prévia de Local.</b><br />
-                5. <strong>Preenchimento:</strong> Responda o questionário (área, atendimento, acessibilidade, etc.).<br />
-                6. <strong>Resultado:</strong> <b>“Permitido com restrição”</b> → precisa de <b>acessibilidade + licença sanitária.</b><br />
-                7. <strong>Próximo Passo:</strong> Com o protocolo, abrimos o <b>CNPJ e Inscrição Municipal</b>, e já encaminhamos o <b>alvará sanitário</b> com os <b>POPs</b> e <b>MRP</b> que vamos montar para você.
-                </Typography>
-            </Paper>
-            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
-                <Typography variant="h6" component="h3" gutterBottom>
-                B - Modelo Editável de POP (Procedimento Operacional Padrão)
-                </Typography>
-                <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', bgcolor: 'background.neutral', p: 2, borderRadius: 1.5 }}>
-                POP – Higienização das Mãos (CÓD.: POP-HM-01 | Rev.: 00){'\n\n'}
-                1. OBJETIVO: Padronizar a higienização para reduzir risco de infecção.{'\n'}
-                2. ALCANCE: Todos os profissionais da clínica.{'\n'}
-                3. MATERIAIS: Pia, sabonete líquido, álcool 70%, toalhas descartáveis.{'\n'}
-                4. PROCEDIMENTO: Friccionar mãos com sabonete (40-60s) ou álcool (20-30s), seguindo técnica padrão.{'\n'}
-                5. REGISTROS: Anotar na planilha “REG-LIM-01 – Higienização”.{'\n'}
-                6. TREINAMENTO: Semestral, com registro de presença.
-                </Typography>
-                <Typography variant="caption" display="block" sx={{ mt: 2, fontStyle: 'italic', color: 'text.secondary', px: 1 }}>
-                <strong>Nosso diferencial:</strong> Criamos POPs específicos (ex.: Reconstituição de Toxina, Esterilização), todos com registros prontos para impressão.
-                </Typography>
-            </Paper>
+            <Typography variant="body2" color="text.secondary" sx={{ lineHeight: 2.0 }}>
+              1. <strong>Defina os serviços:</strong> Micropigmentação + injetáveis (biomédico).<br />
+              2. <strong>CNAEs:</strong> <b>9602-5/02</b> + saúde compatível ao profissional habilitado.<br />
+              3. <strong>Documentos:</strong> Separe IPTU e endereço do imóvel (ex.: <b>Moema</b>).<br />
+              4. <strong>Ação:</strong> Entre na <b>VRE|REDESIM</b> → <b>Consulta Prévia de Local.</b><br />
+              5. <strong>Preenchimento:</strong> Responda o questionário (área, atendimento, acessibilidade, etc.).<br />
+              6. <strong>Resultado:</strong> <b>“Permitido com restrição”</b> → precisa de <b>acessibilidade + licença sanitária.</b><br />
+              7. <strong>Próximo Passo:</strong> Com o protocolo, abrimos o <b>CNPJ e Inscrição Municipal</b>, e já encaminhamos o <b>alvará sanitário</b> com os <b>POPs</b> e <b>MRP</b> que vamos montar para você.
+            </Typography>
+          </Paper>
+          <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
+            <Typography variant="h6" component="h3" gutterBottom>
+              B - Modelo Editável de POP (Procedimento Operacional Padrão)
+            </Typography>
+            <Typography variant="body2" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', bgcolor: 'background.neutral', p: 2, borderRadius: 1.5 }}>
+              POP – Higienização das Mãos (CÓD.: POP-HM-01 | Rev.: 00){'\n\n'}
+              1. OBJETIVO: Padronizar a higienização para reduzir risco de infecção.{'\n'}
+              2. ALCANCE: Todos os profissionais da clínica.{'\n'}
+              3. MATERIAIS: Pia, sabonete líquido, álcool 70%, toalhas descartáveis.{'\n'}
+              4. PROCEDIMENTO: Friccionar mãos com sabonete (40-60s) ou álcool (20-30s), seguindo técnica padrão.{'\n'}
+              5. REGISTROS: Anotar na planilha “REG-LIM-01 – Higienização”.{'\n'}
+              6. TREINAMENTO: Semestral, com registro de presença.
+            </Typography>
+            <Typography variant="caption" display="block" sx={{ mt: 2, fontStyle: 'italic', color: 'text.secondary', px: 1 }}>
+              <strong>Nosso diferencial:</strong> Criamos POPs específicos (ex.: Reconstituição de Toxina, Esterilização), todos com registros prontos para impressão.
+            </Typography>
+          </Paper>
         </Stack>
 
         <Paper sx={{ p: 3, borderRadius: 2, border: 2, borderColor: 'success.main', bgcolor: 'success.lighter' }}>
@@ -260,7 +260,7 @@ export function RegularizationRoadmap() {
               Checklist Final de Regularização
             </Typography>
           </Stack>
-          <List dense justifyContent="center">
+          <List dense sx={{ display: 'flex', justifyContent: 'center', flexDirection: 'column' }}>
             {[
               "Lista de serviços pronta e CNAEs definidos",
               "Viabilidade (Prefeitura) aprovada",

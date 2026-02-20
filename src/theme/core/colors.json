@@ -62,5 +62,29 @@
   "common": {
     "black": "#000000",
     "white": "#FFFFFF"
+  },
+  "blue": {
+    "lighter": "#D9E3F5",
+    "light": "#66B3E6",
+    "main": "#0096D9",
+    "dark": "#005689",
+    "darker": "#003355",
+    "contrastText": "#FFFFFF"
+  },
+  "brown": {
+    "lighter": "#F5F3F2",
+    "light": "#D9D2CF",
+    "main": "#645658",
+    "dark": "#322628",
+    "darker": "#1A1214",
+    "contrastText": "#FFFFFF"
+  },
+  "yellow": {
+    "lighter": "#FFF5CC",
+    "light": "#FFD666",
+    "main": "#FEC614",
+    "dark": "#B76E00",
+    "darker": "#7A4100",
+    "contrastText": "#FFFFFF"
   }
 }
