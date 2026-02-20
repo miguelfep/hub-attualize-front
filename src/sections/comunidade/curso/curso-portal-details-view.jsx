@@ -5,38 +5,34 @@ import { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import List from '@mui/material/List';
+import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import ListItem from '@mui/material/ListItem';
-import Typography from '@mui/material/Typography';
-import CardMedia from '@mui/material/CardMedia';
-import ListItemText from '@mui/material/ListItemText';
-import LoadingButton from '@mui/lab/LoadingButton';
 import Checkbox from '@mui/material/Checkbox';
+import CardMedia from '@mui/material/CardMedia';
+import Typography from '@mui/material/Typography';
+import ListItemText from '@mui/material/ListItemText';
 import LinearProgress from '@mui/material/LinearProgress';
-
-import Grid from '@mui/material/Grid';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
-import { RouterLink } from 'src/routes/components';
 
+import { endpoints } from 'src/utils/axios';
 import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
-import { toast } from 'src/components/snackbar';
-
 import {
   useCurso,
-  comprarCurso,
-  registrarVisualizacaoCurso,
   marcarMaterialCompleto,
+  registrarVisualizacaoCurso,
 } from 'src/actions/comunidade';
-import { endpoints } from 'src/utils/axios';
+
+import { Label } from 'src/components/label';
+import { toast } from 'src/components/snackbar';
+import { Iconify } from 'src/components/iconify';
+import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 // ----------------------------------------------------------------------
 
@@ -73,42 +69,48 @@ const getTipoLabel = (tipo) => {
 
 export function CursoPortalDetailsView({ id }) {
   const router = useRouter();
-  const { data: curso, isLoading, mutate } = useCurso(id);
-  const [loadingComprar, setLoadingComprar] = useState(false);
+  const { data: curso, isLoading, error, mutate } = useCurso(id);
   const [loadingMaterial, setLoadingMaterial] = useState({});
+  const [thumbnailError, setThumbnailError] = useState(false);
+  // Sempre usar URL padrão (sem extensão): {BASE}/comunidade/cursos/{id}/thumbnail
+  const cursoThumbnailSrc = id ? endpoints.comunidade.cursos.thumbnail(id) : null;
 
-  const temAcesso = curso?.materiais?.some(
-    (m) => m.arquivoUrl || m.linkExterno || (m.tipo === 'videoaula' && m.linkExterno)
-  );
+  const cursoRestrito = error?.response?.status === 403 ? error?.response?.data?.curso : null;
+  const motivoRestrito = error?.response?.data?.motivo;
 
-  const handleComprar = async () => {
-    try {
-      setLoadingComprar(true);
-      const response = await comprarCurso(id);
-
-      if (response?.invoice?._id) {
-        const checkoutUrl = `${endpoints.invoices.checkout}/${response.invoice._id}`;
-        window.location.href = checkoutUrl;
-      } else {
-        toast.error('Erro ao processar compra');
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(error?.message || 'Erro ao processar compra');
-    } finally {
-      setLoadingComprar(false);
-    }
-  };
+  const temAcesso = curso
+    ? (curso.temAcesso ?? curso?.materiais?.some(
+        (m) => m.arquivoUrl || m.linkExterno || (m.tipo === 'videoaula' && m.linkExterno)
+      ))
+    : false;
 
   const handleMarcarCompleto = async (materialId) => {
     try {
       setLoadingMaterial((prev) => ({ ...prev, [materialId]: true }));
-      await marcarMaterialCompleto(id, materialId);
+      const data = await marcarMaterialCompleto(id, materialId);
       toast.success('Material marcado como completo');
-      mutate();
-    } catch (error) {
-      console.error(error);
-      toast.error(error?.message || 'Erro ao marcar material como completo');
+      // Atualiza o cache com a resposta da API (progresso e materiaisCompletos) para refletir na hora
+      if (data?.acesso?.materiaisCompletos) {
+        mutate(
+          (current) =>
+            current?.curso
+              ? {
+                  ...current,
+                  curso: {
+                    ...current.curso,
+                    materiaisCompletos: data.acesso.materiaisCompletos,
+                    progresso: data.acesso.progresso,
+                  },
+                }
+              : current,
+          false
+        );
+      } else {
+        mutate();
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao marcar material como completo');
     } finally {
       setLoadingMaterial((prev) => ({ ...prev, [materialId]: false }));
     }
@@ -134,7 +136,7 @@ export function CursoPortalDetailsView({ id }) {
     );
   }
 
-  if (!curso) {
+  if (!curso && !cursoRestrito) {
     return (
       <DashboardContent>
         <Box sx={{ textAlign: 'center', py: 5 }}>
@@ -144,9 +146,47 @@ export function CursoPortalDetailsView({ id }) {
     );
   }
 
-  const progresso = curso.materiais?.length
-    ? Math.round((curso.materiaisCompletos?.length || 0) / curso.materiais.length) * 100
-    : 0;
+  if (cursoRestrito) {
+    return (
+      <DashboardContent>
+        <CustomBreadcrumbs
+          heading={cursoRestrito.titulo}
+          links={[
+            { name: 'Dashboard', href: paths.cliente.dashboard },
+            { name: 'Comunidade', href: paths.cliente.comunidade.root },
+            { name: 'Cursos', href: paths.cliente.comunidade.cursos.root },
+            { name: cursoRestrito.titulo },
+          ]}
+          sx={{ mb: { xs: 3, md: 5 } }}
+        />
+        <Card sx={{ p: 3, maxWidth: 560, mx: 'auto' }}>
+          <Stack spacing={2}>
+            <Label variant="soft" color={getTipoAcessoColor(cursoRestrito.tipoAcesso)}>
+              {getTipoAcessoLabel(cursoRestrito.tipoAcesso)}
+            </Label>
+            <Typography variant="h5">{cursoRestrito.titulo}</Typography>
+            {motivoRestrito && (
+              <Typography variant="body2" color="text.secondary">
+                {motivoRestrito}
+              </Typography>
+            )}
+            {cursoRestrito.tipoAcesso === 'pago' && (
+              <Typography variant="body1" color="text.secondary">
+                Acesso concedido mediante vínculo. Entre em contato para mais informações.
+              </Typography>
+            )}
+          </Stack>
+        </Card>
+      </DashboardContent>
+    );
+  }
+
+  const progresso =
+    typeof curso.progresso === 'number'
+      ? curso.progresso
+      : curso.materiais?.length > 0
+        ? Math.round(((curso.materiaisCompletos?.length || 0) / curso.materiais.length) * 100)
+        : 0;
 
   return (
     <DashboardContent>
@@ -164,14 +204,15 @@ export function CursoPortalDetailsView({ id }) {
       <Grid container spacing={3}>
         <Grid item xs={12} md={8}>
           <Card>
-            {curso.thumbnailUrl && (
+            {cursoThumbnailSrc && !thumbnailError ? (
               <CardMedia
                 component="img"
                 height="400"
-                image={curso.thumbnailUrl}
+                image={cursoThumbnailSrc}
                 alt={curso.titulo}
+                onError={() => setThumbnailError(true)}
               />
-            )}
+            ) : null}
 
             <Box sx={{ p: 3 }}>
               <Stack spacing={2}>
@@ -237,7 +278,7 @@ export function CursoPortalDetailsView({ id }) {
                       </Typography>
                       <List>
                         {curso.materiais.map((material, index) => {
-                          const isCompleto = curso.materiaisCompletos?.includes(material._id);
+                          const isCompleto = Boolean(curso.materiaisCompletos?.includes(material._id));
                           return (
                             <ListItem
                               key={material._id}
@@ -251,7 +292,7 @@ export function CursoPortalDetailsView({ id }) {
                               <Checkbox
                                 checked={isCompleto}
                                 onChange={() => handleMarcarCompleto(material._id)}
-                                disabled={loadingMaterial[material._id]}
+                                disabled={!!loadingMaterial[material._id]}
                               />
                               <ListItemText
                                 primary={
@@ -296,27 +337,17 @@ export function CursoPortalDetailsView({ id }) {
           <Card sx={{ p: 3, position: 'sticky', top: 24 }}>
             <Stack spacing={3}>
               {curso.tipoAcesso === 'pago' && !temAcesso && (
-                <>
-                  <Box>
-                    <Typography variant="h4" color="primary.main">
-                      {fCurrency(curso.preco)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Curso pago
-                    </Typography>
-                  </Box>
-
-                  <LoadingButton
-                    fullWidth
-                    size="large"
-                    variant="contained"
-                    loading={loadingComprar}
-                    onClick={handleComprar}
-                    startIcon={<Iconify icon="solar:cart-bold-duotone" />}
-                  >
-                    Comprar Curso
-                  </LoadingButton>
-                </>
+                <Box>
+                  <Typography variant="h6" gutterBottom>
+                    Curso pago
+                  </Typography>
+                  <Typography variant="h4" color="primary.main">
+                    {fCurrency(curso.preco)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Acesso concedido mediante vínculo. Entre em contato para mais informações.
+                  </Typography>
+                </Box>
               )}
 
               {temAcesso && (
@@ -328,12 +359,6 @@ export function CursoPortalDetailsView({ id }) {
                     Acesse os materiais abaixo para começar
                   </Typography>
                 </Box>
-              )}
-
-              {curso.tipoAcesso === 'pago' && !temAcesso && (
-                <Typography variant="caption" color="text.secondary" align="center">
-                  Após a compra, você terá acesso a todos os materiais do curso
-                </Typography>
               )}
             </Stack>
           </Card>

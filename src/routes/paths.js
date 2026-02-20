@@ -291,6 +291,7 @@ export const paths = {
         edit: (id) => `${ROOTS.DASHBOARD}/comunidade/cursos/${id}/edit`,
         details: (id) => `${ROOTS.DASHBOARD}/comunidade/cursos/${id}`,
       },
+      compras: `${ROOTS.DASHBOARD}/comunidade/compras`,
       categorias: {
         root: `${ROOTS.DASHBOARD}/comunidade/categorias`,
         new: `${ROOTS.DASHBOARD}/comunidade/categorias/new`,
@@ -364,6 +365,7 @@ export const paths = {
         root: `${ROOTS.CLIENTE}/comunidade/cursos`,
         details: (id) => `${ROOTS.CLIENTE}/comunidade/cursos/${id}`,
       },
+      minhasCompras: `${ROOTS.CLIENTE}/comunidade/minhas-compras`,
     },
   },
   // INDICAÇÃO PÚBLICA

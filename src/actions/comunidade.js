@@ -13,11 +13,12 @@ const swrOptions = {
   revalidateOnReconnect: false,
 };
 
-// Util: monta query string ignorando valores vazios
+// Util: monta query string ignorando valores vazios; arrays viram "id1,id2"
 function buildQuery(params) {
   if (!params) return '';
   const cleaned = Object.entries(params).reduce((acc, [k, v]) => {
-    if (v !== '' && v !== undefined && v !== null) acc[k] = v;
+    if (v === '' || v === undefined || v === null) return acc;
+    acc[k] = Array.isArray(v) ? v.join(',') : v;
     return acc;
   }, {});
   const qs = new URLSearchParams(cleaned).toString();
@@ -138,12 +139,23 @@ export async function uploadMaterialThumbnail(id, file) {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await axios.post(endpoints.comunidade.materiais.thumbnail(id), formData, {
+  const res = await axios.post(endpoints.comunidade.materiais.thumbnailApi(id), formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
 
+  return res.data;
+}
+
+/**
+ * Remover thumbnail do material
+ * DELETE /api/comunidade/materiais/:id/thumbnail
+ * @param {string} id - ID do material
+ * @returns {Promise}
+ */
+export async function deleteMaterialThumbnail(id) {
+  const res = await axios.delete(endpoints.comunidade.materiais.thumbnailApi(id));
   return res.data;
 }
 
@@ -164,18 +176,32 @@ export async function registrarAcessoMaterial(id, tipo) {
  * @returns {Promise}
  */
 export async function comprarMaterial(id) {
-  const res = await axios.post(endpoints.comunidade.materiais.comprar(id));
+  const res = await axios.post(endpoints.comunidade.comprar.material(id));
   return res.data;
 }
 
 /**
- * Download de arquivo do material
+ * Download de arquivo do material.
+ * A API retorna o arquivo em binário (não JSON). Dispara o download no navegador.
+ * O backend já registra o download ao chamar esta rota.
+ *
  * @param {string} id - ID do material
- * @returns {Promise}
+ * @returns {Promise<void>}
  */
 export async function downloadMaterial(id) {
-  const res = await axios.get(endpoints.comunidade.materiais.download(id));
-  return res.data;
+  const res = await axios.get(endpoints.comunidade.materiais.download(id), {
+    responseType: 'blob',
+  });
+  const blob = res.data;
+  const contentDisposition = res.headers['content-disposition'] || res.headers['Content-Disposition'];
+  const filenameMatch = contentDisposition?.match(/filename="?([^";]+)"?/);
+  const filename = filenameMatch?.[1]?.trim() || 'material';
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 // ----------------------------------------------------------------------
@@ -431,12 +457,23 @@ export async function uploadCursoThumbnail(id, file) {
   const formData = new FormData();
   formData.append('file', file);
 
-  const res = await axios.post(endpoints.comunidade.cursos.thumbnail(id), formData, {
+  const res = await axios.post(endpoints.comunidade.cursos.thumbnailApi(id), formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
 
+  return res.data;
+}
+
+/**
+ * Remover thumbnail do curso
+ * DELETE /api/comunidade/cursos/:id/thumbnail
+ * @param {string} id - ID do curso
+ * @returns {Promise}
+ */
+export async function deleteCursoThumbnail(id) {
+  const res = await axios.delete(endpoints.comunidade.cursos.thumbnailApi(id));
   return res.data;
 }
 
@@ -463,6 +500,19 @@ export async function removeMaterialFromCurso(id, materialId) {
 }
 
 /**
+ * Reordenar materiais do curso (PATCH ordem)
+ * @param {string} id - ID do curso
+ * @param {string[]} materialIds - IDs na ordem desejada
+ * @returns {Promise}
+ */
+export async function reordenarMateriaisCurso(id, materialIds) {
+  const res = await axios.patch(endpoints.comunidade.cursos.materiais.ordem(id), {
+    materialIds,
+  });
+  return res.data;
+}
+
+/**
  * Marcar material como completo no curso
  * @param {string} id - ID do curso
  * @param {string} materialId - ID do material
@@ -479,7 +529,7 @@ export async function marcarMaterialCompleto(id, materialId) {
  * @returns {Promise}
  */
 export async function comprarCurso(id) {
-  const res = await axios.post(endpoints.comunidade.cursos.comprar(id));
+  const res = await axios.post(endpoints.comunidade.comprar.curso(id));
   return res.data;
 }
 
@@ -491,4 +541,188 @@ export async function comprarCurso(id) {
 export async function registrarVisualizacaoCurso(id) {
   const res = await axios.post(endpoints.comunidade.cursos.visualizacao(id));
   return res.data;
+}
+
+// ----------------------------------------------------------------------
+// VÍNCULOS (materiais)
+// ----------------------------------------------------------------------
+
+/**
+ * Listar clientes vinculados ao material
+ * @param {string} id - ID do material
+ * @returns {Promise<{ material, clientes }>}
+ */
+export async function getVinculosMaterial(id) {
+  const res = await axios.get(endpoints.comunidade.materiais.vinculos.list(id));
+  return res.data;
+}
+
+/**
+ * Hook: clientes vinculados ao material
+ * @param {string} id - ID do material
+ * @returns {Object} { material, clientes, isLoading, error, mutate }
+ */
+export function useVinculosMaterial(id) {
+  const url = id ? endpoints.comunidade.materiais.vinculos.list(id) : null;
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher, swrOptions);
+  return useMemo(
+    () => ({
+      material: data?.material ?? null,
+      clientes: data?.clientes ?? [],
+      isLoading,
+      error,
+      mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+}
+
+/**
+ * Vincular clientes ao material (lote)
+ * @param {string} id - ID do material
+ * @param {string[]} clienteIds - IDs dos clientes
+ * @returns {Promise}
+ */
+export async function addVinculosMaterial(id, clienteIds) {
+  const res = await axios.post(endpoints.comunidade.materiais.vinculos.add(id), {
+    clienteIds,
+  });
+  return res.data;
+}
+
+/**
+ * Desvincular clientes do material
+ * @param {string} id - ID do material
+ * @param {string[]} clienteIds - IDs dos clientes
+ * @returns {Promise}
+ */
+export async function removeVinculosMaterial(id, clienteIds) {
+  const res = await axios.delete(endpoints.comunidade.materiais.vinculos.remove(id), {
+    data: { clienteIds },
+  });
+  return res.data;
+}
+
+// ----------------------------------------------------------------------
+// VÍNCULOS (cursos)
+// ----------------------------------------------------------------------
+
+/**
+ * Listar clientes vinculados ao curso
+ * @param {string} id - ID do curso
+ * @returns {Promise<{ curso, clientes }>}
+ */
+export async function getVinculosCurso(id) {
+  const res = await axios.get(endpoints.comunidade.cursos.vinculos.list(id));
+  return res.data;
+}
+
+/**
+ * Hook: clientes vinculados ao curso
+ * @param {string} id - ID do curso
+ * @returns {Object} { curso, clientes, isLoading, error, mutate }
+ */
+export function useVinculosCurso(id) {
+  const url = id ? endpoints.comunidade.cursos.vinculos.list(id) : null;
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher, swrOptions);
+  return useMemo(
+    () => ({
+      curso: data?.curso ?? null,
+      clientes: data?.clientes ?? [],
+      isLoading,
+      error,
+      mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+}
+
+/**
+ * Vincular clientes ao curso (lote)
+ * @param {string} id - ID do curso
+ * @param {string[]} clienteIds - IDs dos clientes
+ * @returns {Promise}
+ */
+export async function addVinculosCurso(id, clienteIds) {
+  const res = await axios.post(endpoints.comunidade.cursos.vinculos.add(id), {
+    clienteIds,
+  });
+  return res.data;
+}
+
+/**
+ * Desvincular clientes do curso
+ * @param {string} id - ID do curso
+ * @param {string[]} clienteIds - IDs dos clientes
+ * @returns {Promise}
+ */
+export async function removeVinculosCurso(id, clienteIds) {
+  const res = await axios.delete(endpoints.comunidade.cursos.vinculos.remove(id), {
+    data: { clienteIds },
+  });
+  return res.data;
+}
+
+// ----------------------------------------------------------------------
+// COMPRAS (portal: minhas compras)
+// ----------------------------------------------------------------------
+
+/**
+ * Hook: minhas compras (materiais e cursos) do usuário autenticado
+ * @returns {Object} { comprasMateriais, comprasCursos, isLoading, error, mutate }
+ */
+export function useMinhasCompras() {
+  const url = endpoints.comunidade.minhasCompras;
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher, swrOptions);
+
+  return useMemo(
+    () => ({
+      comprasMateriais: data?.comprasMateriais || [],
+      comprasCursos: data?.comprasCursos || [],
+      isLoading,
+      error,
+      mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+}
+
+// ----------------------------------------------------------------------
+// COMPRAS (admin: listar todas)
+// ----------------------------------------------------------------------
+
+/**
+ * Hook: listar compras (admin). Query: usuarioId, tipo=material|curso, status, page, limit
+ * @param {Object} params
+ * @returns {Object} { data (lista unificada ou compras), comprasMateriais, comprasCursos, total, page, limit, isLoading, error, mutate }
+ */
+export function useCompras(params = {}) {
+  const qs = buildQuery(params);
+  const url = `${endpoints.comunidade.compras}${qs}`;
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher, swrOptions);
+
+  return useMemo(() => {
+    const comprasMateriais = data?.comprasMateriais ?? [];
+    const comprasCursos = data?.comprasCursos ?? [];
+    const list =
+      data?.compras ??
+      (comprasMateriais.length || comprasCursos.length
+        ? [
+            ...comprasMateriais.map((c) => ({ ...c, tipo: 'material' })),
+            ...comprasCursos.map((c) => ({ ...c, tipo: 'curso' })),
+          ]
+        : []);
+
+    return {
+      data: list,
+      comprasMateriais,
+      comprasCursos,
+      total: data?.total ?? list.length,
+      page: data?.page ?? 1,
+      limit: data?.limit ?? 50,
+      isLoading,
+      error,
+      mutate,
+    };
+  }, [data, error, isLoading, mutate]);
 }

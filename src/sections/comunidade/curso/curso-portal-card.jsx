@@ -1,5 +1,8 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+
+import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -9,6 +12,7 @@ import Typography from '@mui/material/Typography';
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
+import { endpoints } from 'src/utils/axios';
 import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
@@ -30,13 +34,42 @@ const getTipoAcessoColor = (tipoAcesso) => {
     gratuito: 'success',
     exclusivo_cliente: 'info',
     pago: 'warning',
+    compra: 'success',
+    cliente_especifico: 'info',
   };
   return colorMap[tipoAcesso] || 'default';
+};
+
+const getMotivoAcessoLabel = (motivoAcesso) => {
+  const map = {
+    gratuito: 'Gratuito',
+    exclusivo_cliente: 'Exclusivo clientes',
+    compra: 'Adquirido',
+    cliente_especifico: 'Disponível para você',
+  };
+  return map[motivoAcesso] || null;
 };
 
 // ----------------------------------------------------------------------
 
 export function CursoPortalCard({ curso }) {
+  const [thumbnailError, setThumbnailError] = useState(false);
+  const temAcesso = curso?.temAcesso ?? false;
+  const motivoAcesso = curso?.motivoAcesso;
+  // Sempre usar URL padrão: {BASE}/comunidade/cursos/{id}/thumbnail — exibir capa; se 404, onError mostra ícone
+  const thumbnailSrc = curso?._id ? endpoints.comunidade.cursos.thumbnail(curso._id) : null;
+
+  useEffect(() => {
+    setThumbnailError(false);
+  }, [curso?._id]);
+
+  const getButtonLabel = () => {
+    if (temAcesso) return 'Acessar';
+    if (curso?.tipoAcesso === 'pago') return 'Ver detalhes';
+    if (curso?.tipoAcesso === 'exclusivo_cliente') return 'Exclusivo clientes';
+    return 'Ver detalhes';
+  };
+
   return (
     <Card
       sx={{
@@ -50,21 +83,41 @@ export function CursoPortalCard({ curso }) {
         },
       }}
     >
-      {curso.thumbnailUrl && (
+      {/* Sempre tentar exibir imagem de capa; se não houver (404), onError exibe o ícone */}
+      {thumbnailSrc && !thumbnailError ? (
         <CardMedia
           component="img"
           height="200"
-          image={curso.thumbnailUrl}
+          image={thumbnailSrc}
           alt={curso.titulo}
           sx={{ objectFit: 'cover' }}
+          onError={() => setThumbnailError(true)}
         />
+      ) : (
+        <Box
+          sx={{
+            height: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: 'background.neutral',
+          }}
+        >
+          <Iconify icon="solar:book-bookmark-bold-duotone" width={64} sx={{ color: 'text.disabled' }} />
+        </Box>
       )}
 
       <Stack spacing={2} sx={{ p: 3, flexGrow: 1 }}>
         <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-          <Label variant="soft" color={getTipoAcessoColor(curso.tipoAcesso)}>
-            {getTipoAcessoLabel(curso.tipoAcesso)}
-          </Label>
+          {temAcesso && motivoAcesso && getMotivoAcessoLabel(motivoAcesso) ? (
+            <Label variant="soft" color={getTipoAcessoColor(motivoAcesso)}>
+              {getMotivoAcessoLabel(motivoAcesso)}
+            </Label>
+          ) : (
+            <Label variant="soft" color={getTipoAcessoColor(curso.tipoAcesso)}>
+              {getTipoAcessoLabel(curso.tipoAcesso)}
+            </Label>
+          )}
         </Stack>
 
         <Typography variant="h6" sx={{ minHeight: 48 }}>
@@ -95,23 +148,17 @@ export function CursoPortalCard({ curso }) {
         </Stack>
 
         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 'auto' }}>
-          {curso.tipoAcesso === 'pago' ? (
-            <Typography variant="h6" color="primary.main">
-              {fCurrency(curso.preco)}
-            </Typography>
-          ) : (
-            <Typography variant="body2" color="text.secondary">
-              Gratuito
-            </Typography>
-          )}
+          <Typography variant="body2" color="text.secondary">
+            {temAcesso ? 'Você tem acesso' : curso?.tipoAcesso === 'pago' ? fCurrency(curso.preco ?? 0) : 'Gratuito'}
+          </Typography>
 
           <Button
             component={RouterLink}
             href={paths.cliente.comunidade.cursos.details(curso._id)}
-            variant="contained"
+            variant={temAcesso ? 'contained' : 'outlined'}
             size="small"
           >
-            Ver Detalhes
+            {getButtonLabel()}
           </Button>
         </Stack>
       </Stack>

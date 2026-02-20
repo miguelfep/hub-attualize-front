@@ -2,13 +2,13 @@
 
 import { useParams } from 'src/routes/hooks';
 
-import { CursoFormView } from 'src/sections/comunidade/curso/curso-form-view';
+import { CursoDetailsView } from 'src/sections/comunidade/curso/curso-details-view';
 
 // ----------------------------------------------------------------------
 
-export default function CursoEditPage() {
+export default function CursoDetailsPage() {
   const params = useParams();
   const { id } = params;
 
-  return <CursoFormView id={id} />;
+  return <CursoDetailsView id={id} />;
 }

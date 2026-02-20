@@ -1,11 +1,16 @@
 'use client';
 
-import { useRouter } from 'src/routes/hooks';
-import { paths } from 'src/routes/paths';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 
-import { DashboardContent } from 'src/layouts/dashboard';
-import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { useCurso } from 'src/actions/comunidade';
+import { DashboardContent } from 'src/layouts/dashboard';
+
+import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { CursoNewEditForm } from './curso-new-edit-form';
 
@@ -13,7 +18,11 @@ import { CursoNewEditForm } from './curso-new-edit-form';
 
 export function CursoFormView({ id }) {
   const router = useRouter();
-  const { data: currentCurso, isLoading } = useCurso(id);
+  const { data: currentCurso, isLoading, error } = useCurso(id);
+
+  const isEdit = Boolean(id);
+  const showForm = !isEdit || currentCurso != null;
+  const notFound = isEdit && !isLoading && !currentCurso;
 
   return (
     <DashboardContent>
@@ -28,11 +37,18 @@ export function CursoFormView({ id }) {
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
-      {isLoading ? (
-        <div>Carregando...</div>
-      ) : (
-        <CursoNewEditForm currentCurso={currentCurso} />
-      )}
+      {isLoading && isEdit ? (
+        <Typography color="text.secondary">Carregando...</Typography>
+      ) : notFound ? (
+        <Box>
+          <Typography color="error">Curso não encontrado.</Typography>
+          <Button sx={{ mt: 2 }} onClick={() => router.push(paths.dashboard.comunidade.cursos.root)}>
+            Voltar para Cursos
+          </Button>
+        </Box>
+      ) : showForm ? (
+        <CursoNewEditForm currentCurso={currentCurso} key={currentCurso?._id ?? 'new'} />
+      ) : null}
     </DashboardContent>
   );
 }

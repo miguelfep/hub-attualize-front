@@ -2,9 +2,10 @@
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
+import MenuList from '@mui/material/MenuList';
+import MenuItem from '@mui/material/MenuItem';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
@@ -13,6 +14,7 @@ import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 // ----------------------------------------------------------------------
 
@@ -55,7 +57,10 @@ const getStatusColor = (status) => {
 // ----------------------------------------------------------------------
 
 export function CursoTableRow({ row, selected, onSelectRow, onViewRow, onEditRow, onDeleteRow }) {
+  const popover = usePopover();
+
   return (
+    <>
     <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
       <TableCell padding="checkbox">
         <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
@@ -112,24 +117,49 @@ export function CursoTableRow({ row, selected, onSelectRow, onViewRow, onEditRow
       </TableCell>
 
       <TableCell align="right">
-        <Tooltip title="Visualizar">
-          <IconButton onClick={() => onViewRow(row._id)}>
-            <Iconify icon="eva:eye-fill" />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Editar">
-          <IconButton onClick={() => onEditRow(row._id)}>
-            <Iconify icon="eva:edit-fill" />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title="Deletar">
-          <IconButton onClick={() => onDeleteRow(row._id)} sx={{ color: 'error.main' }}>
-            <Iconify icon="eva:trash-2-fill" />
-          </IconButton>
-        </Tooltip>
+        <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+          <Iconify icon="eva:more-vertical-fill" />
+        </IconButton>
       </TableCell>
     </TableRow>
+
+    <CustomPopover
+      open={popover.open}
+      anchorEl={popover.anchorEl}
+      onClose={popover.onClose}
+      slotProps={{ arrow: { placement: 'right-top' } }}
+    >
+      <MenuList>
+        <MenuItem
+          onClick={() => {
+            popover.onClose();
+            onViewRow(row._id);
+          }}
+        >
+          <Iconify icon="eva:eye-fill" sx={{ mr: 1 }} />
+          Visualizar
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            popover.onClose();
+            onEditRow(row._id);
+          }}
+        >
+          <Iconify icon="eva:edit-fill" sx={{ mr: 1 }} />
+          Editar
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            popover.onClose();
+            onDeleteRow(row._id);
+          }}
+          sx={{ color: 'error.main' }}
+        >
+          <Iconify icon="eva:trash-2-fill" sx={{ mr: 1 }} />
+          Deletar
+        </MenuItem>
+      </MenuList>
+    </CustomPopover>
+    </>
   );
 }

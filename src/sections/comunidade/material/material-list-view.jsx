@@ -167,6 +167,11 @@ export function MaterialListView() {
 
   const { data, total, isLoading, mutate } = useMateriais(apiParams);
 
+  // Revalidar lista ao montar a página (ex.: ao voltar de criar/editar)
+  useEffect(() => {
+    mutate();
+  }, [mutate]);
+
   // Dados filtrados localmente (para busca por título)
   const dataFiltered = useMemo(
     () =>

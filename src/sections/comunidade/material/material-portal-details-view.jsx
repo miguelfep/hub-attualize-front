@@ -4,28 +4,26 @@ import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Typography from '@mui/material/Typography';
-import CardMedia from '@mui/material/CardMedia';
-import LoadingButton from '@mui/lab/LoadingButton';
-
 import Grid from '@mui/material/Grid';
+import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
+import CardMedia from '@mui/material/CardMedia';
+import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { fCurrency } from 'src/utils/format-number';
+import { endpoints, getFullAssetUrl } from 'src/utils/axios';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
-import { Label } from 'src/components/label';
-import { Iconify } from 'src/components/iconify';
-import { toast } from 'src/components/snackbar';
+import { useMaterial, downloadMaterial, registrarAcessoMaterial } from 'src/actions/comunidade';
 
-import { useMaterial, comprarMaterial, registrarAcessoMaterial, downloadMaterial } from 'src/actions/comunidade';
-import { endpoints } from 'src/utils/axios';
+import { Label } from 'src/components/label';
+import { toast } from 'src/components/snackbar';
+import { Iconify } from 'src/components/iconify';
+import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 // ----------------------------------------------------------------------
 
@@ -62,31 +60,18 @@ const getTipoAcessoLabel = (tipoAcesso) => {
 
 export function MaterialPortalDetailsView({ id }) {
   const router = useRouter();
-  const { data: material, isLoading, mutate } = useMaterial(id);
-  const [loadingComprar, setLoadingComprar] = useState(false);
+  const { data: material, isLoading, error, mutate } = useMaterial(id);
   const [loadingAcesso, setLoadingAcesso] = useState(false);
+  const [thumbnailError, setThumbnailError] = useState(false);
+  // Sempre usar URL padrão (sem extensão): {BASE}/comunidade/materiais/{id}/thumbnail
+  const materialThumbnailSrc = id ? endpoints.comunidade.materiais.thumbnail(id) : null;
 
-  const temAcesso = material?.arquivoUrl || material?.linkExterno || (material?.tipo === 'videoaula' && material?.linkExterno);
+  const materialRestrito = error?.response?.status === 403 ? error?.response?.data?.material : null;
+  const motivoRestrito = error?.response?.data?.motivo;
 
-  const handleComprar = async () => {
-    try {
-      setLoadingComprar(true);
-      const response = await comprarMaterial(id);
-      
-      if (response?.invoice?._id) {
-        // Redirecionar para checkout - usar o endpoint completo
-        const checkoutUrl = `${endpoints.invoices.checkout}/${response.invoice._id}`;
-        window.location.href = checkoutUrl;
-      } else {
-        toast.error('Erro ao processar compra');
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(error?.message || 'Erro ao processar compra');
-    } finally {
-      setLoadingComprar(false);
-    }
-  };
+  const temAcesso = material
+    ? (material.temAcesso ?? !!(material.arquivoUrl || material.linkExterno))
+    : false;
 
   const handleAcessar = async () => {
     try {
@@ -101,14 +86,14 @@ export function MaterialPortalDetailsView({ id }) {
         // Videoaula com YouTube - abrir em nova aba ou mostrar player
         window.open(material.linkExterno, '_blank');
       } else if (material.arquivoUrl) {
-        // Para arquivos, podemos abrir em nova aba ou fazer download
-        window.open(material.arquivoUrl, '_blank');
+        const arquivoUrl = getFullAssetUrl(material.arquivoUrl) || material.arquivoUrl;
+        window.open(arquivoUrl, '_blank');
       }
       
       mutate();
-    } catch (error) {
-      console.error(error);
-      toast.error(error?.message || 'Erro ao acessar material');
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao acessar material');
     } finally {
       setLoadingAcesso(false);
     }
@@ -129,16 +114,11 @@ export function MaterialPortalDetailsView({ id }) {
   const handleDownload = async () => {
     try {
       setLoadingAcesso(true);
-      const response = await downloadMaterial(id);
-      
-      if (response?.fileUrl) {
-        window.open(response.fileUrl, '_blank');
-        await registrarAcessoMaterial(id, 'download');
-        mutate();
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error(error?.message || 'Erro ao fazer download');
+      await downloadMaterial(id);
+      mutate();
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.message || 'Erro ao fazer download');
     } finally {
       setLoadingAcesso(false);
     }
@@ -154,12 +134,46 @@ export function MaterialPortalDetailsView({ id }) {
     );
   }
 
-  if (!material) {
+  if (!material && !materialRestrito) {
     return (
       <DashboardContent>
         <Box sx={{ textAlign: 'center', py: 5 }}>
           <Typography variant="h6">Material não encontrado</Typography>
         </Box>
+      </DashboardContent>
+    );
+  }
+
+  if (materialRestrito) {
+    return (
+      <DashboardContent>
+        <CustomBreadcrumbs
+          heading={materialRestrito.titulo}
+          links={[
+            { name: 'Dashboard', href: paths.cliente.dashboard },
+            { name: 'Comunidade', href: paths.cliente.comunidade.materiais.root },
+            { name: materialRestrito.titulo },
+          ]}
+          sx={{ mb: { xs: 3, md: 5 } }}
+        />
+        <Card sx={{ p: 3, maxWidth: 560, mx: 'auto' }}>
+          <Stack spacing={2}>
+            <Label variant="soft" color={getTipoAcessoColor(materialRestrito.tipoAcesso)}>
+              {getTipoAcessoLabel(materialRestrito.tipoAcesso)}
+            </Label>
+            <Typography variant="h5">{materialRestrito.titulo}</Typography>
+            {motivoRestrito && (
+              <Typography variant="body2" color="text.secondary">
+                {motivoRestrito}
+              </Typography>
+            )}
+            {materialRestrito.tipoAcesso === 'pago' && (
+              <Typography variant="body1" color="text.secondary">
+                Acesso concedido mediante vínculo. Entre em contato para mais informações.
+              </Typography>
+            )}
+          </Stack>
+        </Card>
       </DashboardContent>
     );
   }
@@ -204,12 +218,13 @@ export function MaterialPortalDetailsView({ id }) {
                   allowFullScreen
                 />
               </Box>
-            ) : material.thumbnailUrl ? (
+            ) : materialThumbnailSrc && !thumbnailError ? (
               <CardMedia
                 component="img"
                 height="400"
-                image={material.thumbnailUrl}
+                image={materialThumbnailSrc}
                 alt={material.titulo}
+                onError={() => setThumbnailError(true)}
               />
             ) : null}
 
@@ -261,27 +276,17 @@ export function MaterialPortalDetailsView({ id }) {
           <Card sx={{ p: 3, position: 'sticky', top: 24 }}>
             <Stack spacing={3}>
               {material.tipoAcesso === 'pago' && !temAcesso && (
-                <>
-                  <Box>
-                    <Typography variant="h4" color="primary.main">
-                      {fCurrency(material.preco)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Material pago
-                    </Typography>
-                  </Box>
-
-                  <LoadingButton
-                    fullWidth
-                    size="large"
-                    variant="contained"
-                    loading={loadingComprar}
-                    onClick={handleComprar}
-                    startIcon={<Iconify icon="solar:cart-bold-duotone" />}
-                  >
-                    Comprar Agora
-                  </LoadingButton>
-                </>
+                <Box>
+                  <Typography variant="h6" gutterBottom>
+                    Material pago
+                  </Typography>
+                  <Typography variant="h4" color="primary.main">
+                    {fCurrency(material.preco)}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Acesso concedido mediante vínculo. Entre em contato para mais informações.
+                  </Typography>
+                </Box>
               )}
 
               {temAcesso && (
@@ -305,16 +310,17 @@ export function MaterialPortalDetailsView({ id }) {
                           {material.tipo === 'link'
                             ? 'Clique no botão abaixo para acessar o link externo'
                             : material.tipo === 'videoaula'
-                            ? 'Faça o download ou visualize o vídeo'
-                            : 'Faça o download ou visualize o material'}
+                            ? 'O vídeo está disponível acima. Você pode fazer download se houver arquivo.'
+                            : 'Faça o download do material.'}
                         </Typography>
                       </Box>
 
-                      {material.tipo !== 'link' && material.tipo !== 'videoaula' && (
+                      {/* Documento, ebook, outro: apenas Download */}
+                      {(material.tipo === 'documento' || material.tipo === 'ebook' || material.tipo === 'outro') && (
                         <LoadingButton
                           fullWidth
                           size="large"
-                          variant="outlined"
+                          variant="contained"
                           loading={loadingAcesso}
                           onClick={handleDownload}
                           startIcon={<Iconify icon="eva:download-fill" />}
@@ -323,52 +329,52 @@ export function MaterialPortalDetailsView({ id }) {
                         </LoadingButton>
                       )}
 
-                      {material.tipo === 'videoaula' && material.arquivoUrl && (
+                      {/* Link externo: apenas Abrir Link */}
+                      {material.tipo === 'link' && (
                         <LoadingButton
                           fullWidth
                           size="large"
-                          variant="outlined"
+                          variant="contained"
                           loading={loadingAcesso}
-                          onClick={handleDownload}
-                          startIcon={<Iconify icon="eva:download-fill" />}
+                          onClick={handleAcessar}
+                          startIcon={<Iconify icon="eva:external-link-fill" />}
                         >
-                          Download
+                          Abrir Link
                         </LoadingButton>
                       )}
 
-                      <LoadingButton
-                        fullWidth
-                        size="large"
-                        variant="contained"
-                        loading={loadingAcesso}
-                        onClick={handleAcessar}
-                        startIcon={
-                          <Iconify
-                            icon={
-                              material.tipo === 'link'
-                                ? 'eva:external-link-fill'
-                                : material.tipo === 'videoaula'
-                                ? 'solar:play-circle-bold-duotone'
-                                : 'eva:eye-fill'
-                            }
-                          />
-                        }
-                      >
-                        {material.tipo === 'link'
-                          ? 'Abrir Link'
-                          : material.tipo === 'videoaula'
-                          ? 'Assistir Vídeo'
-                          : 'Visualizar'}
-                      </LoadingButton>
+                      {/* Videoaula: Download (se tiver arquivo) e Assistir (abre em nova aba quando não for YouTube embedido acima) */}
+                      {material.tipo === 'videoaula' && (
+                        <>
+                          {material.arquivoUrl && (
+                            <LoadingButton
+                              fullWidth
+                              size="large"
+                              variant="outlined"
+                              loading={loadingAcesso}
+                              onClick={handleDownload}
+                              startIcon={<Iconify icon="eva:download-fill" />}
+                            >
+                              Download
+                            </LoadingButton>
+                          )}
+                          {material.linkExterno && (
+                            <LoadingButton
+                              fullWidth
+                              size="large"
+                              variant="contained"
+                              loading={loadingAcesso}
+                              onClick={handleAcessar}
+                              startIcon={<Iconify icon="solar:play-circle-bold-duotone" />}
+                            >
+                              Assistir Vídeo
+                            </LoadingButton>
+                          )}
+                        </>
+                      )}
                     </>
                   )}
                 </>
-              )}
-
-              {material.tipoAcesso === 'pago' && !temAcesso && (
-                <Typography variant="caption" color="text.secondary" align="center">
-                  Após a compra, você terá acesso completo ao material
-                </Typography>
               )}
             </Stack>
           </Card>

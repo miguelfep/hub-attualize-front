@@ -1,30 +1,60 @@
 'use client';
 
 import { z as zod } from 'zod';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { useMemo, useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
+import LoadingButton from '@mui/lab/LoadingButton';
 import {
   Box,
   Card,
+  List,
+  Chip,
   Stack,
+  Dialog,
+  Button,
+  Switch,
   Divider,
   MenuItem,
+  ListItem,
   TextField,
   CardHeader,
   Typography,
-  InputAdornment,
+  IconButton,
+  DialogTitle,
+  ListItemText,
   Autocomplete,
+  DialogContent,
+  DialogActions,
+  InputAdornment,
+  FormControlLabel,
 } from '@mui/material';
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { endpoints } from 'src/utils/axios';
+
+import { useGetAllClientes } from 'src/actions/clientes';
+import {
+  useTags,
+  createTag,
+  useCategorias,
+  createMaterial,
+  updateMaterial,
+  createCategoria,
+  useVinculosMaterial,
+  addVinculosMaterial,
+  uploadMaterialArquivo,
+  removeVinculosMaterial,
+  uploadMaterialThumbnail,
+  deleteMaterialThumbnail,
+} from 'src/actions/comunidade';
+
 import { toast } from 'src/components/snackbar';
 import { Form } from 'src/components/hook-form';
-import { useCategorias, useTags, createMaterial, updateMaterial, uploadMaterialArquivo, uploadMaterialThumbnail } from 'src/actions/comunidade';
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -44,6 +74,8 @@ const MaterialSchema = zod.object({
   duracao: zod.number().optional(),
   ordem: zod.number().optional(),
   status: zod.enum(['ativo', 'inativo', 'rascunho']).optional(),
+  clientesComAcesso: zod.array(zod.string()).optional(),
+  visivelSomenteNoCurso: zod.boolean().optional(),
 });
 
 // ----------------------------------------------------------------------
@@ -53,10 +85,45 @@ export function MaterialNewEditForm({ currentMaterial }) {
 
   const [arquivo, setArquivo] = useState(null);
   const [thumbnail, setThumbnail] = useState(null);
+  const [thumbnailPreviewUrl, setThumbnailPreviewUrl] = useState(null); // preview do arquivo selecionado (blob URL)
+  const [thumbnailRemoved, setThumbnailRemoved] = useState(false);
+  const [thumbnailPreviewError, setThumbnailPreviewError] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
 
-  const { data: categorias } = useCategorias({ status: 'ativo' });
-  const { data: tags } = useTags();
+  // Preview da imagem selecionada (novo arquivo) – criar e revogar blob URL
+  useEffect(() => {
+    if (!thumbnail) {
+      setThumbnailPreviewUrl(null);
+      return undefined;
+    }
+    const url = URL.createObjectURL(thumbnail);
+    setThumbnailPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [thumbnail]);
+
+  // Ao abrir/alterar material (edição), resetar estado da thumbnail para exibir a imagem atual
+  useEffect(() => {
+    setThumbnailPreviewError(false);
+    setThumbnailRemoved(false);
+  }, [currentMaterial?._id]);
+
+  const [tagsInputValue, setTagsInputValue] = useState('');
+  const [addingTag, setAddingTag] = useState(false);
+
+  const { data: categorias, mutate: mutateCategorias } = useCategorias({ status: 'ativo' });
+  const { data: tags, mutate: mutateTags } = useTags();
+  const { data: clientesRaw } = useGetAllClientes();
+  const clientes = Array.isArray(clientesRaw) ? clientesRaw : (clientesRaw?.data ?? clientesRaw?.clientes ?? []);
+  const { clientes: clientesVinculados, isLoading: loadingVinculos, mutate: mutateVinculos } = useVinculosMaterial(currentMaterial?._id);
+  const [openVinculosDialog, setOpenVinculosDialog] = useState(false);
+  const [vinculosToAdd, setVinculosToAdd] = useState([]);
+  const [savingVinculos, setSavingVinculos] = useState(false);
+  const [openNovaCategoria, setOpenNovaCategoria] = useState(false);
+  const [openNovaTag, setOpenNovaTag] = useState(false);
+  const [novaCategoriaNome, setNovaCategoriaNome] = useState('');
+  const [novaTagNome, setNovaTagNome] = useState('');
+  const [savingCategoria, setSavingCategoria] = useState(false);
+  const [savingTag, setSavingTag] = useState(false);
 
   const defaultValues = useMemo(
     () => ({
@@ -71,6 +138,8 @@ export function MaterialNewEditForm({ currentMaterial }) {
       duracao: currentMaterial?.duracao || undefined,
       ordem: currentMaterial?.ordem || 0,
       status: currentMaterial?.status || 'rascunho',
+      clientesComAcesso: currentMaterial?.clientesComAcesso?.map((c) => (typeof c === 'string' ? c : c._id)) || [],
+      visivelSomenteNoCurso: currentMaterial?.visivelSomenteNoCurso ?? false,
     }),
     [currentMaterial]
   );
@@ -131,6 +200,17 @@ export function MaterialNewEditForm({ currentMaterial }) {
         }
       }
 
+      // Remover thumbnail no backend se o usuário clicou em "Remover" e não enviou nova
+      if (currentMaterial?._id && thumbnailRemoved && !thumbnail) {
+        try {
+          await deleteMaterialThumbnail(materialId);
+          toast.success('Thumbnail removida');
+        } catch (error) {
+          console.error('Erro ao remover thumbnail:', error);
+          toast.error('Erro ao remover thumbnail');
+        }
+      }
+
       // Upload de thumbnail (se fornecido)
       if (thumbnail) {
         try {
@@ -148,6 +228,56 @@ export function MaterialNewEditForm({ currentMaterial }) {
       toast.error(error?.message || 'Erro ao salvar material');
     }
   });
+
+  const handleCreateCategoria = async () => {
+    const nome = novaCategoriaNome?.trim();
+    if (!nome) {
+      toast.error('Informe o nome da categoria');
+      return;
+    }
+    setSavingCategoria(true);
+    try {
+      const res = await createCategoria({ nome });
+      const newId = res?.categoria?._id || res?._id;
+      await mutateCategorias();
+      if (newId) {
+        const current = watch('categorias') || [];
+        setValue('categorias', [...current, newId], { shouldValidate: true });
+      }
+      setNovaCategoriaNome('');
+      setOpenNovaCategoria(false);
+      toast.success('Categoria criada');
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao criar categoria');
+    } finally {
+      setSavingCategoria(false);
+    }
+  };
+
+  const handleCreateTag = async () => {
+    const nome = novaTagNome?.trim();
+    if (!nome) {
+      toast.error('Informe o nome da tag');
+      return;
+    }
+    setSavingTag(true);
+    try {
+      const res = await createTag({ nome });
+      const newId = res?.tag?._id || res?._id;
+      await mutateTags();
+      if (newId) {
+        const current = watch('tags') || [];
+        setValue('tags', [...current, newId], { shouldValidate: true });
+      }
+      setNovaTagNome('');
+      setOpenNovaTag(false);
+      toast.success('Tag criada');
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao criar tag');
+    } finally {
+      setSavingTag(false);
+    }
+  };
 
   return (
     <Form methods={methods} onSubmit={onSubmit}>
@@ -342,6 +472,50 @@ export function MaterialNewEditForm({ currentMaterial }) {
                 </TextField>
               )}
             />
+
+            <Controller
+              name="visivelSomenteNoCurso"
+              control={control}
+              render={({ field }) => (
+                <Box>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={!!field.value}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                      />
+                    }
+                    label="Visível somente no curso"
+                  />
+                  <Typography variant="caption" display="block" color="text.secondary" sx={{ mt: 0.5 }}>
+                    Se marcado, o material não aparece na listagem da biblioteca no portal; só dentro do curso (como aula).
+                  </Typography>
+                </Box>
+              )}
+            />
+
+            <Controller
+              name="clientesComAcesso"
+              control={control}
+              render={({ field }) => (
+                <Autocomplete
+                  multiple
+                  options={clientes}
+                  getOptionLabel={(opt) => opt.razaoSocial || opt.nome || opt._id || ''}
+                  isOptionEqualToValue={(a, b) => a._id === b._id}
+                  value={(field.value || []).map((id) => clientes.find((c) => c._id === id)).filter(Boolean)}
+                  onChange={(_, newValue) => field.onChange(newValue.map((c) => c._id))}
+                  renderInput={(params) => (
+                    <TextField
+                      {...params}
+                      label="Clientes com acesso (opcional)"
+                      placeholder="Restringir a clientes específicos"
+                      helperText="Deixe vazio para não restringir. Se preenchido, apenas estes clientes terão acesso."
+                    />
+                  )}
+                />
+              )}
+            />
           </Box>
 
           {(tipo !== 'link' && !(tipo === 'videoaula' && watch('linkExterno'))) && (
@@ -371,11 +545,91 @@ export function MaterialNewEditForm({ currentMaterial }) {
             <Typography variant="subtitle2" sx={{ mb: 1 }}>
               Thumbnail (Imagem)
             </Typography>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setThumbnail(e.target.files[0])}
-            />
+            <Stack spacing={2}>
+              {/* Thumbnail atual (ao editar) */}
+              {currentMaterial?._id && !thumbnailRemoved && !thumbnail && (
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  {!thumbnailPreviewError ? (
+                    <>
+                      <Box
+                        component="img"
+                        src={endpoints.comunidade.materiais.thumbnail(currentMaterial._id)}
+                        alt="Thumbnail atual"
+                        onError={() => setThumbnailPreviewError(true)}
+                        sx={{
+                          width: 200,
+                          height: 150,
+                          objectFit: 'cover',
+                          borderRadius: 1,
+                          border: (theme) => `1px solid ${theme.palette.divider}`,
+                        }}
+                      />
+                      <Button
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        startIcon={<Iconify icon="eva:trash-2-outline" />}
+                        onClick={() => setThumbnailRemoved(true)}
+                      >
+                        Remover e enviar nova
+                      </Button>
+                    </>
+                  ) : (
+                    <Typography variant="body2" color="text.secondary">
+                      Nenhuma thumbnail no servidor. Envie uma imagem abaixo.
+                    </Typography>
+                  )}
+                </Stack>
+              )}
+              {/* Preview do novo arquivo selecionado (o que será enviado) */}
+              {thumbnail && thumbnailPreviewUrl && (
+                <Stack spacing={1}>
+                  <Typography variant="caption" color="primary.main" fontWeight="medium">
+                    Nova imagem (será enviada ao salvar)
+                  </Typography>
+                  <Box
+                    component="img"
+                    src={thumbnailPreviewUrl}
+                    alt="Preview da nova thumbnail"
+                    sx={{
+                      width: 200,
+                      height: 150,
+                      objectFit: 'cover',
+                      borderRadius: 1,
+                      border: (theme) => `2px solid ${theme.palette.primary.main}`,
+                    }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {thumbnail.name}
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    startIcon={<Iconify icon="eva:close-outline" />}
+                    onClick={() => setThumbnail(null)}
+                  >
+                    Remover seleção
+                  </Button>
+                </Stack>
+              )}
+              {/* Input para escolher arquivo */}
+              <Box>
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="material-thumbnail-input"
+                  onChange={(e) => {
+                    setThumbnail(e.target.files[0] || null);
+                    if (e.target.files[0]) setThumbnailRemoved(false);
+                  }}
+                />
+                {!thumbnail && !(currentMaterial?._id && !thumbnailRemoved) && (
+                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                    Selecione uma imagem (JPG, PNG, GIF, WebP) para capa do material.
+                  </Typography>
+                )}
+              </Box>
+            </Stack>
           </Box>
 
           <Controller
@@ -383,7 +637,6 @@ export function MaterialNewEditForm({ currentMaterial }) {
             control={control}
             render={({ field, fieldState: { error } }) => (
               <Autocomplete
-                {...field}
                 multiple
                 options={categorias || []}
                 getOptionLabel={(option) => (typeof option === 'string' ? option : option.nome)}
@@ -391,46 +644,260 @@ export function MaterialNewEditForm({ currentMaterial }) {
                   (typeof option === 'string' ? option : option._id) ===
                   (typeof value === 'string' ? value : value._id)
                 }
-                onChange={(event, newValue) => setValue('categorias', newValue, { shouldValidate: true })}
+                onChange={(event, newValue) => {
+                  const ids = newValue.map((v) => (typeof v === 'string' ? v : v._id));
+                  setValue('categorias', ids, { shouldValidate: true });
+                }}
+                value={
+                  field.value?.map((id) => categorias?.find((c) => c._id === id) || id) || []
+                }
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Categorias"
                     error={!!error}
-                    helperText={error?.message}
+                    helperText={error?.message || 'Não encontra? Adicione uma nova categoria.'}
                   />
                 )}
               />
             )}
           />
+          <Box sx={{ mt: -1, mb: 1 }}>
+            <Button
+              size="small"
+              startIcon={<Iconify icon="eva:plus-fill" />}
+              onClick={() => setOpenNovaCategoria(true)}
+            >
+              Adicionar nova categoria
+            </Button>
+          </Box>
 
           <Controller
             name="tags"
             control={control}
             render={({ field, fieldState: { error } }) => (
               <Autocomplete
-                {...field}
                 multiple
+                freeSolo
                 options={tags || []}
-                getOptionLabel={(option) => (typeof option === 'string' ? option : option.nome)}
+                getOptionLabel={(option) => (typeof option === 'string' ? option : option.nome || '')}
                 isOptionEqualToValue={(option, value) =>
                   (typeof option === 'string' ? option : option._id) ===
                   (typeof value === 'string' ? value : value._id)
                 }
-                onChange={(event, newValue) => setValue('tags', newValue, { shouldValidate: true })}
+                filterSelectedOptions
+                inputValue={tagsInputValue}
+                onInputChange={(_, value) => setTagsInputValue(value)}
+                onChange={async (event, newValue) => {
+                  const toCreateNames = newValue
+                    .filter((v) => typeof v === 'string')
+                    .map((v) => (v || '').trim())
+                    .filter(Boolean);
+
+                  if (toCreateNames.length > 0) {
+                    setAddingTag(true);
+                    try {
+                      const createdResults = await Promise.all(
+                        toCreateNames.map((nome) => createTag({ nome }))
+                      );
+                      const createdIds = createdResults.map((r) => r?.tag?._id || r?._id);
+                      await mutateTags();
+                      let createIndex = 0;
+                      const ids = newValue
+                        .map((v) => {
+                          if (typeof v === 'string') {
+                            const nome = (v || '').trim();
+                            if (nome) {
+                              const id = createdIds[createIndex];
+                              createIndex += 1;
+                              return id;
+                            }
+                            return null;
+                          }
+                          return v?._id || null;
+                        })
+                        .filter(Boolean);
+                      setValue('tags', ids, { shouldValidate: true });
+                    } catch (err) {
+                      toast.error(err?.message || 'Erro ao criar tag');
+                    } finally {
+                      setAddingTag(false);
+                    }
+                  } else {
+                    const ids = newValue.filter((v) => v?._id).map((v) => v._id);
+                    setValue('tags', ids, { shouldValidate: true });
+                  }
+                  setTagsInputValue('');
+                }}
+                value={
+                  field.value?.map((id) => tags?.find((t) => t._id === id) || { _id: id, nome: id }) || []
+                }
                 renderInput={(params) => (
                   <TextField
                     {...params}
                     label="Tags"
+                    placeholder="Digite e pressione Enter para adicionar"
                     error={!!error}
-                    helperText={error?.message}
+                    helperText={error?.message || 'Digite o nome da tag e pressione Enter. Pode criar novas tags.'}
                   />
                 )}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => (
+                    <Chip
+                      {...getTagProps({ index })}
+                      key={typeof option === 'string' ? option : option._id}
+                      label={typeof option === 'string' ? option : option.nome}
+                      size="small"
+                    />
+                  ))
+                }
               />
             )}
           />
+          <Box sx={{ mt: -1, mb: 1 }}>
+            <Button
+              size="small"
+              startIcon={<Iconify icon="eva:plus-fill" />}
+              onClick={() => setOpenNovaTag(true)}
+              disabled={addingTag}
+            >
+              {addingTag ? 'Criando tag...' : 'Criar tag no diálogo'}
+            </Button>
+          </Box>
         </Stack>
       </Card>
+
+      {currentMaterial?._id && (
+        <Card sx={{ p: 3, mt: 3 }}>
+          <CardHeader
+            title="Clientes vinculados (vínculos)"
+            subheader="Acesso restrito a estes clientes. Gerencie pela API de vínculos."
+            action={
+              <Button
+                size="small"
+                startIcon={<Iconify icon="eva:plus-fill" />}
+                onClick={() => setOpenVinculosDialog(true)}
+              >
+                Adicionar
+              </Button>
+            }
+          />
+          {loadingVinculos ? (
+            <Typography variant="body2" color="text.secondary">Carregando...</Typography>
+          ) : (clientesVinculados?.length ?? 0) === 0 ? (
+            <Typography variant="body2" color="text.secondary">Nenhum cliente vinculado.</Typography>
+          ) : (
+            <List dense>
+              {clientesVinculados.map((c) => (
+                <ListItem
+                  key={c._id}
+                  secondaryAction={
+                    <IconButton
+                      edge="end"
+                      size="small"
+                      onClick={async () => {
+                        try {
+                          await removeVinculosMaterial(currentMaterial._id, [c._id]);
+                          toast.success('Cliente desvinculado');
+                          mutateVinculos();
+                        } catch (err) {
+                          toast.error(err?.message || 'Erro ao desvincular');
+                        }
+                      }}
+                    >
+                      <Iconify icon="eva:trash-2-outline" />
+                    </IconButton>
+                  }
+                >
+                  <ListItemText primary={c.razaoSocial || c.nome || c._id} />
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Card>
+      )}
+
+      <Dialog open={openVinculosDialog} onClose={() => setOpenVinculosDialog(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Vincular clientes</DialogTitle>
+        <DialogContent>
+          <Autocomplete
+            multiple
+            options={clientes.filter((c) => !clientesVinculados?.some((v) => v._id === c._id))}
+            getOptionLabel={(opt) => opt.razaoSocial || opt.nome || opt._id || ''}
+            isOptionEqualToValue={(a, b) => a._id === b._id}
+            value={vinculosToAdd}
+            onChange={(_, v) => setVinculosToAdd(v)}
+            renderInput={(params) => <TextField {...params} label="Clientes" placeholder="Selecione" />}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenVinculosDialog(false)}>Cancelar</Button>
+          <Button
+            variant="contained"
+            disabled={vinculosToAdd.length === 0 || savingVinculos}
+            onClick={async () => {
+              if (!currentMaterial?._id || vinculosToAdd.length === 0) return;
+              setSavingVinculos(true);
+              try {
+                await addVinculosMaterial(currentMaterial._id, vinculosToAdd.map((c) => c._id));
+                toast.success('Clientes vinculados');
+                setVinculosToAdd([]);
+                setOpenVinculosDialog(false);
+                mutateVinculos();
+              } catch (err) {
+                toast.error(err?.message || 'Erro ao vincular');
+              } finally {
+                setSavingVinculos(false);
+              }
+            }}
+          >
+            Vincular
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openNovaCategoria} onClose={() => !savingCategoria && setOpenNovaCategoria(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Nova categoria</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Nome"
+            value={novaCategoriaNome}
+            onChange={(e) => setNovaCategoriaNome(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreateCategoria()}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenNovaCategoria(false)} disabled={savingCategoria}>Cancelar</Button>
+          <LoadingButton variant="contained" loading={savingCategoria} onClick={handleCreateCategoria}>
+            Criar
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={openNovaTag} onClose={() => !savingTag && setOpenNovaTag(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Nova tag</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Nome"
+            value={novaTagNome}
+            onChange={(e) => setNovaTagNome(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleCreateTag()}
+            sx={{ mt: 1 }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpenNovaTag(false)} disabled={savingTag}>Cancelar</Button>
+          <LoadingButton variant="contained" loading={savingTag} onClick={handleCreateTag}>
+            Criar
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
 
       <Stack direction="row" spacing={2} justifyContent="flex-end" sx={{ mt: 3 }}>
         <LoadingButton

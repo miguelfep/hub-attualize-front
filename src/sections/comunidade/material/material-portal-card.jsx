@@ -1,19 +1,20 @@
 'use client';
 
-import { useRouter } from 'src/routes/hooks';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
-import Typography from '@mui/material/Typography';
 import CardMedia from '@mui/material/CardMedia';
+import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
 import CardActions from '@mui/material/CardActions';
 
-import { fCurrency } from 'src/utils/format-number';
 import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
+import { endpoints } from 'src/utils/axios';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -60,13 +61,44 @@ const getTipoAcessoLabel = (tipoAcesso) => {
   return tipoMap[tipoAcesso] || tipoAcesso;
 };
 
+const getMotivoAcessoLabel = (motivoAcesso) => {
+  const map = {
+    gratuito: 'Gratuito',
+    exclusivo_cliente: 'Exclusivo clientes',
+    compra: 'Adquirido',
+    cliente_especifico: 'Disponível para você',
+  };
+  return map[motivoAcesso] || null;
+};
+
 // ----------------------------------------------------------------------
 
 export function MaterialPortalCard({ material }) {
   const router = useRouter();
+  const [thumbnailError, setThumbnailError] = useState(false);
+  const temAcesso = material?.temAcesso ?? !!(material?.arquivoUrl || material?.linkExterno);
+  const motivoAcesso = material?.motivoAcesso;
+  // Sempre usar URL padrão: {BASE}/comunidade/materiais/{id}/thumbnail — exibir capa; se 404, onError mostra ícone
+  const thumbnailSrc = material?._id ? endpoints.comunidade.materiais.thumbnail(material._id) : null;
+
+  useEffect(() => {
+    setThumbnailError(false);
+  }, [material?._id]);
 
   const handleClick = () => {
     router.push(paths.cliente.comunidade.materiais.details(material._id));
+  };
+
+  const getButtonLabel = () => {
+    if (temAcesso) return 'Acessar';
+    if (material?.tipoAcesso === 'pago') return 'Ver detalhes';
+    if (material?.tipoAcesso === 'exclusivo_cliente') return 'Exclusivo clientes';
+    return 'Ver detalhes';
+  };
+
+  const getButtonVariant = () => {
+    if (temAcesso) return 'contained';
+    return 'outlined';
   };
 
   return (
@@ -84,12 +116,15 @@ export function MaterialPortalCard({ material }) {
       }}
       onClick={handleClick}
     >
-      {material.thumbnailUrl ? (
+      {/* Sempre tentar exibir imagem de capa; se não houver (404), onError exibe o ícone */}
+      {thumbnailSrc && !thumbnailError ? (
         <CardMedia
           component="img"
           height="200"
-          image={material.thumbnailUrl}
+          image={thumbnailSrc}
           alt={material.titulo}
+          sx={{ objectFit: 'cover' }}
+          onError={() => setThumbnailError(true)}
         />
       ) : (
         <Box
@@ -108,9 +143,15 @@ export function MaterialPortalCard({ material }) {
       <CardContent sx={{ flexGrow: 1 }}>
         <Stack spacing={1}>
           <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-            <Label variant="soft" color={getTipoAcessoColor(material.tipoAcesso)}>
-              {getTipoAcessoLabel(material.tipoAcesso)}
-            </Label>
+            {temAcesso && motivoAcesso && getMotivoAcessoLabel(motivoAcesso) ? (
+              <Label variant="soft" color={getTipoAcessoColor(motivoAcesso)}>
+                {getMotivoAcessoLabel(motivoAcesso)}
+              </Label>
+            ) : (
+              <Label variant="soft" color={getTipoAcessoColor(material.tipoAcesso)}>
+                {getTipoAcessoLabel(material.tipoAcesso)}
+              </Label>
+            )}
             <Label variant="soft">{getTipoLabel(material.tipo)}</Label>
           </Stack>
 
@@ -157,11 +198,11 @@ export function MaterialPortalCard({ material }) {
       <CardActions sx={{ p: 2, pt: 0 }}>
         <Button
           fullWidth
-          variant={material.tipoAcesso === 'pago' ? 'contained' : 'outlined'}
+          variant={getButtonVariant()}
           onClick={handleClick}
           endIcon={<Iconify icon="eva:arrow-forward-fill" />}
         >
-          {material.tipoAcesso === 'pago' ? `Comprar por ${fCurrency(material.preco)}` : 'Acessar'}
+          {getButtonLabel()}
         </Button>
       </CardActions>
     </Card>

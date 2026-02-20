@@ -47,7 +47,7 @@ const TABLE_HEAD = [
   { id: 'status', label: 'Status' },
   { id: 'visualizacoes', label: 'Visualizações' },
   { id: 'inscricoes', label: 'Inscrições' },
-  { id: '', width: 88 },
+  { id: 'acoes', label: 'Ações', width: 88, align: 'right' },
 ];
 
 const TIPO_ACESSO_OPTIONS = [
@@ -108,8 +108,14 @@ export function CursoListView() {
   const filters = useSetState(DEFAULT_FILTERS);
 
   const [tableData, setTableData] = useState([]);
+  const [cursoIdToDelete, setCursoIdToDelete] = useState(null);
 
   const { data: cursos, isLoading, mutate } = useCursos();
+
+  // Revalidar lista ao montar a página (ex.: ao voltar de criar/editar)
+  useEffect(() => {
+    mutate();
+  }, [mutate]);
 
   useEffect(() => {
     if (cursos.length) {
@@ -160,6 +166,11 @@ export function CursoListView() {
 
   const handleViewRow = (id) => {
     router.push(paths.dashboard.comunidade.cursos.details(id));
+  };
+
+  const handleOpenConfirm = (id) => {
+    setCursoIdToDelete(id);
+    confirm.onTrue();
   };
 
   return (
@@ -214,6 +225,12 @@ export function CursoListView() {
                   rowCount={dataFiltered.length}
                   numSelected={table.selected.length}
                   onSort={table.onSort}
+                  onSelectAllRows={(checked) =>
+                    table.onSelectAllRows(
+                      checked,
+                      dataFiltered.map((row) => row._id).filter(Boolean)
+                    )
+                  }
                 />
 
                 <TableBody>
@@ -223,7 +240,7 @@ export function CursoListView() {
                       row={row}
                       selected={table.selected.includes(row._id)}
                       onSelectRow={() => table.onSelectRow(row._id)}
-                      onDeleteRow={() => confirm.onTrue()}
+                      onDeleteRow={() => handleOpenConfirm(row._id)}
                       onEditRow={() => handleEditRow(row._id)}
                       onViewRow={() => handleViewRow(row._id)}
                     />
@@ -254,7 +271,10 @@ export function CursoListView() {
 
       <ConfirmDialog
         open={confirm.value}
-        onClose={confirm.onFalse}
+        onClose={() => {
+          confirm.onFalse();
+          setCursoIdToDelete(null);
+        }}
         title="Deletar"
         content="Tem certeza que deseja deletar este curso?"
         action={
@@ -262,9 +282,13 @@ export function CursoListView() {
             variant="contained"
             color="error"
             onClick={async () => {
-              if (table.selected.length > 0) {
-                await Promise.all(table.selected.map((id) => handleDeleteRow(id)));
+              const idsToDelete = cursoIdToDelete
+                ? [cursoIdToDelete]
+                : table.selected.filter(Boolean);
+              if (idsToDelete.length > 0) {
+                await Promise.all(idsToDelete.map((id) => handleDeleteRow(id)));
                 table.onSelectAllRows(false, []);
+                setCursoIdToDelete(null);
               }
               confirm.onFalse();
             }}

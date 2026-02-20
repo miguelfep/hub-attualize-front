@@ -15,7 +15,6 @@ import {
   Alert,
   Button,
   Divider,
-  Container,
   TextField,
   Typography,
   CardContent,
@@ -252,27 +251,26 @@ export function OrcamentoAprovado({
   };
 
   return (
-    <Container sx={{ pt: 5, pb: 10 }}>
-      <Typography variant="h3" align="center" sx={{ mb: 2 }}>
+    <Box sx={{ pt: { xs: 2, sm: 4 }, pb: { xs: 8, md: 10 }, px: { xs: 2, sm: 3 } }}>
+      <Typography variant="h4" align="center" sx={{ mb: 1, fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
         Pronto para simplificar sua contabilidade?
       </Typography>
-      <Typography variant="h4" align="center" sx={{ mb: 2 }}>
+      <Typography variant="h5" align="center" sx={{ mb: { xs: 3, md: 4 }, color: 'text.secondary', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
         Conclua seu orçamento agora!
       </Typography>
-      <Grid container rowSpacing={{ xs: 5, md: 0 }} columnSpacing={{ xs: 0, md: 5 }}>
-        <Grid xs={12} md={8}>
-          <Box
-            gap={5}
-            display="grid"
-            gridTemplateColumns={{ xs: 'repeat(1, 1fr)', md: 'repeat(1, 1fr)' }}
+
+      {/* Mobile: formulário primeiro, depois resumo. Desktop: form à esquerda, resumo à direita */}
+      <Grid container spacing={{ xs: 3, md: 4 }} alignItems="flex-start">
+        <Grid xs={12} md={8} sx={{ order: { xs: 1, md: 1 }, pr: { md: 3 } }}>
+          <Card
+            variant="outlined"
             sx={{
-              p: { md: 5 },
+              p: { xs: 2.5, sm: 4, md: 5 },
               borderRadius: 2,
-              border: (theme) => ({ md: `dashed 1px ${theme.vars.palette.divider}` }),
+              minHeight: 320,
             }}
           >
             <PaymentBillingAddress
-              invoice={invoice}
               formData={formData}
               errors={errors}
               handleCepChange={handleCepChange}
@@ -282,24 +280,29 @@ export function OrcamentoAprovado({
               loadingCep={loadingCep}
               cepNotFound={cepNotFound}
             />
-            <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
+            <Box sx={{ mt: 4 }}>
+              <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
+            </Box>
             {method === 'pix' && (
-              <Alert severity="info" sx={{ mt: 2 }}>
-                Clique em &quot;Finalizar Pedido&quot; para gerar o QR Code PIX. O QR Code será exibido na seção &quot;Detalhes da Cobrança&quot;.
+              <Alert severity="info" sx={{ mt: 3 }}>
+                Clique em &quot;Finalizar pedido&quot; para gerar o QR Code PIX. O QR Code aparecerá na seção &quot;Detalhes da Cobrança&quot;.
               </Alert>
             )}
-          </Box>
+          </Card>
         </Grid>
-        <Grid xs={12} md={4}>
+        <Grid xs={12} md={4} sx={{ order: { xs: 2, md: 2 }, pl: { md: 2 } }}>
           <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} gerandoPix={gerandoPix} method={method} />
         </Grid>
       </Grid>
-    </Container>
+    </Box>
   );
 }
 
+const fieldSxBase = { '& .MuiInputBase-root': { minHeight: 56 } };
+const rowSpacing = 5;
+const colGap = 4;
+
 function PaymentBillingAddress({
-  invoice,
   formData,
   errors,
   handleCepChange,
@@ -310,14 +313,24 @@ function PaymentBillingAddress({
   cepNotFound,
 }) {
   const isFieldDisabled = loadingCep || (!cepNotFound && formData.endereco !== '');
+  const Row = ({ children }) => (
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={{ width: '100%', '& > *': { flex: 1, minWidth: 0 } }}>
+      {children}
+    </Stack>
+  );
+  const Row3 = ({ children }) => (
+    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={{ width: '100%', '& > *': { flex: 1, minWidth: 0 } }}>
+      {children}
+    </Stack>
+  );
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Detalhes do Cliente
+      <Typography variant="h6" sx={{ mb: 4, fontSize: { xs: '1rem', sm: '1.125rem' } }}>
+        Dados para cobrança
       </Typography>
-      <Grid container spacing={3}>
-        <Grid xs={12} sm={6}>
+      <Stack spacing={rowSpacing}>
+        <Row>
           <TextField
             fullWidth
             label="Nome"
@@ -326,20 +339,23 @@ function PaymentBillingAddress({
             onChange={handleInputChange}
             error={!!errors.nome}
             helperText={errors.nome}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
-            label="Email"
+            label="E-mail"
             name="email"
+            type="email"
             value={formData.email}
             onChange={handleInputChange}
             error={!!errors.email}
             helperText={errors.email}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
+        </Row>
+        <Row>
           <TextField
             fullWidth
             label="Telefone"
@@ -349,9 +365,9 @@ function PaymentBillingAddress({
             error={!!errors.telefone}
             helperText={errors.telefone}
             inputProps={{ maxLength: 15 }}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="CPF/CNPJ"
@@ -361,9 +377,15 @@ function PaymentBillingAddress({
             error={!!errors.cpfCnpj}
             helperText={errors.cpfCnpj}
             inputProps={{ maxLength: 18 }}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
+        </Row>
+
+        <Typography variant="subtitle2" sx={{ pt: 1, pb: 0.5, color: 'text.secondary' }}>
+          Endereço
+        </Typography>
+        <Row>
           <TextField
             fullWidth
             label="CEP"
@@ -375,10 +397,10 @@ function PaymentBillingAddress({
             }}
             error={!!errors.cep}
             helperText={errors.cep}
-            inputProps={{ maxLength: 8 }}
+            inputProps={{ maxLength: 9 }}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Endereço"
@@ -388,9 +410,11 @@ function PaymentBillingAddress({
             disabled={isFieldDisabled}
             error={!!errors.endereco}
             helperText={errors.endereco}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
+        </Row>
+        <Row3>
           <TextField
             fullWidth
             label="Número"
@@ -399,9 +423,9 @@ function PaymentBillingAddress({
             onChange={handleInputChange}
             error={!!errors.numero}
             helperText={errors.numero}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Complemento"
@@ -410,9 +434,9 @@ function PaymentBillingAddress({
             onChange={handleInputChange}
             error={!!errors.complemento}
             helperText={errors.complemento}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Bairro"
@@ -422,9 +446,11 @@ function PaymentBillingAddress({
             disabled={isFieldDisabled}
             error={!!errors.bairro}
             helperText={errors.bairro}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
+        </Row3>
+        <Row>
           <TextField
             fullWidth
             label="Cidade"
@@ -434,9 +460,9 @@ function PaymentBillingAddress({
             disabled={isFieldDisabled}
             error={!!errors.cidade}
             helperText={errors.cidade}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-        <Grid xs={12} sm={6}>
           <TextField
             fullWidth
             label="Estado"
@@ -446,9 +472,11 @@ function PaymentBillingAddress({
             disabled={isFieldDisabled}
             error={!!errors.estado}
             helperText={errors.estado}
+            variant="outlined"
+            sx={fieldSxBase}
           />
-        </Grid>
-      </Grid>
+        </Row>
+      </Stack>
     </Box>
   );
 }
@@ -456,11 +484,10 @@ function PaymentBillingAddress({
 function PaymentMethods({ method, handleChangeMethod }) {
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Forma de Pagamento
+      <Typography variant="h6" sx={{ mb: 2, fontSize: { xs: '1rem', sm: '1.125rem' } }}>
+        Forma de pagamento
       </Typography>
       <Stack spacing={2}>
-        {/* PIX - Destacado com viés cognitivo */}
         <Card
           component="label"
           sx={{
@@ -468,46 +495,23 @@ function PaymentMethods({ method, handleChangeMethod }) {
             border: method === 'pix' ? 2 : 1,
             borderColor: method === 'pix' ? 'primary.main' : 'divider',
             backgroundColor: method === 'pix' ? 'action.selected' : 'background.paper',
-            position: 'relative',
             transition: 'all 0.2s ease-in-out',
-            '&:hover': {
-              borderColor: 'primary.main',
-              boxShadow: 2,
-            },
+            '&:hover': { borderColor: 'primary.main', boxShadow: 2 },
           }}
           onClick={() => handleChangeMethod({ target: { value: 'pix' } })}
         >
-          <CardContent>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Radio
-                checked={method === 'pix'}
-                value="pix"
-                onChange={handleChangeMethod}
-                sx={{ p: 0 }}
-              />
-              <Stack direction="row" spacing={1} alignItems="center" flex={1}>
-                <Iconify icon="solar:qr-code-bold" width={32} sx={{ color: 'primary.main' }} />
-                <Stack flex={1}>
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      PIX
-                    </Typography>
-                    <Chip
-                      label="Recomendado"
-                      color="success"
-                      size="small"
-                      sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }}
-                    />
-                    <Chip
-                      label="Pagamento Instantâneo"
-                      color="primary"
-                      size="small"
-                      variant="outlined"
-                      sx={{ height: 20, fontSize: '0.65rem' }}
-                    />
+          <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+            <Stack direction="row" spacing={2} alignItems="flex-start">
+              <Radio checked={method === 'pix'} value="pix" onChange={handleChangeMethod} sx={{ p: 0, mt: 0.5 }} />
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} alignItems={{ sm: 'center' }} flex={1} flexWrap="wrap">
+                <Iconify icon="solar:qr-code-bold" width={28} sx={{ color: 'primary.main' }} />
+                <Stack flex={1} minWidth={0}>
+                  <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>PIX</Typography>
+                    <Chip label="Recomendado" color="success" size="small" sx={{ height: 20, fontSize: '0.65rem', fontWeight: 600 }} />
                   </Stack>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                    Confirmação imediata • Sem taxas • Mais rápido e seguro
+                    Confirmação imediata • Sem taxas
                   </Typography>
                 </Stack>
               </Stack>
@@ -515,7 +519,6 @@ function PaymentMethods({ method, handleChangeMethod }) {
           </CardContent>
         </Card>
 
-        {/* Boleto - Opção secundária */}
         <Card
           component="label"
           sx={{
@@ -524,29 +527,19 @@ function PaymentMethods({ method, handleChangeMethod }) {
             borderColor: method === 'boleto' ? 'primary.main' : 'divider',
             backgroundColor: method === 'boleto' ? 'action.selected' : 'background.paper',
             transition: 'all 0.2s ease-in-out',
-            '&:hover': {
-              borderColor: 'primary.main',
-              boxShadow: 2,
-            },
+            '&:hover': { borderColor: 'primary.main', boxShadow: 2 },
           }}
           onClick={() => handleChangeMethod({ target: { value: 'boleto' } })}
         >
-          <CardContent>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <Radio
-                checked={method === 'boleto'}
-                value="boleto"
-                onChange={handleChangeMethod}
-                sx={{ p: 0 }}
-              />
+          <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+            <Stack direction="row" spacing={2} alignItems="flex-start">
+              <Radio checked={method === 'boleto'} value="boleto" onChange={handleChangeMethod} sx={{ p: 0, mt: 0.5 }} />
               <Stack direction="row" spacing={1} alignItems="center" flex={1}>
-                <Iconify icon="solar:document-text-bold" width={32} sx={{ color: 'text.secondary' }} />
-                <Stack flex={1}>
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Boleto Bancário
-                  </Typography>
+                <Iconify icon="solar:document-text-bold" width={28} sx={{ color: 'text.secondary' }} />
+                <Stack flex={1} minWidth={0}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Boleto bancário</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                    Vencimento em até 3 dias úteis • Pode levar até 2 dias para compensar
+                    Vencimento em até 3 dias úteis
                   </Typography>
                 </Stack>
               </Stack>
@@ -558,81 +551,67 @@ function PaymentMethods({ method, handleChangeMethod }) {
   );
 }
 
-function PaymentSummary({ invoice, handleFinalize, isCreating, gerandoPix, method }) {
+function PaymentSummary({ invoice, handleFinalize, isCreating, gerandoPix }) {
+  const itens = Array.isArray(invoice?.items) ? invoice.items : Array.isArray(invoice?.itens) ? invoice.itens : [];
+
   return (
     <Box
       sx={{
-        p: 5,
+        p: { xs: 2.5, sm: 3, md: 4 },
         borderRadius: 2,
         bgcolor: 'background.neutral',
+        position: { md: 'sticky' },
+        top: { md: 24 },
       }}
     >
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Resumo do Pagamento
+      <Typography variant="h6" sx={{ mb: 2, fontSize: { xs: '1rem', sm: '1.125rem' } }}>
+        Resumo do pedido
       </Typography>
-
-      <Typography variant="h6" sx={{ mb: 3 }}>
-        Itens do Pedido
-      </Typography>
-      <Stack spacing={2} sx={{ mb: 3 }}>
-        {invoice?.items.map((item, index) => (
+      <Stack spacing={1.5} sx={{ mb: 2 }}>
+        {itens.map((item, index) => (
           <Stack key={index} direction="row" justifyContent="space-between" alignItems="center">
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', flex: 1, mr: 1 }} noWrap>
               {item.titulo}
             </Typography>
-            <Typography variant="body2">{fCurrency(item.preco * item.quantidade)}</Typography>
+            <Typography variant="body2" sx={{ flexShrink: 0 }}>{fCurrency((item.preco || 0) * (item.quantidade || 0))}</Typography>
           </Stack>
         ))}
       </Stack>
-      <Divider sx={{ borderStyle: 'dashed', mb: 3 }} />
+      <Divider sx={{ borderStyle: 'dashed', my: 2 }} />
 
-      <Stack spacing={2.5}>
+      <Stack spacing={1.5}>
         <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Subtotal
-          </Typography>
-          <Typography variant="subtitle1">{fCurrency(invoice?.subTotal)}</Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>Subtotal</Typography>
+          <Typography variant="body2">{fCurrency(invoice?.subTotal)}</Typography>
         </Stack>
-
         <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-            Desconto
-          </Typography>
-          <Typography variant="subtitle1" color="error">
-            - {fCurrency(invoice?.desconto)}
-          </Typography>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>Desconto</Typography>
+          <Typography variant="body2" color="error.main">- {fCurrency(invoice?.desconto)}</Typography>
         </Stack>
-
         <Divider sx={{ borderStyle: 'dashed' }} />
-
         <Stack direction="row" justifyContent="space-between">
           <Typography variant="subtitle1">Total</Typography>
           <Typography variant="subtitle1">{fCurrency(invoice?.total)}</Typography>
         </Stack>
-
-        <Divider sx={{ borderStyle: 'dashed' }} />
-
-        <Button
-          fullWidth
-          size="large"
-          variant="contained"
-          sx={{ mt: 5, mb: 3 }}
-          onClick={handleFinalize}
-          disabled={isCreating || gerandoPix}
-          startIcon={(isCreating || gerandoPix) ? <CircularProgress size={24} /> : undefined}
-        >
-          {gerandoPix ? 'Gerando QR Code PIX...' : isCreating ? 'Processando...' : 'Finalizar pedido'}
-        </Button>
       </Stack>
-      <Stack alignItems="center" spacing={1}>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          <Iconify icon="solar:shield-check-bold" sx={{ color: 'success.main' }} />
-          <Typography variant="subtitle2">Pagamento seguro</Typography>
-        </Stack>
 
-        <Typography variant="caption" sx={{ color: 'text.disabled', textAlign: 'center' }}>
-          Este é um pagamento criptografado SSL seguro de 128 bits
-        </Typography>
+      <Button
+        fullWidth
+        size="large"
+        variant="contained"
+        sx={{ mt: 3, mb: 2, minHeight: 48 }}
+        onClick={handleFinalize}
+        disabled={isCreating || gerandoPix}
+        startIcon={(isCreating || gerandoPix) ? <CircularProgress size={22} color="inherit" /> : undefined}
+      >
+        {gerandoPix ? 'Gerando QR Code PIX...' : isCreating ? 'Processando...' : 'Finalizar pedido'}
+      </Button>
+
+      <Stack alignItems="center" spacing={0.5}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Iconify icon="solar:shield-check-bold" sx={{ color: 'success.main', width: 20 }} />
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>Pagamento seguro</Typography>
+        </Stack>
       </Stack>
     </Box>
   );

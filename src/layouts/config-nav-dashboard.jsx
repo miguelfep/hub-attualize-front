@@ -221,6 +221,11 @@ export const navData = [
             path: paths.dashboard.comunidade.cursos.root,
             roles: ['admin', 'operacional'],
           },
+          {
+            title: 'Compras',
+            path: paths.dashboard.comunidade.compras,
+            roles: ['admin', 'operacional'],
+          },
         ],
       },
       {
