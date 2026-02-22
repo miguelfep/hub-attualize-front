@@ -2,18 +2,16 @@ import axios from 'axios';
 import { toast } from 'sonner';
 import React, { useState, useEffect } from 'react';
 
-import {
-  Grid,
-  Card,
-  Stack,
-  Alert,
-  Button,
-  Divider,
-  Container,
-  Typography,
-  CardContent,
-  CircularProgress,
-} from '@mui/material';
+import Box from '@mui/material/Box';
+import Grid from '@mui/material/Grid';
+import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
+import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
+import CardContent from '@mui/material/CardContent';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { useCopyToClipboard } from 'src/hooks/use-copy-to-clipboard';
 
@@ -591,15 +589,15 @@ export function CobrancaExistente({ invoice, onPagamentoConfirmado }) {
   };
 
   return (
-    <Container sx={{ pt: 5, pb: 10, maxWidth: '800px' }}>
-      <Typography variant="h4" align="center" sx={{ mb: 2 }}>
-        Detalhes da Cobrança
+    <Box sx={{ pt: { xs: 2, sm: 4 }, pb: { xs: 8, md: 10 }, px: { xs: 0, sm: 1 } }}>
+      <Typography variant="h5" align="center" sx={{ mb: 3, fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+        Detalhes da cobrança
       </Typography>
       {invoice.cobrancas.map((cobranca, index) => (
-        <Grid container spacing={3} justifyContent="center" key={cobranca._id || index}>
+        <Grid container spacing={2.5} justifyContent="center" key={cobranca._id || index}>
           <Grid xs={12}>
-            <Card sx={{ margin: 'auto', maxWidth: '600px' }}>
-              <CardContent>
+            <Card sx={{ maxWidth: 600, margin: '0 auto', overflow: 'hidden' }} variant="outlined">
+              <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                 <Typography variant="h5" sx={{ mb: 2 }}>
                   {`Cobrança: ${cobranca.metodoPagamento.toUpperCase()}`}
                 </Typography>
@@ -699,6 +697,6 @@ export function CobrancaExistente({ invoice, onPagamentoConfirmado }) {
           </Grid>
         </Grid>
       ))}
-    </Container>
+    </Box>
   );
 }

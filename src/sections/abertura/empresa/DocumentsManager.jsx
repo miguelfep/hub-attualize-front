@@ -104,7 +104,7 @@ const DocumentsManager = ({ formData, setFormData, aberturaId, readOnly = false 
   ];
 
   return (
-    <Box>
+    <Box sx={{ mb: 4, px: 2 }}>
       <Typography variant="h6" gutterBottom>
         Documentos
       </Typography>
@@ -155,7 +155,7 @@ const DocumentsManager = ({ formData, setFormData, aberturaId, readOnly = false 
       )}
 
       {/* Document Upload */}
-      <Grid container spacing={3}>
+      <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
         {documents.map((doc) => {
           if (doc.toggle) {
             const documentoExiste = !!formData[doc.name];

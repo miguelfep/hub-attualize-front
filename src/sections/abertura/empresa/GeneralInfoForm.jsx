@@ -13,14 +13,14 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
   };
 
   return (
-    <Box sx={{ mb: 4 }}>
+    <Box sx={{ mb: 4, px: 2 }}>
       <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
         Informações Gerais
       </Typography>
       <Divider sx={{ mb: 3 }} />
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
+      <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
       {/* Primeira linha: Razão Social e Nome Fantasia */}
-      <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
+      <Grid xs={12} sm={6}>
         <TextField
           margin="normal"
           fullWidth
@@ -39,7 +39,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           onChange={handleChange}
         />
       </Grid>
-      <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
+      <Grid xs={12} sm={6}>
         <TextField
           margin="normal"
           fullWidth
@@ -51,7 +51,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Segunda linha: Nome, CPF, Email e Email Financeiro */}
-      <Grid xs={12} sm={3} sx={{ pr: { xs: 0, sm: 1 } }}>
+      <Grid xs={12} sm={3}>
         <TextField
           margin="normal"
           fullWidth
@@ -61,7 +61,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           onChange={handleChange}
         />
       </Grid>
-      <Grid xs={12} sm={3} sx={{ px: { xs: 0, sm: 1 } }}>
+      <Grid xs={12} sm={3}>
         <TextField
           margin="normal"
           fullWidth
@@ -75,7 +75,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           disabled
         />
       </Grid>
-      <Grid xs={12} sm={3} sx={{ px: { xs: 0, sm: 1 } }}>
+      <Grid xs={12} sm={3}>
         <TextField
           margin="normal"
           fullWidth
@@ -85,7 +85,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           onChange={handleChange}
         />
       </Grid>
-      <Grid xs={12} sm={3} sx={{ pl: { xs: 0, sm: 1 } }}>
+      <Grid xs={12} sm={3}>
         <TextField
           margin="normal"
           fullWidth
@@ -97,7 +97,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Terceira linha: Telefone, Telefone Comercial e Horário de Funcionamento */}
-      <Grid xs={12} sm={4} sx={{ pr: { xs: 0, sm: 1 } }}>
+      <Grid xs={12} sm={4}>
         <TextField
           margin="normal"
           fullWidth
@@ -108,7 +108,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           disabled
         />
       </Grid>
-      <Grid xs={12} sm={4} sx={{ px: { xs: 0, sm: 1 } }}>
+      <Grid xs={12} sm={4}>
         <TextField
           margin="normal"
           fullWidth
@@ -121,7 +121,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           }}
         />
       </Grid>
-      <Grid xs={12} sm={4} sx={{ pl: { xs: 0, sm: 1 } }}>
+      <Grid xs={12} sm={4}>
         <TextField
           margin="normal"
           fullWidth
@@ -133,7 +133,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Quarta linha: Metragem do Imóvel e Metragem Utilizada */}
-      <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
+      <Grid xs={12} sm={6}>
         <TextField
           margin="normal"
           fullWidth
@@ -152,7 +152,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           onChange={handleChange}
         />
       </Grid>
-      <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
+      <Grid xs={12} sm={6}>
         <TextField
           margin="normal"
           fullWidth
@@ -172,7 +172,7 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
         />
       </Grid>
 
-      {/* Quinta linha: Senha GOV */}
+      {/* Quinta linha: Senha GOV - autocomplete off para não expor em autopreenchimento */}
       <Grid xs={12}>
         <TextField
           margin="normal"
@@ -182,7 +182,8 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
           name="senhaGOV"
           value={formData.senhaGOV || ''}
           onChange={handleChange}
-          helperText="Senha para acesso ao portal GOV.br"
+          helperText="Senha para acesso ao portal GOV.br. Se já foi preenchida, altere apenas para definir uma nova."
+          inputProps={{ autoComplete: 'off' }}
         />
       </Grid>
     </Grid>

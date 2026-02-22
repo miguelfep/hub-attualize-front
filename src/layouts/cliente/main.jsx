@@ -85,7 +85,8 @@ export function ClienteLayout({ children }) {
         sx={{ 
           display: { xs: 'none', lg: 'flex' },
           flexDirection: 'column', 
-          width: 280,
+          width: 300,
+          minWidth: 300,
           bgcolor: 'background.paper',
           borderRight: 1,
           borderColor: 'divider',

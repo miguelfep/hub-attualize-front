@@ -7,10 +7,12 @@ import { Controller, useFormContext } from 'react-hook-form';
 
 import {
   Card,
+  Grid,
   Stack,
   Button,
   Switch,
   TextField,
+  Typography,
   CardContent,
   CardActions,
   FormControlLabel,
@@ -67,77 +69,91 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
   };
 
   return (
-    <Card sx={{ padding: 2, marginBottom: 2 }}>
-      <CardContent>
-        <TextField
-          fullWidth
-          label="Nome"
-          defaultValue={currentAbertura.nome || ''}
-          {...register('nome', { required: true })}
-          margin="normal"
-        />
+    <Card sx={{ width: '100%', maxWidth: '100%', p: 4, mb: 3 }}>
+      <CardContent sx={{ pt: 0, px: 0 }}>
+        <Typography variant="h6" sx={{ mb: 2, px: 2 }}>
+          Dados da Abertura
+        </Typography>
 
-        <TextField
-          fullWidth
-          label="Email"
-          defaultValue={currentAbertura.email || ''}
-          {...register('email', { required: true })}
-          margin="normal"
-        />
-
-        <Controller
-          name="telefone"
-          control={control}
-          defaultValue={currentAbertura.telefone || ''}
-          render={({ field }) => (
+        <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
+          <Grid xs={12} sm={6}>
             <TextField
-              {...field}
-              label="Telefone"
+              size="small"
               fullWidth
-              margin="normal"
-              value={field.value || ''}
-              onChange={(e) => {
-                const formatted = formatPhone(e.target.value);
-                field.onChange(formatted);
-              }}
+              label="Nome"
+              defaultValue={currentAbertura.nome || ''}
+              {...register('nome', { required: true })}
             />
-          )}
-        />
-
-        <Controller
-          name="valorMensalidade"
-          control={control}
-          defaultValue={currentAbertura.valorMensalidade || ''}
-          render={({ field }) => (
-            <NumericFormat
-              {...field}
-              customInput={TextField}
-              label="Valor Mensalidade"
-              thousandSeparator="."
-              decimalSeparator=","
-              prefix="R$ "
-              decimalScale={2}
-              fixedDecimalScale
-              value={field.value}
-              onValueChange={(values) => field.onChange(values.floatValue)}
+          </Grid>
+          <Grid xs={12} sm={6}>
+            <TextField
+              size="small"
               fullWidth
-              margin="normal"
+              label="Email"
+              defaultValue={currentAbertura.email || ''}
+              {...register('email', { required: true })}
             />
-          )}
-        />
+          </Grid>
 
-        <FormControlLabel
-          control={
-            <Switch
-              defaultChecked={currentAbertura.notificarWhats || false}
-              {...register('notificarWhats')}
-              color="primary"
+          <Grid xs={12} sm={6}>
+            <Controller
+              name="telefone"
+              control={control}
+              defaultValue={currentAbertura.telefone || ''}
+              render={({ field }) => (
+                <TextField
+                  {...field}
+                  size="small"
+                  label="Telefone"
+                  fullWidth
+                  value={field.value || ''}
+                  onChange={(e) => {
+                    const formatted = formatPhone(e.target.value);
+                    field.onChange(formatted);
+                  }}
+                />
+              )}
             />
-          }
-          label="Notificar pelo WhatsApp"
-        />
+          </Grid>
+          <Grid xs={12} sm={6}>
+            <Controller
+              name="valorMensalidade"
+              control={control}
+              defaultValue={currentAbertura.valorMensalidade || ''}
+              render={({ field }) => (
+                <NumericFormat
+                  {...field}
+                  customInput={TextField}
+                  size="small"
+                  label="Valor Mensalidade"
+                  thousandSeparator="."
+                  decimalSeparator=","
+                  prefix="R$ "
+                  decimalScale={2}
+                  fixedDecimalScale
+                  value={field.value}
+                  onValueChange={(values) => field.onChange(values.floatValue)}
+                  fullWidth
+                />
+              )}
+            />
+          </Grid>
 
-        <CardActions sx={{ justifyContent: 'space-between', mt: 2 }}>
+          <Grid xs={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  defaultChecked={currentAbertura.notificarWhats || false}
+                  {...register('notificarWhats')}
+                  color="primary"
+                />
+              }
+              label="Notificar pelo WhatsApp"
+            />
+          </Grid>
+        </Grid>
+
+        <CardActions sx={{ justifyContent: 'space-between', mt: 3, px: 0 }}>
           <Button variant="contained" color="primary" onClick={onReenviarLink}>
             Reenviar Link
           </Button>

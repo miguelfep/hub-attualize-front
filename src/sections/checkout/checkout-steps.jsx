@@ -31,7 +31,12 @@ export function CheckoutSteps({ steps, activeStep, sx, ...other }) {
       alternativeLabel
       activeStep={activeStep}
       connector={<StepConnector />}
-      sx={{ mb: { xs: 3, md: 5 }, ...sx }}
+      sx={{
+        mb: { xs: 2, md: 4 },
+        px: { xs: 0, sm: 1 },
+        '& .MuiStepLabel-label': { fontSize: { xs: '0.75rem', sm: '0.875rem' } },
+        ...sx,
+      }}
       {...other}
     >
       {steps.map((label) => (

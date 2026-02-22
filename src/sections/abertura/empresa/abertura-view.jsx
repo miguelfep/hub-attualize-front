@@ -17,19 +17,41 @@ import AddressForm from './AddressForm';
 import GeneralInfoForm from './GeneralInfoForm';
 import DocumentsManager from './DocumentsManager';
 
+/** Placeholder exibido quando a senha já existe no servidor — nunca enviar o valor real ao cliente. */
+const SENHA_GOV_MASKED = '••••••••';
+
+/**
+ * Remove senhaGOV do payload se for o placeholder, para não sobrescrever a senha no backend.
+ */
+function sanitizePayloadForSave(data) {
+  const payload = { ...data };
+  if (payload.senhaGOV === SENHA_GOV_MASKED || payload.senhaGOV === '') {
+    delete payload.senhaGOV;
+  }
+  return payload;
+}
+
 const AberturaEmpresaViewPage = ({ aberturaData }) => {
   const [formData, setFormData] = useState(getInitialFormData(aberturaData));
   const [loadingApproval, setLoadingApproval] = useState(false);
 
   useEffect(() => {
     if (aberturaData) {
-      setFormData((prev) => ({ ...prev, ...aberturaData }));
+      setFormData((prev) => {
+        const next = { ...prev, ...aberturaData };
+        // Nunca colocar a senha GOV real no estado do cliente (evita expor no DOM/inspeção).
+        if (aberturaData.senhaGOV && String(aberturaData.senhaGOV).length > 0) {
+          next.senhaGOV = SENHA_GOV_MASKED;
+        }
+        return next;
+      });
     }
   }, [aberturaData]);
 
   const handleSave = async () => {
     try {
-      await updateAbertura(aberturaData._id, formData);
+      const payload = sanitizePayloadForSave(formData);
+      await updateAbertura(aberturaData._id, payload);
       toast.success('Dados salvos com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar os dados.');
@@ -40,7 +62,8 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
     setLoadingApproval(true);
     try {
       const updatedFormData = { ...formData, statusAbertura: 'em_validacao' };
-      await updateAbertura(aberturaData._id, updatedFormData);
+      const payload = sanitizePayloadForSave(updatedFormData);
+      await updateAbertura(aberturaData._id, payload);
       await solicitarAprovacaoPorId(aberturaData._id);
       setFormData(updatedFormData);
       toast.success('Solicitação de aprovação enviada com sucesso.');
@@ -83,7 +106,7 @@ const AberturaEmpresaViewPage = ({ aberturaData }) => {
         </Typography>
       </Box>
       
-      <Card elevation={2}>
+      <Card elevation={2} sx={{ width: '100%', maxWidth: '100%' }}>
         <CardContent sx={{ p: { xs: 3, md: 4 } }}>
           <GeneralInfoForm formData={formData} setFormData={setFormData} />
           <AddressForm formData={formData} setFormData={setFormData} />
@@ -147,7 +170,8 @@ function getInitialFormData(data) {
     horarioFuncionamento: data.horarioFuncionamento || '',
     metragemImovel: data.metragemImovel || '',
     metragemUtilizada: data.metragemUtilizada || '',
-    senhaGOV: data.senhaGOV || '',
+    // Nunca colocar a senha real no cliente: exibir placeholder se já existir no servidor.
+    senhaGOV: data.senhaGOV && String(data.senhaGOV).length > 0 ? SENHA_GOV_MASKED : '',
     capitalSocial: data.capitalSocial || 0,
     responsavelReceitaFederal: data.responsavelReceitaFederal || '',
     formaAtuacao: data.formaAtuacao || '',
@@ -156,6 +180,7 @@ function getInitialFormData(data) {
     marcaRegistrada: data.marcaRegistrada || false,
     interesseRegistroMarca: data.interesseRegistroMarca || false,
     possuiRT: data.possuiRT || false,
+    usarEnderecoFiscal: data.usarEnderecoFiscal || false,
     enderecoComercial: data.enderecoComercial || {
       cep: '',
       logradouro: '',

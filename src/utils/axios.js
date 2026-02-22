@@ -31,8 +31,39 @@ export const fetcher = async (args) => {
 
 // ----------------------------------------------------------------------
 
-export const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+// URL base da API (thumbnails e endpoints usam isso; fallback = mesmo servidor do axios)
+const _base = process.env.NEXT_PUBLIC_API_URL ?? CONFIG.site.serverUrl ?? '';
+export const baseUrl = _base && !_base.endsWith('/') ? `${_base}/` : _base;
 
+// Base pública (sem /api) para exibir thumbnails no portal - GET não exige autenticação
+const _publicBase = (baseUrl || '').replace(/\/api\/?$/i, '') || baseUrl;
+export const publicBaseUrl = _publicBase && !_publicBase.endsWith('/') ? `${_publicBase}/` : _publicBase;
+
+/**
+ * Converte URL relativa retornada pela API em URL absoluta (thumbnail, arquivo, etc.)
+ * @param {string} url - URL relativa (ex: /uploads/thumb.jpg) ou já absoluta
+ * @returns {string|null}
+ */
+export function getFullAssetUrl(url) {
+  if (!url || typeof url !== 'string') return null;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  const base = (baseUrl || '').replace(/\/$/, '');
+  return base ? `${base}${url.startsWith('/') ? url : `/${url}`}` : url;
+}
+
+/**
+ * Extrai a extensão do arquivo de thumbnailUrl retornado pela API (ex.: thumb.webp → webp).
+ * Para usar na URL estática em public: {BASE}/comunidade/materiais|ursos/{id}/thumb.{ext}
+ * @param {string} [thumbnailUrl] - Ex.: "comunidade/materiais/xxx/thumbnail/thumb.webp"
+ * @param {string} [fallback] - Extensão padrão quando não há thumbnailUrl
+ * @returns {string}
+ */
+export function getThumbnailExt(thumbnailUrl, fallback = 'jpg') {
+  if (!thumbnailUrl || typeof thumbnailUrl !== 'string') return fallback;
+  const part = thumbnailUrl.split('.').pop() || '';
+  const ext = part.replace(/\?.*$/, '').toLowerCase();
+  return /^[a-z0-9]+$/i.test(ext) ? ext : fallback;
+}
 
 export const endpoints = {
   chat: '/api/chat',  
@@ -264,5 +295,78 @@ export const endpoints = {
     rejeitarTransacao: (id) => `${baseUrl}recompensa/transacao/${id}/rejeitar`,
     aprovarDesconto: (id) => `${baseUrl}recompensa/desconto/${id}/aprovar`,
     aplicarDescontoManual: `${baseUrl}recompensa/desconto/aplicar-manual`,
+  },
+  // Comunidade (baseUrl já inclui /api quando necessário; paths relativos ao serverUrl)
+  comunidade: {
+    materiais: {
+      list: `${baseUrl}comunidade/materiais`,
+      get: (id) => `${baseUrl}comunidade/materiais/${id}`,
+      create: `${baseUrl}comunidade/materiais`,
+      update: (id) => `${baseUrl}comunidade/materiais/${id}`,
+      delete: (id) => `${baseUrl}comunidade/materiais/${id}`,
+      upload: (id) => `${baseUrl}comunidade/materiais/${id}/upload`,
+      /** URL pública para <img> (GET sem auth). Não incluir nome do arquivo na URL. */
+      thumbnail: (id) => `${publicBaseUrl}comunidade/materiais/${id}/thumbnail`,
+      /** URL estática em public (background/CSS): {BASE}/comunidade/materiais/{id}/thumb.{ext}. ext de thumbnailUrl. */
+      thumbnailStatic: (id, thumbnailUrl) =>
+        `${publicBaseUrl}comunidade/materiais/${id}/thumb.${getThumbnailExt(thumbnailUrl)}`,
+      /** URL da API para POST (upload/trocar) e DELETE (remover) - requer auth admin/operacional */
+      thumbnailApi: (id) => `${baseUrl}comunidade/materiais/${id}/thumbnail`,
+      acesso: (id) => `${baseUrl}comunidade/materiais/${id}/acesso`,
+      comprar: (id) => `${baseUrl}comunidade/materiais/${id}/comprar`,
+      download: (id) => `${baseUrl}comunidade/materiais/${id}/download`,
+      vinculos: {
+        list: (id) => `${baseUrl}comunidade/materiais/${id}/vinculos`,
+        add: (id) => `${baseUrl}comunidade/materiais/${id}/vinculos`,
+        remove: (id) => `${baseUrl}comunidade/materiais/${id}/vinculos`,
+      },
+    },
+    cursos: {
+      list: `${baseUrl}comunidade/cursos`,
+      get: (id) => `${baseUrl}comunidade/cursos/${id}`,
+      create: `${baseUrl}comunidade/cursos`,
+      update: (id) => `${baseUrl}comunidade/cursos/${id}`,
+      delete: (id) => `${baseUrl}comunidade/cursos/${id}`,
+      /** URL pública para <img> (GET sem auth). Não incluir nome do arquivo na URL. */
+      thumbnail: (id) => `${publicBaseUrl}comunidade/cursos/${id}/thumbnail`,
+      /** URL estática em public (background/CSS): {BASE}/comunidade/cursos/{id}/thumb.{ext}. ext de thumbnailUrl. */
+      thumbnailStatic: (id, thumbnailUrl) =>
+        `${publicBaseUrl}comunidade/cursos/${id}/thumb.${getThumbnailExt(thumbnailUrl)}`,
+      /** URL da API para POST (upload/trocar) e DELETE (remover) - requer auth admin/operacional */
+      thumbnailApi: (id) => `${baseUrl}comunidade/cursos/${id}/thumbnail`,
+      materiais: {
+        add: (id) => `${baseUrl}comunidade/cursos/${id}/materiais`,
+        remove: (id, materialId) => `${baseUrl}comunidade/cursos/${id}/materiais/${materialId}`,
+        ordem: (id) => `${baseUrl}comunidade/cursos/${id}/materiais/ordem`,
+        completo: (id, materialId) => `${baseUrl}comunidade/cursos/${id}/materiais/${materialId}/completo`,
+      },
+      comprar: (id) => `${baseUrl}comunidade/cursos/${id}/comprar`,
+      visualizacao: (id) => `${baseUrl}comunidade/cursos/${id}/visualizacao`,
+      vinculos: {
+        list: (id) => `${baseUrl}comunidade/cursos/${id}/vinculos`,
+        add: (id) => `${baseUrl}comunidade/cursos/${id}/vinculos`,
+        remove: (id) => `${baseUrl}comunidade/cursos/${id}/vinculos`,
+      },
+    },
+    minhasCompras: `${baseUrl}comunidade/minhas-compras`,
+    compras: `${baseUrl}comunidade/compras`,
+    comprar: {
+      curso: (id) => `${baseUrl}comunidade/comprar/curso/${id}`,
+      material: (id) => `${baseUrl}comunidade/comprar/material/${id}`,
+    },
+    categorias: {
+      list: `${baseUrl}comunidade/categorias`,
+      get: (id) => `${baseUrl}comunidade/categorias/${id}`,
+      create: `${baseUrl}comunidade/categorias`,
+      update: (id) => `${baseUrl}comunidade/categorias/${id}`,
+      delete: (id) => `${baseUrl}comunidade/categorias/${id}`,
+    },
+    tags: {
+      list: `${baseUrl}comunidade/tags`,
+      get: (id) => `${baseUrl}comunidade/tags/${id}`,
+      create: `${baseUrl}comunidade/tags`,
+      update: (id) => `${baseUrl}comunidade/tags/${id}`,
+      delete: (id) => `${baseUrl}comunidade/tags/${id}`,
+    },
   },
 };

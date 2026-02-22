@@ -1,7 +1,6 @@
 'use client';
 
 import { toast } from 'sonner';
-import InputMask from 'react-input-mask';
 import { NumericFormat } from 'react-number-format';
 import React, { useState, useEffect, useCallback } from 'react';
 
@@ -26,6 +25,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { formatCep } from 'src/utils/format-input';
 import { consultarCep } from 'src/utils/consultarCep';
 
 import { updateAbertura } from 'src/actions/societario';
@@ -242,15 +242,16 @@ export function AberturaKickoffForm({ currentAbertura }) {
   };
 
   return (
-    <Card sx={{ p: 3, mb: 3 }}>
-      <Tabs value={activeTab} onChange={handleTabChange} centered>
+    <Card sx={{ width: '100%', maxWidth: '100%', p: 4, mb: 3 }}>
+      <Tabs value={activeTab} onChange={handleTabChange} variant="standard" centered sx={{ mb: 3 }}>
         <Tab label="Dados da Abertura" />
         <Tab label="Kickoff" />
       </Tabs>
       {activeTab === 0 && (
-        <Grid container spacing={2} mt={2}>
+        <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
           <Grid xs={12} sm={6}>
             <TextField
+              size="small"
               label="Razão Social"
               name="nomeEmpresarial"
               fullWidth
@@ -260,6 +261,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6}>
             <TextField
+              size="small"
               label="Nome Fantasia"
               name="nomeFantasia"
               fullWidth
@@ -270,6 +272,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
 
           <Grid xs={12} sm={6} md={4}>
             <TextField
+              size="small"
               label="Nome"
               name="nome"
               fullWidth
@@ -279,6 +282,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={2}>
             <TextField
+              size="small"
               label="CPF"
               name="cpf"
               fullWidth
@@ -288,6 +292,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Email"
               name="email"
               fullWidth
@@ -297,6 +302,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Email Financeiro"
               name="emailFinanceiro"
               fullWidth
@@ -306,6 +312,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={4}>
             <TextField
+              size="small"
               label="Telefone"
               name="telefone"
               fullWidth
@@ -315,6 +322,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={4}>
             <TextField
+              size="small"
               label="Telefone Comercial"
               name="telefoneComercial"
               fullWidth
@@ -324,6 +332,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={4}>
             <TextField
+              size="small"
               label="Horário de Funcionamento"
               name="horarioFuncionamento"
               fullWidth
@@ -333,6 +342,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Metragem do Imóvel"
               helperText="*Metragem total do imovel"
               name="metragemImovel"
@@ -343,6 +353,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Metragem Utilizada"
               helperText="*Área construida"
               name="metragemUtilizada"
@@ -353,6 +364,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={6}>
             <TextField
+              size="small"
               type={values.showPassword ? 'text' : 'password'}
               label="Senha GOV"
               name="senhaGOV"
@@ -384,38 +396,37 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
           {/* Endereço */}
-          <Grid xs={12}>
-            <Typography variant="h6">Endereço Comercial</Typography>
+          <Grid xs={12} sx={{ mt: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Endereço Comercial</Typography>
           </Grid>
 
           <Grid xs={12} sm={3}>
-            <InputMask
-              mask="99999-999"
-              value={formData.enderecoComercial.cep}
-              onChange={(e) => handleChange(e)}
+            <TextField
+              size="small"
+              label="CEP"
+              name="enderecoComercial.cep"
+              fullWidth
+              variant="outlined"
+              value={formData.enderecoComercial.cep || ''}
+              onChange={(e) =>
+                handleChange({
+                  target: { name: 'enderecoComercial.cep', value: formatCep(e.target.value) },
+                })
+              }
               onBlur={handleCepBlur}
-            >
-              {(inputProps) => (
-                <TextField
-                  {...inputProps}
-                  label="CEP"
-                  name="enderecoComercial.cep"
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{
-                    endAdornment: loadingCep && (
-                      <InputAdornment position="end">
-                        <CircularProgress size={20} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-            </InputMask>
+              InputProps={{
+                endAdornment: loadingCep && (
+                  <InputAdornment position="end">
+                    <CircularProgress size={20} />
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Grid>
 
           <Grid xs={12} sm={6}>
             <TextField
+              size="small"
               label="Rua"
               name="enderecoComercial.logradouro"
               fullWidth
@@ -426,6 +437,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Número"
               name="enderecoComercial.numero"
               fullWidth
@@ -435,6 +447,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Complemento"
               name="enderecoComercial.complemento"
               fullWidth
@@ -444,6 +457,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Bairro"
               name="enderecoComercial.bairro"
               fullWidth
@@ -454,6 +468,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Cidade"
               name="enderecoComercial.cidade"
               fullWidth
@@ -464,6 +479,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Estado"
               name="enderecoComercial.estado"
               fullWidth
@@ -476,6 +492,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           {/* Seletor de número de sócios */}
           <Grid xs={12} sm={12}>
             <TextField
+              size="small"
               select
               label="Número de Sócios"
               fullWidth
@@ -491,13 +508,14 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
 
           {/* Renderização dos sócios */}
-          <Grid xs={12}>
-            <Typography variant="h6">Sócios</Typography>
+          <Grid xs={12} sx={{ mt: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Sócios</Typography>
           </Grid>
           {[...Array(numSocios).keys()].map((i) => (
             <React.Fragment key={i}>
               <Grid xs={12} sm={4}>
                 <TextField
+                  size="small"
                   label={`Nome Sócio ${i + 1}`}
                   name={`socios.${i}.nome`}
                   fullWidth
@@ -507,6 +525,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               </Grid>
               <Grid xs={12} sm={4}>
                 <TextField
+                  size="small"
                   label={`CPF Sócio ${i + 1}`}
                   name={`socios.${i}.cpf`}
                   fullWidth
@@ -516,6 +535,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               </Grid>
               <Grid xs={12} sm={4}>
                 <TextField
+                  size="small"
                   label={`RG Sócio ${i + 1}`}
                   name={`socios.${i}.rg`}
                   fullWidth
@@ -525,6 +545,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               </Grid>
               <Grid xs={12} sm={4}>
                 <TextField
+                  size="small"
                   label={`CNH Sócio ${i + 1}`}
                   name={`socios.${i}.cnh`}
                   fullWidth
@@ -534,6 +555,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               </Grid>
               <Grid xs={12} sm={4}>
                 <TextField
+                  size="small"
                   label={`Endereço Sócio ${i + 1}`}
                   name={`socios.${i}.endereco`}
                   fullWidth
@@ -543,6 +565,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               </Grid>
               <Grid xs={12} sm={4}>
                 <TextField
+                  size="small"
                   label={`Profissão Sócio ${i + 1}`}
                   name={`socios.${i}.profissao`}
                   fullWidth
@@ -552,6 +575,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               </Grid>
               <Grid xs={12} sm={6}>
                 <TextField
+                  size="small"
                   select
                   label={`Estado Civil Sócio ${i + 1}`}
                   name={`socios.${i}.estadoCivil`}
@@ -570,6 +594,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               {formData.socios[i]?.estadoCivil === 'Casado' && (
                 <Grid xs={12} sm={6}>
                   <TextField
+                    size="small"
                     select
                     label={`Regime de Bens Sócio ${i + 1}`}
                     name={`socios.${i}.regimeBens`}
@@ -589,6 +614,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
 
               <Grid xs={12} sm={6}>
                 <TextField
+                  size="small"
                   label={`Porcentagem Sócio ${i + 1}`}
                   name={`socios.${i}.porcentagem`}
                   fullWidth
@@ -602,6 +628,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
               </Grid>
               <Grid xs={12} sm={6} md={6}>
                 <TextField
+                  size="small"
                   label="Naturalidade"
                   name={`socios.${i}.naturalidade`}
                   fullWidth
@@ -646,6 +673,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           {/* Responsável na Receita Federal */}
           <Grid xs={12} sm={6} md={6}>
             <TextField
+              size="small"
               select
               label="Responsável na Receita Federal"
               name="responsavelReceitaFederal"
@@ -663,6 +691,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={6}>
             <TextField
+              size="small"
               select
               label="Forma de Atuação"
               name="formaAtuacao"
@@ -700,6 +729,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           {/* Descrição das Atividades */}
           <Grid xs={12} sm={6} md={12}>
             <TextField
+              size="small"
               multiline
               rows={5}
               label="Descrição das Atividades"
@@ -713,6 +743,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           {/* Observações */}
           <Grid xs={12} sm={6} md={12}>
             <TextField
+              size="small"
               multiline
               rows={2}
               label="Observações"
@@ -734,9 +765,10 @@ export function AberturaKickoffForm({ currentAbertura }) {
       )}
 
       {activeTab === 1 && (
-        <Grid container spacing={2} mt={2}>
+        <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
           <Grid xs={12}>
           <TextField
+            size="small"
             multiline
             rows={4}
             label="História do Negócio"
@@ -761,6 +793,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
         {formData.possuiAtividadeServico && (
           <Grid xs={12}>
             <TextField
+              size="small"
               multiline
               rows={4}
               label="Atividade de Serviço"
@@ -786,6 +819,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
         {formData.possuiAtividadeComercio && (
           <Grid xs={12}>
             <TextField
+              size="small"
               multiline
               rows={4}
               label="Atividade de Comércio"
@@ -811,6 +845,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
         {formData.possuiMaquinas && (
           <Grid xs={12}>
             <TextField
+              size="small"
               multiline
               rows={4}
               label="Quais Máquinas?"
@@ -836,6 +871,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
         {formData.possuiSistema && (
           <Grid xs={12}>
             <TextField
+              size="small"
               multiline
               rows={3}
               label="Sistemas Utilizado"
@@ -848,6 +884,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
         )}
         <Grid xs={12}>
           <TextField
+            size="small"
             label="URL da Meet Kickoff"
             name="urlMeetKickoff"
             fullWidth
@@ -900,6 +937,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
         {/* Regime Tributário */}
         <Grid xs={12} sm={6} md={4}>
           <TextField
+            size="small"
             select
             label="Regime Tributário"
             name="regimeTributario"

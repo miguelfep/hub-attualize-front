@@ -205,6 +205,29 @@ export const navData = [
         icon: ICONS.banking,
         roles: ['admin', 'financeiro'],
       },
+      // {
+      //   title: 'Comunidade',
+      //   path: paths.dashboard.comunidade.materiais.root,
+      //   icon: ICONS.course,
+      //   roles: ['admin', 'operacional'],
+      //   children: [
+      //     {
+      //       title: 'Materiais',
+      //       path: paths.dashboard.comunidade.materiais.root,
+      //       roles: ['admin', 'operacional'],
+      //     },
+      //     {
+      //       title: 'Cursos',
+      //       path: paths.dashboard.comunidade.cursos.root,
+      //       roles: ['admin', 'operacional'],
+      //     },
+      //     {
+      //       title: 'Compras',
+      //       path: paths.dashboard.comunidade.compras,
+      //       roles: ['admin', 'operacional'],
+      //     },
+      //   ],
+      // },
       {
         title: 'Relatórios',
         path: paths.dashboard.aberturas.root,

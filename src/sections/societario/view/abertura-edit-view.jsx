@@ -12,7 +12,7 @@ import { AberturaEditForm } from '../abertura-edit-form';
 
 export function AberturaEditView({ abertura }) {
   return (
-    <DashboardContent>
+    <DashboardContent maxWidth={false}>
       <CustomBreadcrumbs
         heading="Editar"
         links={[

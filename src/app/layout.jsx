@@ -103,8 +103,10 @@ export const metadata = {
     },
   },
   verification: {
-    // Adicione aqui quando tiver o código do Google Search Console
-    // google: 'seu-codigo-google-search-console',
+    // Código do Google Search Console: defina NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION no .env
+    ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION && {
+      google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    }),
   },
 };
 

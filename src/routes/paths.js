@@ -277,6 +277,32 @@ export const paths = {
     recompensas: {
       root: `${ROOTS.DASHBOARD}/recompensas`,
     },
+    comunidade: {
+      root: `${ROOTS.DASHBOARD}/comunidade`,
+      materiais: {
+        root: `${ROOTS.DASHBOARD}/comunidade/materiais`,
+        new: `${ROOTS.DASHBOARD}/comunidade/materiais/new`,
+        edit: (id) => `${ROOTS.DASHBOARD}/comunidade/materiais/${id}/edit`,
+        details: (id) => `${ROOTS.DASHBOARD}/comunidade/materiais/${id}`,
+      },
+      cursos: {
+        root: `${ROOTS.DASHBOARD}/comunidade/cursos`,
+        new: `${ROOTS.DASHBOARD}/comunidade/cursos/new`,
+        edit: (id) => `${ROOTS.DASHBOARD}/comunidade/cursos/${id}/edit`,
+        details: (id) => `${ROOTS.DASHBOARD}/comunidade/cursos/${id}`,
+      },
+      compras: `${ROOTS.DASHBOARD}/comunidade/compras`,
+      categorias: {
+        root: `${ROOTS.DASHBOARD}/comunidade/categorias`,
+        new: `${ROOTS.DASHBOARD}/comunidade/categorias/new`,
+        edit: (id) => `${ROOTS.DASHBOARD}/comunidade/categorias/${id}/edit`,
+      },
+      tags: {
+        root: `${ROOTS.DASHBOARD}/comunidade/tags`,
+        new: `${ROOTS.DASHBOARD}/comunidade/tags/new`,
+        edit: (id) => `${ROOTS.DASHBOARD}/comunidade/tags/${id}/edit`,
+      },
+    },
   },
   // CLIENTE AREA
   cliente: {
@@ -328,6 +354,18 @@ export const paths = {
     },
     recompensas: {
       root: `${ROOTS.CLIENTE}/recompensas`,
+    },
+    comunidade: {
+      root: `${ROOTS.CLIENTE}/comunidade`,
+      materiais: {
+        root: `${ROOTS.CLIENTE}/comunidade`,
+        details: (id) => `${ROOTS.CLIENTE}/comunidade/${id}`,
+      },
+      cursos: {
+        root: `${ROOTS.CLIENTE}/comunidade/cursos`,
+        details: (id) => `${ROOTS.CLIENTE}/comunidade/cursos/${id}`,
+      },
+      minhasCompras: `${ROOTS.CLIENTE}/comunidade/minhas-compras`,
     },
   },
   // INDICAÇÃO PÚBLICA
