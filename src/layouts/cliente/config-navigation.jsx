@@ -26,54 +26,34 @@ export function usePortalNavData() {
       path: paths.cliente.orcamentos.root,
       icon: <Iconify icon="solar:money-bag-bold" />,
     },
-  ].filter(Boolean); 
+  ].filter(Boolean);
 
-  const items = [
+  const conteudoEEmpresaChildren = [
     {
-      title: 'Dashboard',
-      path: paths.cliente.dashboard,
-      icon: <Iconify icon="solar:home-2-bold-duotone" />,
-    },
-    {
-      title: 'Importante',
-      path: paths.cliente.conteudos.root,
-      icon: <Iconify icon="solar:bookmark-bold-duotone" />,
-      info: 'Novo',
-      children: [
-        {
-          title: 'Aulão Reforma',
-          path: paths.cliente.conteudos.aulaoReforma,
-          icon: <Iconify icon="solar:play-circle-bold-duotone" />,
-        },
-        {
-          title: 'Guia IRPF 2026',
-          path: paths.cliente.conteudos.guiaIRPF2026,
-          icon: <Iconify icon="solar:pie-chart-2-bold-duotone" />,
-        },
-        {
-          title: 'Reforma Tributária',
-          path: paths.cliente.conteudos.reformaTributaria,
-          icon: <Iconify icon="solar:diagram-up-bold-duotone" />,
-        },
-      ],
+      title: 'Aulão Reforma',
+      path: paths.cliente.conteudos.aulaoReforma,
+      icon: <Iconify icon="solar:play-circle-bold-duotone" />,
     },
     {
-      title: 'Minha Empresa',
-      path: paths.cliente.empresa,
-      icon: <Iconify icon="solar:buildings-2-bold-duotone" />,
+      title: 'Guia IRPF 2026',
+      path: paths.cliente.conteudos.guiaIRPF2026,
+      icon: <Iconify icon="solar:pie-chart-2-bold-duotone" />,
     },
-    vendasChildren.length > 0 && {
-      title: 'Minhas Vendas',
-      path: '#',
-      icon: <Iconify icon="solar:bill-list-bold-duotone" />,
-      children: vendasChildren,
-    },
+    {
+      title: 'Reforma Tributária',
+      path: paths.cliente.conteudos.reformaTributaria,
+      icon: <Iconify icon="solar:diagram-up-bold-duotone" />,
+    }
+  
+  ];
+
+  const financeiroChildren = [
+    ...vendasChildren,
     {
       title: 'Meu Faturamento',
       path: paths.cliente.faturamentos.root,
       icon: <Iconify icon="solar:hand-money-linear" />,
     },
-    // Só mostra "Extratos Bancários" se possuiExtrato estiver ativo
     possuiExtrato && {
       title: 'Extratos Bancários',
       path: paths.cliente.conciliacaoBancaria,
@@ -85,65 +65,92 @@ export function usePortalNavData() {
       icon: <Iconify icon="solar:money-bag-bold" />,
     },
     {
-      title: 'Indicações',
-      path: paths.cliente.indicacoes.root,
-      icon: <Iconify icon="solar:share-bold-duotone" />,
-    },
-    {
       title: 'Recompensas',
       path: paths.cliente.recompensas.root,
       icon: <Iconify icon="solar:wallet-money-bold-duotone" />,
     },
-    // {
-    //   title: 'Comunidade',
-    //   path: paths.cliente.comunidade.materiais.root,
-    //   icon: <Iconify icon="solar:book-bookmark-bold-duotone" />,
-    //   children: [
-    //     {
-    //       title: 'Materiais',
-    //       path: paths.cliente.comunidade.materiais.root,
-    //       icon: <Iconify icon="solar:book-bookmark-bold-duotone" />,
-    //     },
-    //     {
-    //       title: 'Cursos',
-    //       path: paths.cliente.comunidade.cursos.root,
-    //       icon: <Iconify icon="solar:graduation-bold-duotone" />,
-    //     },
-    //   ],
-    // },
     {
-      title: 'Meus Documentos',
-      path: '#',
-      icon: <Iconify icon="solar:documents-bold-duotone" />,
-      children: [
-        {
-          title: 'Guias',
-          path: paths.cliente.guiasFiscais.list,
-          icon: <Iconify icon="solar:file-text-bold-duotone" />,
-        },
-        {
-          title: 'Licenças',
-          path: paths.cliente.licencas,
-          icon: <Iconify icon="solar:document-text-bold-duotone" />,
-        },
-        {
-          title: 'Societário',
-          path: paths.cliente.societario.documentos, 
-          icon: <Iconify icon="solar:folder-with-files-bold-duotone" />,
-        },
-      ],
-    },
-    {
-      title: 'Configurações',
-      path: paths.cliente.settings,
-      icon: <Iconify icon="solar:settings-bold-duotone" />,
+      title: 'Indicações',
+      path: paths.cliente.indicacoes.root,
+      icon: <Iconify icon="solar:share-bold-duotone" />,
     },
   ].filter(Boolean);
 
   return [
     {
-      subheader: 'Principal',
-      items,
+      subheader: 'Início',
+      items: [
+        {
+          title: 'Dashboard',
+          path: paths.cliente.dashboard,
+          icon: <Iconify icon="solar:home-2-bold-duotone" />,
+        },
+      ],
+    },
+    {
+      items: [
+        {
+          title: 'Meus Documentos',
+          path: paths.cliente.guiasFiscais.list,
+          icon: <Iconify icon="solar:documents-bold-duotone" />,
+          children: [
+            {
+              title: 'Empresa',
+              path: paths.cliente.empresa,
+              icon: <Iconify icon="solar:buildings-2-bold-duotone" />,
+            },
+            {
+              title: 'Guias',
+              path: paths.cliente.guiasFiscais.list,
+              icon: <Iconify icon="solar:file-text-bold-duotone" />,
+            },
+            {
+              title: 'Licenças',
+              path: paths.cliente.licencas,
+              icon: <Iconify icon="solar:document-text-bold-duotone" />,
+            },
+            {
+              title: 'Societário',
+              path: paths.cliente.societario.documentos,
+              icon: <Iconify icon="solar:folder-with-files-bold-duotone" />,
+            },
+          ],
+        },
+      ],
+    },
+  
+    {
+      items: [
+        {
+          title: 'Comercial e Financeiro',
+          path: paths.cliente.financeiro.root,
+          icon: <Iconify icon="solar:money-bag-bold" />,
+          children: financeiroChildren,
+        },
+      ],
+    },
+    {
+      subheader: 'Comunidade',
+      items: [
+        {
+          title: 'Conteúdo e materiais',
+          path: paths.cliente.conteudos.root,
+          icon: <Iconify icon="solar:bookmark-bold-duotone" />,
+          info: 'Novo',
+          children: conteudoEEmpresaChildren,
+        },
+      ],
+    },
+  
+    {
+      subheader: 'Conta',
+      items: [
+        {
+          title: 'Configurações',
+          path: paths.cliente.settings,
+          icon: <Iconify icon="solar:settings-bold-duotone" />,
+        },
+      ],
     },
   ];
 }

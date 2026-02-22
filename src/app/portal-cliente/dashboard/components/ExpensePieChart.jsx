@@ -115,14 +115,7 @@ export default function ExpensePieChart({
     return chartData.categories[0]?.contaContabilNome || null;
   }, [selectedCategory, chartData]);
 
-  // 🔥 Handlers memoizados com useCallback
-  const handleMonthChangeLocal = useCallback((event) => {
-    const novoMes = event.target.value;
-    if (onMonthChange) {
-      onMonthChange(novoMes);
-    }
-  }, [onMonthChange]);
-
+  // 🔥 Handlers memoizados com useCallback (mês é controlado pelo select global na página)
   const handleBankChangeLocal = useCallback((event) => {
     const novoBanco = event.target.value;
     if (onBankChange) {
@@ -238,19 +231,6 @@ export default function ExpensePieChart({
             <Stack direction="row" spacing={1.5} alignItems="center">
               <FormControl size="small">
                 <Select
-                  value={displayMonth}
-                  onChange={handleMonthChangeLocal}
-                  sx={{ fontSize: '0.75rem', fontWeight: 600, height: 32, minWidth: 140 }}
-                >
-                  {mesesDisponiveis.map((mes) => (
-                    <MenuItem key={mes.value} value={mes.value}>
-                      {mes.labelCurto}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl size="small">
-                <Select
                   value={displayBank}
                   onChange={handleBankChangeLocal}
                   sx={{ fontSize: '0.75rem', fontWeight: 600, height: 32, minWidth: 180 }}
@@ -297,19 +277,6 @@ export default function ExpensePieChart({
           title={tituloGrafico}
           action={
             <Stack direction="row" spacing={1.5} alignItems="center">
-              <FormControl size="small">
-                <Select
-                  value={displayMonth}
-                  onChange={handleMonthChangeLocal}
-                  sx={{ fontSize: '0.75rem', fontWeight: 600, height: 32, minWidth: 140 }}
-                >
-                  {mesesDisponiveis.map((mes) => (
-                    <MenuItem key={mes.value} value={mes.value}>
-                      {mes.labelCurto}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
               <FormControl size="small">
                 <Select
                   value={displayBank}
@@ -367,19 +334,6 @@ export default function ExpensePieChart({
                 Limpar Filtro
               </Button>
             )}
-            <FormControl size="small">
-              <Select
-                value={displayMonth}
-                onChange={handleMonthChangeLocal}
-                sx={{ fontSize: '0.75rem', fontWeight: 600, height: 32, minWidth: 140 }}
-              >
-                {mesesDisponiveis.map((mes) => (
-                  <MenuItem key={mes.value} value={mes.value}>
-                    {mes.labelCurto}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
             <FormControl size="small">
               <Select
                 value={displayBank}

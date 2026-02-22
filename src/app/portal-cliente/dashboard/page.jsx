@@ -4,6 +4,11 @@ import dynamic from 'next/dynamic';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
+import FormControl from '@mui/material/FormControl';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
 
@@ -127,15 +132,17 @@ export default function PortalClienteDash2View() {
   // 🎯 Outros dados
   const { data, isLoading } = useGetGuiasFiscaisPortal({ limit: 200 });
 
-  // 🎯 Buscar dados do dashboard da API (para vendas)
+  // 🎯 Buscar dados do dashboard da API (para vendas) — mesAno atualiza Vendas quando o backend suportar
   useEffect(() => {
     if (!userId) return;
     const fetchDashboardData = async () => {
       try {
         setLoadingDashboard(true);
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dashboard/${userId}`
-        );
+        const url = `${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dashboard/${userId}`;
+        const params = new URLSearchParams();
+        if (mesAnoAtual) params.set('mesAno', mesAnoAtual);
+        const query = params.toString();
+        const response = await axios.get(query ? `${url}?${query}` : url);
         setDashboardData(response.data.data);
       } catch (error) {
         console.error('Erro ao buscar dados do dashboard:', error);
@@ -145,7 +152,7 @@ export default function PortalClienteDash2View() {
     };
 
     fetchDashboardData();
-  }, [userId]);
+  }, [userId, mesAnoAtual]);
 
   // 🎯 Handler para limpar filtro (voltar para mês anterior)
   const handleLimparFiltro = useCallback(() => {
@@ -169,19 +176,34 @@ export default function PortalClienteDash2View() {
     setSelectedCategory(contaContabilId === selectedCategory ? null : contaContabilId);
   }, [selectedCategory]);
 
-  // 🎯 Calcular KPIs dinamicamente
-  const metrics = useMemo(() => {
-    const { faturamentoMensal } = dashboardData || {};
+  // 🎯 Label do período para os chips (todos os cards usam o mesmo mês selecionado)
+  const chipPeriodo = useMemo(() => {
+    const label = mesesDisponiveis.find((m) => m.value === mesAnoAtual)?.labelCurto || 'Mês Anterior';
+    return label;
+  }, [mesAnoAtual, mesesDisponiveis]);
 
-    return [
+  // 🎯 Vendas do período: usar visaoGeralAnual (vendas por mês) quando existir, senão faturamentoMensal
+  const vendasDoPeriodo = useMemo(() => {
+    const { faturamentoMensal, visaoGeralAnual } = dashboardData || {};
+    if (!visaoGeralAnual?.length || !mesAnoAtual) return faturamentoMensal ?? 0;
+    const [anoStr, mesStr] = mesAnoAtual.split('-');
+    const ano = parseInt(anoStr, 10);
+    const mes = parseInt(mesStr, 10); // 1-12
+    const item = visaoGeralAnual.find((i) => i.ano === ano && i.mes === mes);
+    return item?.vendas ?? faturamentoMensal ?? 0;
+  }, [dashboardData, mesAnoAtual]);
+
+  // 🎯 Calcular KPIs dinamicamente
+  const metrics = useMemo(() => [
       {
         label: 'Vendas',
-        value: formatToCurrency(faturamentoMensal || 0),
+        value: formatToCurrency(vendasDoPeriodo || 0),
         change: 2.6,
         isPositive: true,
         icon: 'solar:chart-2-bold-duotone',
         color: 'primary',
         mostrarChipMesAtual: true,
+        chipLabel: selectedMonth ? chipPeriodo : 'Mês Atual',
       },
       {
         label: 'Saída',
@@ -192,7 +214,7 @@ export default function PortalClienteDash2View() {
         icon: 'account_balance_wallet',
         color: 'warning',
         mostrarChipExtrato: kpiTemExtrato,
-        chipLabel: kpiMesExibicao || 'Mês Anterior',
+        chipLabel: chipPeriodo,
         loading: loadingKPIs,
       },
       {
@@ -204,11 +226,10 @@ export default function PortalClienteDash2View() {
         icon: 'savings',
         color: 'success',
         mostrarChipExtrato: kpiTemExtrato,
-        chipLabel: kpiMesExibicao || 'Mês Anterior',
+        chipLabel: chipPeriodo,
         loading: loadingKPIs,
       },
-    ];
-  }, [dashboardData, kpiEntrada, kpiSaida, kpiTemExtrato, kpiMesExibicao, loadingKPIs]);
+    ], [vendasDoPeriodo, kpiEntrada, kpiSaida, kpiTemExtrato, loadingKPIs, selectedMonth, chipPeriodo]);
 
   // Transformar dados da API para o formato do gráfico
   const chartData = useMemo(() => {
@@ -256,6 +277,11 @@ export default function PortalClienteDash2View() {
     setSelectedMonthForModal(null);
   };
 
+  const handleMonthSelectChange = useCallback((event) => {
+    const mesAno = event.target.value;
+    handleMonthChange(mesAno || null);
+  }, [handleMonthChange]);
+
   return (
     <Box
       sx={{
@@ -269,6 +295,29 @@ export default function PortalClienteDash2View() {
         pb: { xs: 1.5, sm: 2 },
       }}
     >
+      {/* Select Mês/Ano global — atualiza Vendas, Saída e Entrada */}
+      <Box sx={{ mb: 1.5, flexShrink: 0, ...ANIMATION_FADE_IN_UP }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
+          <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.secondary' }}>
+            Período:
+          </Typography>
+          <FormControl size="small" sx={{ minWidth: 160 }}>
+            <Select
+              value={mesAnoAtual}
+              onChange={handleMonthSelectChange}
+              displayEmpty
+              sx={{ fontSize: '0.875rem', fontWeight: 600, height: 36, bgcolor: 'background.paper' }}
+            >
+              {mesesDisponiveis.map((mes) => (
+                <MenuItem key={mes.value} value={mes.value}>
+                  {mes.labelCurto}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
+      </Box>
+
       <Box
         sx={{
           display: 'grid',

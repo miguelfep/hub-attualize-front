@@ -72,10 +72,10 @@ export default function MetricCard({ metric, index = 0, sx, ...other }) {
           >
             {metric.label}
           </Typography>
-          {/* Chip mostrando "Mês Atual" para Vendas */}
+          {/* Chip mostrando período (Mês Atual ou mês selecionado) para Vendas */}
           {metric.mostrarChipMesAtual && (
             <Chip
-              label="Mês Atual"
+              label={metric.chipLabel ?? 'Mês Atual'}
               color="info"
               size="small"
               sx={{

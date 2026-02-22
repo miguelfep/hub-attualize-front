@@ -79,14 +79,14 @@ const SociosForm = ({ formData, setFormData }) => {
   };
 
   return (
-    <Box sx={{ mb: 4 }}>
+    <Box sx={{ mb: 4, px: 2 }}>
       <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
         Quadro Societário
       </Typography>
       <Divider sx={{ mb: 3 }} />
       
       {/* Campo para selecionar o número de sócios */}
-      <Grid container spacing={{ xs: 2, sm: 3 }} sx={{ mb: 3 }}>
+      <Grid container spacing={0} sx={{ mb: 3, '& > *': { px: 2, mb: 2 } }}>
         <Grid xs={12} sm={4}>
           <TextField
             margin="normal"
@@ -113,8 +113,8 @@ const SociosForm = ({ formData, setFormData }) => {
           <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
             {`Sócio ${index + 1}`}
           </Typography>
-          <Grid container spacing={{ xs: 2, sm: 3 }}>
-          <Grid xs={12} sm={4} sx={{ pr: { xs: 0, sm: 1 } }}>
+          <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
+          <Grid xs={12} sm={4}>
             <TextField
               margin="normal"
               fullWidth
@@ -123,7 +123,7 @@ const SociosForm = ({ formData, setFormData }) => {
               onChange={(e) => handleChange(index, 'nome', e.target.value)}
             />
           </Grid>
-          <Grid xs={12} sm={4} sx={{ px: { xs: 0, sm: 1 } }}>
+          <Grid xs={12} sm={4}>
             <TextField
               margin="normal"
               fullWidth
@@ -135,7 +135,7 @@ const SociosForm = ({ formData, setFormData }) => {
               }}
             />
           </Grid>
-          <Grid xs={12} sm={4} sx={{ pl: { xs: 0, sm: 1 } }}>
+          <Grid xs={12} sm={4}>
             <TextField
               margin="normal"
               fullWidth
@@ -147,7 +147,7 @@ const SociosForm = ({ formData, setFormData }) => {
               }}
             />
           </Grid>
-          <Grid xs={12} sm={4} sx={{ pr: { xs: 0, sm: 1 } }}>
+          <Grid xs={12} sm={4}>
             <TextField
               margin="normal"
               fullWidth
@@ -159,7 +159,7 @@ const SociosForm = ({ formData, setFormData }) => {
               }}
             />
           </Grid>
-          <Grid xs={12} sm={8} sx={{ pl: { xs: 0, sm: 1 } }}>
+          <Grid xs={12} sm={8}>
             <TextField
               margin="normal"
               fullWidth
@@ -168,7 +168,7 @@ const SociosForm = ({ formData, setFormData }) => {
               onChange={(e) => handleChange(index, 'endereco', e.target.value)}
             />
           </Grid>
-          <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
+          <Grid xs={12} sm={6}>
             <TextField
               margin="normal"
               fullWidth
@@ -177,7 +177,7 @@ const SociosForm = ({ formData, setFormData }) => {
               onChange={(e) => handleChange(index, 'naturalidade', e.target.value)}
             />
           </Grid>
-          <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
+          <Grid xs={12} sm={6}>
             <TextField
               margin="normal"
               fullWidth
@@ -186,7 +186,7 @@ const SociosForm = ({ formData, setFormData }) => {
               onChange={(e) => handleChange(index, 'profissao', e.target.value)}
             />
           </Grid>
-          <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
+          <Grid xs={12} sm={6}>
             <TextField
               margin="normal"
               fullWidth
@@ -196,7 +196,7 @@ const SociosForm = ({ formData, setFormData }) => {
               onChange={(e) => handleChange(index, 'porcentagem', e.target.value)}
             />
           </Grid>
-          <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
+          <Grid xs={12} sm={6}>
             <TextField
               margin="normal"
               fullWidth
@@ -214,7 +214,7 @@ const SociosForm = ({ formData, setFormData }) => {
           </Grid>
 
           {socio.estadoCivil === 'Casado' && (
-            <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
+            <Grid xs={12} sm={6}>
               <TextField
                 margin="normal"
                 fullWidth

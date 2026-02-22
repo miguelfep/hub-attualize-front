@@ -1,7 +1,6 @@
 'use client';
 
 import { toast } from 'sonner';
-import InputMask from 'react-input-mask';
 import { NumericFormat } from 'react-number-format';
 import React, { useState, useEffect, useCallback } from 'react';
 
@@ -26,6 +25,7 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { formatCep } from 'src/utils/format-input';
 import { consultarCep } from 'src/utils/consultarCep';
 
 import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/societario';
@@ -293,15 +293,16 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
   const handleTabChange = (event, newValue) => setActiveTab(newValue);
 
   return (
-    <Card sx={{ p: 3, mb: 3 }}>
-      <Tabs value={activeTab} onChange={handleTabChange} centered>
+    <Card sx={{ width: '100%', maxWidth: '100%', p: 4, mb: 3 }}>
+      <Tabs value={activeTab} onChange={handleTabChange} variant="standard" centered sx={{ mb: 3 }}>
         <Tab label="Dados da Abertura" />
         <Tab label="Kickoff" />
       </Tabs>
       {activeTab === 0 && (
-        <Grid container spacing={2} mt={2}>
+        <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
           <Grid xs={12} sm={6}>
             <TextField
+              size="small"
               label="Razão Social"
               name="nomeEmpresarial"
               fullWidth
@@ -311,6 +312,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6}>
             <TextField
+              size="small"
               label="Nome Fantasia"
               name="nomeFantasia"
               fullWidth
@@ -321,6 +323,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
 
           <Grid xs={12} sm={6} md={4}>
             <TextField
+              size="small"
               label="Nome"
               name="nome"
               fullWidth
@@ -330,6 +333,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={2}>
             <TextField
+              size="small"
               label="CPF"
               name="cpf"
               fullWidth
@@ -339,6 +343,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Email"
               name="email"
               fullWidth
@@ -348,6 +353,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Email  Financeiro"
               name="emailFinanceiro"
               fullWidth
@@ -357,6 +363,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={4}>
             <TextField
+              size="small"
               label="Telefone"
               name="telefone"
               fullWidth
@@ -366,6 +373,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={4}>
             <TextField
+              size="small"
               label="Telefone Comercial"
               name="telefoneComercial"
               fullWidth
@@ -375,6 +383,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={4}>
             <TextField
+              size="small"
               label="Horário de Funcionamento"
               name="horarioFuncionamento"
               fullWidth
@@ -384,6 +393,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Metragem do Imóvel"
               helperText="*Metragem total do imovel"
               name="metragemImovel"
@@ -394,6 +404,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Metragem Utilizada"
               helperText="*Área construida"
               name="metragemUtilizada"
@@ -404,6 +415,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={6}>
             <TextField
+              size="small"
               type={values.showPassword ? 'text' : 'password'}
               label="Senha GOV"
               name="senhaGOV"
@@ -435,38 +447,37 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
             />
           </Grid>
           {/* Endereço */}
-          <Grid xs={12}>
-            <Typography variant="h6">Endereço Comercial</Typography>
+          <Grid xs={12} sx={{ mt: 2 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Endereço Comercial</Typography>
           </Grid>
 
           <Grid xs={12} sm={3}>
-            <InputMask
-              mask="99999-999"
-              value={formData.enderecoComercial.cep}
-              onChange={(e) => handleChange(e)} // Garante que o handleChange seja chamado corretamente
-              onBlur={handleCepBlur} // A função que busca o CEP
-            >
-              {(inputProps) => (
-                <TextField
-                  {...inputProps} // Passa as propriedades do InputMask para o TextField
-                  label="CEP"
-                  name="enderecoComercial.cep"
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{
-                    endAdornment: loadingCep && (
-                      <InputAdornment position="end">
-                        <CircularProgress size={20} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              )}
-            </InputMask>
+            <TextField
+              size="small"
+              label="CEP"
+              name="enderecoComercial.cep"
+              fullWidth
+              variant="outlined"
+              value={formData.enderecoComercial.cep || ''}
+              onChange={(e) =>
+                handleChange({
+                  target: { name: 'enderecoComercial.cep', value: formatCep(e.target.value) },
+                })
+              }
+              onBlur={handleCepBlur}
+              InputProps={{
+                endAdornment: loadingCep && (
+                  <InputAdornment position="end">
+                    <CircularProgress size={20} />
+                  </InputAdornment>
+                ),
+              }}
+            />
           </Grid>
 
           <Grid xs={12} sm={6}>
             <TextField
+              size="small"
               label="Rua"
               name="enderecoComercial.logradouro"
               fullWidth
@@ -477,6 +488,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Número"
               name="enderecoComercial.numero" // Nome correto para alterar dentro do objeto enderecoComercial
               fullWidth
@@ -486,6 +498,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Complemento"
               name="enderecoComercial.complemento" // Nome correto para alterar dentro do objeto enderecoComercial
               fullWidth
@@ -495,6 +508,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Bairro"
               name="enderecoComercial.bairro"
               fullWidth
@@ -505,6 +519,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Cidade"
               name="enderecoComercial.cidade"
               fullWidth
@@ -515,6 +530,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={3}>
             <TextField
+              size="small"
               label="Estado"
               name="enderecoComercial.estado"
               fullWidth
@@ -527,6 +543,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           {/* Seletor de número de sócios */}
           <Grid xs={12} sm={12}>
             <TextField
+              size="small"
               select
               label="Número de Sócios"
               fullWidth
@@ -542,8 +559,8 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
 
           {/* Renderização dos sócios */}
-          <Grid xs={12}>
-            <Typography variant="h6">Sócios</Typography>
+          <Grid xs={12} sx={{ mt: 3 }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>Sócios</Typography>
           </Grid>
           {[...Array(numSocios).keys()].map((i) => (
             <React.Fragment key={i}>
@@ -681,6 +698,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           ))}
           <Grid xs={12} sm={6} md={6}>
             <TextField
+              size="small"
               label="Capital Social"
               customInput={TextField}
               value={formData.capitalSocial}
@@ -697,6 +715,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           {/* Responsável na Receita Federal */}
           <Grid xs={12} sm={6} md={6}>
             <TextField
+              size="small"
               select
               label="Responsável na Receita Federal"
               name="responsavelReceitaFederal"
@@ -714,6 +733,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={6} md={6}>
             <TextField
+              size="small"
               select
               label="Forma de Atuação"
               name="formaAtuacao"
@@ -749,6 +769,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           </Grid>
           <Grid xs={12} sm={12} md={12}>
             <TextField
+              size="small"
               select
               label="Situação da Abertura"
               name="situacaoAbertura"
@@ -810,7 +831,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
       )}
 
       {activeTab === 1 && (
-        <Grid container spacing={2} mt={2}>
+        <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
           <Grid xs={12}>
             <Typography variant="h6">Kickoff</Typography>
           </Grid>

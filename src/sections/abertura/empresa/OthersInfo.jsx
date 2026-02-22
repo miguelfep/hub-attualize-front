@@ -21,14 +21,14 @@ const OthersInfo = ({ formData, setFormData }) => {
   };
 
   return (
-    <Box sx={{ mb: 4 }}>
+    <Box sx={{ mb: 4, px: 2 }}>
       <Typography variant="h6" sx={{ mb: 3, fontWeight: 600 }}>
         Outras Informações
       </Typography>
       <Divider sx={{ mb: 3 }} />
-      <Grid container spacing={{ xs: 2, sm: 3 }}>
+      <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
       {/* Capital Social */}
-      <Grid xs={12} sm={6} sx={{ pr: { xs: 0, sm: 1.5 } }}>
+      <Grid xs={12} sm={6}>
         <NumericFormat
           margin="normal"
           fullWidth
@@ -46,7 +46,7 @@ const OthersInfo = ({ formData, setFormData }) => {
       </Grid>
 
       {/* Responsável Técnico */}
-      <Grid xs={12} sm={6} sx={{ pl: { xs: 0, sm: 1.5 } }}>
+      <Grid xs={12} sm={6}>
         <TextField
           margin="normal"
           fullWidth
