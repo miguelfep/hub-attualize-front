@@ -3,7 +3,7 @@
 import { m } from 'framer-motion';
 
 import { alpha, useTheme } from '@mui/material/styles';
-import { Box, Avatar, Paper, Stack, Container, Typography, Rating, Grid, Chip } from '@mui/material';
+import { Box, Grid, Chip, Paper, Stack, Rating, Avatar, Container, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
@@ -18,7 +18,7 @@ const TESTIMONIALS = [
     city: 'Curitiba - PR',
     avatar: '/assets/images/avatar/avatar-1.webp',
     rating: 5,
-    testimonial: 'A Attualize transformou a gestão da minha clínica! Com abertura de CNPJ gratuita e suporte especializado, consegui focar 100% nos meus clientes. A economia em impostos foi impressionante!',
+    testimonial: 'A Attualize transformou a gestão da minha clínica! Com abertura de CNPJ e suporte especializado, consegui focar 100% nos meus clientes. A economia em impostos foi impressionante!',
     specialty: 'Estética Facial',
   },
   {
@@ -163,7 +163,7 @@ export function EsteticaTestimonials() {
               Sua clínica pode ser a próxima!
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', maxWidth: 480 }}>
-              Comece hoje com <strong>CNPJ gratuito</strong> e tenha o suporte que sua estética merece.
+              Comece hoje com <strong>abertura de CNPJ e regularização</strong> e tenha o suporte que sua estética merece.
             </Typography>
           </Stack>
         </m.div>
