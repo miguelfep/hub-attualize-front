@@ -1,273 +1,235 @@
-import React from 'react';
+'use client';
 
-import { Box, Card, Grid, Stack, Button, Divider, Container, Typography , CardHeader, CardContent } from '@mui/material';
+import { m } from 'framer-motion';
+
+import { alpha, useTheme } from '@mui/material/styles';
+import { Box, Grid, Paper, Stack, Button, Divider, Container, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
+import { varFade, MotionViewport } from 'src/components/animate';
+
+// ----------------------------------------------------------------------
 
 export function LeiSalaoParceiro() {
-  const responsabilidadesProfissional = [
-    'Realizar os serviços com qualidade e técnica',
-    'Fornecer seus próprios materiais e equipamentos',
-    'Emitir nota fiscal de sua cota-parte para o salão',
-    'Cumprir com a agenda e horários estabelecidos',
-  ];
+  const theme = useTheme();
+  const isLight = theme.palette.mode === 'light';
 
-  const responsabilidadesSalao = [
-    'Fornecer espaço físico e infraestrutura básica',
-    'Organizar a agenda e promover os serviços',
-    'Emissão de nota fiscal ao cliente final',
-    'Repassar corretamente os valores aos parceiros',
-  ];
-
-  const modeloContrato = [
-    'Identificação completa das partes',
-    'Objeto (serviços prestados)',
-    'Percentuais ou valores de repasse',
-    'Responsabilidades de cada parte',
-    'Prazo e condições de rescisão'
-  ];
-
-  const regrasRepasseValor = [
-    'Todo repasse deve ser documentado por nota fiscal ou recibo.',
-    'O contrato deve especificar claramente percentuais e formas de repasse.',
-    'A transparência é essencial para evitar problemas fiscais.'
-  ];
-
-  const podemAderir = [
-    'Clínicas de estética',
-    'Salões de beleza',
-    'Barbearias',
-    'Espaços de manicure, pedicure e maquiagem'
-  ];
-
-  const riscosComuns = [
-    {
-      titulo: 'Caracterização de vínculo empregatício',
-      descricao: 'Evite subordinação direta, horários rígidos ou controle excessivo.',
-    },
-    {
-      titulo: 'Profissionais irregulares',
-      descricao: 'Exija certidão de regularidade fiscal e acompanhe periodicamente.',
-    },
-    {
-      titulo: 'Falta de documentação de repasses',
-      descricao: 'Guarde recibos, notas e contratos organizados para fiscalização.',
-    },
-  ];
-
-  const comparativoEmpresas = [
-    {
-      titulo: 'MEI',
-      caracteristicas: [ 'Faturamento até R$ 81.000/ano', 'Pode contratar até 1 auxiliar', 'Simples e barato de manter' ],
-    },
-    {
-      titulo: 'Microempresa (ME)',
-      caracteristicas: [ 'Faturamento até R$ 360.000/ano', 'Pode ter mais auxiliares CLT', 'Mais flexível e robusta para crescimento' ],
-    },
-  ];
-
-  const pontosResumo = [
-    'Garante economia tributária para o salão.',
-    'Dá autonomia jurídica e fiscal para os profissionais.',
-    'Reduz riscos de vínculo trabalhista indevido.',
-    'Exige organização de contratos e repasses.',
-  ];
+  const SECTION_BG = isLight
+    ? `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.grey[500], 0.04)} 50%, ${theme.palette.background.default} 100%)`
+    : `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${alpha(theme.palette.grey[900], 0.5)} 50%, ${theme.palette.background.default} 100%)`;
 
   return (
-    <Box sx={{ py: { xs: 8, md: 12 } }}>
-      <Container maxWidth="lg">
-        <Stack spacing={8}>
-          <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="h1" sx={{ color: 'primary.main', mb: 2, fontSize: { xs: '2.5rem', md: '3.5rem' } }}>
+    <Box
+      component="section"
+      id="lei-salao-parceiro"
+      sx={{
+        py: { xs: 10, md: 15 },
+        position: 'relative',
+        background: SECTION_BG,
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          top: 0,
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '80%',
+          maxWidth: 600,
+          height: '1px',
+          background: `linear-gradient(90deg, transparent, ${alpha(theme.palette.primary.main, isLight ? 0.2 : 0.3)}, transparent)`,
+        },
+      }}
+    >
+      <Container component={MotionViewport}>
+        {/* Header Principal */}
+        <Stack spacing={2} sx={{ textAlign: 'center', mb: { xs: 8, md: 10 } }}>
+          <m.div variants={varFade().inDown}>
+            <Typography
+              variant="h2"
+              sx={{
+                fontWeight: 800,
+                color: '#9864FD'
+              }}
+            >
               Lei do Salão Parceiro
             </Typography>
-            <Typography variant="h5" sx={{ color: 'text.secondary', fontWeight: 400 }}>
-              Entenda como a Lei nº 13.352/2016 pode transformar o seu negócio de estética!
+            <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 640, mx: 'auto', mt: 2 }}>
+              A solução jurídica e tributária definitiva para clínicas de estética que buscam crescer sem riscos trabalhistas.
             </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="h3" sx={{ color: 'text.primary', mb: 3 }}>
-              Benefícios Principais
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-              A Lei do Salão Parceiro trouxe um modelo tributário e jurídico diferenciado para salões, clínicas de estética, barbearias e espaços de beleza. O maior benefício é que o <strong>salão parceiro só paga imposto sobre a sua parte</strong> — e não sobre todo o valor recebido dos clientes.
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
-              Isso significa que as comissões pagas aos profissionais parceiros são deduzidas do faturamento antes da apuração de impostos.
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="h3" sx={{ color: 'text.primary', mb: 3 }}>
-              Como Funciona a Tributação
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-              A sua estética recebe o pagamento dos serviços prestados dentro do seu espaço, faz o rateio para o profissional e o que você como salão parceiro repassar para ele, não será somado em seu faturamento para fins de tributação.
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-              Dessa forma, o proprietário do espaço de estética só será tributado por sua cota parte, ou seja, o que realmente fica para a empresa.
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-              1° O cliente paga o valor integral do serviço no salão/clínica. <br />
-              2° O estabelecimento emite a nota fiscal ao cliente. <br />
-              3° O valor é repartido: uma parte vai para o profissional parceiro, outra fica para o salão.<br />
-              4° <b>Somente a parte que fica para o salão é tributada.</b>
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', fontWeight: 'bold', mb: 1 }}>
-              Exemplo:
-            </Typography>
-            <Box sx={{ pl: 2 }}>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                  • Corte de cabelo: R$ 120,00
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                  • Profissional recebe: R$ 72,00 (60%)
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                  • Salão fica com: R$ 48,00 (40%)
-                </Typography>
-                <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                  • Tributos incidem <b>apenas sobre R$ 48,00</b>
-                </Typography>
-            </Box>
-          </Box>
-
-          <Box>
-            <Typography variant="h3" sx={{ color: 'text.primary', mb: 3 }}>
-              Quem Pode Aderir à Lei
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 2 }}>
-              Podem usar a Lei do Salão Parceiro todos os <b>estabelecimentos do ramo de beleza e estética</b>, como:
-            </Typography>
-            {podemAderir.map((text) => (
-              <Typography key={text} variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                {`• ${text}`}
-              </Typography>
-            ))}
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mt: 2 }}>
-              Os <b>profissionais parceiros</b> precisam estar <b>regularizados</b> como <b>MEI</b> ou <b>Microempresa (ME).</b>
-            </Typography>
-          </Box>
-
-          <Box>
-            <Typography variant="h3" sx={{ color: 'text.primary', mb: 3 }}>
-              Regras para Repasse de Valores
-            </Typography>
-            {regrasRepasseValor.map((text) => (
-              <Typography key={text} variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                {`• ${text}`}
-              </Typography>
-            ))}
-          </Box>
-
-          <Box>
-            <Typography variant="h3" sx={{ color: 'text.primary', mb: 3 }}>
-              Modelo de Contrato de Parceria
-            </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-              O contrato deve incluir:
-            </Typography>
-            {modeloContrato.map((text) => (
-              <Typography key={text} variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                {`• ${text}`}
-              </Typography>
-            ))}
-          </Box>
-
-          <Box>
-            <Typography variant="h3" sx={{ color: 'text.primary', mb: 3 }}>
-              Responsabilidades de Cada Parte
-            </Typography>
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={{ xs: 3, sm: 4 }}
-              divider={<Divider orientation="vertical" flexItem />}
-              sx={{ p: 3, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}
-            >
-              <Stack sx={{ width: '100%' }}>
-                <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
-                  Do <strong>Salão Parceiro</strong>:
-                </Typography>
-                {responsabilidadesSalao.map((text) => (
-                  <Typography key={text} variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                    {`• ${text}`}
-                  </Typography>
-                ))}
-              </Stack>
-              <Stack sx={{ width: '100%' }}>
-                <Typography variant="h6" sx={{ color: 'text.secondary', mb: 2 }}>
-                  Do <strong>Profissional Parceiro</strong>:
-                </Typography>
-                {responsabilidadesProfissional.map((text) => (
-                  <Typography key={text} variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                    {`• ${text}`}
-                  </Typography>
-                ))}
-              </Stack>
-            </Stack>
-          </Box>
-
-          <Box>
-            <Typography variant="h3" sx={{ color: 'text.primary', mb: 3 }}>
-              Riscos Comuns e Como Evitá-los
-            </Typography>
-            <Stack spacing={2}>
-              {riscosComuns.map((risco, index) => (
-                <Box key={risco.titulo}>
-                  <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-                    {`${index + 1}° `}<b>{risco.titulo}</b>
-                  </Typography>
-                  <Typography variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, pl: 1 }}>{`• ${risco.descricao}`}</Typography>
-                </Box>
-              ))}
-            </Stack>
-          </Box>
-
-          <Box>
-            <Typography variant="h3" sx={{ color: 'text.primary', mb: 4, textAlign: 'center' }}>
-              MEI ou ME: qual é melhor para o profissional parceiro?
-            </Typography>
-            <Grid container spacing={4} alignItems="stretch">
-              {comparativoEmpresas.map((empresa) => (
-                <Grid xs={12} md={6} key={empresa.titulo}>
-                  <Card sx={{ height: '100%',  }}>
-                    <CardHeader title={empresa.titulo} titleTypographyProps={{ variant: 'h4', align: 'center' }} sx={{ bgcolor: 'action.hover' }}/>
-                    <Divider />
-                    <CardContent>
-                      {empresa.caracteristicas.map((texto) => (
-                        <Typography key={texto} variant="body1" sx={{ color: 'text.secondary', mb: 2 }}>{`• ${texto}`}</Typography>
-                      ))}
-                    </CardContent>
-                  </Card>
-                </Grid>
-              ))}
-            </Grid>
-          </Box>
-
-          <Box sx={{ bgcolor: 'action.hover', p: { xs: 3, md: 5 }, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-            <Typography variant="h3" align="center" gutterBottom>Resumindo</Typography>
-            <Typography variant="h6" align="center" color="text.secondary" sx={{ mb: 3 }}>A Lei do Salão Parceiro:</Typography>
-            <Box sx={{ maxWidth: 'md', mx: 'auto', mb: 4 }}>
-              {pontosResumo.map((ponto) => (
-                 <Typography key={ponto} variant="body1" sx={{ color: 'text.secondary', lineHeight: 1.8, mb: 1 }}>
-                  {`• ${ponto}`}
-                </Typography>
-              ))}
-            </Box>
-            <Divider variant="middle" />
-            <Typography variant="h6" align="center" sx={{ color: 'text.primary', mt: 4, lineHeight: 1.7 }}>
-              Com <b>apoio contábil especializado</b>, sua clínica ou salão pode aplicar essa lei corretamente, economizar e <b>crescer com segurança</b>.
-            </Typography>
-          </Box>
-
-          <Box sx={{ textAlign: 'center', pt: 2 }}>
-            <Button variant="contained" size="large" endIcon={<Iconify icon="mdi:message-text" />} sx={{ borderRadius: 2, py: 1.5, px: 4, fontWeight: 600, fontSize: '1.1rem' }}>
-              Quero entender meu enquadramento
-            </Button>
-          </Box>
-
+          </m.div>
         </Stack>
+
+        <Grid container spacing={5} alignItems="flex-start">
+          {/* Coluna 1: Como Funciona */}
+          <Grid item xs={12} md={7}>
+            <Stack spacing={4}>
+              <m.div variants={varFade().inLeft}>
+                <Typography variant="h4" sx={{ fontWeight: 700, mb: 2 }}>Economia Tributária Real</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.8 }}>
+                  Sua clínica deixa de ser tributada pelo faturamento bruto e passa a pagar impostos apenas sobre a <b>sua cota-parte</b>. O valor repassado aos profissionais parceiros é deduzido legalmente da sua base de cálculo.
+                </Typography>
+              </m.div>
+
+              {/* Card de Simulação Visual */}
+              <m.div variants={varFade().inLeft}>
+                <Paper
+                  variant="outlined"
+                  sx={{
+                    p: 3,
+                    borderRadius: 2,
+                    bgcolor: alpha('#9864FD', 0.03),
+                    borderColor: alpha('#9864FD', 0.2),
+                    borderStyle: 'dashed'
+                  }}
+                >
+                  <Typography variant="subtitle2" sx={{ mb: 2, color: '#9864FD', fontWeight: 800, textTransform: 'uppercase', letterSpacing: 1 }}>
+                    Na ponta do lápis:
+                  </Typography>
+                  <Stack spacing={1.5}>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2">Serviço (ex: Botox):</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>R$ 1.000,00</Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2">Cota do Profissional:</Typography>
+                      <Typography variant="body2" sx={{ color: 'error.main' }}>- R$ 600,00</Typography>
+                    </Stack>
+                    <Divider />
+                    <Stack direction="row" justifyContent="space-between" sx={{ pt: 1 }}>
+                      <Typography variant="subtitle2">Sua base de imposto:</Typography>
+                      <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 900 }}>R$ 400,00</Typography>
+                    </Stack>
+                  </Stack>
+                </Paper>
+              </m.div>
+            </Stack>
+          </Grid>
+
+          {/* Coluna 2: Regras de Ouro */}
+          <Grid item xs={12} md={5}>
+            <m.div variants={varFade().inRight}>
+              <Paper
+                sx={{
+                  p: 4,
+                  borderRadius: 3,
+                  bgcolor: isLight ? alpha(theme.palette.background.paper, 0.8) : alpha(theme.palette.background.paper, 0.05),
+                  backdropFilter: 'blur(10px)',
+                  boxShadow: theme.customShadows?.z16
+                }}
+              >
+                <Typography variant="h6" sx={{ fontWeight: 800, mb: 3, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                  <Iconify icon="solar:shield-check-bold-duotone" sx={{ color: 'primary.main' }} />
+                  Pilares de Segurança
+                </Typography>
+                <Stack spacing={3}>
+                  {[
+                    { t: 'Contrato Homologado', d: 'O contrato deve ser registrado e seguir as normas sindicais.' },
+                    { t: 'Profissional com CNPJ', d: 'O parceiro precisa atuar como MEI ou Microempresa (ME).' },
+                    { t: 'Gestão de Repasses', d: 'O controle de valores deve ser rigoroso e transparente.' },
+                  ].map((item) => (
+                    <Box key={item.t}>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>{item.t}</Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', lineHeight: 1.4 }}>{item.d}</Typography>
+                    </Box>
+                  ))}
+                </Stack>
+              </Paper>
+            </m.div>
+          </Grid>
+        </Grid>
+
+        {/* --- SEÇÃO DE CONFORMIDADE COM PARCEIRO ID --- */}
+        <Box sx={{ mt: 10, pt: 8, borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+          <m.div variants={varFade().inUp}>
+            <Typography variant="h4" textAlign="center" sx={{ fontWeight: 800, mb: 6 }}>
+              Como garantimos sua proteção total?
+            </Typography>
+
+            <Grid container spacing={4}>
+              {/* Item 1: Jurídico */}
+              <Grid item xs={12} md={4}>
+                <Stack spacing={2} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+                  <Iconify icon="solar:document-text-bold-duotone" sx={{ color: 'primary.main', mx: { xs: 'auto', md: 0 } }} width={32} />
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Blindagem Contratual</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Criamos contratos personalizados que eliminam o risco de caracterização de vínculo empregatício.
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Grid>
+
+              {/* Item 2: Parceiro ID (O diferencial tecnológico) */}
+              <Grid item xs={12} md={4}>
+                <Stack
+                  spacing={2}
+                  sx={{
+                    textAlign: { xs: 'center', md: 'left' },
+                    p: 2.5,
+                    borderRadius: 2,
+                    bgcolor: alpha('#9864FD', 0.05),
+                    border: `1px solid ${alpha('#9864FD', 0.1)}`,
+                    transition: 'all 0.3s',
+                    '&:hover': { bgcolor: alpha('#9864FD', 0.08) }
+                  }}
+                >
+                  <Box
+                    component="img"
+                    src="/logo/pid-logo.webp"
+                    sx={{ width: 40, height: 40, mx: { xs: 'auto', md: 0 }, borderRadius: 1 }}
+                  />
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: '#9864FD' }}>Gestão via Parceiro ID</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Automatizamos o controle de repasses e emissão de notas para seus parceiros através da nossa plataforma integrada.
+                    </Typography>
+                    <Button
+                      component="a"
+                      href="https://parceiroid.com.br/"
+                      target="_blank"
+                      size="small"
+                      rel="noopener noreferrer"
+                      endIcon={<Iconify icon="solar:arrow-right-up-bold" />}
+                      sx={{ p: 0, color: '#9864FD', fontWeight: 700, '&:hover': { bgcolor: 'transparent', textDecoration: 'underline' } }}
+                    >
+                      Conhecer Tecnologia
+                    </Button>
+                  </Box>
+                </Stack>
+              </Grid>
+
+              {/* Item 3: Contabilidade */}
+              <Grid item xs={12} md={4}>
+                <Stack spacing={2} sx={{ textAlign: { xs: 'center', md: 'left' } }}>
+                  <Iconify icon="solar:checklist-minimalistic-bold-duotone" sx={{ color: 'primary.main', mx: { xs: 'auto', md: 0 } }} width={32} />
+                  <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Conformidade Fiscal</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Apuração mensal rigorosa para garantir que sua estética aproveite 100% dos benefícios da lei.
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Grid>
+            </Grid>
+          </m.div>
+        </Box>
+
+        {/* CTA Final */}
+        <m.div variants={varFade().inUp}>
+          <Stack alignItems="center" sx={{ mt: 10 }}>
+            <Button
+              variant="contained"
+              size="large"
+              sx={{
+                py: 2, px: 6, borderRadius: 1.5, fontWeight: 800, fontSize: '1.1rem',
+                bgcolor: '#9864FD',
+                '&:hover': { bgcolor: alpha('#9864FD', 0.9) },
+                boxShadow: `0 8px 24px ${alpha('#9864FD', 0.3)}`
+              }}
+            >
+              Quero aplicar na minha clínica
+            </Button>
+          </Stack>
+        </m.div>
       </Container>
     </Box>
   );

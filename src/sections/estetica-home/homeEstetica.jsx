@@ -30,6 +30,12 @@ const ServicosEspecializados = lazy(() =>
   }))
 );
 
+const EsteticaTestimonials = lazy(() =>
+  import('./EsteticaTestimonials').then((module) => ({
+    default: module.EsteticaTestimonials,
+  }))
+);
+
 const NaturezaTributacaoTabs = lazy(() =>
   import('./NaturezaTributacaoTabs').then((module) => ({
     default: module.NaturezaTributacaoTabs,
@@ -113,6 +119,10 @@ export function HomeEstetica() {
 
         <Suspense fallback={<ComponentLoader />}>
           <ServicosEspecializados />
+        </Suspense>
+
+        <Suspense fallback={<ComponentLoader />}>
+          <EsteticaTestimonials />
         </Suspense>
 
         <Suspense fallback={<ComponentLoader />}>
