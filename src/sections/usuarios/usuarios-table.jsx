@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -13,6 +13,7 @@ import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import TableSortLabel from '@mui/material/TableSortLabel';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
@@ -24,12 +25,97 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 
 // ----------------------------------------------------------------------
 
+const STATUS_LABEL = {
+  true: 'Ativo',
+  false: 'Inativo',
+  ativo: 'Ativo',
+  inativo: 'Inativo',
+  pendente: 'Pendente',
+};
+
+function getStatusLabel(status) {
+  if (status == null) return '';
+  return STATUS_LABEL[String(status).toLowerCase()] ?? status ?? '';
+}
+
+function getEmpresasSortString(usuario) {
+  if (!usuario.empresasId?.length) return '';
+  return usuario.empresasId
+    .map((e) => (typeof e === 'object' && e?.razaoSocial ? e.razaoSocial : String(e)))
+    .filter(Boolean)
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+    .join(' ');
+}
+
+function getComparator(order, orderBy) {
+  const dir = order === 'asc' ? 1 : -1;
+  return (a, b) => {
+    let valA;
+    let valB;
+    switch (orderBy) {
+      case 'name':
+        valA = (a.name || '').toLowerCase();
+        valB = (b.name || '').toLowerCase();
+        return dir * (valA.localeCompare(valB, 'pt-BR'));
+      case 'email':
+        valA = (a.email || '').toLowerCase();
+        valB = (b.email || '').toLowerCase();
+        return dir * (valA.localeCompare(valB, 'pt-BR'));
+      case 'empresas':
+        valA = getEmpresasSortString(a);
+        valB = getEmpresasSortString(b);
+        return dir * (valA.localeCompare(valB, 'pt-BR'));
+      case 'status':
+        valA = getStatusLabel(a.status);
+        valB = getStatusLabel(b.status);
+        return dir * (valA.localeCompare(valB, 'pt-BR'));
+      case 'ultimoAcesso': {
+        const dA = a.ultimoAcesso ? new Date(a.ultimoAcesso).getTime() : 0;
+        const dB = b.ultimoAcesso ? new Date(b.ultimoAcesso).getTime() : 0;
+        return dir * (dA - dB);
+      }
+      case 'createdAt': {
+        const dA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const dB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return dir * (dA - dB);
+      }
+      default:
+        return 0;
+    }
+  };
+}
+
+const HEAD_LABELS = [
+  { id: 'name', label: 'Usuário', width: 220, sortable: true },
+  { id: 'email', label: 'Email', width: 180, sortable: true },
+  { id: 'empresas', label: 'Empresas', sortable: true },
+  { id: 'status', label: 'Status', width: 120, sortable: true },
+  { id: 'ultimoAcesso', label: 'Último Acesso', width: 140, sortable: true },
+  { id: 'createdAt', label: 'Criado em', width: 120, sortable: true },
+];
+
+// ----------------------------------------------------------------------
+
 export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [selected, setSelected] = useState([]);
+  const [order, setOrder] = useState('asc');
+  const [orderBy, setOrderBy] = useState('name');
 
   const confirmDialog = useBoolean();
+
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+    setPage(0);
+  };
+
+  const sortedUsuarios = useMemo(
+    () => [...usuarios].sort(getComparator(order, orderBy)),
+    [usuarios, order, orderBy]
+  );
 
 
   const handleSelectAllClick = (event) => {
@@ -86,17 +172,10 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
       ativo: 'success',
       inativo: 'error',
       pendente: 'warning',
+      true: 'success',
+      false: 'error',
     };
-    return statusColors[status] || 'default';
-  };
-
-  const getStatusLabel = (status) => {
-    const statusLabels = {
-      true: 'Ativo',
-      false: 'Inativo'
-    
-    };
-    return statusLabels[status] || status;
+    return statusColors[status] ?? statusColors[String(status)?.toLowerCase()] ?? 'default';
   };
 
   const formatDate = (dateString) => {
@@ -111,7 +190,7 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
 
   const isSelected = (id) => selected.indexOf(id) !== -1;
 
-  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - usuarios.length) : 0;
+  const emptyRows = page > 0 ? Math.max(0, (1 + page) * rowsPerPage - sortedUsuarios.length) : 0;
 
   if (loading) {
     return (
@@ -137,19 +216,27 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
                     onChange={handleSelectAllClick}
                   />
                 </TableCell>
-
-                <TableCell width={220}>Usuário</TableCell>
-                <TableCell width={180}>Email</TableCell>
-                <TableCell>Empresas</TableCell>
-                <TableCell width={120}>Status</TableCell>
-                <TableCell width={140}>Último Acesso</TableCell>
-                <TableCell width={120}>Criado em</TableCell>
+                {HEAD_LABELS.map((head) => (
+                  <TableCell key={head.id} width={head.width} sortDirection={orderBy === head.id ? order : false}>
+                    {head.sortable ? (
+                      <TableSortLabel
+                        active={orderBy === head.id}
+                        direction={orderBy === head.id ? order : 'asc'}
+                        onClick={() => handleRequestSort(head.id)}
+                      >
+                        {head.label}
+                      </TableSortLabel>
+                    ) : (
+                      head.label
+                    )}
+                  </TableCell>
+                ))}
                 <TableCell align="center" width={100}>Ações</TableCell>
               </TableRow>
             </TableHead>
 
             <TableBody>
-              {usuarios
+              {sortedUsuarios
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((usuario) => {
                   const isItemSelected = isSelected(usuario._id);
@@ -330,7 +417,7 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
       <TablePagination
         page={page}
         component="div"
-        count={usuarios.length}
+        count={sortedUsuarios.length}
         rowsPerPage={rowsPerPage}
         onPageChange={handleChangePage}
         rowsPerPageOptions={[5, 10, 25]}

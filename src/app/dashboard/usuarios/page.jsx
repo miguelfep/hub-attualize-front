@@ -9,6 +9,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import InputAdornment from '@mui/material/InputAdornment';
 
+import { exportUsuariosClientesExcel } from 'src/utils/export-usuarios-clientes-excel';
+
 import { getUsersCliente, criarUserCliente, editarUserCliente, deletarUserCliente } from 'src/actions/users';
 
 import { Iconify } from 'src/components/iconify';
@@ -125,6 +127,19 @@ export default function DashboardUsuariosView() {
     return nameMatch || empresaMatch;
   });
 
+  const handleExportExcel = () => {
+    if (!filteredUsuarios?.length) {
+      toast.error('Nenhum usuário para exportar');
+      return;
+    }
+    try {
+      exportUsuariosClientesExcel(filteredUsuarios);
+      toast.success('Planilha exportada com sucesso');
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao exportar');
+    }
+  };
+
   return (
     <SimplePaper>
       <Stack spacing={4}>
@@ -139,19 +154,29 @@ export default function DashboardUsuariosView() {
             </Typography>
           </Stack>
           
-          <Button
-            variant="contained"
-            startIcon={<Iconify icon="eva:person-add-fill" />}
-            onClick={handleCreateUsuario}
-            sx={{ 
-              borderRadius: 2,
-              px: 3,
-              py: 1.5,
-              fontWeight: 'bold'
-            }}
-          >
-            Novo Usuário Cliente
-          </Button>
+          <Stack direction="row" spacing={2}>
+            <Button
+              variant="outlined"
+              startIcon={<Iconify icon="vscode-icons:file-type-excel" />}
+              onClick={handleExportExcel}
+              sx={{ borderRadius: 2, px: 2, py: 1.5 }}
+            >
+              Exportar Excel
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="eva:person-add-fill" />}
+              onClick={handleCreateUsuario}
+              sx={{ 
+                borderRadius: 2,
+                px: 3,
+                py: 1.5,
+                fontWeight: 'bold'
+              }}
+            >
+              Novo Usuário Cliente
+            </Button>
+          </Stack>
         </Stack>
 
         {/* Estatísticas */}
