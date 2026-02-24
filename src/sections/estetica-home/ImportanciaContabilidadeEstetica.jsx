@@ -1,33 +1,23 @@
 'use client';
 
+import React from 'react';
+import Image from 'next/image';
 import { m } from 'framer-motion';
-import React, { useState } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
-import {
-  Box,
-  Chip,
-  Grid,
-  Stack,
-  Container,
-  Typography,
-} from '@mui/material';
+import { Box, Chip, Grid, Stack, Container, Typography } from '@mui/material';
 
 import { CONFIG } from 'src/config-global';
 
 import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
 
-import { GradeFotos } from './GradeFotos';
 import { CallToAction } from '../call-to-action/CallToAction';
 import { BENEFICIOS_IMPORTANCIA } from './importanciaEsteticaData';
 
 export function ImportanciaContabilidadeEstetica() {
   const theme = useTheme();
-  const [imageError, setImageError] = useState(false);
-  const imagePath = `${CONFIG.site.basePath}/assets/images/estetica/clinica.webp`;
-  const imagePathSecundaria = `${CONFIG.site.basePath}/assets/images/about/time-operacao.webp`;
-
+  const imagePath = `${CONFIG.site.basePath}/assets/images/estetica/grafico-hub.webp`;
   return (
     <Box
       component="section"
@@ -82,56 +72,84 @@ export function ImportanciaContabilidadeEstetica() {
           </m.div>
         </Stack>
 
-        <Grid
-          container
-          spacing={{ xs: 6, md: 6 }}
-          alignItems="center"
-          direction={{ xs: 'column-reverse', md: 'row' }}
-        >
-          <Grid xs={12} md={6} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-            <m.div
-              variants={varFade().inLeft}
-              style={{
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                maxWidth: '550px',
-                aspectRatio: '1/1'
-              }}
-            >
+        {/* Texto principal logo após o título, antes da imagem */}
+        <m.div variants={varFade().inUp}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: 'text.secondary',
+              fontSize: { xs: '0.98rem', md: '1.06rem' },
+              lineHeight: 1.8,
+              maxWidth: 640,
+              mx: 'auto',
+              textAlign: 'center',
+              mb: { xs: 5, md: 7 },
+            }}
+          >
+            Manter uma clínica de estética saudável financeiramente é o que garante tranquilidade
+            para você e segurança para o seu negócio. Enquanto cuidamos da{' '}
+            <Box component="span" sx={{ fontWeight: 700 }}>
+              contabilidade, impostos e burocracias
+            </Box>
+            , você acompanha tudo em um{' '}
+            <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
+              Portal do Cliente completo
+            </Box>
+            , com indicadores, dashboards e informações sempre atualizadas.
+          </Typography>
+        </m.div>
 
-              <GradeFotos srcPrincipal={imagePath} srcSecundaria={imagePathSecundaria} alt="Gestão financeira" />
+        <Grid container spacing={{ xs: 6, md: 7 }} justifyContent="center">
+          {/* Imagem centralizada em grid 12 */}
+          <Grid xs={12} md={10} lg={8}>
+            <m.div variants={varFade().inUp}>
+              <Box
+                sx={{
+                  my: { xs: 4, md: 6 },
+                }}
+              >
+                {/* Imagem principal - visão geral dos números da clínica */}
+                <Box
+                  sx={{
+                    position: 'relative',
+                    width: '100%',
+                    maxWidth: 760,
+                    mx: 'auto',
+                    aspectRatio: '16 / 10',
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    boxShadow:
+                      theme.customShadows?.z24 ||
+                      `0 24px 60px ${alpha(theme.palette.common.black, 0.16)}`,
+                    border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <Image
+                    src={imagePath}
+                    alt="Dashboard financeiro trazendo clareza para a gestão da clínica de estética"
+                    fill
+                    priority
+                    sizes="(min-width: 1200px) 760px, (min-width: 900px) 80vw, 100vw"
+                    style={{ objectFit: 'contain', objectPosition: 'center' }}
+                  />
+                </Box>
+              </Box>
             </m.div>
           </Grid>
 
-          {/* Coluna direita: texto + benefícios + CTA */}
-          <Grid xs={12} md={6}>
-            <m.div variants={varFade().inRight}>
+          {/* Benefícios e CTA logo abaixo da imagem */}
+          <Grid xs={12} md={10} lg={8}>
+            <m.div variants={varFade().inUp}>
               <Stack
-                spacing={3}
-                sx={{ textAlign: { xs: 'center', md: 'left' }, alignItems: { xs: 'center', md: 'flex-start' } }}
+                spacing={3.5}
+                sx={{
+                  textAlign: 'center',
+                  alignItems: 'center',
+                  mx: 'auto',
+                }}
               >
-                <Typography
-                  variant="body1"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: { xs: '0.95rem', md: '1.05rem' },
-                    lineHeight: 1.75,
-                    maxWidth: 540,
-                  }}
-                >
-                  Gerir uma clínica de estética exige mais do que um serviço de qualidade — é
-                  essencial ter uma <strong>gestão financeira estratégica</strong>. Nós combinamos
-                  praticidade e expertise para que você foque no que realmente importa:{' '}
-                  <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
-                    o bem-estar dos seus clientes
-                  </Box>
-                  .
-                </Typography>
-
-                <Stack spacing={2.5} sx={{ py: 2, width: '100%', maxWidth: 520 }}>
+                <Stack spacing={2.5} sx={{ py: 1, width: '100%', maxWidth: 620 }}>
                   {BENEFICIOS_IMPORTANCIA.map((item) => (
                     <Stack
                       key={item.title}
@@ -141,6 +159,7 @@ export function ImportanciaContabilidadeEstetica() {
                       sx={{
                         justifyContent: { xs: 'center', md: 'flex-start' },
                         textAlign: { xs: 'center', md: 'left' },
+                        width: '100%',
                       }}
                     >
                       <Box
@@ -155,11 +174,17 @@ export function ImportanciaContabilidadeEstetica() {
                       >
                         <Iconify icon={item.icon} width={26} />
                       </Box>
-                      <Stack spacing={0.5}>
+                      <Stack
+                        spacing={0.5}
+                        sx={{
+                          alignItems: { xs: 'center', md: 'flex-start' },
+                          width: '100%',
+                        }}
+                      >
                         <Typography variant="subtitle1" fontWeight={700}>
                           {item.title}
                         </Typography>
-                        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+                        <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.7 }}>
                           {item.description}
                         </Typography>
                       </Stack>
@@ -170,7 +195,7 @@ export function ImportanciaContabilidadeEstetica() {
                 <Box
                   sx={{
                     display: 'flex',
-                    justifyContent: { xs: 'center', md: 'flex-start' },
+                    justifyContent: 'center',
                     width: '100%',
                   }}
                 >
@@ -181,6 +206,6 @@ export function ImportanciaContabilidadeEstetica() {
           </Grid>
         </Grid>
       </Container>
-    </Box >
+    </Box>
   );
 }

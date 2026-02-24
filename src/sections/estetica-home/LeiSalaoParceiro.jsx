@@ -52,8 +52,8 @@ export function LeiSalaoParceiro() {
             >
               Lei do Salão Parceiro
             </Typography>
-            <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 640, mx: 'auto', mt: 2 }}>
-              A solução jurídica e tributária definitiva para clínicas de estética que buscam crescer sem riscos trabalhistas.
+            <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 720, mx: 'auto', mt: 2 }}>
+              A regularização ideal para a relação entre clínicas e <strong>especialistas técnicos (esteticistas, manicures e depiladores)</strong>, garantindo conformidade com a Lei 13.352/2016.
             </Typography>
           </m.div>
         </Stack>
@@ -86,17 +86,17 @@ export function LeiSalaoParceiro() {
                   </Typography>
                   <Stack spacing={1.5}>
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2">Serviço (ex: Botox):</Typography>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>R$ 1.000,00</Typography>
+                      <Typography variant="body2">Serviço Técnico (ex: Limpeza de Pele):</Typography>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>R$ 200,00</Typography>
                     </Stack>
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2">Cota do Profissional:</Typography>
-                      <Typography variant="body2" sx={{ color: 'error.main' }}>- R$ 600,00</Typography>
+                      <Typography variant="body2">Cota do Profissional (Parceiro):</Typography>
+                      <Typography variant="body2" sx={{ color: 'error.main' }}>- R$ 100,00</Typography>
                     </Stack>
                     <Divider />
                     <Stack direction="row" justifyContent="space-between" sx={{ pt: 1 }}>
-                      <Typography variant="subtitle2">Sua base de imposto:</Typography>
-                      <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 900 }}>R$ 400,00</Typography>
+                      <Typography variant="subtitle2">Sua base de imposto (Cota-Parte):</Typography>
+                      <Typography variant="subtitle2" sx={{ color: 'success.main', fontWeight: 900 }}>R$ 100,00</Typography>
                     </Stack>
                   </Stack>
                 </Paper>
@@ -122,9 +122,18 @@ export function LeiSalaoParceiro() {
                 </Typography>
                 <Stack spacing={3}>
                   {[
-                    { t: 'Contrato Homologado', d: 'O contrato deve ser registrado e seguir as normas sindicais.' },
-                    { t: 'Profissional com CNPJ', d: 'O parceiro precisa atuar como MEI ou Microempresa (ME).' },
-                    { t: 'Gestão de Repasses', d: 'O controle de valores deve ser rigoroso e transparente.' },
+                    {
+                      t: 'Escopo Restrito da Lei',
+                      d: 'Válido apenas para profissionais técnicos de estética e beleza. Equipe administrativa e de apoio devem permanecer no regime CLT.'
+                    },
+                    {
+                      t: 'Profissional Formalizado',
+                      d: 'O parceiro deve atuar com CNPJ (MEI ou ME) e possuir autonomia técnica na execução dos seus serviços.'
+                    },
+                    {
+                      t: 'Contrato e Homologação',
+                      d: 'O documento deve ser específico para a Lei 13.352 e, conforme o caso, homologado no sindicato da categoria.'
+                    },
                   ].map((item) => (
                     <Box key={item.t}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 0.5 }}>{item.t}</Typography>
@@ -152,7 +161,7 @@ export function LeiSalaoParceiro() {
                   <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>Blindagem Contratual</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Criamos contratos personalizados que eliminam o risco de caracterização de vínculo empregatício.
+                      Disponibilizamos contratos que atendem todos os requisitos da Lei 13.352/16, reduzindo a exposição a passivos trabalhistas.
                     </Typography>
                   </Box>
                 </Stack>

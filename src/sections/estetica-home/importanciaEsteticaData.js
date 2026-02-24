@@ -3,18 +3,21 @@
  */
 export const BENEFICIOS_IMPORTANCIA = [
   {
-    icon: 'solar:document-text-bold-duotone',
-    title: 'Organização Fiscal',
-    description: 'Tenha suas finanças em ordem e evite problemas com o fisco.',
-  },
-  {
-    icon: 'solar:shield-check-bold-duotone',
-    title: 'Otimização de Custos',
-    description: 'Descubra oportunidades para aumentar sua margem de lucro.',
-  },
-  {
     icon: 'solar:notebook-bold-duotone',
-    title: 'Decisões Inteligentes',
-    description: 'Relatórios claros e práticos para apoiar o crescimento da sua clínica.',
+    title: 'Tudo centralizado no Portal do Cliente',
+    description:
+      'Acompanhe em um só lugar faturamento, despesas, impostos e resultados da clínica, em painéis claros e atualizados.',
+  },
+  {
+    icon: 'solar:chart-square-bold-duotone',
+    title: 'Indicadores financeiros em tempo real',
+    description:
+      'Indicadores financeiros em tempo real para decisões rápidas e seguras.',
+  },
+  {
+    icon: 'solar:slider-vertical-bold-duotone',
+    title: 'Dashboards personalizados para sua clínica',
+    description:
+      'Visualizar os dados de acordo com a realidade da sua clínica: notas fiscais, vendas, clientes, impostos e muito mais.',
   },
 ];
