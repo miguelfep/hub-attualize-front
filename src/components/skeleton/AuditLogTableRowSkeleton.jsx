@@ -22,6 +22,10 @@ export function AuditLogTableRowSkeleton() {
         </Stack>
       </TableCell>
 
+      <TableCell sx={{ width: 180 }}>
+        <Skeleton variant="text" width="70%" />
+      </TableCell>
+
       <TableCell sx={{ width: 200 }}>
         <Skeleton variant="text" width="70%" />
       </TableCell>

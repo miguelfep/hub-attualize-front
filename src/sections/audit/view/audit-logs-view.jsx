@@ -47,6 +47,7 @@ const TABLE_HEAD = [
   { id: 'action', label: 'Ação', width: 100 },
   { id: 'entityType', label: 'Entidade', width: 120 },
   { id: 'userEmail', label: 'Usuário', width: 200 },
+  { id: 'clienteRazaoSocial', label: 'Cliente', width: 180 },
   { id: 'changes', label: 'Alterações', width: 200 },
   { id: 'actions', label: 'Ações', align: 'right', width: 100 },
 ];
@@ -55,7 +56,9 @@ const ENTITY_TYPES = [
   { value: '', label: 'Todas' },
   { value: 'Cliente', label: 'Cliente' },
   { value: 'User', label: 'Usuário' },
-  { value: 'Invoice', label: 'Orçamento/Invoice' },
+  { value: 'Invoice', label: 'Orçamento/Venda' },
+  { value: 'Contrato', label: 'Contrato' },
+  { value: 'Cobranca', label: 'Cobrança' },
 ];
 
 const ACTION_TYPES = [
@@ -285,7 +288,7 @@ export function AuditLogsView() {
         <Card>
           <TableContainer sx={{ position: 'relative', overflow: 'unset' }}>
             <Scrollbar>
-              <Table size="small" sx={{ minWidth: 1200 }}>
+              <Table size="small" sx={{ minWidth: 1380 }}>
                 <TableHeadCustom headLabel={TABLE_HEAD} />
 
                 <TableBody>
@@ -322,6 +325,11 @@ export function AuditLogsView() {
                                 {log.userId.name}
                               </Typography>
                             )}
+                          </TableCell>
+                          <TableCell>
+                            <Typography variant="body2" sx={{ maxWidth: 180 }} title={log.clienteRazaoSocial || undefined}>
+                              {log.clienteRazaoSocial || '—'}
+                            </Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2" sx={{ maxWidth: 200 }}>
@@ -423,6 +431,12 @@ export function AuditLogsView() {
                     <Typography variant="body2" color="text.secondary">Usuário:</Typography>
                     <Typography variant="body2">{dialogDetalhes.log.userEmail}</Typography>
                   </Stack>
+                  {(dialogDetalhes.log.clienteRazaoSocial ?? '') !== '' && (
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Cliente:</Typography>
+                      <Typography variant="body2">{dialogDetalhes.log.clienteRazaoSocial}</Typography>
+                    </Stack>
+                  )}
                   {dialogDetalhes.log.userId?.name && (
                     <Stack direction="row" justifyContent="space-between">
                       <Typography variant="body2" color="text.secondary">Nome:</Typography>
