@@ -350,16 +350,16 @@ export function UsuariosTable({ usuarios, loading, onEdit, onDelete }) {
                           label={getStatusLabel(usuario.status)}
                           color={getStatusColor(usuario.status)}
                           size="small"
-                          startIcon={
-                            <Iconify 
+                          icon={
+                            <Iconify
                               icon={
-                                usuario.status === 'ativo' 
-                                  ? 'eva:checkmark-circle-2-fill' 
+                                usuario.status === 'ativo'
+                                  ? 'eva:checkmark-circle-2-fill'
                                   : usuario.status === 'inativo'
-                                  ? 'eva:close-circle-fill'
-                                  : 'eva:clock-outline'
-                              } 
-                              width={16} 
+                                    ? 'eva:close-circle-fill'
+                                    : 'eva:clock-outline'
+                              }
+                              width={16}
                             />
                           }
                         />

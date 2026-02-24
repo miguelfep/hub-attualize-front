@@ -1,6 +1,5 @@
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
-import Avatar from '@mui/material/Avatar';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
 import { useTheme } from '@mui/material/styles';
@@ -9,7 +8,9 @@ import ListItemButton from '@mui/material/ListItemButton';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
-import { CONFIG } from 'src/config-global';
+import { paths } from 'src/routes/paths';
+import { RouterLink } from 'src/routes/components';
+
 import { maxLine } from 'src/theme/styles';
 
 import { Iconify } from 'src/components/iconify';
@@ -17,31 +18,33 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 const CATEGORIES = [
+  { label: 'Dashboard', icon: 'solar:chart-2-bold', href: paths.cliente.dashboard },
+  { label: 'Financeiro', icon: 'solar:wallet-money-bold', href: paths.cliente.financeiro.root },
   {
-    label: 'Managing your account',
-    icon: `${CONFIG.site.basePath}/assets/icons/faqs/ic-account.svg`,
-    href: '#',
+    label: 'Documentos e Societário',
+    icon: 'solar:document-text-bold',
+    href: paths.cliente.societario.root,
   },
-  { label: 'Payment', icon: `${CONFIG.site.basePath}/assets/icons/faqs/ic-payment.svg`, href: '#' },
+  { label: 'Vendas e Orçamentos', icon: 'solar:bill-list-bold', href: paths.cliente.orcamentos.root },
   {
-    label: 'Delivery',
-    icon: `${CONFIG.site.basePath}/assets/icons/faqs/ic-delivery.svg`,
-    href: '#',
-  },
-  {
-    label: 'Problem with the product',
-    icon: `${CONFIG.site.basePath}/assets/icons/faqs/ic-package.svg`,
-    href: '#',
+    label: 'Conteúdos Exclusivos',
+    icon: 'solar:book-2-bold',
+    href: paths.cliente.conteudos.root,
   },
   {
-    label: 'Return & refund',
-    icon: `${CONFIG.site.basePath}/assets/icons/faqs/ic-refund.svg`,
-    href: '#',
+    label: 'Comunidade',
+    icon: 'solar:users-group-rounded-bold',
+    href: paths.cliente.comunidade.root,
   },
   {
-    label: 'Guarantees and assurances',
-    icon: `${CONFIG.site.basePath}/assets/icons/faqs/ic-assurances.svg`,
-    href: '#',
+    label: 'Indicações e Recompensas',
+    icon: 'solar:gift-bold',
+    href: paths.cliente.indicacoes.root,
+  },
+  {
+    label: 'Contratos e Licenças',
+    icon: 'solar:document-bold',
+    href: paths.cliente.contratos.root,
   },
 ];
 
@@ -64,7 +67,7 @@ export function FaqsCategory() {
         }}
       >
         <Button startIcon={<Iconify icon="solar:list-bold" />} onClick={nav.onTrue}>
-          Categories
+          Áreas do Portal
         </Button>
       </Box>
 
@@ -82,7 +85,7 @@ export function FaqsCategory() {
     <Box
       gap={3}
       display={{ xs: 'none', md: 'grid' }}
-      gridTemplateColumns={{ md: 'repeat(3, 1fr)', lg: 'repeat(6, 1fr)' }}
+      gridTemplateColumns={{ md: 'repeat(2, 1fr)', lg: 'repeat(4, 1fr)' }}
     >
       {CATEGORIES.map((category) => (
         <CardDesktop key={category.label} category={category} />
@@ -103,6 +106,8 @@ function CardDesktop({ category }) {
 
   return (
     <Paper
+      component={RouterLink}
+      href={category.href}
       variant="outlined"
       sx={{
         p: 3,
@@ -110,19 +115,27 @@ function CardDesktop({ category }) {
         bgcolor: 'unset',
         cursor: 'pointer',
         textAlign: 'center',
+        textDecoration: 'none',
+        color: 'inherit',
         '&:hover': { bgcolor: 'background.paper', boxShadow: theme.customShadows.z20 },
       }}
     >
-      <Avatar
-        alt={category.icon}
-        src={category.icon}
+      <Box
         sx={{
           mb: 2,
           width: 80,
           height: 80,
           mx: 'auto',
+          borderRadius: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'primary.lighter',
+          color: 'primary.main',
         }}
-      />
+      >
+        <Iconify icon={category.icon} width={40} />
+      </Box>
 
       <Typography
         variant="subtitle2"
@@ -140,9 +153,11 @@ function CardMobile({ category }) {
   return (
     <ListItemButton
       key={category.label}
+      component={RouterLink}
+      href={category.href}
       sx={{
         py: 2,
-        maxWidth: 140,
+        maxWidth: 160,
         borderRadius: 1,
         textAlign: 'center',
         alignItems: 'center',
@@ -152,7 +167,21 @@ function CardMobile({ category }) {
         bgcolor: 'background.neutral',
       }}
     >
-      <Avatar alt={category.icon} src={category.icon} sx={{ width: 48, height: 48, mb: 1 }} />
+      <Box
+        sx={{
+          width: 48,
+          height: 48,
+          mb: 1,
+          borderRadius: 1.5,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          bgcolor: 'primary.lighter',
+          color: 'primary.main',
+        }}
+      >
+        <Iconify icon={category.icon} width={28} />
+      </Box>
 
       {category.label}
     </ListItemButton>
