@@ -2,7 +2,7 @@
 
 import { mutate } from 'swr';
 import { useTheme } from '@emotion/react';
-import { useState, useEffect } from 'react';
+import { use, useState, useEffect } from 'react';
 import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 
 import { alpha } from '@mui/material/styles';
@@ -97,7 +97,7 @@ const SectionHeader = ({ icon, title }) => (
 
 export default function PortalClienteEditPage({ params }) {
   const theme = useTheme();
-  const { id } = params;
+  const { id } = use(params);
   const { user } = useAuthContext();
   const userId = user?.id || user?._id || user?.userId;
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
