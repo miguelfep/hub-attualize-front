@@ -113,12 +113,16 @@ export function EsteticaTestimonials() {
             <Chip
               icon={<Iconify icon="solar:star-bold" width={16} />}
               label="DEPOIMENTOS REAIS"
-              size="small"
+              size="large"
               sx={{
                 fontWeight: 700,
                 bgcolor: alpha(theme.palette.primary.main, 0.12),
                 color: 'primary.main',
                 letterSpacing: 1,
+                ':hover': {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.3),
+                  opacity: 0.85,
+                },
               }}
             />
           </m.div>
