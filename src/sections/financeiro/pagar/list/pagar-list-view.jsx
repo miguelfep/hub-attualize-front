@@ -9,11 +9,15 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import { IconButton } from '@mui/material';
 import Divider from '@mui/material/Divider';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
+import DialogTitle from '@mui/material/DialogTitle';
 import { alpha, useTheme } from '@mui/material/styles';
+import DialogContent from '@mui/material/DialogContent';
+import DialogActions from '@mui/material/DialogActions';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -25,10 +29,12 @@ import { RouterLink } from 'src/routes/components';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { sumBy } from 'src/utils/helper';
+import { exportContasPagarExcel } from 'src/utils/export-contas-pagar-excel';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { buscarContasPagarPorPeriodo } from 'src/actions/contas';
 
+import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/custom-dialog';
@@ -81,6 +87,12 @@ export function ContasPagarListView() {
   const router = useRouter();
   const confirm = useBoolean();
   const modalOpen = useBoolean();
+  const exportModal = useBoolean();
+  const [exportPeriod, setExportPeriod] = useState({
+    startDate: dayjs().startOf('month'),
+    endDate: dayjs().endOf('month'),
+  });
+  const [exporting, setExporting] = useState(false);
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -233,6 +245,47 @@ export function ContasPagarListView() {
 
   const dataInPage = rowInPage(dataFiltered, page, rowsPerPage);
 
+  const handleOpenExportModal = () => {
+    setExportPeriod({
+      startDate: (filters.startDate && dayjs(filters.startDate).isValid() ? dayjs(filters.startDate) : dayjs().startOf('month')).startOf('day'),
+      endDate: (filters.endDate && dayjs(filters.endDate).isValid() ? dayjs(filters.endDate) : dayjs().endOf('month')).endOf('day'),
+    });
+    exportModal.onTrue();
+  };
+
+  const handleExportExcel = async () => {
+    if (exportPeriod.startDate.isAfter(exportPeriod.endDate)) {
+      toast.error('Data inicial não pode ser maior que a data final');
+      return;
+    }
+    setExporting(true);
+    try {
+      const start = exportPeriod.startDate.format('YYYY-MM-DD');
+      const end = exportPeriod.endDate.format('YYYY-MM-DD');
+      const contas = await buscarContasPagarPorPeriodo(start, end);
+      if (!contas?.length) {
+        toast.error('Nenhuma conta no período selecionado para exportar');
+        return;
+      }
+      exportContasPagarExcel(contas, exportPeriod.startDate, exportPeriod.endDate);
+      toast.success('Planilha exportada com sucesso');
+      exportModal.onFalse();
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao exportar');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const setExportQuickPeriod = (type) => {
+    if (type === 'current') {
+      setExportPeriod({ startDate: dayjs().startOf('month'), endDate: dayjs().endOf('month') });
+    } else if (type === 'previous') {
+      const prev = dayjs().subtract(1, 'month');
+      setExportPeriod({ startDate: prev.startOf('month'), endDate: prev.endOf('month') });
+    }
+  };
+
   return (
     <DashboardContent>
       <CustomBreadcrumbs
@@ -243,14 +296,23 @@ export function ContasPagarListView() {
           { name: 'Todas' },
         ]}
         action={
-          <Button
-            component={RouterLink}
-            href={paths.dashboard.financeiro.pagarnovo}
-            variant="contained"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-          >
-            Nova Conta
-          </Button>
+          <Stack direction="row" spacing={1.5}>
+            <Button
+              variant="outlined"
+              startIcon={<Iconify icon="vscode-icons:file-type-excel" />}
+              onClick={handleOpenExportModal}
+            >
+              Exportar Excel
+            </Button>
+            <Button
+              component={RouterLink}
+              href={paths.dashboard.financeiro.pagarnovo}
+              variant="contained"
+              startIcon={<Iconify icon="mingcute:add-line" />}
+            >
+              Nova Conta
+            </Button>
+          </Stack>
         }
         sx={{ mb: { xs: 3, md: 5 } }}
       />
@@ -493,6 +555,145 @@ export function ContasPagarListView() {
           </Button>
         }
       />
+
+      {/* Modal Exportar Excel */}
+      <Dialog
+        open={exportModal.value}
+        onClose={exportModal.onFalse}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            overflow: 'hidden',
+          },
+        }}
+      >
+        <DialogTitle sx={{ pb: 0 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: (t) => alpha(t.palette.success.main, 0.12),
+                color: 'success.main',
+              }}
+            >
+              <Iconify icon="vscode-icons:file-type-excel" width={28} />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Exportar para Excel
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                Escolha o período. O arquivo será gerado com o nome e intervalo abaixo.
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2.5, pb: 3 }}>
+          <Stack spacing={2.5}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ mt: 2, fontWeight: 600, color: 'text.primary' }}>
+                Período
+              </Typography>
+              <Stack direction="row" spacing={1} sx={{ mb: 2, py: 1 }} flexWrap="wrap" useFlexGap>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setExportQuickPeriod('current')}
+                  sx={{
+                    borderColor: alpha(theme.palette.grey[500], 0.32),
+                    color: 'text.secondary',
+                    '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                  }}
+                >
+                  Este mês
+                </Button>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  onClick={() => setExportQuickPeriod('previous')}
+                  sx={{
+                    borderColor: alpha(theme.palette.grey[500], 0.32),
+                    color: 'text.secondary',
+                    '&:hover': { borderColor: 'primary.main', color: 'primary.main', bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                  }}
+                >
+                  Mês passado
+                </Button>
+              </Stack>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+                  <DatePicker
+                    label="Data inicial"
+                    value={exportPeriod.startDate}
+                    onChange={(date) => setExportPeriod((p) => ({ ...p, startDate: date ? dayjs(date).startOf('day') : p.startDate }))}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        fullWidth: true,
+                        sx: { '& .MuiInputBase-root': { borderRadius: 1.5 } },
+                      },
+                    }}
+                  />
+                  <DatePicker
+                    label="Data final"
+                    value={exportPeriod.endDate}
+                    onChange={(date) => setExportPeriod((p) => ({ ...p, endDate: date ? dayjs(date).endOf('day') : p.endDate }))}
+                    slotProps={{
+                      textField: {
+                        size: 'small',
+                        fullWidth: true,
+                        sx: { '& .MuiInputBase-root': { borderRadius: 1.5 } },
+                      },
+                    }}
+                  />
+                </Stack>
+              </LocalizationProvider>
+            </Box>
+
+            <Box
+              sx={{
+                py: 1.5,
+                px: 2,
+                borderRadius: 1.5,
+                bgcolor: (t) => alpha(t.palette.grey[500], 0.08),
+                border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.2)}`,
+              }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.75 }}>
+                Nome do arquivo
+              </Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500, color: 'text.primary' }}>
+                {exportPeriod.startDate.format('YYYY-MM') === exportPeriod.endDate.format('YYYY-MM')
+                  ? `contas-a-pagar-${exportPeriod.startDate.format('YYYY-MM')}.xlsx`
+                  : `contas-a-pagar-${exportPeriod.startDate.format('YYYY-MM')}-${exportPeriod.endDate.format('YYYY-MM')}.xlsx`}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {exportPeriod.startDate.format('DD/MM/YYYY')} a {exportPeriod.endDate.format('DD/MM/YYYY')}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, py: 2, pt: 1.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" onClick={exportModal.onFalse} disabled={exporting}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={exporting ? null : <Iconify icon="vscode-icons:file-type-excel" width={20} />}
+            onClick={handleExportExcel}
+            disabled={exporting}
+          >
+            {exporting ? 'Exportando…' : 'Exportar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </DashboardContent>
   );
 }

@@ -2,30 +2,37 @@ import axios, { endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
-const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-
 export async function getServiceItens() {
-  const res = await axios.get(`${baseUrl}financeiro/services/itens`);
-  return res.data;
+  const res = await axios.get(endpoints.serviceItens.list);
+  const { data } = res;
+  return Array.isArray(data?.servicesItem) ? data.servicesItem : [];
 }
 
 // ----------------------------------------------------------------------
 
 export async function getServiceItemById(id) {
-  const res = await axios.get(`${endpoints.invoices.list}/${id}`);
-  return res.data;
+  const res = await axios.get(endpoints.serviceItens.list);
+  const { data } = res;
+  const list = Array.isArray(data?.servicesItem) ? data.servicesItem : [];
+  return list.find((item) => item._id === id) ?? null;
 }
 
 // ----------------------------------------------------------------------
 
 export async function createServiceItem(itemData) {
-  const res = await axios.post(endpoints.invoices.create, itemData);
+  const res = await axios.post(endpoints.serviceItens.create, itemData);
   return res.data;
 }
 
 // ----------------------------------------------------------------------
 
 export async function updateServiceItem(id, itemData) {
-  const res = await axios.put(`${endpoints.invoices.update}/${id}`, itemData);
+  const res = await axios.put(endpoints.serviceItens.update(id), itemData);
   return res.data;
+}
+
+// ----------------------------------------------------------------------
+
+export async function deleteServiceItem(id) {
+  await axios.delete(endpoints.serviceItens.delete(id));
 }

@@ -41,12 +41,12 @@ export function InvoiceNewEditDetails() {
     const fetchServiceItens = async () => {
       try {
         const response = await getServiceItens();
-        setItensServices(response.servicesItem);
+        const lista = response.servicesItem || response.data || response;
+        setItensServices(Array.isArray(lista) ? lista : []);
       } catch (error) {
         console.error('Erro ao buscar itens de serviço:', error);
       }
     };
-
     fetchServiceItens();
   }, []);
 
@@ -59,6 +59,8 @@ export function InvoiceNewEditDetails() {
       quantidade: 1,
       preco: 0,
       total: 0,
+      categoriaReceita: null,
+      centroCusto: null
     });
   };
 
@@ -84,6 +86,8 @@ export function InvoiceNewEditDetails() {
         setValue(`items[${index}].servico`, selectedService._id);
         setValue(`items[${index}].titulo`, selectedService.titulo);
         setValue(`items[${index}].preco`, selectedService.preco);
+        setValue(`items[${index}].categoriaReceita`, selectedService.categoriaReceita);
+        setValue(`items[${index}].centroCusto`, selectedService.centroCusto);
         setValue(`items[${index}].total`, selectedService.preco * values.items[index].quantidade);
       }
     },
@@ -151,7 +155,7 @@ export function InvoiceNewEditDetails() {
                 label="Serviço"
                 InputLabelProps={{ shrink: true }}
                 sx={{ maxWidth: { md: 160 } }}
-                value={values.items[index].servico}
+                value={values.items[index].servico || ''}
                 onChange={(event) => handleSelectService(index, event.target.value)}
               >
                 <MenuItem
@@ -164,7 +168,7 @@ export function InvoiceNewEditDetails() {
 
                 <Divider sx={{ borderStyle: 'dashed' }} />
 
-                {itensServices.map((service) => (
+                {Array.isArray(itensServices) && itensServices.map((service) => (
                   <MenuItem key={service._id} value={service._id}>
                     {service.titulo}
                   </MenuItem>
