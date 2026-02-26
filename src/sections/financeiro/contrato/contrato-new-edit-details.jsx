@@ -44,7 +44,7 @@ export function ContratoNewEditDetails({ contrato }) {
     const fetchServiceItens = async () => {
       try {
         const response = await getServiceItens();
-        setItensServices(response.servicesItem);
+        setItensServices(response);
       } catch (error) {
         console.error('Erro ao buscar itens de serviço:', error);
       }
