@@ -20,19 +20,29 @@ export async function buscarContasPagarPorMes(dataInicio, dataFim) {
 }
 
 // Função para buscar cobranças por um intervalo de datas
-export async function buscarContasPagarPorPeriodo(dataInicio, dataFim) {
-  const res = await axios.get(endpoints.contasPagar.mes, {
-    params: {
-      dataInicio,
-      dataFim,
-    },
-  });
+// centroCustoId (opcional): filtra contas pelo centro de custo
+export async function buscarContasPagarPorPeriodo(dataInicio, dataFim, centroCustoId) {
+  const params = { dataInicio, dataFim };
+  if (centroCustoId) params.centroCustoId = centroCustoId;
+  const res = await axios.get(endpoints.contasPagar.mes, { params });
   return res.data;
 }
 
 // Função para buscar conta a pagar por ID
 export async function buscarContaPagarPorId(id) {
   const res = await axios.get(`${endpoints.contasPagar.get}/${id}`);
+  return res.data;
+}
+
+// Função para buscar parcelas seguintes (para exibir antes de excluir "esta e as seguintes")
+export async function buscarParcelasSeguintes(id) {
+  const res = await axios.get(`${endpoints.contasPagar.get}/${id}/parcelas-seguintes`);
+  return res.data;
+}
+
+// Função para buscar todas as parcelas da série recorrente (anteriores, atual e futuras) com status
+export async function buscarTodasParcelasRecorrente(id) {
+  const res = await axios.get(`${endpoints.contasPagar.get}/${id}/parcelas-todas`);
   return res.data;
 }
 
@@ -43,8 +53,10 @@ export async function atualizarContaPagarPorId(id, data) {
 }
 
 // Função para deletar uma conta a pagar por ID
-export async function deletarContaPagarPorId(id) {
-  return axios.delete(`${endpoints.contasPagar.delete}/${id}`);
+// options.apenasEsta = true → exclui só esta parcela; omitido → exclui esta + parcelas seguintes (RECORRENTE)
+export async function deletarContaPagarPorId(id, options = {}) {
+  const params = options.apenasEsta ? { apenasEsta: 'true' } : {};
+  return axios.delete(`${endpoints.contasPagar.delete}/${id}`, { params });
 }
 
 // Função para registrar uma conta a pagar no Banco Inter

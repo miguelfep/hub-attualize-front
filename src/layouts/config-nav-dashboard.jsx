@@ -6,9 +6,9 @@ import { SvgColor } from 'src/components/svg-color';
 
 // ----------------------------------------------------------------------
 
-const icon = (name) => <SvgColor src={`${CONFIG.site.basePath}/assets/icons/navbar/${name}.svg`} />;
+export const icon = (name) => <SvgColor src={`${CONFIG.site.basePath}/assets/icons/navbar/${name}.svg`} />;
 
-const ICONS = {
+export const ICONS = {
   job: icon('ic-job'),
   blog: icon('ic-blog'),
   chat: icon('ic-chat'),
@@ -38,6 +38,8 @@ const ICONS = {
   tax: icon('ic-tax'),
 };
 
+export const ICON_KEYS = Object.keys(ICONS);
+
 // ----------------------------------------------------------------------
 
 export const navData = [
@@ -49,10 +51,10 @@ export const navData = [
     items: [
       { title: 'Dashboard', path: paths.dashboard.root, icon: ICONS.dashboard },
 
-      { 
-        title: 'Clientes', 
-        path: paths.dashboard.cliente.root, 
-        icon: ICONS.user, 
+      {
+        title: 'Clientes',
+        path: paths.dashboard.cliente.root,
+        icon: ICONS.user,
         roles: ['admin', 'operacional', 'comercial', 'financeiro'],
         children: [
           { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
@@ -60,9 +62,9 @@ export const navData = [
           { title: 'Avaliações', path: paths.dashboard.avaliacoes.root, icon: ICONS.analytics, roles: ['admin'] },
         ],
       },
-     
-      
-     
+
+
+
       {
         title: 'Comercial',
         path: paths.dashboard.invoice.root,
@@ -84,14 +86,24 @@ export const navData = [
             roles: ['admin', 'financeiro', 'comercial'],
             path: paths.dashboard.invoice.root,
           },
+          {
+            title: 'Itens de Serviço',
+            roles: ['admin', 'financeiro', 'comercial'],
+            path: paths.dashboard.comercial.itensServico,
+          },
         ],
       },
       {
         title: 'Financeiro',
-        path: paths.dashboard.general.analytics,
+        path: paths.dashboard.financeiro.root,
         icon: ICONS.banking,
         roles: ['financeiro', 'admin'],
         children: [
+          {
+            title: 'Dashboard',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.financeiro.root,
+          },
           {
             title: 'Contratos',
             roles: ['admin', 'financeiro', 'comercial'],
@@ -111,6 +123,16 @@ export const navData = [
             title: 'PIX',
             roles: ['admin', 'financeiro'],
             path: paths.dashboard.pix.root,
+          },
+          {
+            title: 'Categorias Financeiras',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.financeiro.categorias,
+          },
+          {
+            title: 'Centros de Custo',
+            roles: ['admin', 'financeiro'],
+            path: paths.dashboard.financeiro.centroCusto,
           },
         ],
       },
@@ -165,7 +187,7 @@ export const navData = [
           {
             title: 'Alteração',
             roles: ['admin', 'operacional', 'comercial'],
-            path: paths.dashboard.alteracao.root, 
+            path: paths.dashboard.alteracao.root,
           },
           {
             title: 'Licenças',

@@ -180,6 +180,8 @@ export const paths = {
       receber: `${ROOTS.DASHBOARD}/financeiro/receber`,
       pagar: `${ROOTS.DASHBOARD}/financeiro/pagar`,
       pagarnovo: `${ROOTS.DASHBOARD}/financeiro/pagar/new`,
+      categorias: `${ROOTS.DASHBOARD}/financeiro/categorias`,
+      centroCusto: `${ROOTS.DASHBOARD}/financeiro/centro-custo`,
     },
     aberturas: {
       root: `${ROOTS.DASHBOARD}/societario/abertura`,
@@ -195,6 +197,7 @@ export const paths = {
       leadDetails: (id) => `${ROOTS.DASHBOARD}/comercial/leads/${id}`,
       leadsConvertidos: `${ROOTS.DASHBOARD}/comercial/leads/convertidos`,
       funil: `${ROOTS.DASHBOARD}/comercial/vendas`,
+      itensServico: `${ROOTS.DASHBOARD}/comercial/itens-servico`,
     },
     servicos: `${ROOTS.DASHBOARD}/servicos`,
     product: {

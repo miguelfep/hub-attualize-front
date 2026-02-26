@@ -66,7 +66,7 @@ export function getThumbnailExt(thumbnailUrl, fallback = 'jpg') {
 }
 
 export const endpoints = {
-  chat: '/api/chat',  
+  chat: '/api/chat',
   kanban: `${baseUrl}comercial/board`,
   calendar: '/api/calendar',
   auth: {
@@ -118,6 +118,26 @@ export const endpoints = {
     registrar: `${baseUrl}financeiro/contas-pagar`,
     agendamentoInter: `${baseUrl}financeiro/contas-pagar`,
     dashboard: `${baseUrl}financeiro/infos/dashboard`,
+  },
+  categoriasFinanceiras: {
+    list: `${baseUrl}financeiro/categorias-financeiras`,
+    get: (id) => `${baseUrl}financeiro/categorias-financeiras/${id}`,
+    create: `${baseUrl}financeiro/categorias-financeiras`,
+    update: (id) => `${baseUrl}financeiro/categorias-financeiras/${id}`,
+    delete: (id) => `${baseUrl}financeiro/categorias-financeiras/${id}`,
+  },
+  centrosCusto: {
+    list: `${baseUrl}financeiro/centros-custo`,
+    get: (id) => `${baseUrl}financeiro/centros-custo/${id}`,
+    create: `${baseUrl}financeiro/centros-custo`,
+    update: (id) => `${baseUrl}financeiro/centros-custo/${id}`,
+    delete: (id) => `${baseUrl}financeiro/centros-custo/${id}`,
+  },
+  serviceItens: {
+    list: `${baseUrl}financeiro/services/itens`,
+    create: `${baseUrl}financeiro/services/itens`,
+    update: (id) => `${baseUrl}financeiro/services/itens/${id}`,
+    delete: (id) => `${baseUrl}financeiro/services/itens/${id}`,
   },
   fiscal: {
     atividades: {
