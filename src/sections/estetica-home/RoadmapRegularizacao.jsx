@@ -25,7 +25,7 @@ import { Iconify } from 'src/components/iconify';
 
 const handleContatoWhatsapp = () => {
   try {
-    const message = encodeURIComponent('Olá, gostaria de abrir minha clínica de estética e gostaria de mais informações!');
+    const message = encodeURIComponent('Olá, vim pelo site da Attualize (página de estética) e quero agendar uma análise da minha clínica!');
     const whatsappUrl = `https://wa.me/5541996982267?text=${message}`;
     window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
   } catch (error) {
@@ -44,23 +44,23 @@ const formatarTexto = (text) => {
 const benefits = [
   {
     icon: '🎯',
-    title: 'Somos especialistas em estética:',
-    description: 'entendemos CNAE, risco sanitário, Lei do Salão Parceiro e tributação do seu nicho.',
+    title: 'Se seu CNAE está correto',
+    description: 'Alinhamos sua atividade e às normas vigentes do seu nicho.',
   },
   {
     icon: '⚖️',
-    title: 'Regularização sem sustos:',
-    description: 'viabilidade correta, documentos certos, POPs e registros que passam em fiscalização.',
+    title: 'Se você está no regime ideal',
+    description: 'Analisamos o enquadramento legal que garante a melhor eficiência financeira para o seu negócio.',
   },
   {
     icon: '💸',
-    title: 'Menos impostos, mais lucro:',
-    description: 'planejamento tributário e parametrização de NF para não pagar o que não deve.',
+    title: 'Se pode reduzir sua carga tributária',
+    description: 'Aplicamos planejamento tributário para evitar o pagamento de impostos indevidos ou em duplicidade.',
   },
   {
     icon: '🤝',
-    title: 'Do zero ao atendendo:',
-    description: 'cuidamos de CNPJ, alvarás, licença sanitária, bombeiros, contratos e notas. Você foca no cliente.',
+    title: 'Se sua estrutura sanitária está segura',
+    description: 'Regularizamos alvarás, licenças e POPs para garantir total tranquilidade em fiscalizações.',
   },
 ];
 
@@ -286,7 +286,11 @@ export function RegularizationRoadmap() {
 
         <Paper sx={{ textAlign: 'center', p: 4, py: 5, borderRadius: 2, bgcolor: 'background.neutral' }}>
           <Typography variant="h5" component="h2" sx={{ fontWeight: 'bold' }}>
-            Por que fazer esses processos com a Attualize?
+            Quer saber se sua clínica paga imposto a mais?
+          </Typography>
+
+          <Typography variant='body2' sx={{ py: 3, fontWeight: 'bold', }} >
+            Agende uma análise com a Attualize e descubra:
           </Typography>
 
           <Stack
@@ -316,7 +320,7 @@ export function RegularizationRoadmap() {
           </Stack>
 
           <Button variant="contained" size="large" color="primary" onClick={handleContatoWhatsapp} startIcon={<Iconify icon="mdi:whatsapp" />}>
-            Fale com um Especialista Agora!
+            Fale com um especialista agora!
           </Button>
         </Paper>
 

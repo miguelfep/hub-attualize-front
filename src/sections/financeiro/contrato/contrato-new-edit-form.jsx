@@ -9,8 +9,9 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
+import { alpha } from '@mui/material/styles';
 import LoadingButton from '@mui/lab/LoadingButton';
-import { Dialog, Button, DialogTitle, DialogContent, DialogActions } from '@mui/material';
+import { Dialog, Button, Typography, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 
 import { useRouter } from 'src/routes/hooks';
 
@@ -20,6 +21,7 @@ import { today } from 'src/utils/format-time';
 
 import { postContrato, updateContrato } from 'src/actions/financeiro';
 
+import { Iconify } from 'src/components/iconify';
 import { Form, schemaHelper } from 'src/components/hook-form';
 
 import { ContratoCobrancas } from './contrato-cobranca';
@@ -153,7 +155,10 @@ export function ContratoNewEditForm({ currentContrato }) {
   const handleSaveAsDraft = handleSubmit(async (data) => {
     const currentTotal = calculateTotal(items);
 
-    if (currentTotal !== initialTotal) {
+    const itensChanged = JSON.stringify(data.items) !== JSON.stringify(currentContrato?.items);
+    const valorMudou = data.valorMensalidade !== currentContrato?.valorMensalidade;
+
+    if (itensChanged || valorMudou) {
       // Se o valor total mudou, exibir o modal de confirmação
       setOpenConfirmDialog(true);
     } else {
@@ -230,17 +235,73 @@ export function ContratoNewEditForm({ currentContrato }) {
       </Stack>
 
       {/* Diálogo de confirmação */}
-      <Dialog open={openConfirmDialog} onClose={() => setOpenConfirmDialog(false)}>
-        <DialogTitle>Atualizar cobranças?</DialogTitle>
-        <DialogContent>
-          O valor total do contrato foi alterado. Deseja atualizar as cobranças?
+      <Dialog
+        open={openConfirmDialog}
+        onClose={() => setOpenConfirmDialog(false)}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            maxWidth: 440, // Um pouco mais estreito para focar a atenção
+          },
+        }}
+      >
+        <DialogTitle sx={{ py: 3, px: 3 }}>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: (t) => alpha(t.palette.warning.main, 0.12),
+                color: 'warning.main',
+              }}
+            >
+              <Iconify icon="solar:refresh-circle-bold-duotone" width={28} />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                Atualizar cobranças pendentes?
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                Alteração de contrato detectada
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, pb: 0 }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', lineHeight: 1.6 }}>
+            Você alterou os itens ou o valor do contrato. Deseja aplicar essas mudanças automaticamente em todas as
+            <strong> cobranças futuras</strong> que ainda não possuem boleto gerado?
+          </Typography>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => handleConfirmUpdate(false)} color="secondary">
-            Não
+
+        <DialogActions sx={{ p: 3, gap: 1.5 }}>
+          <Button
+            fullWidth
+            variant="outlined"
+            color="inherit"
+            onClick={() => handleConfirmUpdate(false)}
+            sx={{ borderRadius: 1.25, fontWeight: 600 }}
+          >
+            Não, manter atuais
           </Button>
-          <Button onClick={() => handleConfirmUpdate(true)} color="primary">
-            Sim
+          <Button
+            fullWidth
+            variant="contained"
+            color="primary"
+            onClick={() => handleConfirmUpdate(true)}
+            startIcon={<Iconify icon="solar:check-read-bold-duotone" />}
+            sx={{
+              borderRadius: 1.25,
+              fontWeight: 600,
+              boxShadow: (theme) => theme.customShadows?.primary, // Se o seu tema tiver sombras customizadas
+            }}
+          >
+            Sim, atualizar agora
           </Button>
         </DialogActions>
       </Dialog>

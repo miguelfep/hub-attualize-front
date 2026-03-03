@@ -87,7 +87,7 @@ export function BannerEstetica() {
 
   const handleTrocarContador = () => {
     try {
-      const message = encodeURIComponent('Olá, tenho interesse em trocar minha contabilidade!');
+      const message = encodeURIComponent('Olá, estou no site e tenho interesse em trocar de contabilidade”');
       const whatsappUrl = `https://wa.me/5541996982267?text=${message}`;
       window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
     } catch (error) {
