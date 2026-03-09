@@ -136,7 +136,7 @@ const steps = [
               <Stack direction="row" spacing={2} alignItems="center">
                 <Iconify icon="solar:user-circle-bold-duotone" width={24} color="text.secondary" />
                 <Typography variant="subtitle1">MEI</Typography>
-                <Chip label="Para autônomos" size="small" color="primary" variant="soft" />
+                <Chip label="MEI: Esteticistas independentes" size="small" color="primary" variant="soft" />
               </Stack>
             </AccordionSummary>
             <AccordionDetails>
@@ -533,208 +533,208 @@ export function LegalizarClinicaEsteticaStepper() {
                       justifyContent="center"
                       sx={{ flexGrow: 1, textAlign: 'center', py: 6 }}
                     >
-                    <Box
-                      sx={{
-                        width: 80,
-                        height: 80,
-                        borderRadius: '50%',
-                        bgcolor: alpha(theme.palette.success.main, 0.12),
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <m.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{
-                          type: 'spring',
-                          stiffness: 260,
-                          damping: 20,
-                          delay: 0.1,
+                      <Box
+                        sx={{
+                          width: 80,
+                          height: 80,
+                          borderRadius: '50%',
+                          bgcolor: alpha(theme.palette.success.main, 0.12),
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                         }}
                       >
-                        <Iconify
-                          icon="eva:checkmark-circle-2-fill"
-                          width={56}
-                          sx={{ color: 'success.main' }}
-                        />
-                      </m.div>
-                    </Box>
-                    <Typography
-                      variant="h5"
-                      sx={{
-                        fontWeight: 800,
-                        fontSize: { xs: '1.25rem', md: '1.5rem' },
-                      }}
-                    >
-                      Mensagem enviada com sucesso!
-                    </Typography>
-                    <Typography
-                      variant="body1"
-                      sx={{
-                        color: 'text.secondary',
-                        maxWidth: 360,
-                      }}
-                    >
-                      Nossa equipe entrará em contato em breve pelo telefone ou e-mail informado.
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      color="primary"
-                      onClick={() => setSubmitSuccess(false)}
-                      startIcon={<Iconify icon="solar:pen-new-round-bold-duotone" />}
-                      sx={{ borderRadius: 2, fontWeight: 700 }}
-                    >
-                      Enviar outra mensagem
-                    </Button>
+                        <m.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{
+                            type: 'spring',
+                            stiffness: 260,
+                            damping: 20,
+                            delay: 0.1,
+                          }}
+                        >
+                          <Iconify
+                            icon="eva:checkmark-circle-2-fill"
+                            width={56}
+                            sx={{ color: 'success.main' }}
+                          />
+                        </m.div>
+                      </Box>
+                      <Typography
+                        variant="h5"
+                        sx={{
+                          fontWeight: 800,
+                          fontSize: { xs: '1.25rem', md: '1.5rem' },
+                        }}
+                      >
+                        Mensagem enviada com sucesso!
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          color: 'text.secondary',
+                          maxWidth: 360,
+                        }}
+                      >
+                        Nossa equipe entrará em contato em breve pelo telefone ou e-mail informado.
+                      </Typography>
+                      <Button
+                        variant="outlined"
+                        color="primary"
+                        onClick={() => setSubmitSuccess(false)}
+                        startIcon={<Iconify icon="solar:pen-new-round-bold-duotone" />}
+                        sx={{ borderRadius: 2, fontWeight: 700 }}
+                      >
+                        Enviar outra mensagem
+                      </Button>
                     </Stack>
                   </m.div>
                 ) : (
-                <m.div
-                  key={activeStep}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  transition={{ duration: 0.3 }}
-                  style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: '100%' }}
-                >
-                  <Box sx={{ flexGrow: 1 }}>
-                    <Typography
-                      variant="h5"
-                      component="h3"
-                      sx={{
-                        mb: 3,
-                        color: 'primary.main',
-                        fontWeight: 700,
-                        fontSize: { xs: '1.5rem', md: '1.75rem' },
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {steps[activeStep].label}
-                    </Typography>
-                    {steps[activeStep].description}
-                    {steps[activeStep].isFormStep && (
-                      <Stack spacing={2} sx={{ mt: 3 }}>
-                        <Controller
-                          name="nome"
-                          control={control}
-                          rules={{
-                            required: 'Nome é obrigatório!',
-                            minLength: {
-                              value: 5,
-                              message: 'Nome deve ter pelo menos 5 caracteres!',
-                            },
-                          }}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Nome"
-                              error={!!error}
-                              helperText={error?.message}
-                              fullWidth
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="email"
-                          control={control}
-                          rules={{
-                            required: 'O e-mail é obrigatório',
-                            pattern: {
-                              value: /^\S+@\S+\.\S+$/,
-                              message: 'Insira um endereço de e-mail válido!',
-                            },
-                          }}
-                          render={({ field, fieldState: { error } }) => (
-                            <TextField
-                              {...field}
-                              label="Email"
-                              type="email"
-                              fullWidth
-                              error={!!error}
-                              helperText={error?.message}
-                            />
-                          )}
-                        />
-                        <Controller
-                          name="telefone"
-                          control={control}
-                          rules={{
-                            required: 'O telefone é obrigatório',
-                            pattern: {
-                              value: /\(\d{2}\)\s\d\s\d{4}-\d{4}/,
-                              message: 'Insira um número de telefone válido',
-                            },
-                          }}
-                          render={({ field, fieldState: { error } }) => (
-                            <PatternFormat
-                              format="(##) # ####-####"
-                              customInput={TextField}
-                              label="Telefone"
-                              fullWidth
-                              variant="outlined"
-                              value={field.value ?? ''}
-                              onValueChange={(values) => field.onChange(values.formattedValue)}
-                              onBlur={field.onBlur}
-                              name={field.name}
-                              getInputRef={field.ref}
-                              error={!!error}
-                              helperText={error?.message}
-                            />
-                          )}
-                        />
-                      </Stack>
-                    )}
-                  </Box>
-
-                  <Stack direction="row" spacing={2} sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
-                    <Button
-                      variant="outlined"
-                      color="inherit"
-                      disabled={activeStep === 0}
-                      onClick={handleBack}
-                      startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
-                    >
-                      Voltar
-                    </Button>
-                    <Box sx={{ flexGrow: 1 }} />
-                    {steps[activeStep].isFormStep ? (
-                      <Button
-                        variant="contained"
-                        color="primary"
-                        onClick={handleSubmit(onSubmit)}
-                        size="large"
-                        disabled={isSubmitting}
-                        endIcon={
-                          isSubmitting ? (
-                            <Box component="span" sx={{ display: 'inline-flex', animation: 'spin 0.8s linear infinite' }}>
-                              <Iconify icon="eos-icons:loading" width={22} />
-                            </Box>
-                          ) : (
-                            <Iconify icon="eva:message-circle-fill" />
-                          )
-                        }
+                  <m.div
+                    key={activeStep}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.3 }}
+                    style={{ display: 'flex', flexDirection: 'column', flexGrow: 1, width: '100%' }}
+                  >
+                    <Box sx={{ flexGrow: 1 }}>
+                      <Typography
+                        variant="h5"
+                        component="h3"
                         sx={{
-                          '@keyframes spin': {
-                            '0%': { transform: 'rotate(0deg)' },
-                            '100%': { transform: 'rotate(360deg)' },
-                          },
+                          mb: 3,
+                          color: 'primary.main',
+                          fontWeight: 700,
+                          fontSize: { xs: '1.5rem', md: '1.75rem' },
+                          lineHeight: 1.3,
                         }}
                       >
-                        {isSubmitting ? 'Enviando...' : 'Falar com especialista'}
-                      </Button>
-                    ) : (
+                        {steps[activeStep].label}
+                      </Typography>
+                      {steps[activeStep].description}
+                      {steps[activeStep].isFormStep && (
+                        <Stack spacing={2} sx={{ mt: 3 }}>
+                          <Controller
+                            name="nome"
+                            control={control}
+                            rules={{
+                              required: 'Nome é obrigatório!',
+                              minLength: {
+                                value: 5,
+                                message: 'Nome deve ter pelo menos 5 caracteres!',
+                              },
+                            }}
+                            render={({ field, fieldState: { error } }) => (
+                              <TextField
+                                {...field}
+                                label="Nome"
+                                error={!!error}
+                                helperText={error?.message}
+                                fullWidth
+                              />
+                            )}
+                          />
+                          <Controller
+                            name="email"
+                            control={control}
+                            rules={{
+                              required: 'O e-mail é obrigatório',
+                              pattern: {
+                                value: /^\S+@\S+\.\S+$/,
+                                message: 'Insira um endereço de e-mail válido!',
+                              },
+                            }}
+                            render={({ field, fieldState: { error } }) => (
+                              <TextField
+                                {...field}
+                                label="Email"
+                                type="email"
+                                fullWidth
+                                error={!!error}
+                                helperText={error?.message}
+                              />
+                            )}
+                          />
+                          <Controller
+                            name="telefone"
+                            control={control}
+                            rules={{
+                              required: 'O telefone é obrigatório',
+                              pattern: {
+                                value: /\(\d{2}\)\s\d\s\d{4}-\d{4}/,
+                                message: 'Insira um número de telefone válido',
+                              },
+                            }}
+                            render={({ field, fieldState: { error } }) => (
+                              <PatternFormat
+                                format="(##) # ####-####"
+                                customInput={TextField}
+                                label="Telefone"
+                                fullWidth
+                                variant="outlined"
+                                value={field.value ?? ''}
+                                onValueChange={(values) => field.onChange(values.formattedValue)}
+                                onBlur={field.onBlur}
+                                name={field.name}
+                                getInputRef={field.ref}
+                                error={!!error}
+                                helperText={error?.message}
+                              />
+                            )}
+                          />
+                        </Stack>
+                      )}
+                    </Box>
+
+                    <Stack direction="row" spacing={2} sx={{ mt: 4, pt: 3, borderTop: 1, borderColor: 'divider' }}>
                       <Button
-                        variant="contained"
-                        onClick={handleNext}
-                        endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
+                        variant="outlined"
+                        color="inherit"
+                        disabled={activeStep === 0}
+                        onClick={handleBack}
+                        startIcon={<Iconify icon="eva:arrow-ios-back-fill" />}
                       >
-                        Próximo
+                        Voltar
                       </Button>
-                    )}
-                  </Stack>
-                </m.div>
+                      <Box sx={{ flexGrow: 1 }} />
+                      {steps[activeStep].isFormStep ? (
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          onClick={handleSubmit(onSubmit)}
+                          size="large"
+                          disabled={isSubmitting}
+                          endIcon={
+                            isSubmitting ? (
+                              <Box component="span" sx={{ display: 'inline-flex', animation: 'spin 0.8s linear infinite' }}>
+                                <Iconify icon="eos-icons:loading" width={22} />
+                              </Box>
+                            ) : (
+                              <Iconify icon="eva:message-circle-fill" />
+                            )
+                          }
+                          sx={{
+                            '@keyframes spin': {
+                              '0%': { transform: 'rotate(0deg)' },
+                              '100%': { transform: 'rotate(360deg)' },
+                            },
+                          }}
+                        >
+                          {isSubmitting ? 'Enviando...' : 'Falar com especialista'}
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="contained"
+                          onClick={handleNext}
+                          endIcon={<Iconify icon="eva:arrow-ios-forward-fill" />}
+                        >
+                          Próximo
+                        </Button>
+                      )}
+                    </Stack>
+                  </m.div>
                 )}
               </AnimatePresence>
             </Paper>

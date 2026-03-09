@@ -3,17 +3,14 @@ import { toast } from 'sonner';
 import React, { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
+import { alpha } from '@mui/material/styles'
 import TextField from '@mui/material/TextField';
-import InputLabel from '@mui/material/InputLabel';
+import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
-import FormControl from '@mui/material/FormControl';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import InputAdornment from '@mui/material/InputAdornment';
@@ -24,6 +21,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { atualizarCobrancaPorId, criarCobrancasPorContrato } from 'src/actions/financeiro';
 
 import { Iconify } from 'src/components/iconify';
+import { formatToCurrency } from 'src/components/animate';
 
 import { getUser } from 'src/auth/context/jwt';
 
@@ -92,12 +90,12 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
       // Validação: se tem boleto, não permite editar descrição, valor ou vencimento
       if (cobrancaAtual?.boleto) {
         const descricaoAlterada = observacoes !== (cobrancaAtual?.observacoes || '');
-        const valorAlterado = 
+        const valorAlterado =
           parseCurrency(formattedValue) !== (cobrancaAtual?.valor || 0);
-        const vencimentoAlterado = 
-          dataVencimento.format('YYYY-MM-DD') !== 
-          (cobrancaAtual?.dataVencimento 
-            ? dayjs(cobrancaAtual.dataVencimento).format('YYYY-MM-DD') 
+        const vencimentoAlterado =
+          dataVencimento.format('YYYY-MM-DD') !==
+          (cobrancaAtual?.dataVencimento
+            ? dayjs(cobrancaAtual.dataVencimento).format('YYYY-MM-DD')
             : dayjs().format('YYYY-MM-DD'));
 
         if (descricaoAlterada || valorAlterado || vencimentoAlterado) {
@@ -148,221 +146,147 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
       maxWidth="sm"
       fullWidth
       PaperProps={{
-        sx: {
-          borderRadius: 2,
-        },
+        sx: { borderRadius: 2, overflow: 'hidden' },
       }}
     >
-      <DialogTitle
-        sx={{
-          pb: 2,
-          pt: 3,
-          px: 3,
-          borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
-        }}
-      >
-        <Stack direction="row" spacing={1.5} alignItems="center">
+      {/* Header inspirado no estilo Excel */}
+      <DialogTitle sx={{ pb: 2, pt: 3 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5}>
           <Box
             sx={{
-              width: 40,
-              height: 40,
-              borderRadius: 1.5,
+              width: 48,
+              height: 48,
+              borderRadius: 2,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              bgcolor: 'primary.lighter',
+              bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
               color: 'primary.main',
             }}
           >
-            <Iconify
-              icon={cobrancaAtual ? 'solar:pen-bold-duotone' : 'solar:document-add-bold-duotone'}
-              width={24}
-            />
+            <Iconify icon="solar:bill-list-bold-duotone" width={28} />
           </Box>
           <Box>
-            <Box sx={{ typography: 'h6', fontWeight: 700 }}>
-              {cobrancaAtual ? 'Editar Cobrança' : 'Nova Cobrança'}
-            </Box>
-            <Box sx={{ typography: 'caption', color: 'text.secondary' }}>
-              {cobrancaAtual
-                ? 'Atualize as informações da cobrança'
-                : 'Preencha os dados para criar uma nova cobrança'}
-            </Box>
+            <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              {cobrancaAtual ? 'Detalhes da Cobrança' : 'Nova Cobrança'}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {temBoleto ? 'Visualização bloqueada - Boleto emitido' : 'Gerencie os valores e itens desta fatura'}
+            </Typography>
           </Box>
         </Stack>
       </DialogTitle>
 
-      <DialogContent sx={{ pt: 5, pb: 2, px: 3 }}>
-        <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-          <Stack spacing={3}>
-            {/* Alerta quando tem boleto */}
-            {temBoleto && (
-              <Alert 
-                severity="warning" 
-                icon={<Iconify icon="solar:danger-triangle-bold-duotone" width={24} />}
-                sx={{ 
-                  '& .MuiAlert-message': {
-                    width: '100%',
-                  },
-                }}
-              >
-                <Box sx={{ fontWeight: 600, mb: 0.5 }}>
-                  Boleto gerado - Edição bloqueada
-                </Box>
-                <Box sx={{ typography: 'body2' }}>
-                  Para editar descrição, valor ou vencimento, é necessário cancelar o boleto primeiro.
-                  Apenas o status pode ser alterado.
-                </Box>
-              </Alert>
-            )}
+      <DialogContent sx={{ pt: 1, pb: 3 }}>
+        <Stack spacing={3}>
 
-            {/* Descrição */}
+          {/* Alerta de Bloqueio (Estilo sutil) */}
+          {temBoleto && (
+            <Alert severity="warning" variant="outlined" sx={{ borderRadius: 1.5, borderStyle: 'dashed' }}>
+              O boleto já foi gerado. Para editar, cancele-o primeiro.
+            </Alert>
+          )}
+
+          {/* Input de Descrição */}
+          <Box>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Descrição Geral</Typography>
             <TextField
               value={observacoes}
               onChange={(e) => setObservacoes(e.target.value)}
               fullWidth
               multiline
-              rows={4}
-              margin="normal"
-              label="Descrição"
-              placeholder="Descreva os detalhes da cobrança..."
+              rows={2}
               disabled={camposDesabilitados}
-              InputLabelProps={{ shrink: true }}
-              helperText={
-                temBoleto
-                  ? 'Cancelar o boleto para editar este campo'
-                  : 'Informe uma descrição clara sobre esta cobrança'
-              }
+              placeholder="Ex: Consultoria referente ao mês de..."
+              sx={{ '& .MuiInputBase-root': { borderRadius: 1.5 } }}
             />
+          </Box>
 
-            {/* Data e Valor em linha */}
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+          {/* Grid de Data e Valor */}
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Vencimento</Typography>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
                 <DatePicker
-                  label="Data de Vencimento"
                   value={dataVencimento}
-                  onChange={(newValue) => setDataVencimento(newValue)}
-                  format="DD/MM/YYYY"
+                  onChange={(date) => setDataVencimento(date)}
                   disabled={camposDesabilitados}
                   slotProps={{
                     textField: {
                       fullWidth: true,
-                      disabled: camposDesabilitados,
-                      helperText: temBoleto ? 'Cancelar o boleto para editar' : undefined,
-                      InputProps: {
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <Iconify icon="solar:calendar-mark-bold-duotone" width={20} sx={{ color: 'text.disabled' }} />
-                          </InputAdornment>
-                        ),
-                      },
+                      size: 'medium',
+                      sx: { '& .MuiInputBase-root': { borderRadius: 1.5 } },
                     },
                   }}
                 />
-              </Grid>
-
-              <Grid item xs={12} sm={6}>
-                <TextField
-                  label="Valor"
-                  fullWidth
-                  value={formattedValue}
-                  onChange={handleValorChange}
-                  disabled={camposDesabilitados}
-                  placeholder="R$ 0,00"
-                  helperText={temBoleto ? 'Cancelar o boleto para editar' : undefined}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <Iconify icon="solar:dollar-bold-duotone" width={20} sx={{ color: 'text.disabled' }} />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
-              </Grid>
-            </Grid>
-
-            {/* Status (apenas para admin) */}
-            {isAdmin && (
-              <FormControl fullWidth>
-                <InputLabel>Status da Cobrança</InputLabel>
-                <Select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  label="Status da Cobrança"
-                  renderValue={(value) => {
-                    if (value === 'RECEBIDO' || value === 'PAGO') {
-                      return 'Pago';
-                    }
-                    if (value === 'EMABERTO') {
-                      return 'Pendente';
-                    }
-                    if (value === 'CANCELADO') {
-                      return 'Cancelado';
-                    }
-                    return value;
-                  }}
-                >
-                  <MenuItem value="RECEBIDO">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Iconify icon="solar:check-circle-bold-duotone" width={18} sx={{ color: 'success.main' }} />
-                      <Box>Pago</Box>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="PAGO">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Iconify icon="solar:check-circle-bold-duotone" width={18} sx={{ color: 'success.main' }} />
-                      <Box>Pago</Box>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="EMABERTO">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Iconify icon="solar:clock-circle-bold-duotone" width={18} sx={{ color: 'warning.main' }} />
-                      <Box>Pendente</Box>
-                    </Stack>
-                  </MenuItem>
-                  <MenuItem value="CANCELADO">
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Iconify icon="solar:close-circle-bold-duotone" width={18} sx={{ color: 'error.main' }} />
-                      <Box>Cancelado</Box>
-                    </Stack>
-                  </MenuItem>
-                </Select>
-              </FormControl>
-            )}
+              </LocalizationProvider>
+            </Box>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Valor Total</Typography>
+              <TextField
+                fullWidth
+                value={formattedValue}
+                onChange={handleValorChange}
+                disabled={camposDesabilitados}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                }}
+                sx={{ '& .MuiInputBase-root': { borderRadius: 1.5 } }}
+              />
+            </Box>
           </Stack>
-        </LocalizationProvider>
+
+          {cobrancaAtual?.items && cobrancaAtual.items.length > 0 && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}>
+                Itens da Cobrança
+              </Typography>
+
+              <Box
+                sx={{
+                  py: 2,
+                  px: 2,
+                  borderRadius: 1.5,
+                  bgcolor: (t) => alpha(t.palette.grey[500], 0.08),
+                  border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.12)}`,
+                }}
+              >
+                <Stack spacing={2}>
+                  {cobrancaAtual.items.map((item, index) => (
+                    <Stack key={index} direction="row" justifyContent="space-between" alignItems="center">
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                          {item.titulo}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {item.quantidade}x de {formatToCurrency(item.preco)}
+                        </Typography>
+                      </Box>
+                      <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                        {formatToCurrency(item.preco * item.quantidade)}
+                      </Typography>
+                    </Stack>
+                  ))}
+                </Stack>
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block', textAlign: 'right' }}>
+                Estes itens são fixos conforme o contrato pai.
+              </Typography>
+            </Box>
+          )}
+
+        </Stack>
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          px: 3,
-          py: 2,
-          borderTop: (theme) => `1px solid ${theme.palette.divider}`,
-          gap: 1.5,
-        }}
-      >
-        <Button
-          onClick={handleClose}
-          variant="outlined"
-          color="inherit"
-          startIcon={<Iconify icon="solar:close-circle-bold-duotone" />}
-        >
-          Cancelar
+      <DialogActions sx={{ px: 2.5, py: 2, gap: 1.5, borderTop: (t) => `1px solid ${t.palette.divider}` }}>
+        <Button variant="outlined" color="inherit" onClick={handleClose}>
+          Fechar
         </Button>
-        <Button
-          onClick={handleCreateOrUpdate}
-          variant="contained"
-          disabled={
-            !observacoes || !formattedValue || !dataVencimento || (!isAdmin && !isFinanceiro)
-          }
-          startIcon={
-            <Iconify
-              icon={cobrancaAtual ? 'solar:check-circle-bold-duotone' : 'solar:add-circle-bold-duotone'}
-            />
-          }
-        >
-          {cobrancaAtual ? 'Atualizar' : 'Criar Cobrança'}
-        </Button>
+        {!temBoleto && (
+          <Button variant="contained" onClick={handleCreateOrUpdate} sx={{ borderRadius: 1.5 }}>
+            Salvar Alterações
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
