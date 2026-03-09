@@ -302,6 +302,19 @@ const fieldSxBase = { '& .MuiInputBase-root': { minHeight: 56 } };
 const rowSpacing = 5;
 const colGap = 4;
 
+const Row = ({ children }) => (
+  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={{ width: '100%', '& > *': { flex: 1, minWidth: 0 } }}>
+    {children}
+  </Stack>
+);
+
+const Row3 = ({ children }) => (
+  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={{ width: '100%', '& > *': { flex: 1, minWidth: 0 } }}>
+    {children}
+  </Stack>
+);
+
+
 function PaymentBillingAddress({
   formData,
   errors,
@@ -313,16 +326,6 @@ function PaymentBillingAddress({
   cepNotFound,
 }) {
   const isFieldDisabled = loadingCep || (!cepNotFound && formData.endereco !== '');
-  const Row = ({ children }) => (
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={{ width: '100%', '& > *': { flex: 1, minWidth: 0 } }}>
-      {children}
-    </Stack>
-  );
-  const Row3 = ({ children }) => (
-    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={{ width: '100%', '& > *': { flex: 1, minWidth: 0 } }}>
-      {children}
-    </Stack>
-  );
 
   return (
     <Box>
