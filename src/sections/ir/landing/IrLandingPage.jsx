@@ -243,7 +243,7 @@ export function IrLandingPage() {
       // adicionar imagem de fundo
      
         sx={{
-          backgroundImage: `url(${CONFIG.site.basePath}/assets/images/banners/banner-irpf-2025.webp )`,
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)), url(${CONFIG.site.basePath}/assets/images/banners/banner-irpf-2025.webp )`,
           backgroundBlendMode: 'multiply',
           backgroundSize: 'cover',
           backgroundPosition: 'center',
@@ -613,7 +613,7 @@ export function IrLandingPage() {
 
           <Grid container spacing={3} alignItems="stretch">
             {loadingPlanos
-              ? [0, 1, 2].map((i) => (
+              ? [0, 1, 2, 3].map((i) => (
                   <Grid key={i} xs={12} md={4}>
                     <Skeleton variant="rounded" height={480} />
                   </Grid>
@@ -629,7 +629,7 @@ export function IrLandingPage() {
                       : null;
 
                   return (
-                    <Grid key={planoApi._id ?? planoApi.modalidade} xs={12} md={4}>
+                    <Grid key={planoApi._id ?? planoApi.modalidade} xs={12} md={3}>
                       <Card
                         sx={{
                           height: '100%',
