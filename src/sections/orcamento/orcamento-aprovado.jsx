@@ -4,6 +4,7 @@ import { z } from 'zod';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
+import { CardPayment } from '@mercadopago/sdk-react';
 
 import {
   Box,
@@ -14,16 +15,19 @@ import {
   Stack,
   Alert,
   Button,
+  Dialog,
   Divider,
   TextField,
   Typography,
   CardContent,
+  DialogTitle,
+  DialogContent,
   CircularProgress,
 } from '@mui/material';
 
 import { fCurrency, onlyDigits, formatTelefone, formatCPFOrCNPJ, validateCPFOrCNPJ } from 'src/utils/format-number';
 
-import { updateInvoice, crirarPedidoOrcamento } from 'src/actions/invoices';
+import { updateInvoice, criarPedidoCheckout, crirarPedidoOrcamento } from 'src/actions/invoices';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -61,6 +65,7 @@ export function OrcamentoAprovado({
 }) {
   const [pixGerado, setPixGerado] = useState(false);
   const [gerandoPix, setGerandoPix] = useState(false);
+  const [cartaoDialogOpen, setCartaoDialogOpen] = useState(false);
   const enderecoInicial = invoice?.cliente?.endereco?.[0] || invoice?.endereco || {};
   const [method, setMethod] = useState(paymentMethod);
   const [errors, setErrors] = useState({});
@@ -114,7 +119,7 @@ export function OrcamentoAprovado({
   const handleCepChange = async (event) => {
     const rawCep = event.target.value;
     const cep = sanitizeCep(rawCep);
-    setFormData({ ...formData, cep: rawCep });
+    setFormData((prev) => ({ ...prev, cep: rawCep }));
     if (cep.length === 8) {
       setLoadingCep(true);
       setCepNotFound(false);
@@ -145,17 +150,17 @@ export function OrcamentoAprovado({
 
   const handleInputChange = (event) => {
     const { name, value } = event.target;
-    setFormData({ ...formData, [name]: value });
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleTelefoneChange = (event) => {
     const formatted = formatTelefone(event.target.value);
-    setFormData({ ...formData, telefone: formatted });
+    setFormData((prev) => ({ ...prev, telefone: formatted }));
   };
 
   const handleCpfCnpjChange = (event) => {
     const formatted = formatCPFOrCNPJ(event.target.value);
-    setFormData({ ...formData, cpfCnpj: formatted });
+    setFormData((prev) => ({ ...prev, cpfCnpj: formatted }));
   };
 
   const handleFinalize = async () => {
@@ -213,7 +218,25 @@ export function OrcamentoAprovado({
       return;
     }
 
-    // Para outros métodos de pagamento (boleto, etc)
+    // Cartão de crédito — abre dialog com Brick Mercado Pago e chama nova API checkout
+    if (method === 'credit_card') {
+      const validationResult = formDataSchema.safeParse(formData);
+      if (!validationResult.success) {
+        const newErrors = {};
+        validationResult.error.errors.forEach((error) => {
+          newErrors[error.path[0]] = error.message;
+        });
+        setErrors(newErrors);
+        setIsCreating(false);
+        return;
+      }
+      setErrors({});
+      setCartaoDialogOpen(true);
+      setIsCreating(false);
+      return;
+    }
+
+    // Para boleto e outros
     const validationResult = formDataSchema.safeParse(formData);
     if (!validationResult.success) {
       const newErrors = {};
@@ -288,12 +311,30 @@ export function OrcamentoAprovado({
                 Clique em &quot;Finalizar pedido&quot; para gerar o QR Code PIX. O QR Code aparecerá na seção &quot;Detalhes da Cobrança&quot;.
               </Alert>
             )}
+            {method === 'credit_card' && (
+              <Alert severity="info" sx={{ mt: 3 }}>
+                Clique em &quot;Finalizar pedido&quot; e preencha os dados do cartão na próxima tela. Parcelamento em até 12x.
+              </Alert>
+            )}
           </Card>
         </Grid>
         <Grid xs={12} md={4} sx={{ order: { xs: 2, md: 2 }, pl: { md: 2 } }}>
           <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} gerandoPix={gerandoPix} method={method} />
         </Grid>
       </Grid>
+
+      {/* Dialog cartão de crédito — nova API ms-me POST /api/checkout/:id/pedido */}
+      <OrcamentoCartaoDialog
+        open={cartaoDialogOpen}
+        onClose={() => setCartaoDialogOpen(false)}
+        invoice={invoice}
+        formData={formData}
+        onSuccess={async () => {
+          await updateInvoiceData();
+          setCartaoDialogOpen(false);
+          toast.success('Pagamento com cartão processado!');
+        }}
+      />
     </Box>
   );
 }
@@ -302,18 +343,7 @@ const fieldSxBase = { '& .MuiInputBase-root': { minHeight: 56 } };
 const rowSpacing = 5;
 const colGap = 4;
 
-const Row = ({ children }) => (
-  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={{ width: '100%', '& > *': { flex: 1, minWidth: 0 } }}>
-    {children}
-  </Stack>
-);
-
-const Row3 = ({ children }) => (
-  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={{ width: '100%', '& > *': { flex: 1, minWidth: 0 } }}>
-    {children}
-  </Stack>
-);
-
+const rowStackSx = { width: '100%', '& > *': { flex: 1, minWidth: 0 } };
 
 function PaymentBillingAddress({
   formData,
@@ -333,7 +363,7 @@ function PaymentBillingAddress({
         Dados para cobrança
       </Typography>
       <Stack spacing={rowSpacing}>
-        <Row>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
           <TextField
             fullWidth
             label="Nome"
@@ -357,8 +387,8 @@ function PaymentBillingAddress({
             variant="outlined"
             sx={fieldSxBase}
           />
-        </Row>
-        <Row>
+        </Stack>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
           <TextField
             fullWidth
             label="Telefone"
@@ -383,12 +413,12 @@ function PaymentBillingAddress({
             variant="outlined"
             sx={fieldSxBase}
           />
-        </Row>
+        </Stack>
 
         <Typography variant="subtitle2" sx={{ pt: 1, pb: 0.5, color: 'text.secondary' }}>
           Endereço
         </Typography>
-        <Row>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
           <TextField
             fullWidth
             label="CEP"
@@ -416,8 +446,8 @@ function PaymentBillingAddress({
             variant="outlined"
             sx={fieldSxBase}
           />
-        </Row>
-        <Row3>
+        </Stack>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
           <TextField
             fullWidth
             label="Número"
@@ -452,8 +482,8 @@ function PaymentBillingAddress({
             variant="outlined"
             sx={fieldSxBase}
           />
-        </Row3>
-        <Row>
+        </Stack>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
           <TextField
             fullWidth
             label="Cidade"
@@ -478,7 +508,7 @@ function PaymentBillingAddress({
             variant="outlined"
             sx={fieldSxBase}
           />
-        </Row>
+        </Stack>
       </Stack>
     </Box>
   );
@@ -549,12 +579,126 @@ function PaymentMethods({ method, handleChangeMethod }) {
             </Stack>
           </CardContent>
         </Card>
+
+        <Card
+          component="label"
+          sx={{
+            cursor: 'pointer',
+            border: method === 'credit_card' ? 2 : 1,
+            borderColor: method === 'credit_card' ? 'primary.main' : 'divider',
+            backgroundColor: method === 'credit_card' ? 'action.selected' : 'background.paper',
+            transition: 'all 0.2s ease-in-out',
+            '&:hover': { borderColor: 'primary.main', boxShadow: 2 },
+          }}
+          onClick={() => handleChangeMethod({ target: { value: 'credit_card' } })}
+        >
+          <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
+            <Stack direction="row" spacing={2} alignItems="flex-start">
+              <Radio checked={method === 'credit_card'} value="credit_card" onChange={handleChangeMethod} sx={{ p: 0, mt: 0.5 }} />
+              <Stack direction="row" spacing={1} alignItems="center" flex={1}>
+                <Iconify icon="eva:credit-card-outline" width={28} sx={{ color: 'text.secondary' }} />
+                <Stack flex={1} minWidth={0}>
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Cartão de crédito</Typography>
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    Parcelado em até 12x • Mercado Pago
+                  </Typography>
+                </Stack>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
       </Stack>
     </Box>
   );
 }
 
-function PaymentSummary({ invoice, handleFinalize, isCreating, gerandoPix }) {
+// Dialog cartão de crédito — nova API ms-me POST /api/checkout/:invoiceId/pedido com cardToken (Mercado Pago)
+function OrcamentoCartaoDialog({ open, onClose, invoice, formData, onSuccess }) {
+  const [loading, setLoading] = useState(false);
+  const [brickError, setBrickError] = useState(null);
+  const total = Number(invoice?.total) || (Array.isArray(invoice?.items) ? invoice.items : Array.isArray(invoice?.itens) ? invoice.itens : []).reduce(
+    (s, i) => s + Number(i.preco || i.valor || 0) * (i.quantidade || 1),
+    0
+  );
+
+  const handleSubmit = async (mpFormData) => {
+    const token = mpFormData?.token ?? mpFormData?.formData?.cardToken;
+    if (!invoice?._id || !token) return;
+    setLoading(true);
+    setBrickError(null);
+    try {
+      const paymentMethodId =
+        mpFormData?.paymentMethodId ??
+        mpFormData?.payment_method_id ??
+        mpFormData?.formData?.paymentMethodId ??
+        'visa';
+      const installments = mpFormData?.installments ?? mpFormData?.formData?.installments ?? 1;
+
+      await criarPedidoCheckout(invoice._id, {
+        paymentMethod: 'credit_card',
+        cardToken: token,
+        card_token: token,
+        installments,
+        payment_method_id: String(paymentMethodId).trim() || 'visa',
+        paymentMethodId: String(paymentMethodId).trim() || 'visa',
+        cpfCnpj: onlyDigits(formData?.cpfCnpj) || mpFormData?.payer?.identification?.number?.replace(/\D/g, '') || '',
+        nome: formData?.nome || mpFormData?.payer?.first_name || '',
+        email: formData?.email || mpFormData?.payer?.email || '',
+      });
+      onSuccess?.();
+    } catch (err) {
+      const msg = err?.response?.data?.message || err?.message || 'Erro ao processar cartão';
+      setBrickError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleError = (err) => {
+    setBrickError(err?.message || 'Erro no formulário do cartão');
+    toast.error('Verifique os dados do cartão.');
+  };
+
+  return (
+    <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Iconify icon="eva:credit-card-outline" width={24} />
+          <Typography variant="h6">Pagamento com cartão</Typography>
+        </Stack>
+      </DialogTitle>
+      <DialogContent sx={{ pt: 1, pb: 3 }}>
+        <Stack spacing={2} sx={{ pb: 2 }}>
+          <Alert severity="info">
+            Total: <strong>{fCurrency(total)}</strong> — Parcelamento em até 12x via Mercado Pago.
+          </Alert>
+          {brickError && <Alert severity="error">{brickError}</Alert>}
+          {open && total > 0 && (
+            <Box sx={{ minHeight: 320 }}>
+              <CardPayment
+                initialization={{
+                  amount: total,
+                  payer: {
+                    email: formData?.email || '',
+                    firstName: (formData?.nome || '').split(' ')[0] || '',
+                    lastName: (formData?.nome || '').split(' ').slice(1).join(' ') || '',
+                    identification: { type: 'CPF', number: onlyDigits(formData?.cpfCnpj) || '' },
+                  },
+                }}
+                customization={{ paymentMethods: { maxInstallments: 12, minInstallments: 1 } }}
+                onSubmit={handleSubmit}
+                onError={handleError}
+              />
+            </Box>
+          )}
+        </Stack>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function PaymentSummary({ invoice, handleFinalize, isCreating, gerandoPix, method }) {
   const itens = Array.isArray(invoice?.items) ? invoice.items : Array.isArray(invoice?.itens) ? invoice.itens : [];
 
   return (

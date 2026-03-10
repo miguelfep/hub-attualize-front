@@ -6,10 +6,10 @@ import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import ListItemButton from '@mui/material/ListItemButton';
 
-import { useBoolean } from 'src/hooks/use-boolean';
-
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import { maxLine } from 'src/theme/styles';
 

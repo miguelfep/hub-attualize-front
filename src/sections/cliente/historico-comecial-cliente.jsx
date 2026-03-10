@@ -103,7 +103,12 @@ export function HistoricoComercialCliente({ cliente }) {
     };
     setSelectedInvoice(invoiceWithClientData);
     view.onTrue();
-  }
+  };
+
+  const handleCloseViewer = () => {
+    view.onFalse();
+    setSelectedInvoice(null);
+  };
 
   const renderFiltros = (
     <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -307,14 +312,22 @@ export function HistoricoComercialCliente({ cliente }) {
       <Dialog fullScreen open={view.value}>
         <Box sx={{ height: 1, display: 'flex', flexDirection: 'column' }}>
           <DialogActions sx={{ p: 1.5, bgcolor: 'background.default' }}>
-            <Button color="inherit" variant="contained" onClick={view.onFalse}>
+            <Button color="inherit" variant="contained" onClick={handleCloseViewer}>
               Fechar
             </Button>
           </DialogActions>
           <Box sx={{ flexGrow: 1, height: 1, overflow: 'hidden' }}>
-            <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
-              {selectedInvoice && <InvoicePDF invoice={selectedInvoice} currentStatus={selectedInvoice.status} />}
-            </PDFViewer>
+            {selectedInvoice ? (
+              <PDFViewer width="100%" height="100%" style={{ border: 'none' }}>
+                <InvoicePDF invoice={selectedInvoice} currentStatus={selectedInvoice.status} />
+              </PDFViewer>
+            ) : (
+              <Box sx={{ height: 1, display: 'grid', placeItems: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Fatura nao selecionada.
+                </Typography>
+              </Box>
+            )}
           </Box>
         </Box>
       </Dialog>

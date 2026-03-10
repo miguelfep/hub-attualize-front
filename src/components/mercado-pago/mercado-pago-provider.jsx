@@ -4,42 +4,53 @@ import { useEffect } from 'react';
 import { initMercadoPago } from '@mercadopago/sdk-react';
 
 // ----------------------------------------------------------------------
+// Modo: "test" = chaves de teste | "production" ou vazio = chaves de produção
+// Front (Public Key) e Back (Access Token) devem usar o MESMO modo.
+// Em dev use NEXT_PUBLIC_MERCADO_PAGO_MODE=test
+// ----------------------------------------------------------------------
+
+const MP_MODE = (process.env.NEXT_PUBLIC_MERCADO_PAGO_MODE || '').toLowerCase();
+
+function getPublicKey() {
+  const useTest = MP_MODE === 'test';
+
+  if (useTest) {
+    return (
+      process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY_TEST ||
+      process.env.NEXT_PUBLIC_MP_PUBLIC_KEY_TEST ||
+      ''
+    );
+  }
+
+  return (
+    process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY ||
+    process.env.NEXT_PUBLIC_MP_PUBLIC_KEY ||
+    ''
+  );
+}
 
 export function MercadoPagoProvider({ children }) {
   useEffect(() => {
-    const publicKey = process.env.NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY_TEST;
-    
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('🔑 Inicializando Mercado Pago SDK...');
-    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-    console.log('Public Key encontrada?', !!publicKey);
-    
+    const publicKey = getPublicKey();
+
     if (publicKey) {
-      console.log('Public Key (preview):', `${publicKey.substring(0, 20)}...`);
-      
       try {
         initMercadoPago(publicKey, {
           locale: 'pt-BR',
         });
-        console.log('✅ Mercado Pago SDK inicializado com sucesso!');
-        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        if (process.env.NODE_ENV === 'development') {
+          console.info(
+            `[Mercado Pago] SDK inicializado em modo: ${MP_MODE === 'test' ? 'TESTE' : 'PRODUÇÃO'}`
+          );
+        }
       } catch (error) {
-        console.error('❌ Erro ao inicializar SDK:', error);
-        console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.error('Erro ao inicializar Mercado Pago SDK:', error);
       }
     } else {
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('❌ ERRO: Public Key NÃO ENCONTRADA!');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-      console.error('📋 Variável esperada:');
-      console.error('   NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY_TEST');
-      console.error('');
-      console.error('✅ Solução:');
-      console.error('1. Crie .env.local na raiz do projeto');
-      console.error('2. Adicione:');
-      console.error('   NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY_TEST=TEST-xxxxx');
-      console.error('3. Reinicie o servidor (yarn dev)');
-      console.error('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      const modeHint = MP_MODE === 'test' ? 'NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY_TEST' : 'NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY';
+      console.warn(
+        `[Mercado Pago] PUBLIC_KEY não encontrada (modo: ${MP_MODE || 'production'}). Defina ${modeHint} em .env.local. Para dev use NEXT_PUBLIC_MERCADO_PAGO_MODE=test`
+      );
     }
   }, []);
 

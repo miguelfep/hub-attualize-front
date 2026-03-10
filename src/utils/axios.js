@@ -108,6 +108,8 @@ export const endpoints = {
     update: `${baseUrl}financeiro/invoice/update`,
     delete: `${baseUrl}financeiro/invoice/`,
     checkout: `${baseUrl}checkout/orcamento`,
+    /** Nova API ms-me: POST /api/checkout/:invoiceId/pedido (boleto | pix | credit_card) */
+    checkoutPedido: (invoiceId) => `${baseUrl}checkout/${invoiceId}/pedido`,
   },
   contasPagar: {
     criar: `${baseUrl}financeiro/contas-pagar`,
@@ -162,6 +164,14 @@ export const endpoints = {
     fatura: `${baseUrl}contratos/cobrancas/fatura`,
     enviarMensagem: `${baseUrl}contratos/cobrancas/mensagem`,
     subscription: `${baseUrl}contratos/subscription`,
+    /** Nova API ms-me: financeiro (boleto, cobranças, assinatura) */
+    financeiro: {
+      boleto: (cobrancaId) => `${baseUrl}contratos/financeiro/boleto/${cobrancaId}`,
+      cobrancas: (contratoId) => `${baseUrl}contratos/financeiro/cobrancas?contratoId=${contratoId}`,
+      cancelarBoleto: (cobrancaId) => `${baseUrl}contratos/financeiro/cancelar-boleto/${cobrancaId}`,
+      atualizarBoleto: (cobrancaId) => `${baseUrl}contratos/financeiro/atualizar-boleto/${cobrancaId}`,
+      assinarMercadoPago: (contratoId) => `${baseUrl}contratos/${contratoId}/assinar-mercadopago`,
+    },
   },
   marketing: {
     getLeads: `${baseUrl}marketing/leads`,
@@ -315,6 +325,46 @@ export const endpoints = {
     rejeitarTransacao: (id) => `${baseUrl}recompensa/transacao/${id}/rejeitar`,
     aprovarDesconto: (id) => `${baseUrl}recompensa/desconto/${id}/aprovar`,
     aplicarDescontoManual: `${baseUrl}recompensa/desconto/aplicar-manual`,
+  },
+  // Imposto de Renda (IR)
+  ir: {
+    checkout: `${baseUrl}ir/checkout`,
+    checkoutPublico: `${baseUrl}ir/public/checkout`,
+    /** Nova API ms-me: gera cobrança para pedido já existente (auth) */
+    checkoutByOrderId: (id) => `${baseUrl}ir/${id}/checkout`,
+    /** Nova API ms-me: gera cobrança para pedido já existente (público) */
+    checkoutPublicoByOrderId: (id) => `${baseUrl}ir/${id}/checkout-publico`,
+    planos: `${baseUrl}ir/planos`,
+    orders: `${baseUrl}ir/orders`,
+    order: (id) => `${baseUrl}ir/orders/${id}`,
+    publicOrder: (id) => `${baseUrl}ir/public/orders/${id}`,
+    collectionLink: (id) => `${baseUrl}ir/orders/${id}/collection-link`,
+    documents: (id) => `${baseUrl}ir/orders/${id}/documents`,
+    declaration: (id) => `${baseUrl}ir/orders/${id}/declaration`,
+    coleta: {
+      get: (token) => `${baseUrl}ir/coleta/${token}`,
+      formulario: (token) => `${baseUrl}ir/coleta/${token}/formulario`,
+      upload: (token) => `${baseUrl}ir/coleta/${token}/documents`,
+      enviar: (token) => `${baseUrl}ir/coleta/${token}/enviar`,
+      submeterValidacao: (token) => `${baseUrl}ir/coleta/${token}/submeter-validacao`,
+    },
+    admin: {
+      orders: `${baseUrl}ir/admin/orders`,
+      export: `${baseUrl}ir/admin/orders/export`,
+      order: (id) => `${baseUrl}ir/admin/orders/${id}`,
+      status: (id) => `${baseUrl}ir/admin/orders/${id}/status`,
+      responsavel: (id) => `${baseUrl}ir/admin/orders/${id}/responsavel`,
+      pagamentoManual: (id) => `${baseUrl}ir/admin/orders/${id}/pagamento-manual`,
+      documents: (id) => `${baseUrl}ir/admin/orders/${id}/documents`,
+      notify: (id) => `${baseUrl}ir/admin/orders/${id}/notify`,
+      analiseIa: (id) => `${baseUrl}ir/admin/orders/${id}/analise-ia`,
+      downloadDoc: (id, tipo, filename) => `${baseUrl}ir/admin/orders/${id}/documents/${tipo}/${filename}`,
+      usuariosInternos: `${baseUrl}ir/admin/usuarios-internos`,
+      planos: `${baseUrl}ir/admin/planos`,
+      plano: (id) => `${baseUrl}ir/admin/planos/${id}`,
+      planoAvancarLote: (id) => `${baseUrl}ir/admin/planos/${id}/avancar-lote`,
+      planoEncerrar: (id) => `${baseUrl}ir/admin/planos/${id}/encerrar`,
+    },
   },
   // Comunidade (baseUrl já inclui /api quando necessário; paths relativos ao serverUrl)
   comunidade: {

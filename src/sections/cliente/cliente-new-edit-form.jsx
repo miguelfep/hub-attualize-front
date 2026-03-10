@@ -251,7 +251,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       nomeFantasia: currentCliente?.nomeFantasia || '',
       razaoSocial: currentCliente?.razaoSocial || '',
       cnpj: currentCliente?.cnpj || '',
-      codigo: currentCliente?.codigo || null,
+      codigo: currentCliente?.codigo ?? '',
       email: currentCliente?.email || '',
       emailFinanceiro: currentCliente?.emailFinanceiro || '',
       whatsapp: normalizePhoneBR(currentCliente?.whatsapp),
@@ -371,6 +371,7 @@ const onSubmit = handleSubmit(
           const updatedCliente = await getClienteById(currentCliente._id);
           reset({
             ...updatedCliente,
+            codigo: updatedCliente?.codigo ?? '',
             status: updatedCliente.status !== undefined ? updatedCliente.status : true,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
             dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
@@ -403,7 +404,10 @@ const onSubmit = handleSubmit(
     setLoadingReceita(true);
     try {
       const clienteAtualizado = await atualizarDadosCliente(currentCliente._id);
-      reset(clienteAtualizado);
+      reset({
+        ...clienteAtualizado,
+        codigo: clienteAtualizado?.codigo ?? '',
+      });
 
       toast.success('Dados da Receita atualizados com sucesso!');
     } catch (error) {
@@ -525,6 +529,7 @@ const onSubmit = handleSubmit(
                     render={({ field }) => (
                       <TextField
                         {...field}
+                        value={field.value ?? ''}
                         type="number"
                         label="Código"
                         fullWidth
