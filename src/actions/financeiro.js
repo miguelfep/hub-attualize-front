@@ -126,6 +126,40 @@ export async function criarAssinaturaMercadoPago(data) {
   return res.data;
 }
 
+// ----------------------------------------------------------------------
+// Nova API ms-me — financeiro (boleto, cobranças, assinatura)
+// ----------------------------------------------------------------------
+
+/** Gera boleto para uma cobrança (POST /api/contratos/financeiro/boleto/:cobrancaId) */
+export async function gerarBoletoFinanceiro(cobrancaId) {
+  const res = await axios.post(endpoints.contratos.financeiro.boleto(cobrancaId));
+  return res.data;
+}
+
+/** Lista cobranças do contrato (GET /api/contratos/financeiro/cobrancas?contratoId=) — campo boleto é JSON com linhaDigitavel, pixCopiaECola */
+export async function listarCobrancasFinanceiro(contratoId) {
+  const res = await axios.get(endpoints.contratos.financeiro.cobrancas(contratoId));
+  return res.data;
+}
+
+/** Cancela boleto (POST /api/contratos/financeiro/cancelar-boleto/:cobrancaId) */
+export async function cancelarBoletoFinanceiro(cobrancaId) {
+  const res = await axios.post(endpoints.contratos.financeiro.cancelarBoleto(cobrancaId));
+  return res.data;
+}
+
+/** Atualiza boleto expirado (POST /api/contratos/financeiro/atualizar-boleto/:cobrancaId), body opcional: { novaDataVencimento, novoValor } */
+export async function atualizarBoletoFinanceiro(cobrancaId, body = {}) {
+  const res = await axios.post(endpoints.contratos.financeiro.atualizarBoleto(cobrancaId), body);
+  return res.data;
+}
+
+/** Assinatura recorrente Mercado Pago (POST /api/contratos/:contratoId/assinar-mercadopago), body: { provider, method: 'subscription', email, cpfCnpj } */
+export async function assinarContratoMercadoPago(contratoId, body) {
+  const res = await axios.post(endpoints.contratos.financeiro.assinarMercadoPago(contratoId), body);
+  return res.data;
+}
+
 // Função para calcular totais de faturas
 export function calcularTotais(invoices) {
   let pago = 0;

@@ -280,6 +280,11 @@ export const paths = {
     recompensas: {
       root: `${ROOTS.DASHBOARD}/recompensas`,
     },
+    impostoRenda: {
+      root: `${ROOTS.DASHBOARD}/imposto-renda`,
+      pedido: (id) => `${ROOTS.DASHBOARD}/imposto-renda/${id}`,
+      planos: `${ROOTS.DASHBOARD}/imposto-renda/planos`,
+    },
     comunidade: {
       root: `${ROOTS.DASHBOARD}/comunidade`,
       materiais: {
@@ -354,6 +359,11 @@ export const paths = {
     },
     indicacoes: {
       root: `${ROOTS.CLIENTE}/indicacoes`,
+    },
+    impostoRenda: {
+      root: `${ROOTS.CLIENTE}/imposto-renda`,
+      meusPedidos: `${ROOTS.CLIENTE}/imposto-renda/meus-pedidos`,
+      pedido: (id) => `${ROOTS.CLIENTE}/imposto-renda/pedido/${id}`,
     },
     recompensas: {
       root: `${ROOTS.CLIENTE}/recompensas`,

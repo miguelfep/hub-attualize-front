@@ -162,6 +162,24 @@ export const navData = [
         ],
       },
       {
+        title: 'Imposto de Renda',
+        path: paths.dashboard.impostoRenda.root,
+        icon: ICONS.tax,
+        roles: ['admin', 'operacional', 'financeiro'],
+        children: [
+          {
+            title: 'Pedidos IR',
+            path: paths.dashboard.impostoRenda.root,
+            roles: ['admin', 'operacional', 'financeiro'],
+          },
+          {
+            title: 'Planos e Lotes',
+            path: paths.dashboard.impostoRenda.planos,
+            roles: ['admin'],
+          },
+        ],
+      },
+      {
         title: 'Contábil',
         path: paths.dashboard.contabil.root,
         icon: ICONS.banking,

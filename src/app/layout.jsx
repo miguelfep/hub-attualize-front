@@ -14,8 +14,8 @@ import { ThemeProvider } from 'src/theme/theme-provider';
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { detectSettings } from 'src/components/settings/server';
+import { MercadoPagoProvider } from 'src/components/mercado-pago';
 import { InitColorSchemeScript } from 'src/components/color-scheme-script';
-// import { MercadoPagoProvider } from 'src/components/mercado-pago'; // Removido temporariamente - será implementado depois
 import { defaultSettings, SettingsProvider } from 'src/components/settings';
 
 import { AuthProvider as JwtAuthProvider } from 'src/auth/context/jwt';
@@ -161,14 +161,14 @@ export default async function RootLayout({ children }) {
                 <ThemeProvider>
                   <SpeedInsights />
                   <MotionLazy>
-                    {/* <MercadoPagoProvider> Removido temporariamente - será implementado depois */}
+                    <MercadoPagoProvider>
                       <ClientComponents>
                         <ProgressBar />
                         <Analytics />
                         <ClientAnalytics />
                         {children}
                       </ClientComponents>
-                    {/* </MercadoPagoProvider> */}
+                    </MercadoPagoProvider>
                   </MotionLazy>
                 </ThemeProvider>
               </SettingsProvider>

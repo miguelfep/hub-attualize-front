@@ -24,6 +24,7 @@ import { Iconify } from 'src/components/iconify';
 import { QrCodePix } from 'src/components/pix/qrcode-pix';
 
 const statusColors = {
+  PAGO: 'success',
   EMABERTO: 'warning',
   VENCIDO: 'error',
   CANCELADO: 'info',
@@ -31,11 +32,22 @@ const statusColors = {
 };
 
 const statusTexts = {
+  PAGO: 'Pago',
   EMABERTO: 'Aguardando pagamento',
   VENCIDO: 'Vencida',
   CANCELADO: 'Cancelado',
   RECEBIDO: 'Pago',
 };
+
+// Label amigável do método de pagamento para exibição
+const metodoPagamentoLabels = {
+  boleto: 'Boleto',
+  pix: 'PIX',
+  credit_card: 'Cartão de crédito',
+};
+function getMetodoPagamentoLabel(metodo) {
+  return metodoPagamentoLabels[metodo] || (metodo || '').replace(/_/g, ' ').toUpperCase();
+}
 
 // Componente para exibir dados PIX da cobrança
 function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
@@ -599,7 +611,7 @@ export function CobrancaExistente({ invoice, onPagamentoConfirmado }) {
             <Card sx={{ maxWidth: 600, margin: '0 auto', overflow: 'hidden' }} variant="outlined">
               <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                 <Typography variant="h5" sx={{ mb: 2 }}>
-                  {`Cobrança: ${cobranca.metodoPagamento.toUpperCase()}`}
+                  {`Cobrança: ${getMetodoPagamentoLabel(cobranca.metodoPagamento)}`}
                 </Typography>
                 <Label color={statusColors[cobranca.status]} variant="filled" sx={{ mb: 3 }}>
                   {statusTexts[cobranca.status]}
@@ -682,6 +694,37 @@ export function CobrancaExistente({ invoice, onPagamentoConfirmado }) {
                       >
                         Download do Boleto
                       </Button>
+                    </Stack>
+                  </>
+                )}
+                {cobranca.metodoPagamento === 'credit_card' && (
+                  <>
+                    <Divider sx={{ mb: 2 }} />
+                    <Stack spacing={2} sx={{ mt: 3 }} alignItems="center">
+                      <Iconify
+                        icon="eva:credit-card-outline"
+                        width={48}
+                        sx={{ color: cobranca.status === 'RECEBIDO' ? 'success.main' : 'text.secondary' }}
+                      />
+                      <Typography variant="body1" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                        {cobranca.status === 'RECEBIDO'
+                          ? 'Pagamento confirmado no cartão.'
+                          : cobranca.status === 'CANCELADO'
+                            ? 'Esta cobrança foi cancelada.'
+                            : cobranca.status === 'VENCIDO'
+                              ? 'Cobrança vencida.'
+                              : 'Pagamento em processamento ou aguardando confirmação.'}
+                      </Typography>
+                      {cobranca.status === 'RECEBIDO' && cobranca.dataPagamento && (
+                        <Stack direction="row" justifyContent="space-between" sx={{ width: '100%', maxWidth: 320 }}>
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            Data do pagamento
+                          </Typography>
+                          <Typography variant="subtitle2">
+                            {new Date(cobranca.dataPagamento).toLocaleDateString('pt-BR')}
+                          </Typography>
+                        </Stack>
+                      )}
                     </Stack>
                   </>
                 )}
