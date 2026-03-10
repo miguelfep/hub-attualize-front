@@ -29,6 +29,8 @@ const statusColors = {
   VENCIDO: 'error',
   CANCELADO: 'info',
   RECEBIDO: 'success',
+  PROCESSANDO: 'primary',
+  ERRO_PROCESSAMENTO: 'error',
 };
 
 const statusTexts = {
@@ -37,6 +39,8 @@ const statusTexts = {
   VENCIDO: 'Vencida',
   CANCELADO: 'Cancelado',
   RECEBIDO: 'Pago',
+  PROCESSANDO: 'Processando...',
+  ERRO_PROCESSAMENTO: 'Erro na cobrança',
 };
 
 // Label amigável do método de pagamento para exibição
@@ -65,9 +69,9 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
     const cobrancaPix = invoice.cobrancas.find((cob) => cob.metodoPagamento === 'pix');
     if (cobrancaPix) {
       const cob = cobrancaPix;
-      const txid = cob.pixTxid 
-        || cob.txid 
-        || cob.pix?.txid 
+      const txid = cob.pixTxid
+        || cob.txid
+        || cob.pix?.txid
         || cob.pix?.pixTxid
         || (typeof cob.pix === 'string' ? (() => {
           try {
@@ -76,13 +80,13 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
             return null;
           }
         })() : null);
-      
+
       if (txid) {
         console.log('🔑 TXID encontrado em outra cobrança da invoice:', txid);
         return txid;
       }
     }
-    
+
     return null;
   };
 
@@ -101,12 +105,12 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
     // 1. Verificar se há dados PIX diretamente na cobrança (campo pix)
     if (cobrancaParam.pix) {
       try {
-        dadosPix = typeof cobrancaParam.pix === 'string' 
-          ? JSON.parse(cobrancaParam.pix) 
+        dadosPix = typeof cobrancaParam.pix === 'string'
+          ? JSON.parse(cobrancaParam.pix)
           : cobrancaParam.pix;
-        
+
         console.log('📦 Dados PIX extraídos do campo pix:', dadosPix);
-        
+
         // Normalizar estrutura
         if (dadosPix) {
           // Normalizar valor (pode vir como objeto ou número)
@@ -149,7 +153,7 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
         const boletoData = typeof cobrancaParam.boleto === 'string'
           ? JSON.parse(cobrancaParam.boleto)
           : cobrancaParam.boleto;
-        
+
         if (boletoData.pixCopiaECola || boletoData.pixQrCode || boletoData.qrcode) {
           return {
             // Seguindo documentação: pixCopiaECola é o campo principal
@@ -170,11 +174,11 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
 
     // 3. Verificar se há txid na cobrança para buscar da API
     // Verificar múltiplos campos possíveis onde o TXID pode estar
-    let txid = cobrancaParam.pixTxid 
-      || cobrancaParam.txid 
-      || cobrancaParam.pix?.txid 
+    let txid = cobrancaParam.pixTxid
+      || cobrancaParam.txid
+      || cobrancaParam.pix?.txid
       || cobrancaParam.pix?.pixTxid;
-    
+
     // Tentar parsear se for string
     if (!txid && typeof cobrancaParam.pix === 'string') {
       try {
@@ -184,24 +188,24 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
         // Ignorar erro de parse
       }
     }
-    
+
     // Tentar buscar no boleto também
     if (!txid && cobrancaParam.boleto) {
       try {
-        const boletoParsed = typeof cobrancaParam.boleto === 'string' 
-          ? JSON.parse(cobrancaParam.boleto) 
+        const boletoParsed = typeof cobrancaParam.boleto === 'string'
+          ? JSON.parse(cobrancaParam.boleto)
           : cobrancaParam.boleto;
         txid = boletoParsed.pixTxid || boletoParsed.txid;
       } catch (e) {
         // Ignorar erro de parse
       }
     }
-    
+
     // Se ainda não encontrou, tentar buscar em outras cobranças da invoice
     if (!txid && invoice?.cobrancas) {
       txid = encontrarTxidNaInvoice();
     }
-    
+
     if (txid) {
       console.log('🔑 TXID encontrado, precisa buscar da API:', txid);
       return {
@@ -226,13 +230,13 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
     if (!silent) {
       setBuscando(true);
     }
-    
+
     console.log(`🔎 Buscando PIX da API com TXID: ${txid} (silent: ${silent})`);
-    
+
     try {
       const cobrancaPix = await consultarCobrancaPix(txid);
       console.log('📥 Resposta da API:', cobrancaPix);
-      
+
       if (cobrancaPix && (cobrancaPix.pixCopiaECola || cobrancaPix.qrcode || cobrancaPix.qrcodeBase64)) {
         // Normalizar valor (pode vir como objeto ou número)
         let valorNormalizado = cobranca.valor;
@@ -259,14 +263,14 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
           podeGerarNovo: cobrancaPix.podeGerarNovo !== false,
           expiraEm: cobrancaPix.expiraEm,
         };
-        
+
         console.log('📊 Dados normalizados da API:', {
           temPixCopiaECola: !!dadosNormalizados.pixCopiaECola,
           temQrcode: !!dadosNormalizados.qrcode,
           pixCopiaEColaLength: dadosNormalizados.pixCopiaECola?.length,
           dadosNormalizados,
         });
-        
+
         setPixData(dadosNormalizados);
         console.log('✅ Dados PIX carregados com sucesso e salvos no estado:', dadosNormalizados);
         console.log('✅ Verificação de QR Code:', {
@@ -275,20 +279,20 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
           temQrcodeBase64: !!dadosNormalizados.qrcodeBase64,
           pixCopiaEColaLength: dadosNormalizados.pixCopiaECola?.length,
         });
-        
+
         // Se o status for CONCLUIDA, atualizar invoice para pago
         if (dadosNormalizados.status === 'CONCLUIDA' && onPagamentoConfirmado) {
           console.log('💰 Pagamento confirmado! Atualizando invoice...');
           onPagamentoConfirmado(dadosNormalizados);
         }
-        
+
         if (!silent) {
           toast.success('QR Code PIX carregado!');
         }
         return dadosNormalizados;
-      } 
-        console.log('⚠️ Resposta da API não contém QR Code ainda');
-      
+      }
+      console.log('⚠️ Resposta da API não contém QR Code ainda');
+
     } catch (error) {
       console.error('❌ Erro ao buscar PIX da API:', error);
       if (!silent) {
@@ -302,7 +306,7 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
         setBuscando(false);
       }
     }
-    
+
     return null;
   };
 
@@ -316,13 +320,13 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
       txid: cobranca.txid,
       cobrancaCompleta: cobranca,
     });
-    
+
     // Buscar imediatamente sem delay
     const dados = extrairDadosPix(cobranca);
-    
+
     if (dados) {
       console.log('📊 Dados extraídos:', dados);
-      
+
       if (dados.precisaBuscar && dados.txid && !buscando) {
         // Se tem TXID mas não tem QR Code, buscar da API imediatamente
         console.log('🔍 Buscando PIX da API com TXID:', dados.txid);
@@ -340,7 +344,7 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
       }
     } else {
       console.log('⚠️ Nenhum dado PIX encontrado na cobrança');
-      
+
       // Se não encontrou dados, tentar buscar TXID em outras cobranças
       const txidAlternativo = encontrarTxidNaInvoice();
       if (txidAlternativo && !buscando) {
@@ -371,18 +375,18 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
     if (!(pixData?.txid && pixData.status !== 'CONCLUIDA' && cobranca.status !== 'RECEBIDO')) {
       return undefined;
     }
-    
+
     const interval = setInterval(async () => {
       try {
         const cobrancaPix = await consultarCobrancaPix(pixData.txid);
-        
+
         if (cobrancaPix?.status === 'CONCLUIDA') {
           clearInterval(interval);
           console.log('💰 Pagamento confirmado via polling!');
-          
+
           // Atualizar dados locais
           setPixData((prev) => ({ ...prev, status: 'CONCLUIDA' }));
-          
+
           // Atualizar invoice para pago
           if (onPagamentoConfirmado) {
             onPagamentoConfirmado({
@@ -411,7 +415,7 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
   useEffect(() => {
     // Tentar encontrar TXID de múltiplas formas
     let txid = cobranca.pixTxid || cobranca.txid;
-    
+
     if (!txid && cobranca.pix) {
       try {
         const pixParsed = typeof cobranca.pix === 'string' ? JSON.parse(cobranca.pix) : cobranca.pix;
@@ -420,12 +424,12 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
         // Ignorar
       }
     }
-    
+
     // Se ainda não encontrou, buscar em outras cobranças
     if (!txid) {
       txid = encontrarTxidNaInvoice();
     }
-    
+
     console.log('🔄 Polling - Estado atual:', {
       temPixData: !!pixData,
       temQrcode: !!(pixData?.pixCopiaECola || pixData?.qrcode || pixData?.qrcodeBase64),
@@ -433,14 +437,14 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
       buscando,
       metodoPagamento: cobranca.metodoPagamento,
     });
-    
+
     if (!(!pixData && txid && !buscando && cobranca.metodoPagamento === 'pix')) {
       return undefined;
     }
-    
+
     let tentativas = 0;
     const maxTentativas = 60; // Máximo de 60 tentativas (2 minutos)
-    
+
     // Primeira tentativa imediata
     buscarPixDaApi(txid, true).then((dados) => {
       if (dados && (dados.pixCopiaECola || dados.qrcode || dados.qrcodeBase64)) {
@@ -448,7 +452,7 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
         tentativas = maxTentativas; // Parar polling
       }
     });
-    
+
     // Depois tentar a cada 2 segundos (mais agressivo)
     const interval = setInterval(async () => {
       if (!pixData && tentativas < maxTentativas) {
@@ -511,7 +515,7 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
 
   // Fallback: exibir informações básicas com botão para buscar
   const txidParaBuscar = cobranca.pixTxid || cobranca.txid || encontrarTxidNaInvoice();
-  
+
   console.log('⚠️ Estado atual do PIX (fallback):', {
     temPixData: !!pixData,
     temQrcode: !!(pixData?.qrcode || pixData?.qrcodeBase64),
@@ -521,7 +525,7 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
     txidEncontrado: txidParaBuscar,
     metodoPagamento: cobranca.metodoPagamento,
   });
-  
+
   return (
     <>
       <Divider sx={{ mb: 2 }} />
@@ -552,7 +556,7 @@ function PixCobrancaDisplay({ cobranca, invoice, onPagamentoConfirmado }) {
           </>
         ) : (
           <Alert severity="warning">
-            TXID não encontrado. O QR Code PIX pode estar sendo processado. 
+            TXID não encontrado. O QR Code PIX pode estar sendo processado.
             Aguarde alguns instantes ou recarregue a página.
           </Alert>
         )}
@@ -613,8 +617,8 @@ export function CobrancaExistente({ invoice, onPagamentoConfirmado }) {
                 <Typography variant="h5" sx={{ mb: 2 }}>
                   {`Cobrança: ${getMetodoPagamentoLabel(cobranca.metodoPagamento)}`}
                 </Typography>
-                <Label color={statusColors[cobranca.status]} variant="filled" sx={{ mb: 3 }}>
-                  {statusTexts[cobranca.status]}
+                <Label color={statusColors[cobranca.status?.toUpperCase() || 'default']} variant="filled" sx={{ mb: 3 }}>
+                  {statusTexts[cobranca.status?.toUpperCase() || cobranca.status]}
                 </Label>
 
                 <Stack spacing={2.5} sx={{ mb: 3 }}>
@@ -641,59 +645,75 @@ export function CobrancaExistente({ invoice, onPagamentoConfirmado }) {
                     <Divider sx={{ mb: 2 }} />
                     <Stack spacing={2} sx={{ mt: 3 }}>
                       {(() => {
+                        // 1. PROTEÇÃO MÁXIMA E ESTILIZADA: Se for "PROCESSANDO", mostra o spinner e aborta todo o resto!
+                        if (cobranca.boleto === 'PROCESSANDO' || cobranca.status === 'PROCESSANDO') {
+                          return (
+                            <Stack spacing={2} alignItems="center" sx={{ py: 4, px: 2 }}>
+                              <CircularProgress size={32} color="primary" />
+                              <Typography variant="body2" sx={{ color: 'text.secondary', textAlign: 'center' }}>
+                                Aguarde alguns instantes. <br />
+                                Estamos gerando o seu boleto de forma segura junto ao banco...
+                              </Typography>
+                            </Stack>
+                          );
+                        }
+
+                        // 2. Tenta fazer o parse seguro uma única vez
                         try {
                           const boletoData = typeof cobranca.boleto === 'string'
                             ? JSON.parse(cobranca.boleto)
                             : cobranca.boleto;
-                          const pixCopiaECola = boletoData?.pixCopiaECola;
 
-                          if (pixCopiaECola && pixCopiaECola !== 'null' && pixCopiaECola !== null) {
-                            return (
-                              <Button
-                                variant="contained"
-                                startIcon={<Iconify width={16} icon="eva:copy-outline" />}
-                                onClick={() =>
-                                  handleCopy(
-                                    pixCopiaECola,
-                                    'Chave pix copiada!'
-                                  )
-                                }
-                                fullWidth
-                              >
-                                Pagar com Pix Copia e cola
-                              </Button>
-                            );
-                          }
-                          return null;
+                          if (!boletoData) return null;
+
+                          const { pixCopiaECola, linhaDigitavel, codigoSolicitacao } = boletoData;
+
+                          // 3. Renderiza TODOS os botões de forma segura, usando as variáveis prontas
+                          return (
+                            <>
+                              {pixCopiaECola && pixCopiaECola !== 'null' && (
+                                <Button
+                                  variant="contained"
+                                  startIcon={<Iconify width={16} icon="eva:copy-outline" />}
+                                  onClick={() => handleCopy(pixCopiaECola, 'Chave pix copiada!')}
+                                  fullWidth
+                                >
+                                  Pagar com Pix Copia e cola
+                                </Button>
+                              )}
+
+                              {linhaDigitavel && (
+                                <Button
+                                  variant="contained"
+                                  startIcon={<Iconify width={16} icon="eva:copy-outline" />}
+                                  onClick={() => handleCopy(linhaDigitavel, 'Linha Digitável copiada!')}
+                                  fullWidth
+                                >
+                                  Pagar com Linha Digitável
+                                </Button>
+                              )}
+
+                              {codigoSolicitacao && (
+                                <Button
+                                  variant="contained"
+                                  startIcon={<Iconify width={16} icon="eva:file-outline" />}
+                                  onClick={() => handleDownload(codigoSolicitacao)}
+                                  fullWidth
+                                >
+                                  Download do Boleto
+                                </Button>
+                              )}
+                            </>
+                          );
                         } catch (error) {
                           console.error('Erro ao processar boleto:', error);
-                          return null;
+                          return (
+                            <Typography variant="body2" color="error" align="center" sx={{ py: 2 }}>
+                              Dados do boleto indisponíveis no momento.
+                            </Typography>
+                          );
                         }
                       })()}
-
-                      <Button
-                        variant="contained"
-                        startIcon={<Iconify width={16} icon="eva:copy-outline" />}
-                        onClick={() =>
-                          handleCopy(
-                            JSON.parse(cobranca.boleto).linhaDigitavel,
-                            'Linha Digitável copiada!'
-                          )
-                        }
-                        fullWidth
-                      >
-                        Pagar com Linha Digitável
-                      </Button>
-                      <Button
-                        variant="contained"
-                        startIcon={<Iconify width={16} icon="eva:file-outline" />}
-                        onClick={() =>
-                          handleDownload(JSON.parse(cobranca.boleto).codigoSolicitacao)
-                        }
-                        fullWidth
-                      >
-                        Download do Boleto
-                      </Button>
                     </Stack>
                   </>
                 )}
@@ -729,8 +749,8 @@ export function CobrancaExistente({ invoice, onPagamentoConfirmado }) {
                   </>
                 )}
                 {cobranca.metodoPagamento === 'pix' && (
-                  <PixCobrancaDisplay 
-                    cobranca={cobranca} 
+                  <PixCobrancaDisplay
+                    cobranca={cobranca}
                     invoice={invoice}
                     onPagamentoConfirmado={onPagamentoConfirmado}
                   />

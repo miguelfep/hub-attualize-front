@@ -9,6 +9,8 @@ import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 
+import { getInitials } from 'src/utils/helper';
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -16,60 +18,60 @@ import { Iconify } from 'src/components/iconify';
 const TESTIMONIALS = [
   {
     id: 1,
-    name: 'Dra. Mariana Silva',
+    title: 'Dra.',
+    name: 'Mariana Silva',
     crp: 'CRP 08/12345',
     city: 'Curitiba - PR',
-    avatar: '/assets/images/avatar/avatar-1.webp',
     rating: 5,
     testimonial: 'A Attualize revolucionou minha gestão financeira! Com a abertura de CNPJ gratuita e suporte constante, consegui focar 100% nos meus pacientes. Recomendo demais!',
     specialty: 'Psicologia Clínica',
   },
   {
     id: 2,
-    name: 'Dr. Carlos Mendes',
+    title: 'Dr.',
+    name: 'Carlos Mendes',
     crp: 'CRP 06/45678',
     city: 'São Paulo - SP',
-    avatar: '/assets/images/avatar/avatar-2.webp',
     rating: 5,
     testimonial: 'Economizei mais de R$ 3.000 no primeiro ano! A equipe é super atenciosa e resolve tudo rápido. Minha contabilidade nunca esteve tão organizada.',
     specialty: 'Psicologia Organizacional',
   },
   {
     id: 3,
-    name: 'Dra. Juliana Costa',
+    title: 'Dra.',
+    name: 'Juliana Costa',
     crp: 'CRP 12/23456',
     city: 'Florianópolis - SC',
-    avatar: '/assets/images/avatar/avatar-3.webp',
     rating: 5,
     testimonial: 'O atendimento especializado para psicólogos faz toda a diferença. Eles entendem nossas particularidades e sempre têm soluções práticas. Excelente!',
     specialty: 'Neuropsicologia',
   },
   {
     id: 4,
-    name: 'Dr. Roberto Alves',
+    title: 'Dr.',
+    name: 'Roberto Alves',
     crp: 'CRP 01/34567',
     city: 'Brasília - DF',
-    avatar: '/assets/images/avatar/avatar-4.webp',
     rating: 5,
     testimonial: 'Migrei de outra contabilidade e foi a melhor decisão! Preço justo, atendimento humanizado e total transparência. Minha vida profissional ficou muito mais leve.',
     specialty: 'Psicologia Escolar',
   },
   {
     id: 5,
-    name: 'Dra. Ana Paula Santos',
+    title: 'Dra.',
+    name: 'Ana Paula Santos',
     crp: 'CRP 03/56789',
     city: 'Salvador - BA',
-    avatar: '/assets/images/avatar/avatar-5.webp',
     rating: 5,
     testimonial: 'Impressionante como simplificaram minha rotina! Dashboard intuitivo, relatórios claros e sempre disponíveis para tirar dúvidas. Parceria de confiança!',
     specialty: 'Psicologia Hospitalar',
   },
   {
     id: 6,
-    name: 'Dr. Fernando Lima',
+    title: 'Dr.',
+    name: 'Fernando Lima',
     crp: 'CRP 02/67890',
     city: 'Recife - PE',
-    avatar: '/assets/images/avatar/avatar-6.webp',
     rating: 5,
     testimonial: 'A abertura do CNPJ foi super rápida e sem burocracia. Em menos de 30 dias já estava atendendo legalmente. Processo impecável do início ao fim!',
     specialty: 'Psicologia do Esporte',
@@ -108,30 +110,30 @@ export function PsychologistTestimonials() {
         {/* Header */}
         <Stack spacing={3} sx={{ mb: { xs: 5, md: 8 }, textAlign: 'center' }}>
           <Stack direction="row" justifyContent="center" spacing={1}>
-            <Iconify 
-              icon="solar:star-bold" 
-              width={32} 
-              sx={{ color: 'warning.main' }} 
+            <Iconify
+              icon="solar:star-bold"
+              width={32}
+              sx={{ color: 'warning.main' }}
             />
-            <Iconify 
-              icon="solar:star-bold" 
-              width={32} 
-              sx={{ color: 'warning.main' }} 
+            <Iconify
+              icon="solar:star-bold"
+              width={32}
+              sx={{ color: 'warning.main' }}
             />
-            <Iconify 
-              icon="solar:star-bold" 
-              width={32} 
-              sx={{ color: 'warning.main' }} 
+            <Iconify
+              icon="solar:star-bold"
+              width={32}
+              sx={{ color: 'warning.main' }}
             />
-            <Iconify 
-              icon="solar:star-bold" 
-              width={32} 
-              sx={{ color: 'warning.main' }} 
+            <Iconify
+              icon="solar:star-bold"
+              width={32}
+              sx={{ color: 'warning.main' }}
             />
-            <Iconify 
-              icon="solar:star-bold" 
-              width={32} 
-              sx={{ color: 'warning.main' }} 
+            <Iconify
+              icon="solar:star-bold"
+              width={32}
+              sx={{ color: 'warning.main' }}
             />
           </Stack>
 
@@ -139,9 +141,9 @@ export function PsychologistTestimonials() {
             O que os psicólogos dizem sobre nós
           </Typography>
 
-          <Typography 
-            variant="h5" 
-            sx={{ 
+          <Typography
+            variant="h5"
+            sx={{
               color: 'text.secondary',
               fontWeight: 400,
               maxWidth: 720,
@@ -189,26 +191,26 @@ export function PsychologistTestimonials() {
                   opacity: 0.1,
                 }}
               >
-                <Iconify 
-                  icon="solar:chat-round-quote-bold" 
+                <Iconify
+                  icon="solar:chat-round-quote-bold"
                   width={48}
                   sx={{ color: 'primary.main' }}
                 />
               </Box>
 
               {/* Rating */}
-              <Rating 
-                value={testimonial.rating} 
-                readOnly 
+              <Rating
+                value={testimonial.rating}
+                readOnly
                 size="small"
                 sx={{ mb: 2 }}
               />
 
               {/* Depoimento */}
-              <Typography 
-                variant="body2" 
-                sx={{ 
-                  mb: 3, 
+              <Typography
+                variant="body2"
+                sx={{
+                  mb: 3,
                   flexGrow: 1,
                   fontStyle: 'italic',
                   color: 'text.secondary',
@@ -221,22 +223,23 @@ export function PsychologistTestimonials() {
               {/* Profissional */}
               <Stack direction="row" spacing={2} alignItems="center">
                 <Avatar
-                  src={testimonial.avatar}
                   alt={testimonial.name}
                   sx={{ width: 56, height: 56 }}
-                />
+                >
+                  {getInitials(testimonial.name)}
+                </Avatar>
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                    {testimonial.name}
+                    {testimonial.title ? `${testimonial.title} ` : ''}{testimonial.name}
                   </Typography>
                   <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
                     {testimonial.crp}
                   </Typography>
                   <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
-                    <Iconify 
-                      icon="solar:map-point-bold" 
-                      width={14} 
-                      sx={{ color: 'primary.main' }} 
+                    <Iconify
+                      icon="solar:map-point-bold"
+                      width={14}
+                      sx={{ color: 'primary.main' }}
                     />
                     <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 600 }}>
                       {testimonial.city}
@@ -252,10 +255,10 @@ export function PsychologistTestimonials() {
         </Box>
 
         {/* CTA */}
-        <Stack 
-          spacing={2} 
-          alignItems="center" 
-          sx={{ 
+        <Stack
+          spacing={2}
+          alignItems="center"
+          sx={{
             mt: { xs: 6, md: 8 },
             p: 4,
             borderRadius: 3,

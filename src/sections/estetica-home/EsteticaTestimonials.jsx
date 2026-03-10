@@ -5,6 +5,8 @@ import { m } from 'framer-motion';
 import { alpha, useTheme } from '@mui/material/styles';
 import { Box, Grid, Chip, Paper, Stack, Rating, Avatar, Container, Typography } from '@mui/material';
 
+import { getInitials } from 'src/utils/helper';
+
 import { Iconify } from 'src/components/iconify';
 import { varFade, MotionViewport } from 'src/components/animate';
 
@@ -16,7 +18,6 @@ const TESTIMONIALS = [
     name: 'Ana Paula Santos',
     clinic: 'Clínica Beleza & Estética',
     city: 'Curitiba - PR',
-    avatar: '/assets/images/avatar/avatar-1.webp',
     rating: 5,
     testimonial: 'A Attualize transformou a gestão da minha clínica! Com abertura de CNPJ e suporte especializado, consegui focar 100% nos meus clientes. A economia em impostos foi impressionante!',
     specialty: 'Estética Facial',
@@ -26,7 +27,6 @@ const TESTIMONIALS = [
     name: 'Mariana Costa',
     clinic: 'Estética Avançada',
     city: 'São Paulo - SP',
-    avatar: '/assets/images/avatar/avatar-2.webp',
     rating: 5,
     testimonial: 'Economizei mais de R$ 4.000 no primeiro ano! A equipe entende perfeitamente as necessidades de clínicas de estética e sempre tem soluções práticas. Recomendo demais!',
     specialty: 'Estética Corporal',
@@ -36,7 +36,6 @@ const TESTIMONIALS = [
     name: 'Juliana Oliveira',
     clinic: 'Clínica Harmonia',
     city: 'Florianópolis - SC',
-    avatar: '/assets/images/avatar/avatar-3.webp',
     rating: 5,
     testimonial: 'O atendimento especializado para estética faz toda a diferença! Eles entendem sobre Lei Salão-Parceiro, CNAEs e sempre têm soluções que realmente funcionam. Excelente!',
     specialty: 'Estética Integrada',
@@ -46,7 +45,6 @@ const TESTIMONIALS = [
     name: 'Roberta Alves',
     clinic: 'Beleza & Bem-Estar',
     city: 'Brasília - DF',
-    avatar: '/assets/images/avatar/avatar-4.webp',
     rating: 5,
     testimonial: 'Migrei de outra contabilidade e foi a melhor decisão! Preço justo, atendimento humanizado e total transparência. Minha clínica nunca esteve tão organizada financeiramente.',
     specialty: 'Estética Facial e Corporal',
@@ -56,7 +54,6 @@ const TESTIMONIALS = [
     name: 'Fernanda Lima',
     clinic: 'Clínica Estética Premium',
     city: 'Salvador - BA',
-    avatar: '/assets/images/avatar/avatar-5.webp',
     rating: 5,
     testimonial: 'Impressionante como simplificaram minha rotina! Portal intuitivo, relatórios claros e sempre disponíveis para tirar dúvidas sobre impostos ou contratos. Parceria de confiança!',
     specialty: 'Estética Avançada',
@@ -66,7 +63,6 @@ const TESTIMONIALS = [
     name: 'Patricia Mendes',
     clinic: 'Estética & Beleza',
     city: 'Recife - PE',
-    avatar: '/assets/images/avatar/avatar-6.webp',
     rating: 5,
     testimonial: 'A abertura do CNPJ foi super rápida e sem burocracia. Em menos de 30 dias já estava atendendo legalmente. O processo foi impecável do início ao fim!',
     specialty: 'Estética Corporal',
@@ -242,14 +238,15 @@ function TestimonialCard({ testimonial, index, isLight }) {
 
           <Stack direction="row" spacing={2} alignItems="center">
             <Avatar
-              src={testimonial.avatar}
               alt={testimonial.name}
               sx={{
                 width: 48,
                 height: 48,
                 border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`
               }}
-            />
+            >
+              {getInitials(testimonial.name)}
+            </Avatar>
             <Box>
               <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
                 {testimonial.name}

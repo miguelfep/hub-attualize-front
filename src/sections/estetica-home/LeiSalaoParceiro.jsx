@@ -18,6 +18,16 @@ export function LeiSalaoParceiro() {
     ? `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, ${alpha(theme.palette.grey[500], 0.04)} 50%, ${theme.palette.background.default} 100%)`
     : `linear-gradient(180deg, ${alpha(theme.palette.primary.main, 0.06)} 0%, ${alpha(theme.palette.grey[900], 0.5)} 50%, ${theme.palette.background.default} 100%)`;
 
+  const handleConhecerParceiroId = () => {
+    try {
+      const message = encodeURIComponent('Olá, vim pelo site da Attualize (página de estética) e quero conhecer a plataforma ParceiroID!');
+      const whatsappUrl = `https://wa.me/5541984984211?text=${message}`;
+      window.open(whatsappUrl, '_blank', 'noopener, noreferrer');
+    } catch (error) {
+      console.error('Erro ao abrir o WhatsApp:', error);
+    }
+  };
+
   return (
     <Box
       component="section"
@@ -53,7 +63,8 @@ export function LeiSalaoParceiro() {
               Lei do Salão Parceiro
             </Typography>
             <Typography variant="body1" sx={{ color: 'text.secondary', maxWidth: 720, mx: 'auto', mt: 2 }}>
-              A regularização ideal para a relação entre clínicas e <strong>especialistas técnicos (esteticistas, manicures e depiladores)</strong>, garantindo conformidade com a Lei 13.352/2016.
+              A regularização ideal para a relação de parceria entre clínicas e profissionais parceiros como <b> esteticistas</b>,
+              <b> manicures</b>, <b>micropigmentadores</b>, <b>depiladores</b>, etc., garantindo conformidade com a Lei 13.352/2016.
             </Typography>
           </m.div>
         </Stack>
@@ -124,7 +135,7 @@ export function LeiSalaoParceiro() {
                   {[
                     {
                       t: 'Escopo Restrito da Lei',
-                      d: 'Válido apenas para profissionais técnicos de estética e beleza. Equipe administrativa e de apoio devem permanecer no regime CLT.'
+                      d: 'Válido apenas para profissionais parceiros de estética e beleza limitado a lista de profisisonais permitidos. Equipe administrativa e de apoio devem permanecer no regime CLT.'
                     },
                     {
                       t: 'Profissional Formalizado',
@@ -226,6 +237,7 @@ export function LeiSalaoParceiro() {
         <m.div variants={varFade().inUp}>
           <Stack alignItems="center" sx={{ mt: 10 }}>
             <Button
+              onClick={handleConhecerParceiroId}
               variant="contained"
               size="large"
               sx={{

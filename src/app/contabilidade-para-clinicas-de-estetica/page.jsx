@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 
 import { HomeEstetica } from 'src/sections/estetica-home/homeEstetica';
+import { FAQS_ESTETICA } from 'src/sections/estetica-home/estetica-utils';
 
 // ----------------------------------------------------------------------
 
@@ -43,9 +44,87 @@ export const metadata = {
 export const revalidate = 3600;
 
 export default function Page() {
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": `${SITE_URL}/#organization`,
+        "name": "Attualize Contábil",
+        "url": SITE_URL,
+        "logo": {
+          "@type": "ImageObject",
+          "url": `${SITE_URL}/logo/hub-tt.png`
+        },
+        "sameAs": [
+          "https://www.instagram.com/attualizecontabil/",
+          "https://www.youtube.com/channel/UCefLgcPyYDLbm98QXVm_LFg"
+        ]
+      },
+      {
+        "@type": "LocalBusiness",
+        "@id": `${SITE_URL}/#localbusiness`,
+        "name": "Attualize Contábil",
+        "image": `${SITE_URL}/logo/hub-tt.png`,
+        "url": SITE_URL,
+        "telephone": "+55 41 99698-2267",
+        "priceRange": "$$",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Av. Sen. Salgado Filho, 1847 - Sobreloja - Guabirotuba",
+          "addressLocality": "Curitiba",
+          "addressRegion": "PR",
+          "postalCode": "81570-001",
+          "addressCountry": "BR"
+        },
+        "areaServed": {
+          "@type": "Country",
+          "name": "Brazil"
+        }
+      },
+      {
+        "@type": "WebPage",
+        "@id": `${SITE_URL}/contabilidade-para-clinicas-de-estetica/#webpage`,
+        "url": `${SITE_URL}/contabilidade-para-clinicas-de-estetica/`,
+        "name": "Contabilidade para Clínicas de Estética",
+        "inLanguage": "pt-BR"
+      },
+      {
+        "@type": "Service",
+        "@id": `${SITE_URL}/contabilidade-para-clinicas-de-estetica/#service`,
+        "name": "Contabilidade para Clínicas de Estética",
+        "serviceType": "Contabilidade especializada para clínicas de estética",
+        "provider": {
+          "@id": `${SITE_URL}/#localbusiness`
+        },
+        "description": "Serviço de contabilidade especializada para clínicas de estética: enquadramento tributário, CNAE correto, planejamento fiscal, aplicação da Lei do Salão Parceiro e orientação para regularização sanitária."
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${SITE_URL}/contabilidade-para-clinicas-de-estetica/#faq`,
+        "mainEntity": FAQS_ESTETICA.map((faq) => ({
+          "@type": "Question",
+          "name": faq.question,
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": faq.answer
+          }
+        }))
+      }
+    ]
+  };
+
   return (
-    <Suspense fallback={null}>
-      <HomeEstetica />
-    </Suspense>
+    <section>
+      <script
+        type="application/ld+json"
+        // eslint-disable-next-line react/no-danger
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <Suspense fallback={null}>
+        <HomeEstetica />
+      </Suspense>
+    </section>
   );
 }

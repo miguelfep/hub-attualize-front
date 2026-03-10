@@ -37,7 +37,7 @@ export function ImportanciaContabilidadeEstetica() {
           <m.div variants={varFade().inUp}>
             <Chip
               icon={<Iconify icon="solar:document-text-bold-duotone" width={18} />}
-              label="Por que a contabilidade importa"
+              label="CONTABILIDADE PARA CLÍNICAS DE ESTÉTICA"
               size="large"
               sx={{
                 py: 1.2,
@@ -67,7 +67,7 @@ export function ImportanciaContabilidadeEstetica() {
                 mx: 'auto',
               }}
             >
-              Sua clínica de estética livre de burocracia e dos sustos fiscais
+              Como pagar menos imposto, evitar multas e crescer com segurança
             </Typography>
           </m.div>
         </Stack>
@@ -79,23 +79,41 @@ export function ImportanciaContabilidadeEstetica() {
             sx={{
               color: 'text.secondary',
               fontSize: { xs: '0.98rem', md: '1.06rem' },
-              lineHeight: 1.8,
-              maxWidth: 640,
+              lineHeight: 1.8, // Mantive um respiro confortável entre linhas
+              maxWidth: 720,   // Aumentei levemente para as quebras ficarem mais naturais
               mx: 'auto',
               textAlign: 'center',
               mb: { xs: 5, md: 7 },
             }}
           >
-            Manter uma clínica de estética saudável financeiramente é o que garante tranquilidade
-            para você e segurança para o seu negócio. Enquanto cuidamos da{' '}
-            <Box component="span" sx={{ fontWeight: 700 }}>
-              contabilidade, impostos e burocracias
+            {/* Bloco 1: Contexto */}
+            <Box component="span" sx={{ display: 'block', mb: 2 }}>
+              A contabilidade para clínicas de estética envolve escolha correta de CNAE, enquadramento tributário (Simples, Presumido ou Real),
+              aplicação da Lei do Salão Parceiro, regularização sanitária e planejamento tributário para reduzir impostos legalmente.
             </Box>
-            , você acompanha tudo em um{' '}
-            <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
-              Portal do Cliente completo
+
+            {/* Bloco 2: Alerta */}
+            <Box component="span" sx={{ display: 'block', mb: 3 }}>
+              Se esses pontos não forem estruturados corretamente, sua clínica pode{' '}
+              <Box component="span" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                pagar imposto a mais ou até sofrer interdição.
+              </Box>
             </Box>
-            , com indicadores, dashboards e informações sempre atualizadas.
+
+            {/* Bloco 3: Solução e Diferencial */}
+            <Box component="span" sx={{ display: 'block', mb: 2 }}>
+              A Attualize é especialista no setor da estética e saúde, e ajuda clínicas a trabalharem de forma regular, segura e financeiramente estratégica.
+            </Box>
+
+            {/* Bloco 4: Tecnologia */}
+            <Box component="span" sx={{ display: 'block' }}>
+              Além disso, investimos em tecnologia para lhe entregar tudo de maneira fácil e prática. Cliente Attualize acompanha toda
+              sua empresa em um{' '}
+              <Box component="span" sx={{ color: 'primary.main', fontWeight: 700 }}>
+                Sistema completo com indicadores, dashboards
+              </Box>{' '}
+              e informações sempre atualizadas sobre o seu negócio.
+            </Box>
           </Typography>
         </m.div>
 
