@@ -694,7 +694,7 @@ export default function IrCheckoutDialog({ open, onClose, plano }) {
                 <CardPayment
                   key="ir-card-payment-brick"
                   initialization={cardPaymentInitialization}
-                  customization={{ paymentMethods: { maxInstallments: 12, minInstallments: 1 } }}
+                  customization={{ paymentMethods: { maxInstallments: 4, minInstallments: 1 } }}
                   onSubmit={handleCardSubmit}
                   onError={(err) => {
                     setErroApi(err?.message || 'Erro no formulário do cartão.');

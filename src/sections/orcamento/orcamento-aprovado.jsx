@@ -313,7 +313,7 @@ export function OrcamentoAprovado({
             )}
             {method === 'credit_card' && (
               <Alert severity="info" sx={{ mt: 3 }}>
-                Clique em &quot;Finalizar pedido&quot; e preencha os dados do cartão na próxima tela. Parcelamento em até 12x.
+                Clique em &quot;Finalizar pedido&quot; e preencha os dados do cartão na próxima tela. Parcelamento em até 4x.
               </Alert>
             )}
           </Card>
@@ -600,7 +600,7 @@ function PaymentMethods({ method, handleChangeMethod }) {
                 <Stack flex={1} minWidth={0}>
                   <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>Cartão de crédito</Typography>
                   <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-                    Parcelado em até 12x • Mercado Pago
+                    Parcelado em até 4x • Mercado Pago
                   </Typography>
                 </Stack>
               </Stack>
@@ -671,7 +671,7 @@ function OrcamentoCartaoDialog({ open, onClose, invoice, formData, onSuccess }) 
       <DialogContent sx={{ pt: 1, pb: 3 }}>
         <Stack spacing={2} sx={{ pb: 2 }}>
           <Alert severity="info">
-            Total: <strong>{fCurrency(total)}</strong> — Parcelamento em até 12x via Mercado Pago.
+            Total: <strong>{fCurrency(total)}</strong> — Parcelamento em até 4x via Mercado Pago.
           </Alert>
           {brickError && <Alert severity="error">{brickError}</Alert>}
           {open && total > 0 && (
@@ -686,7 +686,7 @@ function OrcamentoCartaoDialog({ open, onClose, invoice, formData, onSuccess }) 
                     identification: { type: 'CPF', number: onlyDigits(formData?.cpfCnpj) || '' },
                   },
                 }}
-                customization={{ paymentMethods: { maxInstallments: 12, minInstallments: 1 } }}
+                customization={{ paymentMethods: { maxInstallments: 4, minInstallments: 1 } }}
                 onSubmit={handleSubmit}
                 onError={handleError}
               />

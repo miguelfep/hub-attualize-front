@@ -699,8 +699,8 @@ export default function IrAdminDetalheView({ id }) {
           </Card>
         )}
 
-        {/* Bloco 3b — Alterar status (fluxo normal: coletando → em_processo → finalizada) */}
-        {canChangeStatus && (
+        {/* Bloco 3b — Alterar status (fluxo normal: coletando → em_processo → finalizada). Oculto em em_processo para forçar uso do "Entregar declaração". */}
+        {canChangeStatus && !canDeliverDeclaracao && (
           <Card>
             <CardHeader
               title="Avançar status do pedido"

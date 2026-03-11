@@ -243,7 +243,7 @@ export function IrLandingPage() {
       // adicionar imagem de fundo
      
         sx={{
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)), url(${CONFIG.site.basePath}/assets/images/banners/banner-irpf-2025.webp )`,
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)), url(${CONFIG.site.basePath}/assets/images/banners/irpf2026.webp )`,
           backgroundBlendMode: 'multiply',
           backgroundSize: 'cover',
           backgroundPosition: 'center',

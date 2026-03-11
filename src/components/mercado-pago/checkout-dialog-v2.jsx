@@ -176,7 +176,7 @@ export function MercadoPagoCheckoutDialog({
       },
     },
     paymentMethods: {
-      maxInstallments: 12,
+      maxInstallments: 4,
       minInstallments: 1,
     },
   };

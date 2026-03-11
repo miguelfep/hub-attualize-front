@@ -171,7 +171,7 @@ export function StepPagamento({ formData, orcamento, onClose, temAberturaGratuit
                 <Stack flex={1}>
                   <Typography variant="h6">Cartão de Crédito</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    Parcele em até 12x • Aprovação imediata
+                    Parcele em até 4x • Aprovação imediata
                   </Typography>
                 </Stack>
                 <Iconify
