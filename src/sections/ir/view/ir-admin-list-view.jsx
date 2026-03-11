@@ -71,9 +71,27 @@ export default function IrAdminListView() {
   const showTipoPgtoValor = user?.role === 'admin' || user?.role === 'financeiro';
   const usuariosList = Array.isArray(usuariosInternos) ? usuariosInternos : [];
 
-  const pedidos = data?.orders ?? [];
+  const pedidosBrutos = data?.orders ?? [];
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 0;
+
+  // Filtro client-side por responsável (garante resultado correto mesmo se o backend filtrar mal)
+  const pedidos = (() => {
+    const rid = filtrosAplicados.responsavelId;
+    if (!rid) return pedidosBrutos;
+    if (rid === 'nenhum') {
+      return pedidosBrutos.filter((p) => {
+        const r = p.responsavelId;
+        return r == null || r === '' || (typeof r === 'object' && !r._id);
+      });
+    }
+    return pedidosBrutos.filter((p) => {
+      const r = p.responsavelId;
+      if (r == null) return false;
+      const id = typeof r === 'object' ? r._id : r;
+      return id && String(id) === String(rid);
+    });
+  })();
 
   const handleBuscar = useCallback(() => {
     const novos = { page: 1, limit: filtros.limit };
@@ -121,7 +139,11 @@ export default function IrAdminListView() {
           <Box>
             <Typography variant="h4">Pedidos — Imposto de Renda</Typography>
             <Typography variant="body2" color="text.secondary">
-              {total > 0 ? `${total} pedido(s) encontrado(s)` : 'Gerenciamento de pedidos de IR'}
+              {filtrosAplicados.responsavelId
+                ? `${pedidos.length} pedido(s) nesta página (filtro por responsável)`
+                : total > 0
+                  ? `${total} pedido(s) encontrado(s)`
+                  : 'Gerenciamento de pedidos de IR'}
             </Typography>
           </Box>
           <LoadingButton
