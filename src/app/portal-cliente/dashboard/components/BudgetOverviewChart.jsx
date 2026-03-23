@@ -60,8 +60,8 @@ export default function BudgetOverviewChart({ data = BUDGET_OVERVIEW_DATA, onMon
     },
     yaxis: {
       labels: {
-        style: { fontSize: '0.75rem', fontWeight: 600, colors: theme.palette.text.secondary },
-        formatter: (val) => val >= 1000 ? `R$ ${(val / 1000).toFixed(0)}k` : `R$ ${val}`,
+        style: { fontSize: '0.65rem', fontWeight: 600, colors: theme.palette.text.secondary },
+        formatter: (val) => val >= 1000 ? `R$ ${(val / 1000).toFixed(1)}K` : `R$ ${val}`,
       },
     },
     markers: {
@@ -74,7 +74,7 @@ export default function BudgetOverviewChart({ data = BUDGET_OVERVIEW_DATA, onMon
       horizontalAlign: 'right',
       fontSize: '12px',
       fontWeight: 600,
-      itemMargin: { horizontal: 12 },
+      itemMargin: { vertical: 4 },
     },
     tooltip: { shared: true, intersect: false, y: { formatter: (val) => formatToCurrency(val) } },
   });
@@ -103,7 +103,7 @@ export default function BudgetOverviewChart({ data = BUDGET_OVERVIEW_DATA, onMon
       />
 
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', px: 1.5, pb: 2 }}>
-        <Chart dir="ltr" type="area" series={series} options={chartOptions} width="100%" height={320} />
+        <Chart dir="ltr" type="area" series={series} options={chartOptions} width="100%" height={280} />
       </Box>
     </Card>
   );

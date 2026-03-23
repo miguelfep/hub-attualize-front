@@ -114,3 +114,35 @@ export async function importarLeadComoCliente(leadId) {
   const res = await axios.post(`${endpoints.clientes.list}/importar-lead/${leadId}`);
   return res.data;
 }
+
+// ----------------------------------------------------------------------
+
+export async function uploadArquivoCliente(id, file, documentType, onProgress) {
+  const url = `${endpoints.clientes.list}/${id}/upload-documento`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('documentType', documentType);
+
+  const res = await axios.post(url, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(percent);
+      }
+    },
+  });
+
+  return res.data;
+}
+
+export async function removerArquivoCliente(id, documentType) {
+  const url = `${endpoints.clientes.list}/${id}/documento`;
+
+  const res = await axios.delete(url, {
+    params: { documentType },
+  });
+
+  return res.data;
+}
