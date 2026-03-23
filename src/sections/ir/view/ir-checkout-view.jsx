@@ -41,13 +41,26 @@ const boletoUrl = `${baseUrl}contratos/cobrancas/faturas/`;
 // ─── Metadados estáticos dos planos ──────────────────────────────────────────
 
 const PLANO_META = {
+  mei: {
+    nome: 'MEI',
+    destaque: false,
+    inclusos: [
+      'MEI com 1 fonte de renda',
+      'Sem dependentes',
+      'Até 3 bens e direitos',
+      'Deduções padrão',
+      'Envio à Receita Federal',
+      'Suporte via WhatsApp',
+    ],
+    naoInclusos: ['Carnê-leão', 'Ganho de capital', 'Bolsa de valores'],
+  },
   basica: {
     nome: 'Básica',
     destaque: false,
     inclusos: [
-      'Assalariado com 1 fonte de renda',
+      'Empresário/CLT com 1 fonte de renda',
       'Sem dependentes',
-      'Até 3 bens e direitos',
+      'Até 5 bens e direitos',
       'Deduções padrão',
       'Envio à Receita Federal',
       'Suporte via WhatsApp',
@@ -60,7 +73,7 @@ const PLANO_META = {
     inclusos: [
       'Até 3 fontes de renda',
       'Até 3 dependentes',
-      'Bens, aluguéis e investimentos',
+      'Até 10 bens e direitos (investimentos renda fixa)',
       'Deduções com saúde e educação',
       'Envio à Receita Federal',
       'Suporte via WhatsApp',
@@ -71,18 +84,36 @@ const PLANO_META = {
     nome: 'Completa',
     destaque: false,
     inclusos: [
-      'Profissional liberal / MEI',
-      'Fontes de renda ilimitadas',
-      'Dependentes ilimitados',
-      'Bens e direitos ilimitados',
-      'Carnê-leão incluso',
-      'Ganho de capital incluso',
-      'Bolsa de valores incluso',
-      'Suporte prioritário',
+      'Empresário e investidores',
+      'Mais de 3 fontes de renda',
+      'Mais de 3 dependentes',
+      'Até 20 bens e direitos (investimentos renda fixa)',
+      'Até 1 carnê-leão incluso',
+      'Até 1 ganho de capital incluso',
+      'Cálculo de bolsa de valores a consultar',
+      'Suporte via whatsapp e videochamada',
     ],
     naoInclusos: [],
   },
 };
+
+// ─── Resolve metadados do plano pelo título (com fallback por modalidade) ────
+
+function resolverMetaPlano(planoApi) {
+  const titulo = (planoApi.titulo ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+
+  if (titulo.includes('mei'))                                                              return PLANO_META.mei          ?? PLANO_META.basica;
+  if (titulo.includes('basica') || titulo.includes('basico') || titulo.includes('basic')) return PLANO_META.basica;
+  if (titulo.includes('plena'))                                                            return PLANO_META.intermediaria ?? PLANO_META.basica;
+  if (titulo.includes('plus'))                                                             return PLANO_META.completa      ?? PLANO_META.basica;
+  if (titulo.includes('intermediar'))                                                      return PLANO_META.intermediaria ?? PLANO_META.basica;
+  if (titulo.includes('completa') || titulo.includes('completo'))                         return PLANO_META.completa      ?? PLANO_META.basica;
+
+  return PLANO_META[planoApi.modalidade] ?? { destaque: false, inclusos: [], naoInclusos: [] };
+}
 
 const ANO_IR = 'IR2026';
 
@@ -534,7 +565,7 @@ export default function IrCheckoutView() {
                 </Grid>
               ))
               : planosApi.map((planoApi) => {
-                const meta = PLANO_META[planoApi.modalidade] ?? { destaque: false, inclusos: [], naoInclusos: [] };
+                const meta = resolverMetaPlano(planoApi);
                 const esgotado = !planoApi.disponivel;
                 const temDesconto = planoApi.valorFinal != null && planoApi.valorCheio != null && planoApi.valorFinal < planoApi.valorCheio;
                 const badgeDesconto = planoApi.tipoDesconto === 'percentual'

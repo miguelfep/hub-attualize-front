@@ -251,7 +251,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       nomeFantasia: currentCliente?.nomeFantasia || '',
       razaoSocial: currentCliente?.razaoSocial || '',
       cnpj: currentCliente?.cnpj || '',
-      codigo: currentCliente?.codigo ?? '',
+      codigo: currentCliente?.codigo || 0,
       email: currentCliente?.email || '',
       emailFinanceiro: currentCliente?.emailFinanceiro || '',
       whatsapp: normalizePhoneBR(currentCliente?.whatsapp),
@@ -352,18 +352,13 @@ const onSubmit = handleSubmit(
             cep: (e?.cep || '').toString().replace(/\D/g, ''),
           }));
         }
-        
+
         delete cleaned.contratoSocialFile;
         delete cleaned.cartaoCnpjFile;
+        delete cleaned.contratoSocialUrl;
+        delete cleaned.cartaoCnpjUrl;
 
         formData.append('data', JSON.stringify(cleaned));
-
-        if (data.contratoSocialFile instanceof File) {
-          formData.append('contratoSocial', data.contratoSocialFile);
-        }
-        if (data.cartaoCnpjFile instanceof File) {
-          formData.append('cartaoCnpj', data.cartaoCnpjFile);
-        }
 
         if (currentCliente) {
           await updateCliente(currentCliente._id, formData);
@@ -371,11 +366,10 @@ const onSubmit = handleSubmit(
           const updatedCliente = await getClienteById(currentCliente._id);
           reset({
             ...updatedCliente,
-            codigo: updatedCliente?.codigo ?? '',
             status: updatedCliente.status !== undefined ? updatedCliente.status : true,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
             dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
-            contratoSocialFile: null, 
+            contratoSocialFile: null,
             cartaoCnpjFile: null,
           });
 
@@ -404,10 +398,7 @@ const onSubmit = handleSubmit(
     setLoadingReceita(true);
     try {
       const clienteAtualizado = await atualizarDadosCliente(currentCliente._id);
-      reset({
-        ...clienteAtualizado,
-        codigo: clienteAtualizado?.codigo ?? '',
-      });
+      reset(clienteAtualizado);
 
       toast.success('Dados da Receita atualizados com sucesso!');
     } catch (error) {
@@ -529,7 +520,7 @@ const onSubmit = handleSubmit(
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        value={field.value ?? ''}
+                        valeu={field.value ?? 0}
                         type="number"
                         label="Código"
                         fullWidth
@@ -776,26 +767,30 @@ const onSubmit = handleSubmit(
                   <Field.Editor name="observacao" label="Observação" fullWidth disabled={!statusAtivo} />
                 </Grid>
                 <Grid container spacing={2} xs={12} sx={{ mt: 1 }}>
-                <Grid xs={12}>
-                  <Typography variant="h6" sx={{ mb: -1 }}>Documentos da Empresa</Typography>
+                  <Grid xs={12}>
+                    <Typography variant="h6" sx={{ mb: -1 }}>Documentos da Empresa</Typography>
+                  </Grid>
+                  <Grid xs={12} sm={6}>
+                    <FileUploadField
+                      name="contratoSocialFile"
+                      label="Contrato Social"
+                      clienteId={currentCliente?._id}
+                      documentType="contratoSocial"
+                      existingFileUrl={watch('contratoSocialUrl')}
+                      disabled={!statusAtivo}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={6}>
+                    <FileUploadField
+                      name="cartaoCnpjFile"
+                      label="Cartão CNPJ"
+                      clienteId={currentCliente?._id}
+                      documentType="cartaoCnpj"
+                      existingFileUrl={watch('cartaoCnpjUrl')}
+                      disabled={!statusAtivo}
+                    />
+                  </Grid>
                 </Grid>
-                <Grid xs={12} sm={6}>
-                  <FileUploadField
-                    name="contratoSocialFile"
-                    label="Contrato Social"
-                    existingFileUrl={watch('contratoSocialUrl')}
-                    disabled={!statusAtivo}
-                  />
-                </Grid>
-                <Grid xs={12} sm={6}>
-                  <FileUploadField
-                    name="cartaoCnpjFile"
-                    label="Cartão CNPJ"
-                    existingFileUrl={watch('cartaoCnpjUrl')}
-                    disabled={!statusAtivo}
-                  />
-                </Grid>
-              </Grid>
                 <Grid xs={12} sm={6}>
                   <Controller
                     name="dataEntrada"
