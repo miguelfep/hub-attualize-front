@@ -25,10 +25,12 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 
 import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 import { prepareDataForAlteracao } from './prepare-alteracao-payload';
 
@@ -170,7 +172,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
             razaoSocial: currentAlteracao?.razaoSocial || '',
             nomeFantasia: currentAlteracao?.nomeFantasia || '',
             email: currentAlteracao?.email || '',
-            whatsapp: currentAlteracao?.whatsapp || '',
+            whatsapp: normalizePhoneToE164(currentAlteracao?.whatsapp),
             capitalSocial: currentAlteracao?.capitalSocial || '',
             regimeTributario: currentAlteracao?.regimeTributario || '',
             formaAtuacao: currentAlteracao?.formaAtuacao || '',
@@ -225,7 +227,10 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
 
     useEffect(() => {
         if (currentAlteracao) {
-            reset(currentAlteracao);
+            reset({
+                ...currentAlteracao,
+                whatsapp: normalizePhoneToE164(currentAlteracao?.whatsapp),
+            });
             setSituacaoAlteracao(currentAlteracao.situacaoAlteracao ?? 0);
             setEtapasCompletadas(currentAlteracao.etapasCompletadas || []);
             setNotificarWhats(currentAlteracao.notificarWhats ?? true);
@@ -458,8 +463,8 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
     const todasCompletas = todasEtapasCompletas();
 
     return (
-        <Card sx={{ p: 3, mb: 3 }}>
-            <Tabs value={activeTab} onChange={handleTabChange} variant="standard" sx={{ mb: 3 }}>
+        <Card sx={{ width: '100%', maxWidth: '100%', p: 4, mb: 3 }}>
+            <Tabs value={activeTab} onChange={handleTabChange} variant="standard" centered sx={{ mb: 3 }}>
                 <Tab label={isArchived ? 'Alteração concluída' : 'Acompanhamento de Etapas'} />
                 <Tab label="Dados da Alteração" />
                 <Tab label="Documentos" />
@@ -487,11 +492,13 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
 
                     {/* Select de Situação + Switch de Notificação (oculto quando arquivado) */}
                     {!isArchived && (
-                        <Grid container spacing={2} sx={{ mb: 3 }} alignItems="flex-start">
-                            <Grid item xs={12} md={6}>
+                        <Grid container spacing={0} sx={{ mb: 3, '& > *': { px: 2, mb: 2 } }} alignItems="flex-start">
+                            <Grid xs={12} md={6}>
                                 <TextField
                                     select
                                     fullWidth
+                                    size="small"
+                                    variant="outlined"
                                     label="Situação da Alteração"
                                     value={situacaoAlteracao}
                                     onChange={handleSituacaoChange}
@@ -514,7 +521,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                     ))}
                                 </TextField>
                             </Grid>
-                            <Grid item xs={12} md={6}>
+                            <Grid xs={12} md={6}>
                                 <Box
                                     sx={{
                                         display: 'flex',
@@ -689,7 +696,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                         Dados da Alteração
                     </Typography>
 
-                    <Grid container spacing={2}>
+                    <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
                         <Grid xs={12}>
                             <Controller
                                 name="alteracoes"
@@ -702,6 +709,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         rows={3}
                                         fullWidth
                                         variant="outlined"
+                                        size="small"
                                     />
                                 )}
                             />
@@ -711,7 +719,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="razaoSocial"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Razão Social" fullWidth variant="outlined" />
+                                    <TextField {...field} label="Razão Social" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -720,7 +728,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="nomeFantasia"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Nome Fantasia" fullWidth variant="outlined" />
+                                    <TextField {...field} label="Nome Fantasia" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -729,7 +737,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="email"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="E-mail" fullWidth variant="outlined" />
+                                    <TextField {...field} label="E-mail" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -738,7 +746,17 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="whatsapp"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Whatsapp" fullWidth variant="outlined" />
+                                    <PhoneInput
+                                        {...field}
+                                        fullWidth
+                                        country="BR"
+                                        label="Whatsapp"
+                                        placeholder="Digite o número"
+                                        variant="outlined"
+                                        size="small"
+                                        value={field.value ?? ''}
+                                        onChange={(newValue) => field.onChange(newValue ?? '')}
+                                    />
                                 )}
                             />
                         </Grid>
@@ -758,6 +776,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         decimalSeparator=","
                                         fullWidth
                                         variant="outlined"
+                                        size="small"
                                     />
                                 )}
                             />
@@ -767,7 +786,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="regimeTributario"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField select {...field} label="Regime Tributário" fullWidth variant="outlined">
+                                    <TextField select {...field} label="Regime Tributário" fullWidth variant="outlined" size="small">
                                         {regimeTributarioOptions.map((option) => (
                                             <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                                         ))}
@@ -780,7 +799,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="formaAtuacao"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField select {...field} label="Forma de Atuação" fullWidth variant="outlined">
+                                    <TextField select {...field} label="Forma de Atuação" fullWidth variant="outlined" size="small">
                                         {formaAtuacaoOptions.map((option) => (
                                             <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                                         ))}
@@ -793,7 +812,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="responsavelTecnico"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField select {...field} label="Responsável Técnico" fullWidth variant="outlined">
+                                    <TextField select {...field} label="Responsável Técnico" fullWidth variant="outlined" size="small">
                                         <MenuItem value="">Nenhum</MenuItem>
                                         <MenuItem value="novoResponsavelTecnico">Novo Responsável Técnico</MenuItem>
                                         {currentAlteracao?.socios?.map((socio, index) => (
@@ -814,7 +833,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="enderecoComercial.cep"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="CEP" fullWidth variant="outlined" onBlur={handleCepBlur} />
+                                    <TextField {...field} label="CEP" fullWidth variant="outlined" size="small" onBlur={handleCepBlur} />
                                 )}
                             />
                         </Grid>
@@ -823,7 +842,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="enderecoComercial.logradouro"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Logradouro" fullWidth variant="outlined" />
+                                    <TextField {...field} label="Logradouro" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -832,7 +851,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="enderecoComercial.numero"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Número" fullWidth variant="outlined" />
+                                    <TextField {...field} label="Número" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -841,7 +860,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="enderecoComercial.complemento"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Complemento" fullWidth variant="outlined" />
+                                    <TextField {...field} label="Complemento" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -850,7 +869,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="enderecoComercial.bairro"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Bairro" fullWidth variant="outlined" />
+                                    <TextField {...field} label="Bairro" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -859,7 +878,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="enderecoComercial.cidade"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Cidade" fullWidth variant="outlined" />
+                                    <TextField {...field} label="Cidade" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -868,7 +887,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                 name="enderecoComercial.estado"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Estado" fullWidth variant="outlined" />
+                                    <TextField {...field} label="Estado" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -884,11 +903,11 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                             return (
                                 <React.Fragment key={index}>
                                     {index > 0 && (
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Divider sx={{ my: 2 }} />
                                         </Grid>
                                     )}
-                                    <Grid item xs={12}>
+                                    <Grid xs={12}>
                                         <Typography variant="subtitle2" sx={{ mt: 1 }}>Sócio {index + 1}</Typography>
                                     </Grid>
                                     <Grid xs={12} sm={6}>
@@ -896,7 +915,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                             name={`socios[${index}].nome`}
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField {...field} label="Nome" fullWidth variant="outlined" />
+                                                <TextField {...field} label="Nome" fullWidth variant="outlined" size="small" />
                                             )}
                                         />
                                     </Grid>
@@ -911,6 +930,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                                     label="CPF"
                                                     fullWidth
                                                     variant="outlined"
+                                                    size="small"
                                                     value={field.value ?? ''}
                                                     onValueChange={(values) => field.onChange(values.formattedValue)}
                                                     onBlur={field.onBlur}
@@ -931,6 +951,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                                     label="RG"
                                                     fullWidth
                                                     variant="outlined"
+                                                    size="small"
                                                     value={field.value ?? ''}
                                                     onValueChange={(values) => field.onChange(values.formattedValue)}
                                                     onBlur={field.onBlur}
@@ -951,6 +972,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                                     label="Porcentagem"
                                                     fullWidth
                                                     variant="outlined"
+                                                    size="small"
                                                     decimalScale={2}
                                                     suffix="%"
                                                     onValueChange={(values) => field.onChange(values.floatValue)}
@@ -963,7 +985,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                             name={`socios[${index}].estadoCivil`}
                                             control={control}
                                             render={({ field }) => (
-                                                <TextField select {...field} label="Estado Civil" fullWidth variant="outlined">
+                                                <TextField select {...field} label="Estado Civil" fullWidth variant="outlined" size="small">
                                                     {estadoCivilOptions.map((option) => (
                                                         <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                                                     ))}
@@ -977,7 +999,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                                 name={`socios[${index}].regimeBens`}
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <TextField select {...field} label="Regime de Bens" fullWidth variant="outlined">
+                                                    <TextField select {...field} label="Regime de Bens" fullWidth variant="outlined" size="small">
                                                         {regimeBensOptions.map((option) => (
                                                             <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
                                                         ))}
@@ -1019,6 +1041,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         multiline
                                         rows={4}
                                         variant="outlined"
+                                        size="small"
                                     />
                                 )}
                             />
@@ -1041,16 +1064,17 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                                         multiline
                                         rows={4}
                                         variant="outlined"
+                                        size="small"
                                     />
                                 )}
                             />
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Controller
                                 name="urlMeetKickoff"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="URL do Meet Kickoff" fullWidth variant="outlined" />
+                                    <TextField {...field} label="URL do Meet Kickoff" fullWidth variant="outlined" size="small" />
                                 )}
                             />
                         </Grid>
@@ -1073,19 +1097,19 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
 
             {activeTab === 2 && (
                 <Box sx={{ mt: 3 }}>
-                    <Grid container spacing={2} mt={2}>
-                        <Grid item xs={12}>
+                    <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
+                        <Grid xs={12}>
                             <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Iconify icon="eva:file-text-fill" width={24} />
                                 Documentos da Alteração
                             </Typography>
                         </Grid>
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
                             <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                                 Documentos Gerais
                             </Typography>
                         </Grid>
-                        <Grid item xs={12} sm={6} md={4}>
+                        <Grid xs={12} sm={6} md={4}>
                             <DocumentCard
                                 label="IPTU do Imóvel"
                                 value={watch('iptuAnexo')}
@@ -1128,7 +1152,7 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
                             <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
                                 Sócio {index + 1}: {socio.nome || 'Sem nome'}
                             </Typography>
-                            <Grid container spacing={2}>
+                            <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
                                 <Grid xs={12} sm={6}>
                                     <DocumentCard
                                         label={`CNH do Sócio ${index + 1}`}

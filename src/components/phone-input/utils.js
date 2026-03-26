@@ -6,10 +6,14 @@ import { countries } from 'src/assets/data/countries';
 
 export function getCountryCode(inputValue, countryCode) {
   if (inputValue) {
-    const phoneNumber = parsePhoneNumber(inputValue);
+    try {
+      const phoneNumber = parsePhoneNumber(inputValue);
 
-    if (phoneNumber) {
-      return phoneNumber?.country;
+      if (phoneNumber?.country) {
+        return phoneNumber.country;
+      }
+    } catch (error) {
+      // Keep fallback behavior for partial/invalid input while typing.
     }
   }
 

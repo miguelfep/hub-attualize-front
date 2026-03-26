@@ -1,9 +1,9 @@
 import { NumericFormat } from 'react-number-format';
 import { Controller, useFormContext } from "react-hook-form"
 
-import { Box, Grid, Switch, Select, MenuItem, TextField, Typography, FormControlLabel } from "@mui/material";
+import { Box, Grid, Switch, Select,  Divider, MenuItem, TextField, Typography, FormControlLabel } from "@mui/material";
 
-import { formatPhone } from 'src/utils/format-input';
+import { RHFPhoneInput } from 'src/components/hook-form';
 
 export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
 
@@ -32,33 +32,35 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
 
     return (
         <>
-            <Box sx={{ mb: 2 }}>
-                <Typography variant="h5" gutterBottom>
-                    Informações Gerais
-                </Typography>
-            </Box>
-            <Box>
-                <Box>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                        Descreva de maneira objetiva as alterações que você deseja realizar em sua empresa
+            <Grid xs={12}>
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="h5" gutterBottom>
+                        Informações Gerais
                     </Typography>
                 </Box>
-                <Controller
-                    name="alteracoes"
-                    control={control}
-                    render={({ field, fieldState }) => (
-                        <TextField
-                            {...field}
-                            label="Novas Mudanças"
-                            multiline rows={4}
-                            fullWidth
-                            error={!!fieldState.error}
-                            helperText={fieldState.error?.message}
-                        />
-                    )}
-                />
-            </Box>
-            <Grid container spacing={3} sx={{ mt: { xs: 2, md: 2 } }}>
+                <Box sx={{ px: 2, mb: 2 }}>
+                    <Box>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                            Descreva de maneira objetiva as alterações que você deseja realizar em sua empresa
+                        </Typography>
+                    </Box>
+                    <Controller
+                        name="alteracoes"
+                        control={control}
+                        render={({ field, fieldState }) => (
+                            <TextField
+                                {...field}
+                                label="Novas Mudanças"
+                                multiline rows={4}
+                                fullWidth
+                                error={!!fieldState.error}
+                                helperText={fieldState.error?.message}
+                            />
+                        )}
+                    />
+                </Box>
+            </Grid>
+            <Grid container spacing={0} sx={{ mt: { xs: 2, md: 2 }, '& > *': { px: 2, mb: 2 } }} >
                 <Grid xs={12} md={6}>
                     <Controller
                         name="razaoSocialEnabled"
@@ -172,26 +174,12 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                     />
                 </Grid>
                 <Grid xs={12} md={4}>
-                    <Controller
+                    <RHFPhoneInput
                         name="whatsapp"
-                        control={control}
-                        render={({ field }) => (
-                            <TextField
-                                {...field}
-                                fullWidth
-                                label="Telefone Comercial"
-                                placeholder="(00) 0 0000-0000"
-                                disabled={!watch('whatsappEnabled')}
-                                value={formatPhone(field.value || '')}
-                                onChange={(e) => {
-                                    const formatted = formatPhone(e.target.value);
-                                    field.onChange(formatted);
-                                }}
-                                inputProps={{
-                                    maxLength: 17,
-                                }}
-                            />
-                        )}
+                        label="Telefone Comercial"
+                        placeholder="Digite o numero"
+                        country="BR"
+                        disabled={!watch('whatsappEnabled')}
                     />
                     <Controller
                         name="whatsappEnabled"
@@ -381,6 +369,7 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                     />
                 </Grid>
             </Grid>
+            <Divider sx={{ m: 2 }} />
         </>
     );
 }

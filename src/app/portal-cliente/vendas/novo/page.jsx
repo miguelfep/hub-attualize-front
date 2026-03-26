@@ -15,12 +15,14 @@ import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
 
 import { fCurrency } from 'src/utils/format-number';
+import { toPayloadLegacyDigits } from 'src/utils/phone-e164';
 
 import { buscarCep } from 'src/actions/cep';
 import { usePortalClientes, usePortalServicos, portalCreateCliente, portalCreateServico, portalCreateOrcamento } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 import { NovoOrcamentoPageSkeleton } from 'src/components/skeleton/PortalNovaVendaPageSkeleton';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -109,13 +111,15 @@ export default function NovoOrcamentoPage() {
     if (d.length <= 5) return d;
     return `${d.slice(0, 5)}-${d.slice(5, 8)}`;
   };
-  const formatPhone = (v) => {
-    const d = onlyDigits(v).slice(0, 11);
-    if (d.length <= 10) {
-      return d.replace(/(\d{0,2})(\d{0,4})(\d{0,4}).*/, (m, a, b, c) => [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' '));
-    }
-    return d.replace(/(\d{0,2})(\d{0,5})(\d{0,4}).*/, (m, a, b, c) => [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' '));
+  // Legacy do Portal: armazena DDD+numero (10/11 dígitos). O componente do tema usa E.164 (+).
+  const toPhoneInputValue = (raw) => {
+    const d = onlyDigits(raw);
+    if (!d) return '';
+    if (d.startsWith('55') && (d.length === 12 || d.length === 13)) return `+${d}`;
+    if (d.length === 10 || d.length === 11) return `+55${d}`;
+    return `+${d}`;
   };
+
   const formatCPF = (v) => {
     const d = onlyDigits(v).slice(0, 11);
     return d
@@ -490,7 +494,14 @@ export default function NovoOrcamentoPage() {
                 <TextField fullWidth label="Email" value={quickCli.email} onChange={(e) => setQuickCli((q) => ({ ...q, email: e.target.value }))} error={!!errors.email} helperText={errors.email} />
               </Grid>
               <Grid xs={12} sm={6}>
-                <TextField fullWidth label="Telefone" value={quickCli.telefone} onChange={(e) => setQuickCli((q) => ({ ...q, telefone: formatPhone(e.target.value) }))} />
+                <PhoneInput
+                  fullWidth
+                  country="BR"
+                  label="Telefone"
+                  placeholder="Digite o número"
+                  value={quickCli.telefone ?? ''}
+                  onChange={(newValue) => setQuickCli((q) => ({ ...q, telefone: newValue ?? '' }))}
+                />
               </Grid>
               <Grid xs={12} sm={4}>
                 <TextField fullWidth label="CEP" value={quickCli.endereco.cep} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, cep: formatCEP(e.target.value) } }))} onBlur={handleQuickCepBlur} InputProps={{ endAdornment: fetchingCep ? <CircularProgress size={20} /> : null }} />
@@ -530,7 +541,7 @@ export default function NovoOrcamentoPage() {
                   nome: quickCli.nome,
                   cpfCnpj: docDigits,
                   email: quickCli.email,
-                  telefone: onlyDigits(quickCli.telefone),
+                  telefone: toPayloadLegacyDigits(quickCli.telefone),
                   endereco: {
                     ...quickCli.endereco,
                     cep: onlyDigits(quickCli.endereco.cep),

@@ -7,7 +7,6 @@ import {
     Grid,
     Button,
     Switch,
-    Divider,
     Typography,
     FormControlLabel,
 } from '@mui/material';
@@ -117,18 +116,34 @@ export default function AlteracaoDocumentos({ alteracaoId }) {
     return (
         <Box>
             <>
-                <Typography variant="h6" gutterBottom>
-                    Documentos
-                </Typography>
+                <Grid
+                    container
+                    spacing={0}
+                    sx={{
+                        mt: { xs: 2, md: 2 },
+                        '& > *': { px: 2, mb: 2 },
+                    }}
+                >
 
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
-                    Esse área é dedicada ao anexo dos documentos. Caso deseje, é possível baixar, alterar e deletar os documentos.
-                    <br /> <br />
-                    Para realizar um upload, habilite o campo <strong>Editar Documentos</strong>, localizado ao lado direito logo abaixo, e anexe os documentos correspondentes em <strong>Enviar Documento</strong>. Para o anexo do documento de classe do Responsável Técnico, é necessário habilitar o campo <strong>Possui RT?</strong>, localizado logo abaixo.
-                </Typography>
+                    <Typography variant="h6" gutterBottom>
+                        Documentos
+                    </Typography>
 
-                <Divider sx={{ mb: 3 }} />
-                <Grid container spacing={3}>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2, mt: 2 }}>
+                        Esse área é dedicada ao anexo dos documentos. Caso deseje, é possível baixar, alterar e deletar os documentos.
+                        <br /> <br />
+                        Para realizar um upload, habilite o campo <strong>Editar Documentos</strong>, localizado ao lado direito logo abaixo, e anexe os documentos correspondentes em <strong>Enviar Documento</strong>. Para o anexo do documento de classe do Responsável Técnico, é necessário habilitar o campo <strong>Possui RT?</strong>, localizado logo abaixo.
+                    </Typography>
+
+                </Grid>
+                <Grid
+                    container
+                    spacing={0}
+                    sx={{
+                        mt: { xs: 2, md: 2 },
+                        '& > *': { px: 2, mb: 2 },
+                    }}
+                >
                     <Grid xs={12} sm={6}>
                         <Box sx={{ mb: 1 }}>
                             <FormControlLabel
@@ -185,7 +200,14 @@ export default function AlteracaoDocumentos({ alteracaoId }) {
                         </Box>
                     </Grid>
                 </Grid>
-                <Grid container spacing={3} sx={{ mt: 1 }}>
+                <Grid
+                    container
+                    spacing={0}
+                    sx={{
+                        mt: { xs: 2, md: 2 },
+                        '& > *': { px: 2, mb: 2 },
+                    }}
+                >
                     {documents.map((doc) => {
                         const file = getValues(doc.name);
                         if (doc.toggle && !possuiRT && !file) return null;
@@ -249,6 +271,6 @@ export default function AlteracaoDocumentos({ alteracaoId }) {
                     })}
                 </Grid>
             </>
-        </Box>
+        </Box >
     );
 }

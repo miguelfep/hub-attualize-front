@@ -7,9 +7,12 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
-import { alpha } from '@mui/material/styles'
+import Select from '@mui/material/Select';
+import { alpha } from '@mui/material/styles';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
@@ -236,6 +239,51 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
             </Box>
           </Stack>
 
+          {isAdmin && (
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>Status da Cobrança</Typography>
+              <FormControl fullWidth>
+                <Select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  displayEmpty
+                  sx={{ borderRadius: 1.5 }}
+                  renderValue={(value) => {
+                    if (value === 'RECEBIDO' || value === 'PAGO') return 'Pago';
+                    if (value === 'EMABERTO') return 'Pendente';
+                    if (value === 'CANCELADO') return 'Cancelado';
+                    return value;
+                  }}
+                >
+                  <MenuItem value="RECEBIDO">
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Iconify icon="solar:check-circle-bold-duotone" width={18} sx={{ color: 'success.main' }} />
+                      <Box>Pago</Box>
+                    </Stack>
+                  </MenuItem>
+                  <MenuItem value="PAGO">
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Iconify icon="solar:check-circle-bold-duotone" width={18} sx={{ color: 'success.main' }} />
+                      <Box>Pago</Box>
+                    </Stack>
+                  </MenuItem>
+                  <MenuItem value="EMABERTO">
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Iconify icon="solar:clock-circle-bold-duotone" width={18} sx={{ color: 'warning.main' }} />
+                      <Box>Pendente</Box>
+                    </Stack>
+                  </MenuItem>
+                  <MenuItem value="CANCELADO">
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Iconify icon="solar:close-circle-bold-duotone" width={18} sx={{ color: 'error.main' }} />
+                      <Box>Cancelado</Box>
+                    </Stack>
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+
           {cobrancaAtual?.items && cobrancaAtual.items.length > 0 && (
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: 'text.primary' }}>
@@ -282,11 +330,9 @@ const NovaCobrancaForm = ({ open, handleClose, contrato, fetchCobrancas, cobranc
         <Button variant="outlined" color="inherit" onClick={handleClose}>
           Fechar
         </Button>
-        {!temBoleto && (
-          <Button variant="contained" onClick={handleCreateOrUpdate} sx={{ borderRadius: 1.5 }}>
-            Salvar Alterações
-          </Button>
-        )}
+        <Button variant="contained" onClick={handleCreateOrUpdate} sx={{ borderRadius: 1.5 }}>
+          Salvar Alterações
+        </Button>
       </DialogActions>
     </Dialog>
   );

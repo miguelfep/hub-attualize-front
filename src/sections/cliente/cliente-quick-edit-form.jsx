@@ -248,7 +248,7 @@ export function ClienteQuickEditForm({ currentUser, open, onClose, onUpdate }) {
             <Field.Text name="razaoSocial" label="Razão Social" />
             <Field.Text name="codigo" label="Código" type="number" />
             <Field.Text name="emailFinanceiro" label="Email Financeiro" />
-            <Field.Text name="telefoneComercial" label="Telefone Comercial" />
+            <Field.Phone name="telefoneComercial" label="Telefone Comercial" />
             <Field.DatePicker name="dataEntrada" label="Data de Entrada" />
             <Field.DatePicker name="dataSaida" label="Data de Saída" />
             <Field.Select name="regimeTributario" label="Regime Tributário">

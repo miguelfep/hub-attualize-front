@@ -267,21 +267,37 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
 
   return (
     <>
-      <Box sx={{ mb: 2 }}>
-        <Typography variant="h5" sx={{ mb: 2, mt: 4 }} gutterBottom>
-          Quadro Societário
-        </Typography>
-      </Box>
-      <Box>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Abaixo, você verá os sócios de sua empresa e suas respectivas informações. Caso deseje alterar, basta selecionar o novo número de sócios e preencher os novos campos vazios com os dados dele.
-          Para adicionar e/ou alterar as informações de um sócio, é preciso habilitar o campo <strong style={{ color: 'blue' }}>Editar Sócio</strong>
-          <br /> <br />
-          Se possível, preencha todos os campos, e faça o upload dos documentos necessários.
-          É possível fazer a remoção de um sócio clicando no botão <strong style={{ color: 'red' }}>Remover Sócio</strong>
-        </Typography>
-      </Box>
-      <Grid container spacing={3} sx={{ mt: 1 }}>
+      <Grid
+        container
+        spacing={0}
+        sx={{
+          mt: { xs: 2, md: 2 },
+          '& > *': { px: 2, mb: 2 },
+        }}
+      >
+        <Box sx={{ mb: 2 }}>
+          <Typography variant="h5" sx={{ mb: 2, mt: 4 }} gutterBottom>
+            Quadro Societário
+          </Typography>
+        </Box>
+        <Box>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Abaixo, você verá os sócios de sua empresa e suas respectivas informações. Caso deseje alterar, basta selecionar o novo número de sócios e preencher os novos campos vazios com os dados dele.
+            Para adicionar e/ou alterar as informações de um sócio, é preciso habilitar o campo <strong style={{ color: 'blue' }}>Editar Sócio</strong>
+            <br /> <br />
+            Se possível, preencha todos os campos, e faça o upload dos documentos necessários.
+            É possível fazer a remoção de um sócio clicando no botão <strong style={{ color: 'red' }}>Remover Sócio</strong>
+          </Typography>
+        </Box>
+      </Grid>
+      <Grid
+        container
+        spacing={0}
+        sx={{
+          mt: { xs: 2, md: 2 },
+          '& > *': { px: 2, mb: 2 },
+        }}
+      >
         <Grid xs={12} md={12}>
           <TextField
             select
@@ -649,127 +665,124 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
               </Typography>
             </Grid>
 
-            {/* Aqui está a seção corrigida para upload de documentos */}
-            <Grid container spacing={2} sx={{ mt: 2, mb: 4, px: 2 }}>
-              {/* Bloco para CNH */}
-              <Grid xs={6}>
-                <Controller
-                  name={`socios.${index}.cnhAnexo`}
-                  control={control}
-                  render={({ field: { value } }) => (
-                    <Box
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        padding: 2,
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Typography variant="subtitle1" gutterBottom>
-                        Faça o upload da <strong>CNH</strong> em Enviar Anexo
-                      </Typography>
-                      <Box>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          fullWidth
-                          sx={{ mb: 1 }}
-                          disabled={!watch(`socios.${index}.socioEnabled`)}
-                          onClick={() => handleUpload(index, 'cnhAnexo')}
-                        >
-                          Enviar Anexo
-                        </Button>
+            {/* Bloco para CNH */}
+            <Grid xs={6}>
+              <Controller
+                name={`socios.${index}.cnhAnexo`}
+                control={control}
+                render={({ field: { value } }) => (
+                  <Box
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      padding: 2,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography variant="subtitle1" gutterBottom>
+                      Faça o upload da <strong>CNH</strong> em Enviar Anexo
+                    </Typography>
+                    <Box>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        sx={{ mb: 1 }}
+                        disabled={!watch(`socios.${index}.socioEnabled`)}
+                        onClick={() => handleUpload(index, 'cnhAnexo')}
+                      >
+                        Enviar Anexo
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        disabled={!watch(`socios.${index}.socioEnabled`) || !value}
+                        onClick={() => handleDelete(index, 'cnhAnexo')}
+                      >
+                        Deletar
+                      </Button>
+                      {value && (
                         <Button
                           variant="outlined"
                           fullWidth
-                          disabled={!watch(`socios.${index}.socioEnabled`) || !value}
-                          onClick={() => handleDelete(index, 'cnhAnexo')}
+                          sx={{ mt: 1 }}
+                          onClick={() => handleDownload(index, 'cnhAnexo')}
                         >
-                          Deletar
+                          Baixar
                         </Button>
-                        {value && (
-                          <Button
-                            variant="outlined"
-                            fullWidth
-                            sx={{ mt: 1 }}
-                            onClick={() => handleDownload(index, 'cnhAnexo')}
-                          >
-                            Baixar
-                          </Button>
-                        )}
-                      </Box>
-                      {value && typeof value === 'string' && (
-                        <Box mt={2}>
-                          <Typography variant="body2" noWrap>
-                            {value.split('/').pop()}
-                          </Typography>
-                        </Box>
                       )}
                     </Box>
-                  )}
-                />
-              </Grid>
+                    {value && typeof value === 'string' && (
+                      <Box mt={2}>
+                        <Typography variant="body2" noWrap>
+                          {value.split('/').pop()}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              />
+            </Grid>
 
-              {/* Bloco para Comprovante de Endereço */}
-              <Grid xs={6}>
-                <Controller
-                  name={`socios.${index}.comprovanteEnderecoAnexo`}
-                  control={control}
-                  render={({ field: { value } }) => (
-                    <Box
-                      sx={{
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        borderRadius: 2,
-                        padding: 2,
-                        textAlign: 'center',
-                      }}
-                    >
-                      <Typography variant="subtitle1" gutterBottom>
-                        Faça o upload do <strong>Comprovante de Endereço</strong> em Enviar Anexo
-                      </Typography>
-                      <Box>
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          fullWidth
-                          sx={{ mb: 1 }}
-                          disabled={!watch(`socios.${index}.socioEnabled`)}
-                          onClick={() => handleUpload(index, 'comprovanteEnderecoAnexo')}
-                        >
-                          Enviar Anexo
-                        </Button>
+            {/* Bloco para Comprovante de Endereço */}
+            <Grid xs={6}>
+              <Controller
+                name={`socios.${index}.comprovanteEnderecoAnexo`}
+                control={control}
+                render={({ field: { value } }) => (
+                  <Box
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderRadius: 2,
+                      padding: 2,
+                      textAlign: 'center',
+                    }}
+                  >
+                    <Typography variant="subtitle1" gutterBottom>
+                      Faça o upload do <strong>Comprovante de Endereço</strong> em Enviar Anexo
+                    </Typography>
+                    <Box>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        fullWidth
+                        sx={{ mb: 1 }}
+                        disabled={!watch(`socios.${index}.socioEnabled`)}
+                        onClick={() => handleUpload(index, 'comprovanteEnderecoAnexo')}
+                      >
+                        Enviar Anexo
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        fullWidth
+                        disabled={!watch(`socios.${index}.socioEnabled`) || !value}
+                        onClick={() => handleDelete(index, 'comprovanteEnderecoAnexo')}
+                      >
+                        Deletar
+                      </Button>
+                      {value && (
                         <Button
                           variant="outlined"
                           fullWidth
-                          disabled={!watch(`socios.${index}.socioEnabled`) || !value}
-                          onClick={() => handleDelete(index, 'comprovanteEnderecoAnexo')}
+                          sx={{ mt: 1 }}
+                          onClick={() => handleDownload(index, 'comprovanteEnderecoAnexo')}
                         >
-                          Deletar
+                          Baixar
                         </Button>
-                        {value && (
-                          <Button
-                            variant="outlined"
-                            fullWidth
-                            sx={{ mt: 1 }}
-                            onClick={() => handleDownload(index, 'comprovanteEnderecoAnexo')}
-                          >
-                            Baixar
-                          </Button>
-                        )}
-                      </Box>
-                      {value && typeof value === 'string' && (
-                        <Box mt={2}>
-                          <Typography variant="body2" noWrap>
-                            {value.split('/').pop()}
-                          </Typography>
-                        </Box>
                       )}
                     </Box>
-                  )}
-                />
-              </Grid>
+                    {value && typeof value === 'string' && (
+                      <Box mt={2}>
+                        <Typography variant="body2" noWrap>
+                          {value.split('/').pop()}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                )}
+              />
             </Grid>
 
             {index < fields.length - 1 && (
@@ -781,7 +794,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
             )}
           </React.Fragment>
         ))}
-      </Grid>
+      </Grid >
 
       <Dialog
         open={openDialog}
@@ -806,7 +819,7 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
         </DialogActions>
       </Dialog>
 
-      <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ m: 2 }} />
     </>
   );
 }

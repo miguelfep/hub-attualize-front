@@ -21,6 +21,7 @@ import Grid from '@mui/material/Unstable_Grid2';
 import TextField from '@mui/material/TextField';
 import Container from '@mui/material/Container';
 import CardHeader from '@mui/material/CardHeader';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -143,7 +144,7 @@ const FORMAS_PAGAMENTO = [
   { value: 'pix_manual', label: 'PIX (avulso)', icon: 'eva:flash-outline' },
   { value: 'cartao', label: 'Cartão (maquininha)', icon: 'eva:credit-card-fill' },
   { value: 'credit_card', label: 'Cartão (online)', icon: 'eva:credit-card-fill' },
-  { value: 'boleto', label: 'Boleto', icon: 'eva:file-text-outline' }, 
+  { value: 'boleto', label: 'Boleto', icon: 'eva:file-text-outline' },
   { value: 'pix', label: 'PIX', icon: 'eva:flash-fill' },
 ];
 
@@ -310,6 +311,7 @@ export default function IrAdminDetalheView({ id }) {
   const [salvandoResponsavel, setSalvandoResponsavel] = useState(false);
 
   const [gerandoAnaliseIa, setGerandoAnaliseIa] = useState(false);
+  const [showSenhaGov, setShowSenhaGov] = useState(false);
 
   const [pagManualOpen, setPagManualOpen] = useState(false);
   const [pagManualForma, setPagManualForma] = useState('');
@@ -757,8 +759,8 @@ export default function IrAdminDetalheView({ id }) {
             subheader={
               order.formulario && (order.formulario.nome != null || order.formulario.email != null || order.formulario.declarouIrUltimoAno != null || (order.formulario.despesas && order.formulario.despesas.length > 0))
                 ? (order.formulario.atualizadoEm
-                    ? `Última atualização em ${formatData(order.formulario.atualizadoEm)}`
-                    : order.formulario.preenchidoEm
+                  ? `Última atualização em ${formatData(order.formulario.atualizadoEm)}`
+                  : order.formulario.preenchidoEm
                     ? `Preenchido em ${formatData(order.formulario.preenchidoEm)}`
                     : 'Preenchido pelo cliente no link de coleta')
                 : 'O cliente ainda não preencheu o questionário pelo link de coleta.'
@@ -961,6 +963,32 @@ export default function IrAdminDetalheView({ id }) {
                     </Box>
                   </Grid>
                 )}
+
+                {/* Senha GOV */}
+                {(() => {
+                  const senha = order.formulario.senhaGov?.trim();
+                  if (!senha) return null;
+                  return (
+                    <Grid xs={12}>
+                      <Divider sx={{ my: 1.5 }} />
+                      <Stack direction="row" alignItems="center" spacing={1}>
+                        <Box sx={{ flex: 1 }}>
+                          <Typography variant="caption" color="text.disabled" display="block">
+                            Senha GOV
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace', letterSpacing: showSenhaGov ? 'normal' : 3 }}>
+                            {showSenhaGov ? senha : '•'.repeat(senha.length)}
+                          </Typography>
+                        </Box>
+                        <Tooltip title={showSenhaGov ? 'Ocultar senha' : 'Mostrar senha'}>
+                          <IconButton size="small" onClick={() => setShowSenhaGov((prev) => !prev)}>
+                            <Iconify icon={showSenhaGov ? 'eva:eye-fill' : 'eva:eye-off-fill'} width={18} />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </Grid>
+                  );
+                })()}
 
                 {/* Despesas */}
                 {order.formulario.despesas?.length > 0 && (

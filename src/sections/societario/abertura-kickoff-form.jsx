@@ -27,10 +27,12 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { formatCep } from 'src/utils/format-input';
 import { consultarCep } from 'src/utils/consultarCep';
+import { normalizePhoneToE164, toPayloadLegacyDigits } from 'src/utils/phone-e164';
 
 import { updateAbertura } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 import DocumentsManager from '../abertura/empresa/DocumentsManager';
 
@@ -232,7 +234,11 @@ export function AberturaKickoffForm({ currentAbertura }) {
   const handleSave = async () => {
     loading.onTrue();
     try {
-      await updateAbertura(currentAbertura._id, formData);
+      await updateAbertura(currentAbertura._id, {
+        ...formData,
+        telefone: toPayloadLegacyDigits(formData.telefone ?? ''),
+        telefoneComercial: toPayloadLegacyDigits(formData.telefoneComercial ?? ''),
+      });
       toast.success('Dados salvos com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar os dados');
@@ -311,23 +317,34 @@ export function AberturaKickoffForm({ currentAbertura }) {
             />
           </Grid>
           <Grid xs={12} sm={6} md={4}>
-            <TextField
+            <PhoneInput
               size="small"
               label="Telefone"
-              name="telefone"
+              country="BR"
               fullWidth
-              value={formData.telefone || ''}
               disabled
+              value={normalizePhoneToE164(formData.telefone) || undefined}
+              onChange={(newValue) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  telefone: newValue ?? '',
+                }))
+              }
             />
           </Grid>
           <Grid xs={12} sm={6} md={4}>
-            <TextField
+            <PhoneInput
               size="small"
               label="Telefone Comercial"
-              name="telefoneComercial"
+              country="BR"
               fullWidth
-              value={formData.telefoneComercial || ''}
-              onChange={handleChange}
+              value={normalizePhoneToE164(formData.telefoneComercial) || undefined}
+              onChange={(newValue) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  telefoneComercial: newValue ?? '',
+                }))
+              }
             />
           </Grid>
           <Grid xs={12} sm={6} md={4}>
@@ -657,6 +674,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           ))}
           <Grid xs={12} sm={6} md={6}>
             <NumericFormat
+              size="small"
               label="Capital Social"
               customInput={TextField}
               value={formData.capitalSocial}
@@ -712,6 +730,7 @@ export function AberturaKickoffForm({ currentAbertura }) {
           </Grid>
           <Grid xs={12} sm={6}>
             <NumericFormat
+              size="small"
               label="Valor Mensalidade"
               name="valorMensalidade"
               customInput={TextField}
@@ -767,190 +786,192 @@ export function AberturaKickoffForm({ currentAbertura }) {
       {activeTab === 1 && (
         <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
           <Grid xs={12}>
-          <TextField
-            size="small"
-            multiline
-            rows={4}
-            label="História do Negócio"
-            name="historiaNegocio"
-            fullWidth
-            value={formData.historiaNegocio || ''}
-            onChange={handleChange}
-          />
-        </Grid>
-        <Grid xs={12} sm={12}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.possuiAtividadeServico || false}
-                onChange={handleChange}
-                name="possuiAtividadeServico"
-              />
-            }
-            label="Possui Atividade de Serviço?"
-          />
-        </Grid>
-        {formData.possuiAtividadeServico && (
-          <Grid xs={12}>
             <TextField
               size="small"
               multiline
               rows={4}
-              label="Atividade de Serviço"
-              name="atividadeServico"
+              label="História do Negócio"
+              name="historiaNegocio"
               fullWidth
-              value={formData.atividadeServico || ''}
+              value={formData.historiaNegocio || ''}
               onChange={handleChange}
             />
           </Grid>
-        )}
-        <Grid xs={12} sm={12}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.possuiAtividadeComercio || false}
+          <Grid xs={12} sm={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.possuiAtividadeServico || false}
+                  onChange={handleChange}
+                  name="possuiAtividadeServico"
+                />
+              }
+              label="Possui Atividade de Serviço?"
+            />
+          </Grid>
+          {formData.possuiAtividadeServico && (
+            <Grid xs={12}>
+              <TextField
+                size="small"
+                multiline
+                rows={4}
+                label="Atividade de Serviço"
+                name="atividadeServico"
+                fullWidth
+                value={formData.atividadeServico || ''}
                 onChange={handleChange}
-                name="possuiAtividadeComercio"
               />
-            }
-            label="Possui Atividade de Comércio?"
-          />
-        </Grid>
-        {formData.possuiAtividadeComercio && (
+            </Grid>
+          )}
+          <Grid xs={12} sm={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.possuiAtividadeComercio || false}
+                  onChange={handleChange}
+                  name="possuiAtividadeComercio"
+                />
+              }
+              label="Possui Atividade de Comércio?"
+            />
+          </Grid>
+          {formData.possuiAtividadeComercio && (
+            <Grid xs={12}>
+              <TextField
+                size="small"
+                multiline
+                rows={4}
+                label="Atividade de Comércio"
+                name="atividadeComercio"
+                fullWidth
+                value={formData.atividadeComercio || ''}
+                onChange={handleChange}
+              />
+            </Grid>
+          )}
+          <Grid xs={12} sm={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.possuiMaquinas || false}
+                  onChange={handleChange}
+                  name="possuiMaquinas"
+                />
+              }
+              label="Possui Máquinas no local?"
+            />
+          </Grid>
+          {formData.possuiMaquinas && (
+            <Grid xs={12}>
+              <TextField
+                size="small"
+                multiline
+                rows={4}
+                label="Quais Máquinas?"
+                name="maquinas"
+                fullWidth
+                value={formData.maquinas || ''}
+                onChange={handleChange}
+              />
+            </Grid>
+          )}
+          <Grid xs={12} sm={12}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.possuiSistema || false}
+                  onChange={handleChange}
+                  name="possuiSistema"
+                />
+              }
+              label="Possui Sistema?"
+            />
+          </Grid>
+          {formData.possuiSistema && (
+            <Grid xs={12}>
+              <TextField
+                size="small"
+                multiline
+                rows={3}
+                label="Sistemas Utilizado"
+                name="sistemaUtilizado"
+                fullWidth
+                value={formData.sistemaUtilizado || ''}
+                onChange={handleChange}
+              />
+            </Grid>
+          )}
           <Grid xs={12}>
             <TextField
               size="small"
-              multiline
-              rows={4}
-              label="Atividade de Comércio"
-              name="atividadeComercio"
+              label="URL da Meet Kickoff"
+              name="urlMeetKickoff"
               fullWidth
-              value={formData.atividadeComercio || ''}
+              value={formData.urlMeetKickoff || ''}
               onChange={handleChange}
             />
           </Grid>
-        )}
-        <Grid xs={12} sm={12}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.possuiMaquinas || false}
-                onChange={handleChange}
-                name="possuiMaquinas"
-              />
-            }
-            label="Possui Máquinas no local?"
-          />
-        </Grid>
-        {formData.possuiMaquinas && (
-          <Grid xs={12}>
-            <TextField
+          {/* Pro Labore */}
+          <Grid xs={12} sm={6} md={4}>
+            <NumericFormat
               size="small"
-              multiline
-              rows={4}
-              label="Quais Máquinas?"
-              name="maquinas"
+              label="Pro Labore"
+              customInput={TextField}
+              value={formData.proLabore}
+              thousandSeparator="."
+              decimalSeparator=","
+              prefix="R$ "
+              decimalScale={2}
+              fixedDecimalScale
+              onValueChange={({ floatValue }) =>
+                setFormData((prevData) => ({
+                  ...prevData,
+                  proLabore: floatValue || 0,
+                }))
+              }
               fullWidth
-              value={formData.maquinas || ''}
-              onChange={handleChange}
             />
           </Grid>
-        )}
-        <Grid xs={12} sm={12}>
-          <FormControlLabel
-            control={
-              <Switch
-                checked={formData.possuiSistema || false}
-                onChange={handleChange}
-                name="possuiSistema"
-              />
-            }
-            label="Possui Sistema?"
-          />
-        </Grid>
-        {formData.possuiSistema && (
-          <Grid xs={12}>
-            <TextField
-              size="small"
-              multiline
-              rows={3}
-              label="Sistemas Utilizado"
-              name="sistemaUtilizado"
-              fullWidth
-              value={formData.sistemaUtilizado || ''}
-              onChange={handleChange}
-            />
-          </Grid>
-        )}
-        <Grid xs={12}>
-          <TextField
-            size="small"
-            label="URL da Meet Kickoff"
-            name="urlMeetKickoff"
-            fullWidth
-            value={formData.urlMeetKickoff || ''}
-            onChange={handleChange}
-          />
-        </Grid>
-        {/* Pro Labore */}
-        <Grid xs={12} sm={6} md={4}>
-          <NumericFormat
-            label="Pro Labore"
-            customInput={TextField}
-            value={formData.proLabore}
-            thousandSeparator="."
-            decimalSeparator=","
-            prefix="R$ "
-            decimalScale={2}
-            fixedDecimalScale
-            onValueChange={({ floatValue }) =>
-              setFormData((prevData) => ({
-                ...prevData,
-                proLabore: floatValue || 0,
-              }))
-            }
-            fullWidth
-          />
-        </Grid>
 
-        {/* Previsão de Faturamento */}
-        <Grid xs={12} sm={6} md={4}>
-          <NumericFormat
-            label="Previsão de Faturamento"
-            customInput={TextField}
-            value={formData.previsaoFaturamento}
-            thousandSeparator="."
-            decimalSeparator=","
-            prefix="R$ "
-            decimalScale={2}
-            fixedDecimalScale
-            onValueChange={({ floatValue }) =>
-              setFormData((prevData) => ({
-                ...prevData,
-                previsaoFaturamento: floatValue || 0,
-              }))
-            }
-            fullWidth
-          />
-        </Grid>
+          {/* Previsão de Faturamento */}
+          <Grid xs={12} sm={6} md={4}>
+            <NumericFormat
+              size="small"
+              label="Previsão de Faturamento"
+              customInput={TextField}
+              value={formData.previsaoFaturamento}
+              thousandSeparator="."
+              decimalSeparator=","
+              prefix="R$ "
+              decimalScale={2}
+              fixedDecimalScale
+              onValueChange={({ floatValue }) =>
+                setFormData((prevData) => ({
+                  ...prevData,
+                  previsaoFaturamento: floatValue || 0,
+                }))
+              }
+              fullWidth
+            />
+          </Grid>
 
-        {/* Regime Tributário */}
-        <Grid xs={12} sm={6} md={4}>
-          <TextField
-            size="small"
-            select
-            label="Regime Tributário"
-            name="regimeTributario"
-            fullWidth
-            value={formData.regimeTributario || ''}
-            onChange={handleChange}
-          >
-            <MenuItem value="Simples">Simples</MenuItem>
-            <MenuItem value="Real">Real</MenuItem>
-            <MenuItem value="Presumido">Presumido</MenuItem>
-            <MenuItem value="Simei">Simei</MenuItem>
-          </TextField>
-        </Grid>
+          {/* Regime Tributário */}
+          <Grid xs={12} sm={6} md={4}>
+            <TextField
+              size="small"
+              select
+              label="Regime Tributário"
+              name="regimeTributario"
+              fullWidth
+              value={formData.regimeTributario || ''}
+              onChange={handleChange}
+            >
+              <MenuItem value="Simples">Simples</MenuItem>
+              <MenuItem value="Real">Real</MenuItem>
+              <MenuItem value="Presumido">Presumido</MenuItem>
+              <MenuItem value="Simei">Simei</MenuItem>
+            </TextField>
+          </Grid>
         </Grid>
       )}
 

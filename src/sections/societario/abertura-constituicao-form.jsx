@@ -27,10 +27,12 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { formatCep } from 'src/utils/format-input';
 import { consultarCep } from 'src/utils/consultarCep';
+import { normalizePhoneToE164, toPayloadLegacyDigits } from 'src/utils/phone-e164';
 
 import { updateAbertura, deletarArquivo, downloadArquivo } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 import DocumentsManager from '../abertura/empresa/DocumentsManager';
 
@@ -280,6 +282,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
       const dataToSave = {
         ...formData,
         capitalSocial: formData.capitalSocial, // já está como número
+        telefoneComercial: toPayloadLegacyDigits(formData.telefoneComercial ?? ''),
       };
       await updateAbertura(currentAbertura._id, dataToSave);
       toast.success('Dados salvos com sucesso!');
@@ -354,7 +357,7 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
           <Grid xs={12} sm={6} md={3}>
             <TextField
               size="small"
-              label="Email  Financeiro"
+              label="Email Financeiro"
               name="emailFinanceiro"
               fullWidth
               value={formData.emailFinanceiro || ''}
@@ -362,23 +365,28 @@ export function AberturaConstituicaoForm({ currentAbertura, fetchAbertura }) {
             />
           </Grid>
           <Grid xs={12} sm={6} md={4}>
-            <TextField
+            <PhoneInput
               size="small"
               label="Telefone"
-              name="telefone"
+              country="BR"
               fullWidth
-              value={formData.telefone || ''}
               disabled
+              value={normalizePhoneToE164(formData.telefone) || ''}
             />
           </Grid>
           <Grid xs={12} sm={6} md={4}>
-            <TextField
+            <PhoneInput
               size="small"
               label="Telefone Comercial"
-              name="telefoneComercial"
+              country="BR"
               fullWidth
-              value={formData.telefoneComercial || ''}
-              onChange={handleChange}
+              value={normalizePhoneToE164(formData.telefoneComercial) || undefined}
+              onChange={(newValue) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  telefoneComercial: newValue ?? '',
+                }))
+              }
             />
           </Grid>
           <Grid xs={12} sm={6} md={4}>

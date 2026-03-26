@@ -25,7 +25,7 @@ import { useRouter } from 'src/routes/hooks';
 import { useBoolean } from 'src/hooks/use-boolean';
 import { useSetState } from 'src/hooks/use-set-state';
 
-import { formatCpf, formatPhone } from 'src/utils/format-input';
+import { formatCpf } from 'src/utils/format-input';
 
 import { varAlpha } from 'src/theme/styles';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -35,6 +35,7 @@ import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { PhoneInput } from 'src/components/phone-input';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import {
@@ -253,7 +254,7 @@ export function AberturasListView() {
                     {tab.value === 'all'
                       ? tableData.length
                       : tableData.filter((abertura) => abertura.statusAbertura === tab.value)
-                          .length}
+                        .length}
                   </Label>
                 }
               />
@@ -371,16 +372,14 @@ export function AberturasListView() {
               control={control}
               defaultValue=""
               render={({ field }) => (
-                <TextField
+                <PhoneInput
                   {...field}
+                  margin="normal"
                   label="Telefone"
                   fullWidth
-                  margin="normal"
-                  value={field.value || ''}
-                  onChange={(e) => {
-                    const formatted = formatPhone(e.target.value);
-                    field.onChange(formatted);
-                  }}
+                  country="BR"
+                  value={field.value ?? ''}
+                  onChange={(newValue) => field.onChange(newValue ?? '')}
                 />
               )}
             />
@@ -434,7 +433,7 @@ export function AberturasListView() {
             </Button>
           </form>
         </Box>
-      </Modal>
+      </Modal >
 
       <ConfirmDialog
         open={confirm.value}

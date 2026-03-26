@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, FormProvider } from 'react-hook-form';
 
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
@@ -10,10 +10,12 @@ import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
-import { formatToCamelCase } from 'src/utils/formatter';
-import { onlyDigits, formatCPFOrCNPJ } from 'src/utils/format-number';
+import { formatToCamelCase } from 'src/utils/formatter'; import { onlyDigits, formatCPFOrCNPJ } from 'src/utils/format-number';
 
 import { criarLead, getAllLeadsOrigens } from 'src/actions/lead';
+
+import { Field } from 'src/components/hook-form';
+
 
 const validarCpfCnpj = (value) => {
   const cleanValue = onlyDigits(value);
@@ -25,36 +27,12 @@ const validarCpfCnpj = (value) => {
   return true;
 };
 
-const formatTelefone = (value) => {
-  if (!value) return "";
-
-  const nums = value.replace(/\D/g, "");
-
-  const cleanNums = nums.slice(0, 11);
-
-  if (cleanNums.length <= 10) {
-    return cleanNums
-      .replace(/^(\d{2})(\d)/, "($1) $2")
-      .replace(/(\d{4})(\d)/, "$1-$2");
-  }
-  return cleanNums
-  .replace(/^(\d{2})(\d)/, "($1) $2")
-  .replace(/( \d)(\d)/, "$1 $2")
-  .replace(/(\d{4})(\d)/, "$1-$2");
-}
-
 export function NewLeadDialog({ open, onClose, onAddLead }) {
   const [origens, setOrigens] = useState([]);
   const [loadingOrigens, setLoadingOrigens] = useState(true);
   const [origemInputValue, setOrigemInputValue] = useState('');
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    setError,
-    formState: { errors, isSubmitting },
-  } = useForm({
+  const methods = useForm({
     defaultValues: {
       nome: '',
       email: '',
@@ -64,6 +42,14 @@ export function NewLeadDialog({ open, onClose, onAddLead }) {
     },
     mode: 'onSubmit',
   });
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    setError,
+    formState: { errors, isSubmitting },
+  } = methods;
 
   useEffect(() => {
     const fetchOrigens = async () => {
@@ -93,8 +79,23 @@ export function NewLeadDialog({ open, onClose, onAddLead }) {
 
   const onSubmit = async (data) => {
     try {
+      const rawWhatsapp = data.whatsapp || '';
+      let digitsWhatsapp = rawWhatsapp.replace(/\D/g, '');
+
+      if (digitsWhatsapp.startsWith('55')) {
+        digitsWhatsapp = digitsWhatsapp.slice(2);
+      }
+
+      if (digitsWhatsapp.length < 10) {
+        setError('whatsapp', {
+          type: 'manual',
+          message: 'Telefone inválido',
+        });
+        return;
+      }
+
+      const clearedWhatsapp = digitsWhatsapp;
       const clearedCpfCnpj = onlyDigits(data.cnpj);
-      const clearedWhatsapp = data.whatsapp.replace(/\D/g, '');
 
       let origemFinal = data.origem;
       if (typeof data.origem === 'string' && data.origem) {
@@ -139,161 +140,150 @@ export function NewLeadDialog({ open, onClose, onAddLead }) {
     }
   };
 
-  const getPhoneMask = (value) => {
-    const digits = value ? value.replace(/\D/g, '') : '';
-    return digits.length > 10 ? '(99) 9 9999-9999' : '(99) 9999-99999';
-  };
-
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>Novo Lead</DialogTitle>
-      <DialogContent>
-        <Controller
-          name="nome"
-          control={control}
-          rules={{ required: 'Nome é obrigatório' }}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Nome"
-              fullWidth
-              margin="normal"
-              error={!!errors.nome}
-              helperText={errors.nome?.message}
-            />
-          )}
-        />
-        <Controller
-          name="email"
-          control={control}
-          rules={{
-            required: 'Email é obrigatório',
-            pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email inválido' }
-          }}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="Email"
-              fullWidth
-              margin="normal"
-              error={!!errors.email}
-              helperText={errors.email?.message}
-            />
-          )}
-        />
-        <Controller
-          name="whatsapp"
-          control={control}
-          rules={{
-            required: 'WhatsApp é obrigatório',
-            minLength: {
-              value: 14,
-              message: 'Telefone Inválido'
-            }
-          }}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="WhatsApp/Telefone"
-              fullWidth
-              margin="normal"
-              error={!!errors.whatsapp}
-              helperText={errors.whatsapp?.message}
-              onChange={(e) => {
-                const formatted = formatTelefone(e.target.value);
-                field.onChange(formatted);
-              }}
-              inputProps={{ maxLength: 15 }}
-            />
-          )}
-        />
-        <Controller
-          name="cnpj"
-          control={control}
-          rules={{
-            required: 'CPF/CNPJ é obrigatório',
-            validate: validarCpfCnpj
-          }}
-          render={({ field }) => (
-            <TextField
-              {...field}
-              label="CPF ou CNPJ"
-              fullWidth
-              margin="normal"
-              onChange={(e) => {
-                const valorFormatado = formatCPFOrCNPJ(e.target.value);
-                if (valorFormatado.length <= 18) {
-                  field.onChange(valorFormatado);
-                }
-              }}
-              error={!!errors.cnpj}
-              helperText={errors.cnpj?.message}
-              placeholder="000.000.000-00"
-              inputProps={{ maxLength: 18 }}
-            />
-          )}
-        />
-        <Controller
-          name="origem"
-          control={control}
-          rules={{ required: 'Origem é obrigatória' }}
-          render={({ field: { onChange, value, ...field } }) => (
-            <Autocomplete
-              {...field}
-              freeSolo
-              value={value || null}
-              inputValue={origemInputValue}
-              onInputChange={(_, newValue, reason) => {
-                setOrigemInputValue(newValue);
-                if (reason === 'input' || reason === 'clear') {
-                  onChange(newValue);
-                }
-              }}
-              onChange={(_, newValue) => {
-                if (!newValue) {
-                  onChange('');
-                  setOrigemInputValue('');
-                  return;
-                }
+    <FormProvider {...methods}>
+      <Dialog open={open} onClose={onClose}>
+        <DialogTitle>Novo Lead</DialogTitle>
+        <DialogContent>
+          <Controller
+            name="nome"
+            control={control}
+            rules={{ required: 'Nome é obrigatório' }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Nome"
+                fullWidth
+                margin="normal"
+                error={!!errors.nome}
+                helperText={errors.nome?.message}
+              />
+            )}
+          />
+          <Controller
+            name="email"
+            control={control}
+            rules={{
+              required: 'Email é obrigatório',
+              pattern: { value: /^\S+@\S+\.\S+$/, message: 'Email inválido' }
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="Email"
+                fullWidth
+                margin="normal"
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
+            )}
+          />
+          <Field.Phone
+            name="whatsapp"
+            label="WhatsApp/Telefone"
+            country="BR"
+            margin="normal"
+            rules={{
+              required: 'WhatsApp/Telefone é obrigatório',
+              validate: (value) => {
+                const raw = value || '';
+                let digits = String(raw).replace(/\D/g, '');
 
-                const valor = typeof newValue === 'string' ? newValue : (newValue.tipo || newValue.id || '');
-                onChange(valor);
-                setOrigemInputValue(valor);
-              }}
-              options={origens}
-              getOptionLabel={(option) => {
-                if (typeof option === 'string') return option;
-                return option.tipo || option.id || '';
-              }}
-              isOptionEqualToValue={(option, selectedValue) => {
-                const optionValue = typeof option === 'string' ? option : (option.tipo || option.id);
-                return optionValue === selectedValue;
-              }}
-              renderInput={(params) => (
-                <TextField
-                  {...params}
-                  label="Origem"
-                  fullWidth
-                  margin="normal"
-                  error={!!errors.origem}
-                  helperText={errors.origem?.message || 'Selecione uma origem ou digite uma nova'}
-                  disabled={loadingOrigens}
-                  placeholder="Selecione ou digite uma origem"
-                />
-              )}
-              loading={loadingOrigens}
-              loadingText="Carregando origens..."
-              noOptionsText="Nenhuma origem disponível. Digite para criar uma nova."
-            />
-          )}
-        />
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={handleClose}>Cancelar</Button>
-        <Button onClick={handleSubmit(onSubmit)} variant="contained" disabled={isSubmitting}>
-          {isSubmitting ? 'Criando...' : 'Adicionar Lead'}
-        </Button>
-      </DialogActions>
-    </Dialog>
+                if (digits.startsWith('55')) digits = digits.slice(2);
+
+                if (digits.length < 10) return 'Telefone inválido';
+                return true;
+              },
+            }}
+          />
+          <Controller
+            name="cnpj"
+            control={control}
+            rules={{
+              required: 'CPF/CNPJ é obrigatório',
+              validate: validarCpfCnpj
+            }}
+            render={({ field }) => (
+              <TextField
+                {...field}
+                label="CPF ou CNPJ"
+                fullWidth
+                margin="normal"
+                onChange={(e) => {
+                  const valorFormatado = formatCPFOrCNPJ(e.target.value);
+                  if (valorFormatado.length <= 18) {
+                    field.onChange(valorFormatado);
+                  }
+                }}
+                error={!!errors.cnpj}
+                helperText={errors.cnpj?.message}
+                placeholder="000.000.000-00"
+                inputProps={{ maxLength: 18 }}
+              />
+            )}
+          />
+          <Controller
+            name="origem"
+            control={control}
+            rules={{ required: 'Origem é obrigatória' }}
+            render={({ field: { onChange, value, ...field } }) => (
+              <Autocomplete
+                {...field}
+                freeSolo
+                value={value || null}
+                inputValue={origemInputValue}
+                onInputChange={(_, newValue, reason) => {
+                  setOrigemInputValue(newValue);
+                  if (reason === 'input' || reason === 'clear') {
+                    onChange(newValue);
+                  }
+                }}
+                onChange={(_, newValue) => {
+                  if (!newValue) {
+                    onChange('');
+                    setOrigemInputValue('');
+                    return;
+                  }
+
+                  const valor = typeof newValue === 'string' ? newValue : (newValue.tipo || newValue.id || '');
+                  onChange(valor);
+                  setOrigemInputValue(valor);
+                }}
+                options={origens}
+                getOptionLabel={(option) => {
+                  if (typeof option === 'string') return option;
+                  return option.tipo || option.id || '';
+                }}
+                isOptionEqualToValue={(option, selectedValue) => {
+                  const optionValue = typeof option === 'string' ? option : (option.tipo || option.id);
+                  return optionValue === selectedValue;
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Origem"
+                    fullWidth
+                    margin="normal"
+                    error={!!errors.origem}
+                    helperText={errors.origem?.message || 'Selecione uma origem ou digite uma nova'}
+                    disabled={loadingOrigens}
+                    placeholder="Selecione ou digite uma origem"
+                  />
+                )}
+                loading={loadingOrigens}
+                loadingText="Carregando origens..."
+                noOptionsText="Nenhuma origem disponível. Digite para criar uma nova."
+              />
+            )}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleClose}>Cancelar</Button>
+          <Button onClick={handleSubmit(onSubmit)} variant="contained" disabled={isSubmitting}>
+            {isSubmitting ? 'Criando...' : 'Adicionar Lead'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </FormProvider>
   );
 }

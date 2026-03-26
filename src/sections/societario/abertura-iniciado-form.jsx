@@ -18,9 +18,11 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
-import { formatPhone } from 'src/utils/format-input';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 
 import { updateAbertura, enviarLinkAbertura } from 'src/actions/societario';
+
+import { PhoneInput } from 'src/components/phone-input';
 
 export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvanceStatus }) {
   const { control, register, handleSubmit, getValues } = useFormContext();
@@ -99,18 +101,16 @@ export default function AberturaIniciadoForm({ currentAbertura = {}, handleAdvan
             <Controller
               name="telefone"
               control={control}
-              defaultValue={currentAbertura.telefone || ''}
+              defaultValue={normalizePhoneToE164(currentAbertura.telefone) || ''}
               render={({ field }) => (
-                <TextField
+                <PhoneInput
                   {...field}
                   size="small"
                   label="Telefone"
                   fullWidth
-                  value={field.value || ''}
-                  onChange={(e) => {
-                    const formatted = formatPhone(e.target.value);
-                    field.onChange(formatted);
-                  }}
+                  country="BR"
+                  value={field.value ?? ''}
+                  onChange={(newValue) => field.onChange(newValue ?? '')}
                 />
               )}
             />

@@ -25,11 +25,13 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { fCurrency, onlyDigits, formatTelefone, formatCPFOrCNPJ, validateCPFOrCNPJ } from 'src/utils/format-number';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
+import { fCurrency, onlyDigits, formatCPFOrCNPJ, validateCPFOrCNPJ } from 'src/utils/format-number';
 
 import { updateInvoice, criarPedidoCheckout, crirarPedidoOrcamento } from 'src/actions/invoices';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 import { CobrancaExistente } from './orcamento-cobranca';
 
@@ -75,7 +77,9 @@ export function OrcamentoAprovado({
   const [formData, setFormData] = useState({
     nome: invoice?.cliente?.nome || invoice?.lead?.nome || '',
     email: invoice?.cliente?.email || invoice?.lead?.email || '',
-    telefone: formatTelefone(invoice?.cliente?.whatsapp || invoice?.cliente?.telefone || invoice?.lead?.telefone || ''),
+    telefone: normalizePhoneToE164(
+      invoice?.cliente?.whatsapp || invoice?.cliente?.telefone || invoice?.lead?.telefone || ''
+    ),
     cpfCnpj: formatCPFOrCNPJ(invoice?.cliente?.cnpj || invoice?.lead?.cpf || ''),
     cep: enderecoInicial?.cep || '',
     endereco: enderecoInicial?.rua || enderecoInicial?.endereco || '',
@@ -153,9 +157,8 @@ export function OrcamentoAprovado({
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleTelefoneChange = (event) => {
-    const formatted = formatTelefone(event.target.value);
-    setFormData((prev) => ({ ...prev, telefone: formatted }));
+  const handleTelefoneChange = (newValue) => {
+    setFormData((prev) => ({ ...prev, telefone: newValue ?? '' }));
   };
 
   const handleCpfCnpjChange = (event) => {
@@ -389,15 +392,15 @@ function PaymentBillingAddress({
           />
         </Stack>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
+          <PhoneInput
             fullWidth
+            country="BR"
             label="Telefone"
             name="telefone"
             value={formData.telefone}
             onChange={handleTelefoneChange}
             error={!!errors.telefone}
             helperText={errors.telefone}
-            inputProps={{ maxLength: 15 }}
             variant="outlined"
             sx={fieldSxBase}
           />

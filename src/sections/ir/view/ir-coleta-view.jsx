@@ -14,10 +14,12 @@ import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import { alpha } from '@mui/material/styles';
+import Checkbox from '@mui/material/Checkbox';
 import Collapse from '@mui/material/Collapse';
 import TextField from '@mui/material/TextField';
 import Container from '@mui/material/Container';
 import FormLabel from '@mui/material/FormLabel';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import RadioGroup from '@mui/material/RadioGroup';
 import LoadingButton from '@mui/lab/LoadingButton';
@@ -26,14 +28,18 @@ import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import InputAdornment from '@mui/material/InputAdornment';
 import LinearProgress from '@mui/material/LinearProgress';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
+
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 
 import { useGetPedidoPorToken, salvarFormularioColeta, uploadDocumentoPorToken, submeterValidacaoPorToken } from 'src/actions/ir';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 import IrDocumentList from 'src/components/ir/IrDocumentList';
 
 // ----------------------------------------------------------------------
@@ -42,30 +48,30 @@ const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
 const MAX_SIZE_MB = 15;
 
 const OPCOES_DESPESAS = [
-  { value: 'escola',                label: 'Escola (Infantil, Fundamental, Médio)',     icon: 'eva:book-outline' },
-  { value: 'universidade',          label: 'Universidade',                              icon: 'eva:award-outline' },
-  { value: 'pos_graduacao',         label: 'Pós-Graduação, Mestrado ou Doutorado',      icon: 'eva:award-fill' },
-  { value: 'internacao_hospitalar', label: 'Internação Hospitalar',                     icon: 'eva:activity-outline' },
-  { value: 'consulta_medica',       label: 'Consulta Médica',                           icon: 'eva:heart-outline' },
-  { value: 'consulta_odontologica', label: 'Consulta ou Cirurgia Odontológica',         icon: 'eva:smiling-face-outline' },
-  { value: 'plano_saude',           label: 'Plano de Saúde',                            icon: 'eva:shield-outline' },
-  { value: 'plano_previdencia',     label: 'Plano de Previdência',                      icon: 'eva:umbrella-outline' },
-  { value: 'empregada_domestica',   label: 'Empregada Doméstica',                       icon: 'eva:home-outline' },
-  { value: 'pensao_alimenticia',    label: 'Pensão Alimentícia',                        icon: 'eva:people-outline' },
+  { value: 'escola', label: 'Escola (Infantil, Fundamental, Médio)', icon: 'eva:book-outline' },
+  { value: 'universidade', label: 'Universidade', icon: 'eva:award-outline' },
+  { value: 'pos_graduacao', label: 'Pós-Graduação, Mestrado ou Doutorado', icon: 'eva:award-fill' },
+  { value: 'internacao_hospitalar', label: 'Internação Hospitalar', icon: 'eva:activity-outline' },
+  { value: 'consulta_medica', label: 'Consulta Médica', icon: 'eva:heart-outline' },
+  { value: 'consulta_odontologica', label: 'Consulta ou Cirurgia Odontológica', icon: 'eva:smiling-face-outline' },
+  { value: 'plano_saude', label: 'Plano de Saúde', icon: 'eva:shield-outline' },
+  { value: 'plano_previdencia', label: 'Plano de Previdência', icon: 'eva:umbrella-outline' },
+  { value: 'empregada_domestica', label: 'Empregada Doméstica', icon: 'eva:home-outline' },
+  { value: 'pensao_alimenticia', label: 'Pensão Alimentícia', icon: 'eva:people-outline' },
 ];
 
 // Documentos obrigatórios por despesa selecionada
 const DOCS_REQUERIDOS_POR_DESPESA = {
-  escola:                { tipo: 'recibo_escola',          label: 'Recibo / Boleto Escola' },
-  universidade:          { tipo: 'recibo_universidade',    label: 'Recibo / Boleto Universidade' },
-  pos_graduacao:         { tipo: 'recibo_pos_graduacao',   label: 'Recibo / Boleto Pós-Graduação' },
-  internacao_hospitalar: { tipo: 'nota_internacao',        label: 'Nota Fiscal ou Recibo de Internação' },
-  consulta_medica:       { tipo: 'nota_consulta_medica',   label: 'Nota Fiscal / Recibo de Consulta Médica' },
-  consulta_odontologica: { tipo: 'nota_odontologica',      label: 'Nota Fiscal / Recibo Odontológico' },
-  plano_saude:           { tipo: 'informe_plano_saude',    label: 'Informe do Plano de Saúde' },
-  plano_previdencia:     { tipo: 'informe_previdencia',    label: 'Informe de Previdência Privada' },
-  empregada_domestica:   { tipo: 'recibo_domestica',       label: 'Recibos e DARF Empregada Doméstica' },
-  pensao_alimenticia:    { tipo: 'doc_pensao',             label: 'Escritura ou Acordo Judicial de Pensão' },
+  escola: { tipo: 'recibo_escola', label: 'Recibo / Boleto Escola' },
+  universidade: { tipo: 'recibo_universidade', label: 'Recibo / Boleto Universidade' },
+  pos_graduacao: { tipo: 'recibo_pos_graduacao', label: 'Recibo / Boleto Pós-Graduação' },
+  internacao_hospitalar: { tipo: 'nota_internacao', label: 'Nota Fiscal ou Recibo de Internação' },
+  consulta_medica: { tipo: 'nota_consulta_medica', label: 'Nota Fiscal / Recibo de Consulta Médica' },
+  consulta_odontologica: { tipo: 'nota_odontologica', label: 'Nota Fiscal / Recibo Odontológico' },
+  plano_saude: { tipo: 'informe_plano_saude', label: 'Informe do Plano de Saúde' },
+  plano_previdencia: { tipo: 'informe_previdencia', label: 'Informe de Previdência Privada' },
+  empregada_domestica: { tipo: 'recibo_domestica', label: 'Recibos e DARF Empregada Doméstica' },
+  pensao_alimenticia: { tipo: 'doc_pensao', label: 'Escritura ou Acordo Judicial de Pensão' },
 };
 
 // Tipos de dependentes para multi-select
@@ -125,9 +131,9 @@ const PERGUNTAS_FISCAIS = [
 ];
 
 const STEPS = [
-  { label: 'Identificação',   icon: 'eva:person-fill',        desc: 'Seus dados pessoais' },
-  { label: 'Situação fiscal', icon: 'eva:file-text-fill',     desc: 'Sobre o ano fiscal' },
-  { label: 'Despesas',        icon: 'eva:credit-card-fill',   desc: 'Deduções e comprovantes' },
+  { label: 'Identificação', icon: 'eva:person-fill', desc: 'Seus dados pessoais' },
+  { label: 'Situação fiscal', icon: 'eva:file-text-fill', desc: 'Sobre o ano fiscal' },
+  { label: 'Despesas', icon: 'eva:credit-card-fill', desc: 'Deduções e comprovantes' },
   { label: 'Resumo e envio', icon: 'eva:checkmark-circle-fill', desc: 'Revisar e enviar' },
 ];
 
@@ -153,6 +159,7 @@ const FORM_VAZIO = {
   enviouRemessaExterior: null,
   possuiContaBancariaExterior: null,
   solicitacaoEspecifica: '',
+  senhaGov: '',
   despesas: [],
 };
 
@@ -221,7 +228,7 @@ function BoolRadio({ label, value, onChange, disabled, compact = false }) {
             value={value === null || value === undefined ? '' : String(value)}
             onChange={(e) => onChange(e.target.value === 'true')}
           >
-            <FormControlLabel value="true"  control={<Radio size="small" />} label="Sim" sx={{ mr: 1 }} />
+            <FormControlLabel value="true" control={<Radio size="small" />} label="Sim" sx={{ mr: 1 }} />
             <FormControlLabel value="false" control={<Radio size="small" />} label="Não" sx={{ mr: 0 }} />
           </RadioGroup>
         </Stack>
@@ -333,7 +340,11 @@ export default function IrColetaView({ token }) {
   const [fileError, setFileError] = useState('');
   const [uploading, setUploading] = useState(false);
   const [modalDespesa, setModalDespesa] = useState(null);
+  const [modalSemDespesas, setModalSemDespesas] = useState(false);
+  const [timerSemDespesas, setTimerSemDespesas] = useState(15);
+  const [cienteSemDespesas, setCienteSemDespesas] = useState(false);
   const [enviandoColeta, setEnviandoColeta] = useState(false);
+  const [showSenhaGov, setShowSenhaGov] = useState(false);
 
   const autoSaveTimer = useRef(null);
   const iniciado = useRef(false);
@@ -354,14 +365,14 @@ export default function IrColetaView({ token }) {
     setStep(detectarStepInicial(f, enviada));
 
     setForm({
-      nome:                        f?.nome        ?? dc?.nome        ?? '',
-      email:                       f?.email       ?? dc?.email       ?? '',
-      telefone:                    f?.telefone    ?? dc?.telefone    ?? '',
-      dataNascimento:              f?.dataNascimento ? f.dataNascimento.split('T')[0] : '',
-      declarouIrUltimoAno:         f?.declarouIrUltimoAno         ?? null,
-      possuiDependentes:           f?.possuiDependentes           ?? null,
-      dependentesTipos:            f?.dependentesTipos || [],
-      dependentesDetalhes:         (() => {
+      nome: f?.nome ?? dc?.nome ?? '',
+      email: f?.email ?? dc?.email ?? '',
+      telefone: f?.telefone ?? dc?.telefone ?? '',
+      dataNascimento: f?.dataNascimento ? f.dataNascimento.split('T')[0] : '',
+      declarouIrUltimoAno: f?.declarouIrUltimoAno ?? null,
+      possuiDependentes: f?.possuiDependentes ?? null,
+      dependentesTipos: f?.dependentesTipos || [],
+      dependentesDetalhes: (() => {
         const dd = f?.dependentesDetalhes || FORM_VAZIO.dependentesDetalhes;
         const def = FORM_VAZIO.dependentesDetalhes;
         const filhosRaw = dd?.filhos;
@@ -372,16 +383,17 @@ export default function IrColetaView({ token }) {
             : { declarar: filhosRaw.declarar ?? def.filhos.declarar, filhos: filhosRaw.cpfs ? [{ cpf: filhosRaw.cpfs, dataNascimento: '' }] : [] };
         return { ...def, ...dd, filhos: filhosNorm };
       })(),
-      trabalhouAutonomo:           f?.trabalhouAutonomo           ?? null,
-      emitirNotaAutonomo:          f?.emitirNotaAutonomo          ?? null,
-      compraVendaBem:              f?.compraVendaBem              ?? null,
-      compraVendaBemTipo:          f?.compraVendaBemTipo          || '',
-      possuiContaBancaria:         f?.possuiContaBancaria         ?? null,
-      possuiEmpresaExterior:       f?.possuiEmpresaExterior       ?? null,
-      enviouRemessaExterior:       f?.enviouRemessaExterior       ?? null,
+      trabalhouAutonomo: f?.trabalhouAutonomo ?? null,
+      emitirNotaAutonomo: f?.emitirNotaAutonomo ?? null,
+      compraVendaBem: f?.compraVendaBem ?? null,
+      compraVendaBemTipo: f?.compraVendaBemTipo || '',
+      possuiContaBancaria: f?.possuiContaBancaria ?? null,
+      possuiEmpresaExterior: f?.possuiEmpresaExterior ?? null,
+      enviouRemessaExterior: f?.enviouRemessaExterior ?? null,
       possuiContaBancariaExterior: f?.possuiContaBancariaExterior ?? null,
-      solicitacaoEspecifica:       f?.solicitacaoEspecifica       || '',
-      despesas:                    f?.despesas || [],
+      solicitacaoEspecifica: f?.solicitacaoEspecifica || '',
+      senhaGov: f?.senhaGov || '',
+      despesas: f?.despesas || [],
     });
   }, [order]);
 
@@ -393,7 +405,7 @@ export default function IrColetaView({ token }) {
       autoSaveTimer.current = setTimeout(() => {
         salvarFormularioColeta(token, { [field]: value })
           .then(() => mutate((c) => ({ ...c, formularioPreenchido: true }), false))
-          .catch(() => {});
+          .catch(() => { });
       }, 3000);
     }
   };
@@ -401,13 +413,13 @@ export default function IrColetaView({ token }) {
   const toggleDespesa = (value) => {
     const jaSelecionado = form.despesas.includes(value);
     const docInfo = DOCS_REQUERIDOS_POR_DESPESA[value];
-    if (jaSelecionado) {
-      if (docInfo) setModalDespesa({ value, ...docInfo });
-      return;
-    }
     setPendente(true);
-    setForm((prev) => ({ ...prev, despesas: [...prev.despesas, value] }));
-    if (docInfo) setModalDespesa({ value, ...docInfo });
+    if (jaSelecionado) {
+      setForm((prev) => ({ ...prev, despesas: prev.despesas.filter((d) => d !== value) }));
+    } else {
+      setForm((prev) => ({ ...prev, despesas: [...prev.despesas, value] }));
+      if (docInfo) setModalDespesa({ value, ...docInfo });
+    }
   };
 
   const toggleDependenteTipo = (tipo) => {
@@ -484,6 +496,19 @@ export default function IrColetaView({ token }) {
     });
   };
 
+  useEffect(() => {
+    if (!modalSemDespesas) return undefined;
+    setTimerSemDespesas(15);
+    setCienteSemDespesas(false);
+    const interval = setInterval(() => {
+      setTimerSemDespesas((prev) => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [modalSemDespesas]);
+
   const handleEnviarColeta = async () => {
     setEnviandoColeta(true);
     try {
@@ -517,6 +542,10 @@ export default function IrColetaView({ token }) {
   }, [token, mutate]);
 
   const handleAvancar = async () => {
+    if (step === 2 && form.despesas.length === 0) {
+      setModalSemDespesas(true);
+      return;
+    }
     setSalvandoForm(true);
     clearTimeout(autoSaveTimer.current);
     try {
@@ -655,7 +684,7 @@ export default function IrColetaView({ token }) {
           { icon: 'eva:calendar-outline', text: 'Valide a declaração dentro do prazo estabelecido' },
           { icon: 'eva:archive-outline', text: 'Guarde uma cópia dos arquivos e dos comprovantes para seus registros' },
         ],
-        enquantoIsso: [ ],
+        enquantoIsso: [],
         proximosPassos: null,
       },
     };
@@ -929,7 +958,15 @@ export default function IrColetaView({ token }) {
                       <TextField label="E-mail" type="email" value={form.email} onChange={(e) => setField('email', e.target.value)} size="small" fullWidth disabled={salvandoForm} />
                     </Stack>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                      <TextField label="Telefone / WhatsApp" value={form.telefone} onChange={(e) => setField('telefone', e.target.value)} size="small" fullWidth disabled={salvandoForm} />
+                      <PhoneInput
+                        country="BR"
+                        label="Telefone / WhatsApp"
+                        value={normalizePhoneToE164(form.telefone) || undefined}
+                        onChange={(newValue) => setField('telefone', newValue ?? '')}
+                        size="small"
+                        fullWidth
+                        disabled={salvandoForm}
+                      />
                       <TextField label="Data de nascimento" type="date" value={form.dataNascimento} onChange={(e) => setField('dataNascimento', e.target.value)} size="small" fullWidth InputLabelProps={{ shrink: true }} disabled={salvandoForm} />
                     </Stack>
                     {pendente && (
@@ -1188,6 +1225,35 @@ export default function IrColetaView({ token }) {
                       placeholder="Descreva aqui, se houver."
                       disabled={salvandoForm}
                     />
+
+                    {/* Senha Gov */}
+                    <TextField
+                      required
+                      label="Senha GOV"
+                      type={showSenhaGov ? 'text' : 'password'}
+                      value={form.senhaGov || ''}
+                      onChange={(e) => setField('senhaGov', e.target.value)}
+                      fullWidth
+                      placeholder="Senha do gov.br"
+                      disabled={salvandoForm}
+                      InputProps={{
+                        endAdornment: (
+                          <InputAdornment position="end">
+                            <IconButton
+                              size="small"
+                              onClick={() => setShowSenhaGov((prev) => !prev)}
+                              edge="end"
+                              tabIndex={-1}
+                            >
+                              <Iconify
+                                icon={showSenhaGov ? 'eva:eye-fill' : 'eva:eye-off-fill'}
+                                width={18}
+                              />
+                            </IconButton>
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
                   </Stack>
                 )}
 
@@ -1245,10 +1311,7 @@ export default function IrColetaView({ token }) {
                               color="primary"
                               variant="soft"
                               onClick={() => toggleDespesa(d)}
-                              onDelete={() => {
-                                setPendente(true);
-                                setForm((prev) => ({ ...prev, despesas: prev.despesas.filter((x) => x !== d) }));
-                              }}
+                              onDelete={() => toggleDespesa(d)}
                             />
                           ))}
                         </Stack>
@@ -1355,6 +1418,209 @@ export default function IrColetaView({ token }) {
           <Typography variant="caption" color="text.disabled" textAlign="center">
             Portal de coleta — Attualize Contabilidade
           </Typography>
+
+          <Dialog
+            open={modalSemDespesas}
+            onClose={() => { }}
+            disableEscapeKeyDown
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{
+              sx: {
+                borderRadius: 2.5,
+                p: { xs: 1, sm: 2 },
+              },
+            }}
+            slotProps={{
+              backdrop: {
+                sx: { backdropFilter: 'blur(6px)', bgcolor: 'rgba(0,0,0,0.72)' },
+              },
+            }}
+          >
+            <DialogTitle
+              component="div"
+              sx={{ pb: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}
+            >
+              <Box
+                sx={(theme) => ({
+                  width: 68,
+                  height: 68,
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: theme.palette.mode === 'dark'
+                    ? 'rgba(255, 171, 0, 0.16)'
+                    : 'rgba(255, 171, 0, 0.12)',
+                })}
+              >
+                <Iconify icon="eva:alert-triangle-fill" width={36} sx={{ color: 'error.main' }} />
+              </Box>
+              <Typography
+                variant="h5"
+                component="div"
+                textAlign="center"
+              >
+                Nenhum documento selecionado
+              </Typography>
+              <Divider sx={{ width: '100%', borderStyle: 'dashed', mt: 1 }} />
+            </DialogTitle>
+
+            <DialogContent sx={{ pb: 3, pt: 3 }}>
+              <Stack spacing={3} alignItems="center">
+
+                <Alert
+                  severity="error"
+                  icon={false}
+                  sx={{
+                    borderRadius: 2,
+                    textAlign: 'center',
+                    width: '100%',
+                    '& .MuiAlert-message': { width: '100%' }
+                  }}
+                >
+                  <Typography variant="subtitle1" component="div" fontWeight="bold" gutterBottom>
+                    Você não selecionou nenhuma despesa dedutível.
+                  </Typography>
+                  <Typography variant="body2" component="div" sx={{ opacity: 0.85 }}>
+                    As despesas dedutíveis (como plano de saúde, educação e previdência privada)
+                    são fundamentais para a correta transmissão da sua declaração à{' '}
+                    <strong>Receita Federal</strong>. Declarar sem esses dados pode resultar em{' '}
+                    <strong>imposto a pagar maior</strong> ou perda de restituição.
+                  </Typography>
+                </Alert>
+
+                <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ maxWidth: 480 }}>
+                  Caso realmente não possua nenhum documento ou despesa dedutível a informar, leia
+                  atentamente e confirme sua ciência abaixo.
+                </Typography>
+
+                <Box
+                  sx={(theme) => ({
+                    width: '100%',
+                    borderRadius: 2,
+                    p: 3,
+                    border: '1px dashed',
+                    borderColor: timerSemDespesas > 0 ? 'warning.main' : 'success.main',
+                    bgcolor: timerSemDespesas > 0
+                      ? (theme.palette.mode === 'dark' ? 'rgba(255, 171, 0, 0.04)' : 'rgba(255, 171, 0, 0.04)')
+                      : (theme.palette.mode === 'dark' ? 'rgba(84, 214, 44, 0.04)' : 'rgba(84, 214, 44, 0.04)'),
+                    transition: 'all 0.3s ease',
+                  })}
+                >
+                  <Stack direction="column" alignItems="center" spacing={2.5}>
+
+                    {/* BARRAS DE PROGRESSO */}
+                    <Stack direction="row" alignItems="center" spacing={2.5} width="100%" justifyContent="center">
+                      <Box position="relative" display="inline-flex">
+                        <CircularProgress
+                          variant="determinate"
+                          value={timerSemDespesas > 0 ? (timerSemDespesas / 15) * 100 : 100} // Fica totalmente preenchido quando termina
+                          size={48}
+                          thickness={4.5}
+                          color={timerSemDespesas > 0 ? 'warning' : 'success'}
+                        />
+                        {/* O tempo agora mostra o número ou "OK" quando chega a zero */}
+                        <Box
+                          sx={{
+                            top: 0, left: 0, bottom: 0, right: 0,
+                            position: 'absolute', display: 'flex',
+                            alignItems: 'center', justifyContent: 'center',
+                          }}
+                        >
+                          <Typography
+                            variant="caption"
+                            fontWeight="bold"
+                            color={timerSemDespesas > 0 ? 'warning.main' : 'success.main'}
+                          >
+                            {timerSemDespesas > 0 ? `${timerSemDespesas}s` : 'OK'}
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Box flex={1} maxWidth={280}>
+                        <Typography variant="subtitle2" component="div" color={timerSemDespesas > 0 ? 'warning.dark' : 'success.dark'} mb={0.5}>
+                          {timerSemDespesas > 0
+                            ? 'Leia com atenção o aviso acima...'
+                            : 'Você já pode confirmar abaixo!'}
+                        </Typography>
+                        <LinearProgress
+                          variant="determinate"
+                          value={100 - (timerSemDespesas / 15) * 100}
+                          color={timerSemDespesas > 0 ? 'warning' : 'success'}
+                          sx={{ borderRadius: 4, height: 8 }}
+                        />
+                      </Box>
+                    </Stack>
+
+                    <Divider sx={{ width: '100%', borderStyle: 'dashed' }} />
+
+                    {/* CHECKBOX */}
+                    <FormControlLabel
+                      disabled={timerSemDespesas > 0}
+                      sx={{ margin: 0 }}
+                      control={
+                        <Checkbox
+                          checked={cienteSemDespesas}
+                          onChange={(e) => setCienteSemDespesas(e.target.checked)}
+                          color="success"
+                          size="medium"
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" component="div" sx={{ ml: 0.5 }}>
+                          Estou ciente e me responsabilizo por declarar{' '}
+                          <Typography component="span" variant="body2" fontWeight="bold" color="error.main">
+                            sem nenhum documento ou despesa dedutível
+                          </Typography>{' '}
+                          anexado.
+                        </Typography>
+                      }
+                    />
+                  </Stack>
+                </Box>
+
+              </Stack>
+            </DialogContent>
+
+            {/* AÇÕES (BOTÕES) CENTRALIZADAS */}
+            <DialogActions sx={{ px: 3, pb: 4, pt: 0, justifyContent: 'center', gap: 2 }}>
+              <Button
+                variant="outlined"
+                color="inherit"
+                size="large"
+                onClick={() => setModalSemDespesas(false)}
+                sx={{ minWidth: 160 }}
+              >
+                Voltar e adicionar
+              </Button>
+              <LoadingButton
+                variant="contained"
+                color={timerSemDespesas > 0 ? 'warning' : 'success'} // <-- Alterado aqui para ficar verde
+                size="large"
+                disabled={timerSemDespesas > 0 || !cienteSemDespesas}
+                loading={salvandoForm}
+                sx={{ minWidth: 220, transition: 'background-color 0.3s' }}
+                onClick={async () => {
+                  setModalSemDespesas(false);
+                  setSalvandoForm(true);
+                  clearTimeout(autoSaveTimer.current);
+                  try {
+                    await salvarPayload(form);
+                    setStepsSalvos((prev) => [...new Set([...prev, step])]);
+                    setPendente(false);
+                    setStep((s) => s + 1);
+                  } catch (err) {
+                    toast.error(err?.message || 'Erro ao salvar. Tente novamente.');
+                  } finally {
+                    setSalvandoForm(false);
+                  }
+                }}
+              >
+                Prosseguir sem documentos
+              </LoadingButton>
+            </DialogActions>
+          </Dialog>
 
           {/* Modal: upload de comprovante ao selecionar despesa */}
           <Dialog open={!!modalDespesa} onClose={() => setModalDespesa(null)} maxWidth="sm" fullWidth>

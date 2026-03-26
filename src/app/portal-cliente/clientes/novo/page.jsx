@@ -26,12 +26,14 @@ import { useEmpresa } from 'src/hooks/use-empresa';
 import { useSettings } from 'src/hooks/useSettings';
 
 import { endpoints } from 'src/utils/axios';
+import { toPayloadLegacyDigits } from 'src/utils/phone-e164';
 
 import { buscarCep } from 'src/actions/cep';
 import { portalCreateCliente } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 import { PortalClientesPageSkeleton } from 'src/components/skeleton/PortalClientePageSkeleton';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -42,16 +44,13 @@ const formatCEP = (v) => {
   if (d.length <= 5) return d;
   return `${d.slice(0, 5)}-${d.slice(5, 8)}`;
 };
-const formatPhone = (v) => {
-  const d = onlyDigits(v).slice(0, 11);
-  if (d.length <= 10) {
-    return d.replace(/(\d{0,2})(\d{0,4})(\d{0,4}).*/, (m, a, b, c) =>
-      [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' ')
-    );
-  }
-  return d.replace(/(\d{0,2})(\d{0,5})(\d{0,4}).*/, (m, a, b, c) =>
-    [a && `(${a})`, b, c && `-${c}`].filter(Boolean).join(' ')
-  );
+
+const toPhoneInputValue = (raw) => {
+  const d = onlyDigits(raw);
+  if (!d) return '';
+  if (d.startsWith('55') && (d.length === 12 || d.length === 13)) return `+${d}`;
+  if (d.length === 10 || d.length === 11) return `+55${d}`;
+  return `+${d}`;
 };
 const formatCPF = (v) => {
   const d = onlyDigits(v).slice(0, 11);
@@ -186,8 +185,8 @@ export default function PortalClienteNovoPage() {
         ...formData,
         clienteProprietarioId,
         cpfCnpj: onlyDigits(formData.cpfCnpj),
-        telefone: onlyDigits(formData.telefone),
-        whatsapp: onlyDigits(formData.whatsapp),
+        telefone: toPayloadLegacyDigits(formData.telefone),
+        whatsapp: toPayloadLegacyDigits(formData.whatsapp),
         endereco: { ...formData.endereco, cep: onlyDigits(formData.endereco.cep) },
       });
 
@@ -357,37 +356,23 @@ export default function PortalClienteNovoPage() {
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
-                  <TextField
+                  <PhoneInput
                     fullWidth
+                    country="BR"
                     label="Telefone"
-                    value={formData.telefone}
-                    onChange={(e) =>
-                      setFormData((f) => ({ ...f, telefone: formatPhone(e.target.value) }))
-                    }
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Iconify icon="solar:phone-bold-duotone" />
-                        </InputAdornment>
-                      ),
-                    }}
+                    placeholder="Digite o número"
+                    value={formData.telefone ?? ''}
+                    onChange={(newValue) => setFormData((f) => ({ ...f, telefone: newValue ?? '' }))}
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
-                  <TextField
+                  <PhoneInput
                     fullWidth
+                    country="BR"
                     label="Whatsapp"
-                    value={formData.whatsapp}
-                    onChange={(e) =>
-                      setFormData((f) => ({ ...f, whatsapp: formatPhone(e.target.value) }))
-                    }
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <Iconify icon="logos:whatsapp-icon" />
-                        </InputAdornment>
-                      ),
-                    }}
+                    placeholder="Digite o número"
+                    value={formData.whatsapp ?? ''}
+                    onChange={(newValue) => setFormData((f) => ({ ...f, whatsapp: newValue ?? '' }))}
                   />
                 </Grid>
               </Grid>

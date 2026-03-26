@@ -5,6 +5,8 @@ import React, { useState, useEffect } from 'react';
 
 import { Box, Card, Button, Container, Typography, CardContent } from '@mui/material';
 
+import { toPayloadLegacyDigits } from 'src/utils/phone-e164';
+
 import { updateAbertura, solicitarAprovacaoPorId } from 'src/actions/societario';
 
 import ComponenteEmConstituicao from 'src/components/abertura/ComponenteEmConstituicao';
@@ -27,6 +29,12 @@ function sanitizePayloadForSave(data) {
   const payload = { ...data };
   if (payload.senhaGOV === SENHA_GOV_MASKED || payload.senhaGOV === '') {
     delete payload.senhaGOV;
+  }
+  if (payload.telefone) {
+    payload.telefone = toPayloadLegacyDigits(payload.telefone);
+  }
+  if (payload.telefoneComercial) {
+    payload.telefoneComercial = toPayloadLegacyDigits(payload.telefoneComercial);
   }
   return payload;
 }
