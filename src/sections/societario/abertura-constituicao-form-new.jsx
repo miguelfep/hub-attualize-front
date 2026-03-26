@@ -23,9 +23,12 @@ import {
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
+
 import { updateAbertura } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 import DocumentsManager from '../abertura/empresa/DocumentsManager';
 
@@ -458,23 +461,23 @@ export function AberturaConstituicaoFormNew({ currentAbertura, onEtapasChange })
               />
             </Grid>
             <Grid xs={12} sm={6} md={4}>
-              <TextField
+              <PhoneInput
                 size="small"
                 label="Telefone"
+                country="BR"
                 fullWidth
-                value={currentAbertura?.telefone || ''}
-                InputProps={{ readOnly: true }}
-                variant="outlined"
+                disabled
+                value={normalizePhoneToE164(currentAbertura?.telefone) || ''}
               />
             </Grid>
             <Grid xs={12} sm={6} md={4}>
-              <TextField
+              <PhoneInput
                 size="small"
                 label="Telefone Comercial"
+                country="BR"
                 fullWidth
-                value={currentAbertura?.telefoneComercial || ''}
-                InputProps={{ readOnly: true }}
-                variant="outlined"
+                disabled
+                value={normalizePhoneToE164(currentAbertura?.telefoneComercial) || ''}
               />
             </Grid>
 

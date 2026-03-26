@@ -45,7 +45,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
 
   return (
     <>
-      <Grid container spacing={3} sx={{ mt: { xs: 2, md: 2 } }}>
+      <Grid container spacing={0} sx={{ mt: { xs: 2, md: 2 }, '& > *': { px: 2, mb: 2 } }}>
         <Grid xs={12} md={12}>
           <Typography variant="h5" sx={{ mb: 2 }} gutterBottom>
             Endereço Comercial
@@ -154,7 +154,7 @@ export default function AlteracaoEnderecoForm({ enderecoAlteracao }) {
           />
         </Grid>
       </Grid>
-      <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ m: 2 }} />
     </>
   );
 }

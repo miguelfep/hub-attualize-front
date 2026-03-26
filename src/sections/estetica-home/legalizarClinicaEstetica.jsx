@@ -1,7 +1,6 @@
 import { toast } from 'sonner';
 import React, { useState } from 'react';
 import { m, AnimatePresence } from 'framer-motion';
-import { PatternFormat } from 'react-number-format';
 import { useForm, Controller } from 'react-hook-form';
 
 import { alpha, styled, useTheme } from '@mui/material/styles';
@@ -26,9 +25,12 @@ import {
   AccordionDetails,
 } from '@mui/material';
 
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
+
 import { criarLead } from 'src/actions/lead';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 import { varFade, MotionViewport } from 'src/components/animate';
 
 const steps = [
@@ -662,23 +664,21 @@ export function LegalizarClinicaEsteticaStepper() {
                             control={control}
                             rules={{
                               required: 'O telefone é obrigatório',
-                              pattern: {
-                                value: /\(\d{2}\)\s\d\s\d{4}-\d{4}/,
-                                message: 'Insira um número de telefone válido',
+                              validate: (val) => {
+                                const digits = String(val ?? '').replace(/\D/g, '');
+                                if (digits.length === 10 || digits.length === 11) return true;
+                                if ((digits.length === 12 || digits.length === 13) && digits.startsWith('55')) return true;
+                                return 'Insira um número de telefone válido';
                               },
                             }}
                             render={({ field, fieldState: { error } }) => (
-                              <PatternFormat
-                                format="(##) # ####-####"
-                                customInput={TextField}
+                              <PhoneInput
+                                {...field}
+                                country="BR"
                                 label="Telefone"
                                 fullWidth
-                                variant="outlined"
-                                value={field.value ?? ''}
-                                onValueChange={(values) => field.onChange(values.formattedValue)}
-                                onBlur={field.onBlur}
-                                name={field.name}
-                                getInputRef={field.ref}
+                                placeholder="Digite o número"
+                                value={normalizePhoneToE164(field.value) || ''}
                                 error={!!error}
                                 helperText={error?.message}
                               />

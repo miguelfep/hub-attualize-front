@@ -8,11 +8,13 @@ import { Tab, Tabs, Grid, Card, Stack, Button, Switch, Divider, MenuItem, TextFi
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 import { formatRg, formatCpf } from 'src/utils/format-input';
 
 import { updateAlteracao } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 import { prepareDataForAlteracao } from './prepare-alteracao-payload';
 
@@ -80,7 +82,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
             razaoSocial: currentAlteracao?.razaoSocial || '',
             nomeFantasia: currentAlteracao?.nomeFantasia || '',
             email: currentAlteracao?.email || '',
-            whatsapp: currentAlteracao?.whatsapp || '',
+            whatsapp: normalizePhoneToE164(currentAlteracao?.whatsapp),
             capitalSocial: currentAlteracao?.capitalSocial || '',
             regimeTributario: currentAlteracao?.regimeTributario || '',
             formaAtuacao: currentAlteracao?.formaAtuacao || '',
@@ -116,7 +118,7 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
             responsavelTecnico: currentAlteracao?.responsavelTecnico || '',
             possuiRT: currentAlteracao?.possuiRT || false,
             marcaRegistrada: currentAlteracao?.marcaRegistrada || false,
-            notificarWhats: currentAlteracao?.notificarWhatsapp || false,
+            notificarWhats: currentAlteracao?.notificarWhats ?? true,
             anotacoes: currentAlteracao?.anotacoes || '',
             urlMeetKickoff: currentAlteracao?.urlMeetKickoff || '',
         },
@@ -127,7 +129,10 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
 
     useEffect(() => {
         if (currentAlteracao) {
-            reset(currentAlteracao);
+            reset({
+                ...currentAlteracao,
+                whatsapp: normalizePhoneToE164(currentAlteracao?.whatsapp),
+            });
         }
     }, [currentAlteracao, reset]);
 
@@ -325,7 +330,17 @@ export default function AlteracaoFinalizadoForm({ currentAlteracao, handleAdvanc
                                 name="whatsapp"
                                 control={control}
                                 render={({ field }) => (
-                                    <TextField {...field} label="Whatsapp" fullWidth variant="outlined" />
+                                    <PhoneInput
+                                        {...field}
+                                        fullWidth
+                                        country="BR"
+                                        label="Whatsapp"
+                                        placeholder="Digite o número"
+                                        variant="outlined"
+                                        size="small"
+                                        value={field.value ?? ''}
+                                        onChange={(newValue) => field.onChange(newValue ?? '')}
+                                    />
                                 )}
                             />
                         </Grid>

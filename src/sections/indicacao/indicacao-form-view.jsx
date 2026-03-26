@@ -1,8 +1,8 @@
 'use client';
 
 import * as zod from 'zod';
-import { useForm } from 'react-hook-form';
 import { useState, useEffect } from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import Box from '@mui/material/Box';
@@ -25,12 +25,14 @@ import { useRouter } from 'src/routes/hooks';
 
 import { useIndicacoes } from 'src/hooks/use-indicacoes';
 
-import { formatCPF, formatTelefone } from 'src/utils/formatters';
+import { formatCPF } from 'src/utils/formatters';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 import { validarCPF, validarTelefone } from 'src/utils/validators';
 
 import { validarCodigoIndicacao } from 'src/actions/indicacao';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 // ----------------------------------------------------------------------
 
@@ -93,6 +95,7 @@ export function IndicacaoFormView({ codigo }) {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
     reset,
     setValue,
@@ -440,23 +443,26 @@ export function IndicacaoFormView({ codigo }) {
                         }}
                       />
 
-                      <TextField
-                        {...register('telefone')}
-                        label="WhatsApp"
-                        fullWidth
-                        required
-                        placeholder="(00) 00000-0000"
-                        error={!!errors.telefone}
-                        helperText={errors.telefone?.message}
-                        onChange={(e) => {
-                          const formatted = formatTelefone(e.target.value);
-                          setValue('telefone', formatted);
-                          clearErrors('telefone');
-                        }}
-                        InputProps={{
-                          startAdornment: <Iconify icon="logos:whatsapp-icon" width={20} sx={{ mr: 1 }} />,
-                        }}
-                      />
+                    <Controller
+                      name="telefone"
+                      control={control}
+                      render={({ field }) => (
+                        <PhoneInput
+                          {...field}
+                          fullWidth
+                          country="BR"
+                          label="WhatsApp"
+                          placeholder="Digite o número"
+                          error={!!errors.telefone}
+                          helperText={errors.telefone?.message}
+                          value={normalizePhoneToE164(field.value ?? '') || undefined}
+                          onChange={(newValue) => {
+                            field.onChange(newValue ?? '');
+                            clearErrors('telefone');
+                          }}
+                        />
+                      )}
+                    />
                     </Stack>
 
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>

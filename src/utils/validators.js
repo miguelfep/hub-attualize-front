@@ -24,8 +24,13 @@ export function validarTelefone(telefone) {
   if (!telefone) return false;
   // Remove caracteres não numéricos
   const numeros = telefone.replace(/\D/g, '');
-  // Valida se tem 10 ou 11 dígitos
-  return numeros.length === 10 || numeros.length === 11;
+  // Brasil (sem código +55): 10 ou 11 dígitos
+  if (numeros.length === 10 || numeros.length === 11) return true;
+
+  // Brasil (formato E.164 com país +55): 12 ou 13 dígitos começando com "55"
+  if ((numeros.length === 12 || numeros.length === 13) && numeros.startsWith('55')) return true;
+
+  return false;
 }
 
 /**

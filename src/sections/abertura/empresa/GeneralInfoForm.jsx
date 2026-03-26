@@ -2,11 +2,14 @@ import React from 'react';
 
 import { Box, Grid, Divider, Tooltip, TextField, IconButton, Typography } from '@mui/material';
 
-import { formatCpf, formatPhone } from 'src/utils/format-input';
+import { formatCpf } from 'src/utils/format-input';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 const GeneralInfoForm = ({ formData, setFormData }) => {
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -98,27 +101,30 @@ const GeneralInfoForm = ({ formData, setFormData }) => {
 
       {/* Terceira linha: Telefone, Telefone Comercial e Horário de Funcionamento */}
       <Grid xs={12} sm={4}>
-        <TextField
+        <PhoneInput
           margin="normal"
           fullWidth
+          country="BR"
           label="Telefone"
           name="telefone"
-          value={formData.telefone || ''}
-          onChange={handleChange}
+          value={normalizePhoneToE164(formData.telefone) || undefined}
+          onChange={(newValue) =>
+            setFormData((prev) => ({ ...prev, telefone: newValue ?? '' }))
+          }
           disabled
         />
       </Grid>
       <Grid xs={12} sm={4}>
-        <TextField
+        <PhoneInput
           margin="normal"
           fullWidth
+          country="BR"
           label="Telefone Comercial"
           name="telefoneComercial"
-          value={formData.telefoneComercial || ''}
-          onChange={(e) => {
-            const formatted = formatPhone(e.target.value);
-            setFormData((prev) => ({ ...prev, telefoneComercial: formatted }));
-          }}
+          value={normalizePhoneToE164(formData.telefoneComercial) || undefined}
+          onChange={(newValue) =>
+            setFormData((prev) => ({ ...prev, telefoneComercial: newValue ?? '' }))
+          }
         />
       </Grid>
       <Grid xs={12} sm={4}>

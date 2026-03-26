@@ -8,11 +8,13 @@ import { Box, Tab, Tabs, Card, Grid, Stack, Button, Switch, Divider, MenuItem, T
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 import { formatRg, formatCpf } from 'src/utils/format-input';
 
 import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 import { prepareDataForAlteracao } from './prepare-alteracao-payload';
 
@@ -208,7 +210,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
             razaoSocial: currentAlteracao?.nomeEmpresarial || '',
             nomeFantasia: currentAlteracao?.nomeFantasia || '',
             email: currentAlteracao?.email || '',
-            whatsapp: currentAlteracao?.whatsapp || '',
+            whatsapp: normalizePhoneToE164(currentAlteracao?.whatsapp),
             capitalSocial: currentAlteracao?.capitalSocial || '',
             regimeTributario: currentAlteracao?.regimeTributario || '',
             formaAtuacao: currentAlteracao?.formaAtuacao || '',
@@ -243,7 +245,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
             responsavelTecnico: currentAlteracao?.responsavelTecnico || '',
             possuiRT: currentAlteracao?.possuiRT || false,
             marcaRegistrada: currentAlteracao?.marcaRegistrada || false,
-            notificarWhats: currentAlteracao?.notificarWhatsapp || false,
+            notificarWhats: currentAlteracao?.notificarWhats ?? true,
             anotacoes: currentAlteracao?.anotacoes || '',
             urlMeetKickoff: currentAlteracao?.urlMeetKickoff || '',
         },
@@ -254,7 +256,11 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
 
     useEffect(() => {
         if (currentAlteracao) {
-            reset(currentAlteracao);
+            reset({
+                ...currentAlteracao,
+                whatsapp: normalizePhoneToE164(currentAlteracao?.whatsapp),
+                notificarWhats: currentAlteracao?.notificarWhats ?? true,
+            });
         }
     }, [currentAlteracao, reset]);
 
@@ -348,19 +354,19 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
     };
 
     return (
-        <Card sx={{ p: 3, mb: 3 }}>
-            <Tabs value={activeTab} onChange={handleTabChange}>
+        <Card sx={{ width: '100%', maxWidth: '100%', p: 4, mb: 3 }}>
+            <Tabs value={activeTab} onChange={handleTabChange} variant="standard" centered sx={{ mb: 3 }}>
                 <Tab label="Dados da Alteração" />
                 <Tab label="Kickoff" />
                 <Tab label="Documentos" />
             </Tabs>
             {activeTab === 0 && (
                 <>
-                    <Grid container spacing={2} mt={2}>
-                        <Grid item xs={12}>
+                    <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
+                        <Grid xs={12}>
             <Typography variant="h6">Informações Gerais</Typography>
         </Grid>
-        <Grid item xs={12}>
+        <Grid xs={12}>
             <Controller
                 name="alteracoes"
                 control={control}
@@ -372,6 +378,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         rows={3}
                         fullWidth
                         variant="outlined"
+                        size="small"
                     />
                 )}
             />
@@ -381,7 +388,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="razaoSocial"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Razão Social" fullWidth variant="outlined" />
+                    <TextField {...field} label="Razão Social" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -390,7 +397,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="nomeFantasia"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Nome Fantasia" fullWidth variant="outlined" />
+                    <TextField {...field} label="Nome Fantasia" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -399,7 +406,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="email"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="E-mail" fullWidth variant="outlined" />
+                    <TextField {...field} label="E-mail" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -408,7 +415,17 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="whatsapp"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Whatsapp" fullWidth variant="outlined" />
+                    <PhoneInput
+                        {...field}
+                        fullWidth
+                        country="BR"
+                        label="Whatsapp"
+                        placeholder="Digite o número"
+                        variant="outlined"
+                        size="small"
+                        value={field.value ?? ''}
+                        onChange={(newValue) => field.onChange(newValue ?? '')}
+                    />
                 )}
             />
         </Grid>
@@ -428,6 +445,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         decimalSeparator=","
                         fullWidth
                         variant="outlined"
+                        size="small"
                     />
                 )}
             />
@@ -443,6 +461,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="Regime Tributário"
                         fullWidth
                         variant="outlined"
+                        size="small"
                     >
                         {regimeTributarioOptions.map((option, index) => (
                             <MenuItem key={index} value={option.value}>
@@ -464,6 +483,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="Forma de Atuação"
                         fullWidth
                         variant="outlined"
+                        size="small"
                     >
                         {formaAtuacaoOptions.map((option, index) => (
                             <MenuItem key={index} value={option.value}>
@@ -485,6 +505,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="Responsável Técnico"
                         fullWidth
                         variant="outlined"
+                        size="small"
                     >
                         <MenuItem value="novoResponsavelTecnico">Novo Responsável Técnico</MenuItem>
                         {currentAlteracao?.socios.map((socio, index) => (
@@ -497,10 +518,10 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
             />
         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
             <Divider sx={{ my: 3, borderBottomWidth: 2, borderColor: 'divider' }} />
         </Grid>
-        <Grid item xs={12}>
+        <Grid xs={12}>
             <Typography variant="h6">Endereço Comercial</Typography>
         </Grid>
         <Grid xs={12} sm={6} md={4}>
@@ -513,6 +534,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="CEP"
                         fullWidth
                         variant="outlined"
+                        size="small"
                         onBlur={handleCepBlur}
                     />
                 )}
@@ -523,7 +545,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="enderecoComercial.logradouro"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Logradouro" fullWidth variant="outlined" />
+                    <TextField {...field} label="Logradouro" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -532,7 +554,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="enderecoComercial.numero"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Número" fullWidth variant="outlined" />
+                    <TextField {...field} label="Número" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -541,7 +563,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="enderecoComercial.complemento"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Complemento" fullWidth variant="outlined" />
+                    <TextField {...field} label="Complemento" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -550,7 +572,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="enderecoComercial.bairro"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Bairro" fullWidth variant="outlined" />
+                    <TextField {...field} label="Bairro" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -559,7 +581,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="enderecoComercial.cidade"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Cidade" fullWidth variant="outlined" />
+                    <TextField {...field} label="Cidade" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -568,15 +590,15 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 name="enderecoComercial.estado"
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Estado" fullWidth variant="outlined" />
+                    <TextField {...field} label="Estado" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
 
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
             <Divider sx={{ my: 3, borderBottomWidth: 2, borderColor: 'divider' }} />
         </Grid>
-        <Grid item xs={12}>
+        <Grid xs={12}>
             <Typography variant="h6">Informações dos Sócios</Typography>
         </Grid>
 
@@ -586,21 +608,21 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
             return (
                 <React.Fragment key={index}>
                                     {index > 0 && (
-            <Grid item xs={12}>
+            <Grid xs={12}>
                 <Divider sx={{ my: 2 }} />
             </Grid>
         )}
-        <Grid item xs={12}>
+        <Grid xs={12}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                 Dados do Sócio {index + 1}
             </Typography>
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid xs={12} sm={6}>
             <Controller
                 name={`socios[${index}].nome`}
                 control={control}
                 render={({ field }) => (
-                    <TextField {...field} label="Nome" fullWidth variant="outlined" />
+                    <TextField {...field} label="Nome" fullWidth variant="outlined" size="small" />
                 )}
             />
         </Grid>
@@ -614,6 +636,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="CPF"
                         fullWidth
                         variant="outlined"
+                        size="small"
                         placeholder="000.000.000-00"
                         value={formatCpf(field.value || '')}
                         onChange={(e) => {
@@ -637,6 +660,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="RG"
                         fullWidth
                         variant="outlined"
+                        size="small"
                         placeholder="00.000.000-0"
                         value={formatRg(field.value || '')}
                         onChange={(e) => {
@@ -660,6 +684,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label={`Naturalidade Sócio ${index + 1}`}
                         fullWidth
                         variant="outlined"
+                        size="small"
                     />
                 )}
             />
@@ -675,6 +700,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label={`Porcentagem Sócio ${index + 1}`}
                         fullWidth
                         variant="outlined"
+                        size="small"
                         decimalScale={2}
                         suffix="%"
                         value={field.value}
@@ -694,6 +720,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="Estado Civil"
                         fullWidth
                         variant="outlined"
+                        size="small"
                     >
                         {estadoCivilOptions.map((option) => (
                             <MenuItem key={option.value} value={option.value}>
@@ -716,6 +743,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                             label={`Regime de Bens Sócio ${index + 1}`}
                             fullWidth
                             variant="outlined"
+                            size="small"
                         >
                             {regimeBensOptions.map((option) => (
                                 <MenuItem key={option.value} value={option.value}>
@@ -737,6 +765,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label={`Endereço do Sócio ${index + 1}`}
                         fullWidth
                         variant="outlined"
+                        size="small"
                     />
                 )}
             />
@@ -751,6 +780,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label={`Profissão Sócio ${index + 1}`}
                         fullWidth
                         variant="outlined"
+                        size="small"
                     />
                 )}
             />
@@ -765,6 +795,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label={`CNH do Sócio ${index + 1}`}
                         fullWidth
                         variant="outlined"
+                        size="small"
                     />
                 )}
             />
@@ -780,6 +811,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="Raça/Cor"
                         fullWidth
                         variant="outlined"
+                        size="small"
                     >
                         {etniaOptions.map((option) => (
                             <MenuItem key={option.value} value={option.value}>
@@ -801,6 +833,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="Grau de Escolaridade"
                         fullWidth
                         variant="outlined"
+                        size="small"
                     >
                         {grauEscolaridadeOptions.map((option) => (
                             <MenuItem key={option.value} value={option.value}>
@@ -826,10 +859,10 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
     </React.Fragment>
                             );
 })}
-                        <Grid item xs={12}>
+                        <Grid xs={12}>
         <Divider sx={{ my: 3, borderBottomWidth: 2, borderColor: 'divider' }} />
     </Grid>
-    <Grid item xs={12}>
+    <Grid xs={12}>
         <Typography variant="h6">Atividades Econômicas</Typography>
     </Grid>
     <Grid xs={12} mb={2}>
@@ -844,11 +877,12 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                     multiline
                     rows={4}
                     variant="outlined"
+                    size="small"
                 />
             )}
         />
     </Grid>
-    <Grid item xs={12}>
+    <Grid xs={12}>
         <Card sx={{ p: 2, mb: 2 }}>
             <Stack direction="row" alignItems="center" justifyContent="space-between">
                 <Box>
@@ -897,11 +931,11 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
 {
     activeTab === 1 && (
         <>
-            <Grid container spacing={2} mt={2}>
-                            <Grid item xs={12}>
+            <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
+                            <Grid xs={12}>
             <Typography variant="h6">Informações do Kickoff / Meet</Typography>
         </Grid>
-        <Grid item xs={12}>
+        <Grid xs={12}>
             <Controller
                 name="anotacoes"
                 control={control}
@@ -913,6 +947,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         multiline
                         rows={4}
                         variant="outlined"
+                        size="small"
                     />
                 )}
             />
@@ -928,6 +963,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                         label="URL do Meet"
                         fullWidth
                         variant="outlined"
+                        size="small"
                     />
                 )}
             />
@@ -945,19 +981,19 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
 {
     activeTab === 2 && (
         <Box sx={{ mt: 3 }}>
-                    <Grid container spacing={2} mt={2}>
-                    <Grid item xs={12}>
+                    <Grid container spacing={0} sx={{ mt: 2, '& > *': { px: 2, mb: 2 } }}>
+                    <Grid xs={12}>
                         <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                             <Iconify icon="eva:file-text-fill" width={24} />
                             Documentos da Alteração
                         </Typography>
                     </Grid>
-                    <Grid item xs={12}>
+                    <Grid xs={12}>
                         <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
                             Documentos Gerais
                         </Typography>
                     </Grid>
-                    <Grid item xs={12} sm={6} md={4}>
+                    <Grid xs={12} sm={6} md={4}>
                         <Controller
                             name='iptuAnexo'
                             control={control}
@@ -1152,7 +1188,7 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                                 <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
                                     Sócio {index + 1}: {socio.nome || 'Sem nome'}
                                 </Typography>
-                                <Grid container spacing={2}>
+                                <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
                                     <Grid xs={12} sm={6}>
                                         <Controller
                                             name={`socios.${index}.cnhAnexo`}
@@ -1286,6 +1322,6 @@ export default function AlteracaoKickoffForm({ currentAlteracao, handleAdvanceSt
                 )}
             </Box>
             )}
-        </Card >
+        </Card>
     );
 }

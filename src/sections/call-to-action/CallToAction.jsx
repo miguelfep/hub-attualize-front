@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { Icon } from '@iconify/react';
 import React, { useState } from 'react';
 
@@ -13,19 +14,44 @@ import {
   IconButton,
 } from '@mui/material';
 
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
+
+import { criarLead } from 'src/actions/lead';
+
+import { PhoneInput } from 'src/components/phone-input';
+
 export function CallToAction({ pageSource }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleOpen = () => setOpen(true);
-  const handleClose = () => setOpen(false);
+  const handleClose = () => {
+    setOpen(false);
+    setName('');
+    setEmail('');
+    setPhone('');
+  };
 
-  const handleSubmit = () => {
-    // Lógica para enviar os dados do cliente
-    console.log({ name, email, phone, pageSource });
-    handleClose();
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    try {
+      await criarLead({
+        nome: name,
+        email,
+        telefone: normalizePhoneToE164(phone) ?? phone,
+        origem: pageSource || 'paginaEstetica',
+      });
+      toast.success('Solicitação enviada com sucesso!');
+      handleClose();
+    } catch (error) {
+      console.error('Erro ao enviar lead:', error);
+      toast.error('Não foi possível enviar sua solicitação');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -73,7 +99,7 @@ export function CallToAction({ pageSource }) {
             }}
           >
             <IconButton onClick={handleClose} sx={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
-              <Icon icon="mdi:close" width={24} height={24} color="black" style={{ cursor: 'pointer' }}/>
+              <Icon icon="mdi:close" width={24} height={24} color="black" style={{ cursor: 'pointer' }} />
             </IconButton>
 
             <Grid container>
@@ -86,7 +112,14 @@ export function CallToAction({ pageSource }) {
                     Preencha seus dados e um de nossos especialistas entrará em contato em breve.
                   </Typography>
 
-                  <Stack component="form" spacing={2.5}  onSubmit={(e) => { e.preventDefault(); handleSubmit(); }}>
+                  <Stack
+                    component="form"
+                    spacing={2.5}
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSubmit();
+                    }}
+                  >
                     <TextField
                       label="Nome"
                       value={name}
@@ -102,16 +135,23 @@ export function CallToAction({ pageSource }) {
                       fullWidth
                       required
                     />
-                    <TextField
+                    <PhoneInput
+                      country="BR"
                       label="Telefone"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      type="tel"
+                      value={normalizePhoneToE164(phone) || undefined}
+                      onChange={(newValue) => setPhone(newValue ?? '')}
                       fullWidth
                       required
                     />
-                    <Button type="submit" variant="contained" color="primary" size="large" sx={{ mt: 1, py: 1.5 }}>
-                      Enviar Solicitação
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      disabled={isSubmitting}
+                      sx={{ mt: 1, py: 1.5 }}
+                    >
+                      {isSubmitting ? 'Enviando...' : 'Enviar Solicitação'}
                     </Button>
                   </Stack>
                 </Box>

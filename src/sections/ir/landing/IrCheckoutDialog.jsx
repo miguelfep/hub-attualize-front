@@ -26,12 +26,14 @@ import DialogContent from '@mui/material/DialogContent';
 import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 import axiosInstance, { baseUrl, endpoints } from 'src/utils/axios';
 
 import { iniciarCheckoutPublico } from 'src/actions/ir';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 import PixCopiaCola from 'src/components/ir/PixCopiaCola';
 import BoletoLinhaDigitavel from 'src/components/ir/BoletoLinhaDigitavel';
 
@@ -47,12 +49,6 @@ function maskCpf(v) {
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d)/, '$1.$2')
     .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-}
-
-function maskPhone(v) {
-  const d = v.replace(/\D/g, '').slice(0, 11);
-  if (d.length <= 10) return d.replace(/(\d{2})(\d{4})(\d{0,4})/, '($1) $2-$3').trim();
-  return d.replace(/(\d{2})(\d{5})(\d{0,4})/, '($1) $2-$3').trim();
 }
 
 function maskCep(v) {
@@ -87,8 +83,8 @@ async function buscarCep(cep) {
 const STEPS = ['Seus dados', 'Endereço', 'Pagamento', 'Confirmação'];
 
 const ESTADOS_BR = [
-  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS',
-  'MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO',
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS',
+  'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO',
 ];
 
 const MODALIDADE_LABELS = {
@@ -131,17 +127,17 @@ export default function IrCheckoutDialog({ open, onClose, plano }) {
     () =>
       plano?.valorFinal != null
         ? {
-            amount: Number(plano.valorFinal),
-            payer: {
-              email: dados.email?.trim() || '',
-              firstName: (dados.nome || '').trim().split(' ')[0] || '',
-              lastName: (dados.nome || '').trim().split(' ').slice(1).join(' ') || '',
-              identification: {
-                type: 'CPF',
-                number: (dados.cpfCnpj ?? '').replace(/\D/g, '') || '',
-              },
+          amount: Number(plano.valorFinal),
+          payer: {
+            email: dados.email?.trim() || '',
+            firstName: (dados.nome || '').trim().split(' ')[0] || '',
+            lastName: (dados.nome || '').trim().split(' ').slice(1).join(' ') || '',
+            identification: {
+              type: 'CPF',
+              number: (dados.cpfCnpj ?? '').replace(/\D/g, '') || '',
             },
-          }
+          },
+        }
         : null,
     [
       plano?.valorFinal,
@@ -525,7 +521,8 @@ export default function IrCheckoutDialog({ open, onClose, plano }) {
               fullWidth
             />
             <TextField
-              label="E-mail *"
+              required
+              label="E-mail"
               type="email"
               value={dados.email}
               onChange={handleChange('email')}
@@ -533,22 +530,19 @@ export default function IrCheckoutDialog({ open, onClose, plano }) {
               helperText={errors.email || 'Você receberá o link de acesso por aqui'}
               fullWidth
             />
-            <TextField
-              label="WhatsApp / Telefone *"
-              value={dados.telefone}
-              onChange={handleChange('telefone', maskPhone)}
+            <PhoneInput
+              required
+              country="BR"
+              label="WhatsApp / Telefone"
+              value={normalizePhoneToE164(dados.telefone) || ''}
+              onChange={(newValue) => {
+                setDados((prev) => ({ ...prev, telefone: newValue ?? '' }));
+                setErrors((prev) => ({ ...prev, telefone: '' }));
+              }}
               error={!!errors.telefone}
               helperText={errors.telefone || 'Para confirmação de pagamento e atualizações'}
-              placeholder="(11) 99999-9999"
-              inputProps={{ inputMode: 'numeric' }}
+              placeholder="Digite seu WhatsApp"
               fullWidth
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="eva:message-circle-outline" width={18} />
-                  </InputAdornment>
-                ),
-              }}
             />
           </Stack>
         )}
@@ -561,27 +555,28 @@ export default function IrCheckoutDialog({ open, onClose, plano }) {
             </Typography>
 
             <Stack direction="row" spacing={1.5}>
-            <TextField
-              label="CEP *"
-              value={dados.cep}
-              onChange={handleChange('cep', maskCep)}
-              error={!!errors.cep}
-              helperText={errors.cep || (buscandoCep ? 'Buscando endereço...' : '')}
-              placeholder="00000-000"
-              inputProps={{ inputMode: 'numeric' }}
-              sx={{ width: 160 }}
-              InputProps={{
-                endAdornment: buscandoCep ? (
-                  <InputAdornment position="end">
-                    <CircularProgress size={16} />
-                  </InputAdornment>
-                ) : dados.cep.replace(/\D/g, '').length === 8 ? (
-                  <InputAdornment position="end">
-                    <Iconify icon="eva:checkmark-circle-2-fill" width={18} color="success.main" />
-                  </InputAdornment>
-                ) : null,
-              }}
-            />
+              <TextField
+                required
+                label="CEP"
+                value={dados.cep}
+                onChange={handleChange('cep', maskCep)}
+                error={!!errors.cep}
+                helperText={errors.cep || (buscandoCep ? 'Buscando endereço...' : '')}
+                placeholder="00000-000"
+                inputProps={{ inputMode: 'numeric' }}
+                sx={{ width: 160 }}
+                InputProps={{
+                  endAdornment: buscandoCep ? (
+                    <InputAdornment position="end">
+                      <CircularProgress size={16} />
+                    </InputAdornment>
+                  ) : dados.cep.replace(/\D/g, '').length === 8 ? (
+                    <InputAdornment position="end">
+                      <Iconify icon="eva:checkmark-circle-2-fill" width={18} color="success.main" />
+                    </InputAdornment>
+                  ) : null,
+                }}
+              />
               <TextField
                 label="Logradouro *"
                 value={dados.endereco}
@@ -780,27 +775,27 @@ export default function IrCheckoutDialog({ open, onClose, plano }) {
 
             {/* Tabs de método (exibidas somente quando o alternativo também está disponível; não para cartão) */}
             {activePaymentTab !== 'credit_card' &&
-            ((activePaymentTab === 'pix' && order.linhaDigitavel) ||
-              (activePaymentTab === 'boleto' && order.pixCopiaECola)) && (
-              <Tabs
-                value={activePaymentTab}
-                onChange={(_, v) => setActivePaymentTab(v)}
-                sx={{ borderBottom: 1, borderColor: 'divider' }}
-              >
-                <Tab
-                  value="pix"
-                  label="PIX"
-                  icon={<Iconify icon="eva:flash-fill" width={16} />}
-                  iconPosition="start"
-                />
-                <Tab
-                  value="boleto"
-                  label="Boleto"
-                  icon={<Iconify icon="eva:file-text-outline" width={16} />}
-                  iconPosition="start"
-                />
-              </Tabs>
-            )}
+              ((activePaymentTab === 'pix' && order.linhaDigitavel) ||
+                (activePaymentTab === 'boleto' && order.pixCopiaECola)) && (
+                <Tabs
+                  value={activePaymentTab}
+                  onChange={(_, v) => setActivePaymentTab(v)}
+                  sx={{ borderBottom: 1, borderColor: 'divider' }}
+                >
+                  <Tab
+                    value="pix"
+                    label="PIX"
+                    icon={<Iconify icon="eva:flash-fill" width={16} />}
+                    iconPosition="start"
+                  />
+                  <Tab
+                    value="boleto"
+                    label="Boleto"
+                    icon={<Iconify icon="eva:file-text-outline" width={16} />}
+                    iconPosition="start"
+                  />
+                </Tabs>
+              )}
 
             {/* Conteúdo: Cartão (sucesso) */}
             {activePaymentTab === 'credit_card' && (

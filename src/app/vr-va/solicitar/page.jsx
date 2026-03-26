@@ -17,7 +17,10 @@ import { alpha, useTheme } from '@mui/material/styles';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
+
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -310,13 +313,16 @@ export default function SolicitarVrVaPage() {
                           />
                         </Grid>
                         <Grid xs={12} sm={6}>
-                          <TextField
+                          <PhoneInput
                             fullWidth
+                            country="BR"
                             label="Telefone"
-                            value={formData.telefone}
-                            onChange={handleChange('telefone')}
+                            value={normalizePhoneToE164(formData.telefone) || undefined}
+                            onChange={(newValue) =>
+                              setFormData((prev) => ({ ...prev, telefone: newValue ?? '' }))
+                            }
                             size="small"
-                            placeholder="(00) 00000-0000"
+                            placeholder="Digite o telefone"
                           />
                         </Grid>
                       </Grid>

@@ -1,6 +1,5 @@
 'use client';
 
-import InputMask from 'react-input-mask';
 import React, { useState, useEffect } from 'react';
 
 import {
@@ -23,7 +22,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { formatCnpj } from 'src/utils/format-input';
 import { consultarCep } from 'src/utils/consultarCep';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
+
+import { PhoneInput } from 'src/components/phone-input';
 
 const atividadesEstetica = [
   'Clínica de Estética',
@@ -213,13 +216,14 @@ export function Calculadora() {
 
             {/* Campo de CNPJ Condicional */}
             {possuiCnpj && (
-              <InputMask
-                mask="99.999.999/9999-99"
+              <TextField
+                label="CNPJ"
+                variant="outlined"
+                fullWidth
                 value={cnpj}
-                onChange={(e) => setCnpj(e.target.value)}
-              >
-                {() => <TextField label="CNPJ" variant="outlined" fullWidth />}
-              </InputMask>
+                onChange={(e) => setCnpj(formatCnpj(e.target.value))}
+                inputProps={{ inputMode: 'numeric' }}
+              />
             )}
           </Stack>
         )}
@@ -241,13 +245,14 @@ export function Calculadora() {
               fullWidth
               variant="outlined"
             />
-            <InputMask
-              mask="(99) 99999-9999"
-              value={telefone}
-              onChange={(e) => setTelefone(e.target.value)}
-            >
-              {() => <TextField label="Telefone" variant="outlined" fullWidth />}
-            </InputMask>
+            <PhoneInput
+              fullWidth
+              country="BR"
+              label="Telefone"
+              placeholder="Digite o número"
+              value={normalizePhoneToE164(telefone) || undefined}
+              onChange={(newValue) => setTelefone(newValue ?? '')}
+            />
           </Stack>
         )}
 

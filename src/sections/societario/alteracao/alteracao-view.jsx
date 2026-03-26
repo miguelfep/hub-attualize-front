@@ -6,8 +6,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, FormProvider } from "react-hook-form";
+import { isValidPhoneNumber } from "react-phone-number-input/input";
 
 import { formatCpfCnpj } from "src/utils/format-number";
+import { normalizePhoneToE164 } from "src/utils/phone-e164";
 
 import { buscarCep } from "src/actions/cep";
 import { updateAlteracao, aprovarAlteracaoPorId } from "src/actions/societario";
@@ -28,7 +30,11 @@ const AlteracaoSchema = z.object({
   cnpj: z.string().optional(),
   email: z.string().email('E-mail inválido').optional(),
   emailEnabled: z.boolean().optional(),
-  whatsapp: z.string().min(10, 'Telefone Comercial Inválido').max(16, 'Telefone Comercial Inválido'),
+  whatsapp: z
+    .string()
+    .refine((val) => isValidPhoneNumber(String(val ?? '').trim()), {
+      message: 'Telefone inválido. Use o formato internacional com +55 (ex: +5511999998888).',
+    }),
   whatsappEnabled: z.boolean().optional(),
   capitalSocial: z.string().optional(),
   capitalSocialEnabled: z.boolean().optional(),
@@ -93,7 +99,9 @@ export default function AlteracaoEmpresaViewPage({ alteracaoData }) {
       cnpj: alteracaoData?.cliente?.cnpj || '',
       email: alteracaoData?.email || alteracaoData?.cliente?.email || '',
       emailEnabled: false,
-      whatsapp: alteracaoData?.whatsapp || alteracaoData?.cliente?.whatsapp || '',
+      whatsapp: normalizePhoneToE164(
+        alteracaoData?.whatsapp || alteracaoData?.cliente?.whatsapp || ''
+      ),
       whatsappEnabled: false,
       capitalSocial: alteracaoData?.capitalSocial || '',
       capitalSocialEnabled: false,

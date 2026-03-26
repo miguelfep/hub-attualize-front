@@ -1,7 +1,6 @@
 'use client';
 
 import * as z from 'zod';
-import InputMask from 'react-input-mask';
 import { useState, useEffect } from 'react';
 import { NumericFormat } from 'react-number-format';
 import { useForm, Controller } from 'react-hook-form';
@@ -29,8 +28,12 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
+import { formatCep, formatCpf } from 'src/utils/format-input';
+
 import { buscarCep } from 'src/actions/cep';
 import { openMEI, getAllCnaes } from 'src/actions/parceiroId';
+
+import { PhoneInput } from 'src/components/phone-input';
 
 import { Iconify } from '../iconify';
 
@@ -185,8 +188,8 @@ export function MeiStepper() {
 
   const handleBack = () => setActiveStep((prevStep) => prevStep - 1);
 
-  const handleCepChange = async (e) => {
-    const cep = e.target.value.replace(/\D/g, '');
+  const handleCepChange = async (value) => {
+    const cep = String(value ?? '').replace(/\D/g, '');
 
     if (cep.length === 8) {
       const data = await buscarCep(cep);
@@ -327,22 +330,17 @@ if(res.data.success === false){
                               name="cpf"
                               control={control}
                               render={({ field, fieldState }) => (
-                                <InputMask
-                                  mask="999.999.999-99"
-                                  value={field.value}
-                                  onChange={field.onChange}
-                                >
-                                  {(inputProps) => (
-                                    <TextField
-                                      {...inputProps}
-                                      fullWidth
-                                      label="CPF"
-                                      error={!!fieldState.error}
-                                      helperText={fieldState.error ? fieldState.error.message : ''}
-                                      sx={{ mb: 2 }}
-                                    />
-                                  )}
-                                </InputMask>
+                                <TextField
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  onChange={(e) => field.onChange(formatCpf(e.target.value))}
+                                  fullWidth
+                                  label="CPF"
+                                  error={!!fieldState.error}
+                                  helperText={fieldState.error ? fieldState.error.message : ''}
+                                  sx={{ mb: 2 }}
+                                  inputProps={{ inputMode: 'numeric' }}
+                                />
                               )}
                             />
                           </Grid>
@@ -428,18 +426,19 @@ if(res.data.success === false){
                               name="ddd"
                               control={control}
                               render={({ field, fieldState }) => (
-                                <InputMask mask="99" value={field.value} onChange={field.onChange}>
-                                  {(inputProps) => (
-                                    <TextField
-                                      {...inputProps}
-                                      fullWidth
-                                      label="DDD"
-                                      error={!!fieldState.error}
-                                      helperText={fieldState.error ? fieldState.error.message : ''}
-                                      sx={{ mb: 2 }}
-                                    />
-                                  )}
-                                </InputMask>
+                                <TextField
+                                  {...field}
+                                  value={field.value ?? ''}
+                                  onChange={(e) =>
+                                    field.onChange(String(e.target.value ?? '').replace(/\D/g, '').slice(0, 2))
+                                  }
+                                  fullWidth
+                                  label="DDD"
+                                  error={!!fieldState.error}
+                                  helperText={fieldState.error ? fieldState.error.message : ''}
+                                  sx={{ mb: 2 }}
+                                  inputProps={{ inputMode: 'numeric', maxLength: 2 }}
+                                />
                               )}
                             />
                           </Grid>
@@ -448,22 +447,42 @@ if(res.data.success === false){
                               name="phone"
                               control={control}
                               render={({ field, fieldState }) => (
-                                <InputMask
-                                  mask="99999-9999"
-                                  value={field.value}
-                                  onChange={field.onChange}
-                                >
-                                  {(inputProps) => (
-                                    <TextField
-                                      {...inputProps}
-                                      fullWidth
-                                      label="Telefone"
-                                      error={!!fieldState.error}
-                                      helperText={fieldState.error ? fieldState.error.message : ''}
-                                      sx={{ mb: 2 }}
-                                    />
-                                  )}
-                                </InputMask>
+                                <PhoneInput
+                                  country="BR"
+                                  fullWidth
+                                  label="Telefone"
+                                  value={
+                                    `${String(formValues.ddd || '').replace(/\D/g, '') ? '+55' : ''}${String(formValues.ddd || '').replace(
+                                      /\D/g,
+                                      ''
+                                    )}${(field.value || '').replace(/\D/g, '')}`
+                                  }
+                                  onChange={(newValue) => {
+                                    const digits = String(newValue ?? '').replace(/\D/g, '');
+                                    if (!digits) {
+                                      setValue('ddd', '');
+                                      setValue('phone', '');
+                                      return;
+                                    }
+
+                                    const rest = digits.startsWith('55') ? digits.slice(2) : digits;
+                                    const nextDdd = rest.slice(0, 2);
+                                    const subscriberDigits = rest.slice(2);
+
+                                    const formattedPhone =
+                                      subscriberDigits.length === 9
+                                        ? `${subscriberDigits.slice(0, 5)}-${subscriberDigits.slice(5)}`
+                                        : subscriberDigits.length === 8
+                                          ? `${subscriberDigits.slice(0, 4)}-${subscriberDigits.slice(4)}`
+                                          : subscriberDigits;
+
+                                    setValue('ddd', nextDdd);
+                                    setValue('phone', formattedPhone);
+                                  }}
+                                  error={!!fieldState.error}
+                                  helperText={fieldState.error ? fieldState.error.message : ''}
+                                  sx={{ mb: 2 }}
+                                />
                               )}
                             />
                           </Grid>
@@ -520,18 +539,19 @@ if(res.data.success === false){
                           name="cep"
                           control={control}
                           render={({ field }) => (
-                            <InputMask
-                              mask="99999-999"
-                              value={field.value}
+                            <TextField
+                              {...field}
+                              value={field.value ?? ''}
                               onChange={(e) => {
-                                field.onChange(e);
-                                handleCepChange(e);
+                                const next = formatCep(e.target.value);
+                                field.onChange(next);
+                                handleCepChange(next);
                               }}
-                            >
-                              {(inputProps) => (
-                                <TextField {...inputProps} fullWidth label="CEP" sx={{ mb: 2 }} />
-                              )}
-                            </InputMask>
+                              fullWidth
+                              label="CEP"
+                              sx={{ mb: 2 }}
+                              inputProps={{ inputMode: 'numeric' }}
+                            />
                           )}
                         />
                       </Grid>

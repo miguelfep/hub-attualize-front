@@ -6,7 +6,10 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
 
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
+
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 // ----------------------------------------------------------------------
 
@@ -20,15 +23,6 @@ export function StepDadosPessoais({ formData, updateFormData }) {
       value = value.replace(/(\d{3})(\d)/, '$1.$2');
       value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
       updateFormData('cpf', value);
-    }
-  };
-
-  const handleTelefoneChange = (e) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 11) {
-      value = value.replace(/^(\d{2})(\d)/g, '($1) $2');
-      value = value.replace(/(\d)(\d{4})$/, '$1-$2');
-      updateFormData('telefone', value);
     }
   };
 
@@ -117,22 +111,13 @@ export function StepDadosPessoais({ formData, updateFormData }) {
           }}
         />
 
-        <TextField
+        <PhoneInput
           fullWidth
           label="Telefone/WhatsApp"
-          value={formData.telefone}
-          onChange={handleTelefoneChange}
-          placeholder="(00) 00000-0000"
+          value={normalizePhoneToE164(formData.telefone) || undefined}
+          onChange={(newValue) => updateFormData('telefone', newValue ?? '')}
+          placeholder="Digite seu telefone"
           required
-          InputProps={{
-            startAdornment: (
-              <Iconify
-                icon="solar:phone-bold-duotone"
-                width={24}
-                sx={{ mr: 1, color: 'text.disabled' }}
-              />
-            ),
-          }}
         />
 
         <TextField

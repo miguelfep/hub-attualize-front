@@ -1,6 +1,6 @@
 import { Controller, useFormContext } from "react-hook-form";
 
-import { Box, Grid, Switch, Tooltip, Divider, TextField, IconButton, Typography, FormControlLabel } from "@mui/material";
+import { Box, Grid, Switch, Tooltip, TextField, IconButton, Typography, FormControlLabel } from "@mui/material";
 
 import { Iconify } from "src/components/iconify";
 
@@ -9,63 +9,81 @@ export default function AlteracaoCnaeForm({ atividadeAlteracao, atividadeCliente
 
     return (
         <>
-            <Box sx={{ mb: 2 }}>
-                <Typography variant="h5" sx={{ mt: 4 }} gutterBottom>
-                    Atividade Comercial
-                </Typography>
-            </Box>
-            <Box>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                    Use este campo para descrever as novas atividades que deseja incluir no seu negócio.
-                    Para preencher, habilite a opção <strong>Desejo adicionar Novas Atividades</strong>.
-                    Se souber o CNAE, você pode informar o código e a descrição, caso contrário, basta descrever a atividade.
-                </Typography>
-            </Box>
-            <Grid xs={12} md={12}>
-                <Controller
-                    name="novasAtividadesEnabled"
-                    control={control}
-                    defaultValue={false}
-                    render={({ field: switchField }) => (
-                        <>
-                            <Controller
-                                name="novasAtividades"
-                                control={control}
-                                render={({ field }) => (
-                                    <TextField
-                                        {...field}
-                                        fullWidth
-                                        multiline
-                                        rows={5}
-                                        label={
-                                            <span style={{ display: 'flex', alignItems: 'center' }}>
-                                                Novas Atividades
-                                                <Tooltip title="Descreva as novas atividade que deseja adicionar ao seu negócio. Caso saiba o CNAE, adicione o código e sua descrição.">
-                                                    <IconButton size="small" sx={{ ml: 1 }}>
-                                                        <Iconify width={16} icon="eva:question-mark-circle-outline" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </span>
-                                        }
-                                        disabled={!switchField.value}
-                                    />
-                                )}
-                            />
-                            <FormControlLabel
-                                sx={{ mb: 1 }}
-                                control={
-                                    <Switch
-                                        checked={switchField.value}
-                                        onChange={(e) => switchField.onChange(e.target.checked)}
-                                    />
-                                }
-                                label="Desejo adicionar Novas Atividades"
-                            />
-                        </>
-                    )}
-                />
+            <Grid
+                container
+                spacing={0}
+                sx={{
+                    mt: { xs: 2, md: 2 },
+                    '& > *': { px: 2, mb: 2 },
+                }}
+            >
+
+                <Box sx={{ mb: 2 }}>
+                    <Typography variant="h5" sx={{ mt: 4 }} gutterBottom>
+                        Atividade Comercial
+                    </Typography>
+                </Box>
+                <Box>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                        Use este campo para descrever as novas atividades que deseja incluir no seu negócio.
+                        Para preencher, habilite a opção <strong>Desejo adicionar Novas Atividades</strong>.
+                        Se souber o CNAE, você pode informar o código e a descrição, caso contrário, basta descrever a atividade.
+                    </Typography>
+                </Box>
             </Grid>
-            <Divider sx={{ mb: 3 }} />
+            <Grid
+                container
+                spacing={0}
+                sx={{
+                    mt: { xs: 2, md: 2 },
+                    '& > *': { px: 2, mb: 2 },
+                }}
+            >
+                <Grid xs={12} md={12}>
+                    <Controller
+                        name="novasAtividadesEnabled"
+                        control={control}
+                        defaultValue={false}
+                        render={({ field: switchField }) => (
+                            <>
+                                <Controller
+                                    name="novasAtividades"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <TextField
+                                            {...field}
+                                            fullWidth
+                                            multiline
+                                            rows={5}
+                                            label={
+                                                <span style={{ display: 'flex', alignItems: 'center' }}>
+                                                    Novas Atividades
+                                                    <Tooltip title="Descreva as novas atividade que deseja adicionar ao seu negócio. Caso saiba o CNAE, adicione o código e sua descrição.">
+                                                        <IconButton size="small" sx={{ ml: 1 }}>
+                                                            <Iconify width={16} icon="eva:question-mark-circle-outline" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </span>
+                                            }
+                                            disabled={!switchField.value}
+                                        />
+                                    )}
+                                />
+                                <FormControlLabel
+                                    sx={{ mb: 1 }}
+                                    control={
+                                        <Switch
+                                            checked={switchField.value}
+                                            onChange={(e) => switchField.onChange(e.target.checked)}
+                                        />
+                                    }
+                                    label="Desejo adicionar Novas Atividades"
+                                />
+                            </>
+                        )}
+                    />
+                </Grid>
+            </Grid>
         </>
     );
 }

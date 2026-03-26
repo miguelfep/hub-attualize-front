@@ -3,15 +3,33 @@ import React, { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { NumericFormat, PatternFormat } from 'react-number-format';
 
-import { Box, Tab, Grid, Card, Tabs, Stack, Button, Switch, Divider, MenuItem, TextField, Typography, FormControlLabel } from '@mui/material';
+import {
+    Box,
+    Tab,
+    Card,
+    Grid,
+    Tabs,
+    Stack,
+    Button,
+    Switch,
+    Divider,
+    MenuItem,
+    TextField,
+    Typography,
+    CardContent,
+    CardActions,
+    FormControlLabel,
+} from '@mui/material';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
+import { normalizePhoneToE164 } from 'src/utils/phone-e164';
 
 import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvanceStatus, statusAlteracao, setStatusLocal }) {
 
@@ -198,7 +216,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
             razaoSocial: currentAlteracao?.razaoSocial || '',
             nomeFantasia: currentAlteracao?.nomeFantasia || '',
             email: currentAlteracao?.email || '',
-            whatsapp: currentAlteracao?.whatsapp || '',
+            whatsapp: normalizePhoneToE164(currentAlteracao?.whatsapp),
             capitalSocial: currentAlteracao?.capitalSocial || '',
             regimeTributario: currentAlteracao?.regimeTributario || '',
             formaAtuacao: currentAlteracao?.formaAtuacao || '',
@@ -209,55 +227,61 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
             bairro: currentAlteracao?.enderecoComercial?.bairro || currentAlteracao?.cliente?.[0]?.endereco?.bairro || '',
             cidade: currentAlteracao?.enderecoComercial?.cidade || currentAlteracao?.cliente?.[0]?.endereco?.cidade || '',
             estado: currentAlteracao?.enderecoComercial?.estado || currentAlteracao?.cliente?.[0]?.endereco?.estado || '',
+            novasAtividades: currentAlteracao?.novasAtividades || '',
+            socios:
+                currentAlteracao?.socios?.length > 0
+                    ? currentAlteracao.socios.map((socio) => ({
+                        nome: socio?.nome || '',
+                        cpf: socio?.cpf || '',
+                        cnh: socio?.cnh || '',
+                        cnhAnexo: socio?.cnhAnexo || '',
+                        comprovanteEnderecoAnexo: socio?.comprovanteEnderecoAnexo || '',
+                        rg: socio?.rg || '',
+                        estadoCivil: socio?.estadoCivil || '',
+                        naturalidade: socio?.naturalidade || '',
+                        porcentagem: Number(socio?.porcentagem) || 0,
+                        regimeBens: socio?.regimeBens || '',
+                        etnia: socio?.etnia || '',
+                        grau_escolaridade: socio?.grau_escolaridade || '',
+                        endereco: socio?.endereco || '',
+                        profissao: socio?.profissao || '',
+                        administrador: socio?.administrador || false,
+                    }))
+                    : [
+                        {
+                            nome: '',
+                            cpf: '',
+                            cnh: '',
+                            cnhAnexo: '',
+                            comprovanteEnderecoAnexo: '',
+                            rg: '',
+                            estadoCivil: '',
+                            naturalidade: '',
+                            porcentagem: 0,
+                            regimeBens: '',
+                            etnia: '',
+                            grau_escolaridade: '',
+                            endereco: '',
+                            profissao: '',
+                            administrador: false,
+                        },
+                    ],
+            responsavelTecnico: currentAlteracao?.responsavelTecnico || '',
+            possuiRT: currentAlteracao?.possuiRT || false,
+            marcaRegistrada: currentAlteracao?.marcaRegistrada || false,
+            notificarWhats: currentAlteracao?.notificarWhats ?? true,
+            anotacoes: currentAlteracao?.anotacoes || '',
+            urlMeetKickoff: currentAlteracao?.urlMeetKickoff || '',
         },
-        novasAtividades: currentAlteracao?.novasAtividades || '',
-        socios: currentAlteracao?.socios?.length > 0
-            ? currentAlteracao.socios.map(socio => ({
-                nome: socio?.nome || '',
-                cpf: socio?.cpf || '',
-                cnh: socio?.cnh || '',
-                cnhAnexo: socio?.cnhAnexo || '',
-                comprovanteEnderecoAnexo: socio?.comprovanteEnderecoAnexo || '',
-                rg: socio?.rg || '',
-                estadoCivil: socio?.estadoCivil || '',
-                naturalidade: socio?.naturalidade || '',
-                porcentagem: Number(socio?.porcentagem) || 0,
-                regimeBens: socio?.regimeBens || '',
-                etnia: socio?.etnia || '',
-                grau_escolaridade: socio?.grau_escolaridade || '',
-                endereco: socio?.endereco || '',
-                profissao: socio?.profissao || '',
-                administrador: socio?.administrador || false,
-            }))
-            : [
-                {
-                    nome: '',
-                    cpf: '',
-                    cnh: '',
-                    cnhAnexo: '',
-                    comprovanteEnderecoAnexo: '',
-                    rg: '',
-                    estadoCivil: '',
-                    naturalidade: '',
-                    porcentagem: 0,
-                    regimeBens: '',
-                    etnia: '',
-                    grau_escolaridade: '',
-                    endereco: '',
-                    profissao: '',
-                    administrador: false,
-                },
-            ],
-        responsavelTecnico: currentAlteracao?.responsavelTecnico || '',
-        possuiRT: currentAlteracao?.possuiRT || false,
-        marcaRegistrada: currentAlteracao?.marcaRegistrada || false,
-        anotacoes: currentAlteracao?.anotacoes || '',
-        urlMeetKickoff: currentAlteracao?.urlMeetKickoff || '',
     });
 
     useEffect(() => {
         if (currentAlteracao) {
-            reset(currentAlteracao);
+            reset({
+                ...currentAlteracao,
+                whatsapp: normalizePhoneToE164(currentAlteracao?.whatsapp),
+                notificarWhats: currentAlteracao?.notificarWhats ?? true,
+            });
         }
     }, [currentAlteracao, reset]);
 
@@ -308,7 +332,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                 ...data,
                 statusAlteracao: 'kickoff',
                 somenteAtualizar: false,
-                notificarWhats: true,
+                notificarWhats: data?.notificarWhats ?? true,
             });
             toast.success('Alteração aprovada!');
             setStatusLocal('kickoff');
@@ -338,20 +362,22 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
     };
 
     return (
-        <Card sx={{ p: 3, mb: 3 }}>
-            <>
-                <Tabs value={activeTab} onChange={handleTabChange} sx={{ mb: 2 }}>
+        <Card sx={{ width: '100%', maxWidth: '100%', p: 4, mb: 3 }}>
+            <CardContent sx={{ pt: 0, px: 0 }}>
+                <Tabs value={activeTab} onChange={handleTabChange} variant="standard" centered sx={{ mb: 3, px: 2 }}>
                     <Tab label="Dados da Alteração" />
                     <Tab label="Documentos" />
                 </Tabs>
 
                 {activeTab === 0 && (
                     <Box sx={{ mt: 1 }}>
-                        <Grid container spacing={2} mt={2}>
-                            <Grid item xs={12}>
-                                <Typography variant="h6">Informações Gerais</Typography>
+                        <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
+                            <Grid xs={12}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Informações Gerais
+                                </Typography>
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Controller
                                     name="alteracoes"
                                     control={control}
@@ -363,61 +389,72 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                             rows={3}
                                             fullWidth
                                             variant="outlined"
+                                            size="small"
                                         />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="razaoSocial"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} label="Razão Social" fullWidth variant="outlined" />
+                                        <TextField {...field} label="Razão Social" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="nomeFantasia"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} label="Nome Fantasia" fullWidth variant="outlined" />
+                                        <TextField {...field} label="Nome Fantasia" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="email"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} label="E-mail" fullWidth variant="outlined" />
+                                        <TextField {...field} label="E-mail" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="whatsapp"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} label="Whatsapp" fullWidth variant="outlined" />
+                                        <PhoneInput
+                                            {...field}
+                                            fullWidth
+                                            country="BR"
+                                            label="Whatsapp"
+                                            placeholder="Digite o número"
+                                            variant="outlined"
+                                            size="small"
+                                            value={field.value ?? ''}
+                                            onChange={(newValue) => field.onChange(newValue ?? '')}
+                                        />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="capitalSocial"
                                     control={control}
                                     render={({ field }) => (
-                                        <NumericFormat {...field} label="Capital Social" customInput={TextField} thousandSeparator="." decimalScale={2} fixedDecimalScale prefix="R$" decimalSeparator="," fullWidth variant="outlined" />
+                                        <NumericFormat {...field} label="Capital Social" customInput={TextField} thousandSeparator="." decimalScale={2} fixedDecimalScale prefix="R$" decimalSeparator="," fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="regimeTributario"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField select {...field} label="Regime Tributário" fullWidth variant="outlined">
+                                        <TextField select {...field} label="Regime Tributário" fullWidth variant="outlined" size="small">
                                             {regimeTributarioOptions.map((option, index) => (
                                                 <MenuItem key={index} value={option.value}>{option.label}</MenuItem>
                                             ))}
@@ -425,12 +462,12 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="formaAtuacao"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField select {...field} label="Forma de Atuação" fullWidth variant="outlined">
+                                        <TextField select {...field} label="Forma de Atuação" fullWidth variant="outlined" size="small">
                                             {formaAtuacaoOptions.map((option, index) => (
                                                 <MenuItem key={index} value={option.value}>{option.label}</MenuItem>
                                             ))}
@@ -439,12 +476,12 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="responsavelTecnico"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField select {...field} value={field.value || ''} label="Responsável Técnico" fullWidth variant="outlined">
+                                        <TextField select {...field} value={field.value || ''} label="Responsável Técnico" fullWidth variant="outlined" size="small">
                                             <MenuItem value="responsavelTecnico">Novo Responsável Técnico</MenuItem>
                                             {currentAlteracao?.socios?.map((socio, index) => (
                                                 <MenuItem key={index} value={socio.nome}>{socio.nome}</MenuItem>
@@ -454,13 +491,15 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                 />
                             </Grid>
 
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Divider sx={{ my: 3, borderBottomWidth: 2, borderColor: 'divider' }} />
                             </Grid>
-                            <Grid item xs={12}>
-                                <Typography variant="h6">Endereço Comercial</Typography>
+                            <Grid xs={12}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Endereço Comercial
+                                </Typography>
                             </Grid>
-                            <Grid item xs={12} sm={6} md={4}>
+                            <Grid xs={12} sm={6} md={4}>
                                 <Controller
                                     name="enderecoComercial.cep"
                                     control={control}
@@ -471,71 +510,74 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                             label="CEP"
                                             fullWidth
                                             variant="outlined"
+                                            size="small"
                                             onBlur={handleCepBlur}
                                         />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6} md={8}>
+                            <Grid xs={12} sm={6} md={8}>
                                 <Controller
                                     name="enderecoComercial.logradouro"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} value={field.value ?? ''} label="Logradouro" fullWidth variant="outlined" />
+                                        <TextField {...field} value={field.value ?? ''} label="Logradouro" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid xs={12} sm={4}>
                                 <Controller
                                     name="enderecoComercial.numero"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} value={field.value ?? ''} label="Número" fullWidth variant="outlined" />
+                                        <TextField {...field} value={field.value ?? ''} label="Número" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid xs={12} sm={4}>
                                 <Controller
                                     name="enderecoComercial.complemento"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} value={field.value ?? ''} label="Complemento" fullWidth variant="outlined" />
+                                        <TextField {...field} value={field.value ?? ''} label="Complemento" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={4}>
+                            <Grid xs={12} sm={4}>
                                 <Controller
                                     name="enderecoComercial.bairro"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} value={field.value ?? ''} label="Bairro" fullWidth variant="outlined" />
+                                        <TextField {...field} value={field.value ?? ''} label="Bairro" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="enderecoComercial.cidade"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} value={field.value ?? ''} label="Cidade" fullWidth variant="outlined" />
+                                        <TextField {...field} value={field.value ?? ''} label="Cidade" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
-                            <Grid item xs={12} sm={6}>
+                            <Grid xs={12} sm={6}>
                                 <Controller
                                     name="enderecoComercial.estado"
                                     control={control}
                                     render={({ field }) => (
-                                        <TextField {...field} value={field.value ?? ''} label="Estado" fullWidth variant="outlined" />
+                                        <TextField {...field} value={field.value ?? ''} label="Estado" fullWidth variant="outlined" size="small" />
                                     )}
                                 />
                             </Grid>
 
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Divider sx={{ my: 3, borderBottomWidth: 2, borderColor: 'divider' }} />
                             </Grid>
-                            <Grid item xs={12}>
-                                <Typography variant="h6">Informações dos Sócios</Typography>
+                            <Grid xs={12}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Informações dos Sócios
+                                </Typography>
                             </Grid>
 
 
@@ -545,25 +587,25 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                 return (
                                     <React.Fragment key={index}>
                                         {index > 0 && (
-                                            <Grid item xs={12}>
+                                            <Grid xs={12}>
                                                 <Divider sx={{ my: 2 }} />
                                             </Grid>
                                         )}
-                                        <Grid item xs={12}>
+                                        <Grid xs={12}>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1 }}>
                                                 Dados do Sócio {index + 1}
                                             </Typography>
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].nome`}
                                                 control={control}
                                                 render={({ field }) => (
-                                                    <TextField {...field} label="Nome" fullWidth variant="outlined" />
+                                                    <TextField {...field} label="Nome" fullWidth variant="outlined" size="small" />
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].cpf`}
                                                 control={control}
@@ -574,6 +616,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label="CPF"
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                         value={field.value ?? ''}
                                                         onValueChange={(values) => field.onChange(values.formattedValue)}
                                                         onBlur={field.onBlur}
@@ -583,7 +626,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].rg`}
                                                 control={control}
@@ -594,6 +637,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label="RG"
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                         value={field.value ?? ''}
                                                         onValueChange={(values) => field.onChange(values.formattedValue)}
                                                         onBlur={field.onBlur}
@@ -603,7 +647,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].naturalidade`}
                                                 control={control}
@@ -613,11 +657,12 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label={`Naturalidade Sócio ${index + 1}`}
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                     />
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].porcentagem`}
                                                 control={control}
@@ -628,6 +673,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label={`Porcentagem Sócio ${index + 1}`}
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                         decimalScale={2}
                                                         suffix="%"
                                                         value={field.value}
@@ -636,7 +682,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].estadoCivil`}
                                                 control={control}
@@ -647,6 +693,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label="Estado Civil"
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                     >
                                                         {estadoCivilOptions.map((option) => (
                                                             <MenuItem key={option.value} value={option.value}>
@@ -658,7 +705,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                             />
                                         </Grid>
                                         {estadoCivilValue === 'Casado' && (
-                                            <Grid item xs={12} sm={6}>
+                                            <Grid xs={12} sm={6}>
                                                 <Controller
                                                     name={`socios[${index}].regimeBens`}
                                                     control={control}
@@ -669,6 +716,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                             label={`Regime de Bens Sócio ${index + 1}`}
                                                             fullWidth
                                                             variant="outlined"
+                                                            size="small"
                                                         >
                                                             {regimeBensOptions.map((option) => (
                                                                 <MenuItem key={option.value} value={option.value}>
@@ -680,7 +728,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                 />
                                             </Grid>
                                         )}
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].endereco`}
                                                 control={control}
@@ -690,11 +738,12 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label={`Endereço do Sócio ${index + 1}`}
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                     />
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].profissao`}
                                                 control={control}
@@ -704,11 +753,12 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label={`Profissão Sócio ${index + 1}`}
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                     />
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].cnh`}
                                                 control={control}
@@ -718,11 +768,12 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label={`CNH do Sócio ${index + 1}`}
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                     />
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].etnia`}
                                                 control={control}
@@ -733,6 +784,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label="Raça/Cor"
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                     >
                                                         {etniaOptions.map((option) => (
                                                             <MenuItem key={option.value} value={option.value}>
@@ -743,7 +795,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].grau_escolaridade`}
                                                 control={control}
@@ -754,6 +806,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                         label="Grau de Escolaridade"
                                                         fullWidth
                                                         variant="outlined"
+                                                        size="small"
                                                     >
                                                         {grauEscolaridadeOptions.map((option) => (
                                                             <MenuItem key={option.value} value={option.value}>
@@ -764,7 +817,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                 )}
                                             />
                                         </Grid>
-                                        <Grid item xs={12} sm={6}>
+                                        <Grid xs={12} sm={6}>
                                             <Controller
                                                 name={`socios[${index}].administrador`}
                                                 control={control}
@@ -780,14 +833,16 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                     </React.Fragment>
                                 );
                             })}
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Divider sx={{ my: 3, borderBottomWidth: 2, borderColor: 'divider' }} />
                             </Grid>
-                            <Grid item xs={12}>
-                                <Typography variant="h6">Atividades Econômicas</Typography>
+                            <Grid xs={12}>
+                                <Typography variant="h6" sx={{ mb: 2 }}>
+                                    Atividades Econômicas
+                                </Typography>
                             </Grid>
 
-                            <Grid item xs={12} mb={2}>
+                            <Grid xs={12} mb={2}>
                                 <Controller
                                     name='novasAtividades'
                                     control={control}
@@ -799,12 +854,13 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                             multiline
                                             rows={4}
                                             variant="outlined"
+                                            size="small"
                                         />
                                     )}
                                 />
                             </Grid>
 
-                            <Grid item xs={12}>
+                            <Grid xs={12}>
                                 <Card sx={{ p: 2, mb: 2 }}>
                                     <Stack direction="row" alignItems="center" justifyContent="space-between">
                                         <Box>
@@ -846,11 +902,11 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                             Documentos da Alteração
                         </Typography>
 
-                        <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                        <Typography variant="subtitle1" sx={{ mb: 2, px: 2, fontWeight: 600 }}>
                             Documentos Gerais
                         </Typography>
-                        <Grid container spacing={2}>
-                            <Grid item xs={12} sm={6} md={4}>
+                        <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
+                            <Grid xs={12} sm={6} md={4}>
                                 <Controller
                                     name='iptuAnexo'
                                     control={control}
@@ -911,7 +967,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6} md={4}>
+                            <Grid xs={12} sm={6} md={4}>
                                 <Controller
                                     name='rgAnexo'
                                     control={control}
@@ -972,7 +1028,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                 />
                             </Grid>
 
-                            <Grid item xs={12} sm={6} md={4}>
+                            <Grid xs={12} sm={6} md={4}>
                                 <Controller
                                     name='documentoRT'
                                     control={control}
@@ -1036,16 +1092,16 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
 
                         {getValues('socios')?.length > 0 && (
                             <Box sx={{ mt: 4 }}>
-                                <Typography variant="subtitle1" sx={{ mb: 2, fontWeight: 600 }}>
+                                <Typography variant="subtitle1" sx={{ mb: 2, px: 2, fontWeight: 600 }}>
                                     Documentos dos Sócios
                                 </Typography>
                                 {getValues('socios').map((socio, index) => (
                                     <Box key={index} sx={{ mb: 3 }}>
-                                        <Typography variant="subtitle2" sx={{ mb: 2, color: 'primary.main' }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 2, px: 2, color: 'primary.main' }}>
                                             Sócio {index + 1}: {socio.nome || 'Sem nome'}
                                         </Typography>
-                                        <Grid container spacing={2}>
-                                            <Grid item xs={12} sm={6}>
+                                        <Grid container spacing={0} sx={{ '& > *': { px: 2, mb: 2 } }}>
+                                            <Grid xs={12} sm={6}>
                                                 <Controller
                                                     name={`socios.${index}.cnhAnexo`}
                                                     control={control}
@@ -1108,7 +1164,7 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                                                     )}
                                                 />
                                             </Grid>
-                                            <Grid item xs={12} sm={6}>
+                                            <Grid xs={12} sm={6}>
                                                 <Controller
                                                     name={`socios.${index}.comprovanteEnderecoAnexo`}
                                                     control={control}
@@ -1179,37 +1235,82 @@ export default function AlteracaoValidacaoForm({ currentAlteracao, handleAdvance
                     </Box>
                 )}
 
-                {(statusAlteracao ?? currentAlteracao?.statusAlteracao) === 'em_validacao' &&
-                    <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="center">
-                        <Button
-                            variant="contained"
-                            onClick={handleSubmit(onSave)}
-                            disabled={loading.value}
-                            startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+                {(statusAlteracao ?? currentAlteracao?.statusAlteracao) === 'em_validacao' && (
+                    <CardActions
+                        sx={{
+                            justifyContent: 'center',
+                            mt: 2,
+                            px: 2,
+                            flexWrap: 'wrap',
+                            gap: 2,
+                            flexDirection: 'column',
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                p: 2,
+                                borderRadius: 1.5,
+                                bgcolor: watch('notificarWhats') ? 'success.lighter' : 'warning.lighter',
+                                border: '1px solid',
+                                borderColor: watch('notificarWhats') ? 'success.light' : 'warning.main',
+                            }}
                         >
-                            Salvar
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            onClick={handleSubmit(onReject)}
-                            disabled={loading.value}
-                            startIcon={<Iconify icon="eva:close-circle-fill" />}
-                        >
-                            Reprovar
-                        </Button>
-                        <Button
-                            variant="contained"
-                            color="success"
-                            onClick={handleSubmit(onApprove)}
-                            disabled={loading.value}
-                            startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
-                        >
-                            Aprovar
-                        </Button>
-                    </Stack>
-                }
-            </>
-        </Card >
+                            <Controller
+                                name="notificarWhats"
+                                control={control}
+                                render={({ field }) => (
+                                    <FormControlLabel
+                                        control={
+                                            <Switch
+                                                color="success"
+                                                checked={!!field.value}
+                                                onChange={(_, checked) => field.onChange(checked)}
+                                                disabled={loading.value}
+                                            />
+                                        }
+                                        label={
+                                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                                                {field.value
+                                                    ? 'Aprovar e notificar no WhatsApp'
+                                                    : 'Aprovar sem notificar no WhatsApp'}
+                                            </Typography>
+                                        }
+                                        sx={{ m: 0 }}
+                                    />
+                                )}
+                            />
+                        </Box>
+                        <Stack direction="row" spacing={2} flexWrap="wrap" justifyContent="center">
+                            <Button
+                                variant="contained"
+                                onClick={handleSubmit(onSave)}
+                                disabled={loading.value}
+                                startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+                            >
+                                Salvar
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                onClick={handleSubmit(onReject)}
+                                disabled={loading.value}
+                                startIcon={<Iconify icon="eva:close-circle-fill" />}
+                            >
+                                Reprovar
+                            </Button>
+                            <Button
+                                variant="contained"
+                                color="success"
+                                onClick={handleSubmit(onApprove)}
+                                disabled={loading.value}
+                                startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
+                            >
+                                Aprovar
+                            </Button>
+                        </Stack>
+                    </CardActions>
+                )}
+            </CardContent>
+        </Card>
     );
 }

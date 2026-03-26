@@ -20,10 +20,12 @@ import {
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { consultarCep } from 'src/utils/consultarCep';
+import { normalizePhoneToE164, toPayloadLegacyDigits } from 'src/utils/phone-e164';
 
 import { updateAbertura } from 'src/actions/societario';
 
 import { Iconify } from 'src/components/iconify';
+import { PhoneInput } from 'src/components/phone-input';
 
 import DocumentsManager from '../abertura/empresa/DocumentsManager';
 
@@ -146,7 +148,11 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
   const handleSave = async () => {
     loading.onTrue();
     try {
-      await updateAbertura(currentAbertura._id, formData);
+      await updateAbertura(currentAbertura._id, {
+        ...formData,
+        telefone: toPayloadLegacyDigits(formData.telefone ?? ''),
+        telefoneComercial: toPayloadLegacyDigits(formData.telefoneComercial ?? ''),
+      });
       toast.success('Dados salvos com sucesso!');
     } catch (error) {
       toast.error('Erro ao salvar os dados');
@@ -249,23 +255,33 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
           />
         </Grid>
         <Grid xs={12} sm={4}>
-          <TextField
+          <PhoneInput
             size="small"
             fullWidth
+            country="BR"
             label="Telefone"
-            value={formData.telefone}
-            onChange={handleInputChange('telefone')}
-            margin="dense"
+            value={normalizePhoneToE164(formData.telefone) || undefined}
+            onChange={(newValue) =>
+              setFormData((prev) => ({
+                ...prev,
+                telefone: newValue ?? '',
+              }))
+            }
           />
         </Grid>
         <Grid xs={12} sm={4}>
-          <TextField
+          <PhoneInput
             size="small"
             fullWidth
+            country="BR"
             label="Telefone Comercial"
-            value={formData.telefoneComercial}
-            onChange={handleInputChange('telefoneComercial')}
-            margin="dense"
+            value={normalizePhoneToE164(formData.telefoneComercial) || undefined}
+            onChange={(newValue) =>
+              setFormData((prev) => ({
+                ...prev,
+                telefoneComercial: newValue ?? '',
+              }))
+            }
           />
         </Grid>
         <Grid xs={12} sm={4}>
@@ -391,10 +407,10 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
         {formData.socios.map((socio, index) => (
           <React.Fragment key={index}>
             <Grid xs={12} sm={6}>
-<TextField
-            size="small"
-            fullWidth
-            label={`Nome Sócio ${index + 1}`}
+              <TextField
+                size="small"
+                fullWidth
+                label={`Nome Sócio ${index + 1}`}
                 value={socio.nome}
                 onChange={handleSocioChange(index, 'nome')}
                 margin="dense"
@@ -448,6 +464,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             </Grid>
             <Grid xs={12} sm={6}>
               <NumericFormat
+                size="small"
                 fullWidth
                 label={`Porcentagem Sócio ${index + 1}`}
                 customInput={TextField}
@@ -476,6 +493,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             </Grid>
             <Grid xs={12} sm={6}>
               <TextField
+                size="small"
                 fullWidth
                 label={`Endereço Sócio ${index + 1}`}
                 value={socio.endereco}
@@ -485,6 +503,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             </Grid>
             <Grid xs={12} sm={6}>
               <TextField
+                size="small"
                 fullWidth
                 label={`Profissão Sócio ${index + 1}`}
                 value={socio.profissao}
@@ -494,6 +513,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
             </Grid>
             <Grid xs={12} sm={6}>
               <TextField
+                size="small"
                 fullWidth
                 label={`CNH Sócio ${index + 1}`}
                 value={socio.cnh}
@@ -519,6 +539,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
         {/* Outros Campos */}
         <Grid xs={12} sm={6}>
           <NumericFormat
+            size="small"
             fullWidth
             label="Capital Social"
             customInput={TextField}
@@ -539,6 +560,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
         </Grid>
         <Grid xs={12} sm={6}>
           <NumericFormat
+            size="small"
             fullWidth
             label="Valor Mensalidade"
             customInput={TextField}
@@ -559,6 +581,7 @@ export function AberturaValidacaoForm({ currentAbertura, setValue: setParentValu
         </Grid>
         <Grid xs={12}>
           <TextField
+            size="small"
             fullWidth
             multiline
             rows={2}

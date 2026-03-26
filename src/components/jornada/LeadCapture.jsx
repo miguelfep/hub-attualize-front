@@ -4,6 +4,10 @@ import { useState } from 'react';
 
 import { Box, Button, TextField, Container, Typography, CircularProgress } from '@mui/material';
 
+import { normalizePhoneToE164, toPayloadLegacyDigits } from 'src/utils/phone-e164';
+
+import { PhoneInput } from 'src/components/phone-input';
+
 export function LeadCapture() {
   const [leadCaptured, setLeadCaptured] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +30,10 @@ export function LeadCapture() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}marketing/criar/lead/defina`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          telefone: toPayloadLegacyDigits(formData.telefone ?? ''),
+        }),
       });
 
       if (!response.ok) {
@@ -87,14 +94,14 @@ export function LeadCapture() {
               onChange={handleInputChange}
               sx={{ mb: 2 }}
             />
-            <TextField
+            <PhoneInput
               fullWidth
-              name="telefone"
+              country="BR"
               label="WhatsApp"
-              variant="outlined"
+              placeholder="Digite o número"
               required
-              value={formData.telefone}
-              onChange={handleInputChange}
+              value={normalizePhoneToE164(formData.telefone) || undefined}
+              onChange={(newValue) => setFormData((prev) => ({ ...prev, telefone: newValue ?? '' }))}
               sx={{ mb: 3 }}
             />
             <Button variant="contained" color="primary" type="submit" fullWidth disabled={loading}>
