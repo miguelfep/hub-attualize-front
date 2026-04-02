@@ -12,6 +12,23 @@ import { fCurrency } from 'src/utils/format-number';
 import { Iconify } from 'src/components/iconify';
 import { SelectContaContabil } from 'src/components/plano-contas';
 
+const ORIGEM_SUGESTAO_LABEL = {
+  ml_cliente: 'ML',
+  historico_exato: 'Histórico',
+  historico_similar: 'Similar',
+  gemini: 'IA',
+  ia_pdf: 'IA (PDF)',
+};
+
+const getNivelConfianca = (confianca) => {
+  if (typeof confianca !== 'number') {
+    return { label: 'Não informada', color: 'default' };
+  }
+  if (confianca >= 85) return { label: 'Alta', color: 'success' };
+  if (confianca >= 60) return { label: 'Média', color: 'warning' };
+  return { label: 'Baixa', color: 'default' };
+};
+
 /**
  * Componente para exibir transação não identificada
  * Status: nao_identificada
@@ -23,6 +40,7 @@ export default function TransacaoNaoIdentificada({
   onConfirmar, 
   clienteId,
   onContaChange, // 🔥 NOVO: Callback quando conta muda
+  onAplicarSemelhantes,
   autoConfirm, // 🔥 NOVO: Flag para confirmar automaticamente
 }) {
   // Estado para conta contábil selecionada (inicializar com sugestão se houver)
@@ -30,6 +48,7 @@ export default function TransacaoNaoIdentificada({
     transacao.contaSugerida?._id || ''
   );
   const [confirmando, setConfirmando] = useState(false);
+  const nivelConfianca = getNivelConfianca(Number(transacao.confiancaSugestao));
 
   // 🔥 NOVO: Notificar mudança de conta
   const handleContaChange = (novaConta) => {
@@ -77,29 +96,51 @@ export default function TransacaoNaoIdentificada({
     // TODO: Abrir dialog para editar manualmente
   };
 
+  const handleAplicarSemelhantes = () => {
+    if (!onAplicarSemelhantes || !contaContabilId) return;
+    onAplicarSemelhantes(transacao, contaContabilId);
+  };
+
   return (
     <Card
       sx={{
-        p: 1.5,
-        mb: 1,
+        p: 1,
+        mb: 0.75,
         borderLeft: 3,
         borderColor: 'error.main',
         bgcolor: 'background.paper',
         '&:hover': {
-          boxShadow: 2,
+          boxShadow: 1,
           bgcolor: 'action.hover',
         },
       }}
     >
-      <Stack spacing={1.5}>
-        {/* Linha 1: Header + Valor + Data */}
-        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} flexWrap="wrap">
-          <Stack direction="row" alignItems="center" spacing={1} flex={1} minWidth={200}>
+      <Stack spacing={1}>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={1}
+          alignItems={{ xs: 'flex-start', md: 'center' }}
+          sx={{ width: '100%' }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 140 }}>
             <Iconify icon="eva:question-mark-circle-fill" color="error.main" width={20} />
             <Chip label="Não Identificada" color="error" size="small" sx={{ height: 24 }} />
           </Stack>
-          
-          <Stack direction="row" alignItems="center" spacing={2} flexWrap="wrap">
+
+          <Typography
+            variant="body2"
+            sx={{
+              flex: 1,
+              minWidth: 220,
+              fontWeight: 500,
+              wordBreak: 'break-word',
+              lineHeight: 1.35,
+            }}
+          >
+            {transacao.descricao || 'N/A'}
+          </Typography>
+
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 170 }}>
             <Typography 
               variant="body2" 
               sx={{ 
@@ -111,34 +152,16 @@ export default function TransacaoNaoIdentificada({
             </Typography>
             {transacao.data && (
               <Typography variant="caption" color="text.secondary">
-                {new Date(transacao.data).toLocaleDateString('pt-BR', { 
-                  day: '2-digit', 
-                  month: '2-digit' 
-                })}
+                {new Date(transacao.data).toLocaleDateString('pt-BR')}
               </Typography>
             )}
           </Stack>
         </Stack>
 
-        {/* Linha 2: Descrição */}
-        <Typography 
-          variant="body2" 
-          sx={{ 
-            wordBreak: 'break-word',
-            color: 'text.primary',
-            fontSize: '0.875rem',
-            lineHeight: 1.4,
-          }}
-        >
-          {transacao.descricao || 'N/A'}
-        </Typography>
-
-        {/* Linha 3: Sugestão (se houver) */}
-        {/* ✅ Sugestão já vem salva na resposta (gerada durante upload, não ao buscar) */}
         {transacao.contaSugerida && (
           <Box
             sx={{
-              p: 1,
+              p: 0.75,
               bgcolor: 'info.lighter',
               borderRadius: 1,
               border: '1px solid',
@@ -146,32 +169,51 @@ export default function TransacaoNaoIdentificada({
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-              <Iconify icon="eva:trending-up-fill" color="info.main" width={16} />
-              <Typography variant="caption" color="info.dark" fontWeight="bold">
-                Sugestão:
-              </Typography>
-              <Typography variant="caption" fontFamily="monospace" fontWeight="bold">
-                {transacao.contaSugerida.codigoSequencial || transacao.contaSugerida.codigo}
-              </Typography>
-              {transacao.contaSugerida.classificacao && (
-                <Chip 
-                  label={transacao.contaSugerida.classificacao}
+                <Iconify icon="eva:trending-up-fill" color="info.main" width={16} />
+                <Typography variant="caption" color="info.dark" fontWeight="bold">
+                  Sugestão:
+                </Typography>
+                {transacao.sugestaoOrigem && (
+                  <Chip
+                    label={ORIGEM_SUGESTAO_LABEL[transacao.sugestaoOrigem] || transacao.sugestaoOrigem}
+                    size="small"
+                    color="info"
+                    variant="outlined"
+                    sx={{ height: 22, fontSize: '0.65rem' }}
+                  />
+                )}
+                <Chip
                   size="small"
-                  variant="outlined"
-                  color="info"
+                  color={nivelConfianca.color}
+                  label={`Confiança ${nivelConfianca.label}`}
                   sx={{ height: 20, fontSize: '0.65rem' }}
                 />
-              )}
-              <Typography variant="caption" color="text.secondary">
-                {transacao.contaSugerida.nome}
-              </Typography>
+                {typeof transacao.confiancaSugestao === 'number' && (
+                  <Typography variant="caption" color="text.secondary">
+                    {Math.round(transacao.confiancaSugestao)}%
+                  </Typography>
+                )}
+                <Typography variant="body2" fontWeight="medium" sx={{ ml: 0.5 }}>
+                  {transacao.contaSugerida.nome}
+                </Typography>
+                <Typography variant="caption" color="text.secondary" fontFamily="monospace" sx={{ ml: 0.5 }}>
+                  {transacao.contaSugerida.codigoSequencial || transacao.contaSugerida.codigo || ''}
+                </Typography>
+                {transacao.contaSugerida.classificacao && (
+                  <Chip
+                    label={transacao.contaSugerida.classificacao}
+                    size="small"
+                    variant="outlined"
+                    color="info"
+                    sx={{ height: 20, fontSize: '0.65rem' }}
+                  />
+                )}
             </Stack>
           </Box>
         )}
 
-        {/* Linha 4: Seleção de Conta + Botão */}
-        <Stack spacing={1.5}>
-          <Box>
+        <Stack direction={{ xs: 'column', lg: 'row' }} spacing={1} alignItems={{ xs: 'stretch', lg: 'center' }}>
+          <Box sx={{ flex: 1 }}>
             <SelectContaContabil
               clienteId={clienteId}
               value={contaContabilId}
@@ -185,22 +227,28 @@ export default function TransacaoNaoIdentificada({
             />
           </Box>
 
-          {/* Botão de confirmação - sempre visível */}
           <Button
             variant="contained"
             color="primary"
             size="small"
-            fullWidth
             onClick={handleConfirmar}
             startIcon={<Iconify icon="eva:checkmark-fill" width={16} />}
             disabled={!contaContabilId || confirmando}
-            sx={{ 
-              minWidth: 120,
-              ...(confirmando && { opacity: 0.7 })
-            }}
+            sx={{ minWidth: 150, ...(confirmando && { opacity: 0.7 }) }}
           >
             {confirmando ? 'Confirmando...' : (transacao.contaSugerida && contaContabilId === transacao.contaSugerida._id ? 'Aceitar Sugestão' : 'Confirmar')}
           </Button>
+          {contaContabilId && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={handleAplicarSemelhantes}
+              startIcon={<Iconify icon="eva:copy-fill" width={16} />}
+              sx={{ minWidth: 220 }}
+            >
+              Aplicar conta para semelhantes
+            </Button>
+          )}
         </Stack>
       </Stack>
     </Card>

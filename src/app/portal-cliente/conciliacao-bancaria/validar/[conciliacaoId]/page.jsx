@@ -14,14 +14,25 @@ import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
 import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
+import InputAdornment from '@mui/material/InputAdornment';
 
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
 
-import { obterStatusConciliacao, confirmarTransacoesEmLote } from 'src/actions/conciliacao';
+import {
+  confirmarTransacao,
+  finalizarConciliacao,
+  obterMlStatusCliente,
+  obterStatusConciliacao,
+  buscarTransacoesPendentes,
+  confirmarTransacoesEmLote,
+  mapearContextoConciliacao,
+  buscarTransacoesConciliacao,
+} from 'src/actions/conciliacao';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -61,6 +72,20 @@ const formatarDataISO = (dataISO) => {
   }
 };
 
+/** Ordenação recomendada: sem sugestão primeiro; depois maior valor absoluto. */
+function ordenarPendentes(list) {
+  const arr = [...list];
+  arr.sort((a, b) => {
+    const aSug = !!(a.contaSugerida?._id || a.contaSugerida);
+    const bSug = !!(b.contaSugerida?._id || b.contaSugerida);
+    if (aSug !== bSug) return aSug ? 1 : -1;
+    const va = Math.abs(parseFloat(a.valor) || 0);
+    const vb = Math.abs(parseFloat(b.valor) || 0);
+    return vb - va;
+  });
+  return arr;
+}
+
 export default function ValidacaoConciliacaoPage() {
   const router = useRouter();
   const params = useParams();
@@ -76,7 +101,7 @@ export default function ValidacaoConciliacaoPage() {
   const [error, setError] = useState(null);
   const [resumoInicialFixo, setResumoInicialFixo] = useState(null); // 🔥 Resumo fixo do OFX
   const [bancoInfo, setBancoInfo] = useState(null); // ✅ Informações do banco (saldo, etc)
-  const carregandoTransacoesRef = useRef(false); // 🔥 Prevenir múltiplas chamadas
+  const pollTimeoutRef = useRef(null);
   
   // 🔥 NOVO: Estados para processamento assíncrono
   const [statusProcessamento, setStatusProcessamento] = useState(null); // 'processando' | 'pendente' | 'concluida' | 'erro' | null
@@ -89,6 +114,8 @@ export default function ValidacaoConciliacaoPage() {
   // ✅ NOVO: Transações já confirmadas (para exibir no final)
   const [transacoesConfirmadas, setTransacoesConfirmadas] = useState([]);
   const [abaAtiva, setAbaAtiva] = useState(0); // 0 = Pendentes, 1 = Conciliadas
+  const [alterandoContaId, setAlterandoContaId] = useState(null);
+  const [buscaPendentes, setBuscaPendentes] = useState('');
   
   // 🔥 NOVO: Rastrear contas selecionadas para cada transação
   const [contasSelecionadas, setContasSelecionadas] = useState({}); // { transacaoId: contaContabilId }
@@ -150,207 +177,147 @@ export default function ValidacaoConciliacaoPage() {
     fetchEmpresaData();
   }, [user?.userId]);
 
-  // 🔥 Função separada para carregar transações (usando useCallback para evitar problemas de dependências)
-  const carregarTransacoes = useCallback(async () => {
-      if (!conciliacaoId) return;
+  const aplicarPayloadStatus = useCallback(
+    (statusData) => {
+      if (!statusData) return;
+      setStatusProcessamento(statusData.status);
+      setProgressoProcessamento(statusData.progresso || 0);
+      setProcessando(statusData.status === 'processando');
+      if (statusData.resumo !== undefined || statusData.totalTransacoes !== undefined) {
+        setResumoStatus({
+          totalTransacoes: statusData.totalTransacoes ?? 0,
+          transacoesPendentes: statusData.transacoesPendentes ?? 0,
+          resumo: statusData.resumo ?? null,
+        });
+      }
+      setConciliacao(mapearContextoConciliacao(statusData, conciliacaoId));
+    },
+    [conciliacaoId]
+  );
 
-      carregandoTransacoesRef.current = true;
-      setLoading(true);
-      setError(null);
-
-      try {
-      // ✅ Buscar transações pendentes (Nova API)
-      // ⚡ IMPORTANTE: Resposta é INSTANTÂNEA - sugestões já estão salvas no banco (geradas durante upload)
-      // Não chama IA - apenas retorna sugestões já salvas
-        const response = await axios.get(
-          `${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/pendentes`
-        );
-
-        if (response.data?.success) {
-          const transacoesPendentes = response.data.data || [];
-        // ✅ As transações já vêm com contaSugerida preenchida (se houver sugestão salva)
-        // Se contaSugerida for null, significa que não há sugestão disponível
-          setTransacoes(transacoesPendentes);
-          
-          // 🔥 Calcular resumo inicial IMEDIATAMENTE das transações pendentes (snapshot inicial)
-          if (transacoesPendentes.length > 0) {
-            const transacoesCreditos = transacoesPendentes.filter(t => t.tipo === 'credito');
-            const transacoesDebitos = transacoesPendentes.filter(t => t.tipo === 'debito');
-            
-            const totalCreditos = transacoesCreditos.reduce((sum, t) => {
-              const valor = parseFloat(t.valor) || 0;
-              return sum + valor;
-            }, 0);
-            
-            const totalDebitos = transacoesDebitos.reduce((sum, t) => {
-              const valor = parseFloat(t.valor) || 0;
-              return sum + valor;
-            }, 0);
-            
-            const saldoFinal = totalCreditos - totalDebitos;
-            
-          setResumoInicialFixo({
-              totalCreditos,
-              totalDebitos,
-              saldoFinal,
-          });
-          } else {
-            setResumoInicialFixo({
-              totalCreditos: 0,
-              totalDebitos: 0,
-              saldoFinal: 0,
-            });
-          }
-          
-        // Buscar detalhes básicos da conciliação
-          if (!conciliacao) {
-            try {
-              const detalhesResponse = await axios.get(
-                `${process.env.NEXT_PUBLIC_API_URL}reconciliation/${conciliacaoId}`
-              );
-              if (detalhesResponse.data?.success) {
-              setConciliacao(detalhesResponse.data.data);
-            }
-          } catch (detalhesErr) {
-            console.warn('⚠️ Não foi possível buscar detalhes:', detalhesErr);
-          }
-        }
-      } else {
-        throw new Error(response.data?.message || 'Erro ao carregar transações');
-                      }
-    } catch (err) {
-      console.error('❌ Erro ao carregar transações:', err);
-      setError(err.message || 'Erro ao carregar transações');
-      toast.error('Erro ao carregar transações');
-    } finally {
-      setLoading(false);
-      carregandoTransacoesRef.current = false;
+  const atualizarResumoLocalPendentes = useCallback((transacoesPendentes) => {
+    if (transacoesPendentes.length > 0) {
+      const transacoesCreditos = transacoesPendentes.filter((t) => t.tipo === 'credito');
+      const transacoesDebitos = transacoesPendentes.filter((t) => t.tipo === 'debito');
+      const totalCreditos = transacoesCreditos.reduce((sum, t) => sum + (parseFloat(t.valor) || 0), 0);
+      const totalDebitos = transacoesDebitos.reduce((sum, t) => sum + (parseFloat(t.valor) || 0), 0);
+      setResumoInicialFixo({
+        totalCreditos,
+        totalDebitos,
+        saldoFinal: totalCreditos - totalDebitos,
+      });
+    } else {
+      setResumoInicialFixo({
+        totalCreditos: 0,
+        totalDebitos: 0,
+        saldoFinal: 0,
+      });
     }
-  }, [conciliacaoId, conciliacao]);
+  }, []);
 
-  // 🔥 NOVO: Verificar status da conciliação e fazer polling se necessário
+  const carregarPendentesOrdenados = useCallback(async () => {
+    if (!conciliacaoId) return;
+    const response = await buscarTransacoesPendentes(conciliacaoId);
+    if (!response.data?.success) {
+      throw new Error(response.data?.message || 'Erro ao carregar transações pendentes');
+    }
+    const transacoesPendentes = ordenarPendentes(response.data.data || []);
+    setTransacoes(transacoesPendentes);
+    atualizarResumoLocalPendentes(transacoesPendentes);
+  }, [conciliacaoId, atualizarResumoLocalPendentes]);
+
+  // Status + polling (2s) até sair de processando; depois apenas GET /pendentes
   useEffect(() => {
-    if (!conciliacaoId) {
-      return undefined;
-    }
+    if (!conciliacaoId) return undefined;
 
-    let intervalId = null;
+    let cancelled = false;
 
-    const verificarStatus = async () => {
+    const limparPoll = () => {
+      if (pollTimeoutRef.current) {
+        clearTimeout(pollTimeoutRef.current);
+        pollTimeoutRef.current = null;
+      }
+    };
+
+    const tick = async () => {
+      if (cancelled) return;
       try {
         const statusResponse = await obterStatusConciliacao(conciliacaoId);
         const statusData = statusResponse.data?.data;
+        if (cancelled || !statusData) return;
 
-        if (statusData) {
-          setStatusProcessamento(statusData.status);
-          setProgressoProcessamento(statusData.progresso || 0);
-          
-          // ✅ NOVO: Salvar resumo do status (valores fixos da API)
-          if (statusData.resumo || statusData.totalTransacoes !== undefined) {
-            setResumoStatus({
-              totalTransacoes: statusData.totalTransacoes || 0,
-              transacoesPendentes: statusData.transacoesPendentes || 0,
-              resumo: statusData.resumo || null,
-            });
-          }
+        aplicarPayloadStatus(statusData);
 
-          // Se está processando, iniciar polling
-          if (statusData.status === 'processando') {
-            setProcessando(true);
-            
-            // Iniciar polling
-            intervalId = setInterval(async () => {
-              try {
-                const pollResponse = await obterStatusConciliacao(conciliacaoId);
-                const pollData = pollResponse.data?.data;
-
-                if (pollData) {
-                  setStatusProcessamento(pollData.status);
-                  setProgressoProcessamento(pollData.progresso || 0);
-                  
-                  // ✅ NOVO: Atualizar resumo do status durante polling
-                  if (pollData.resumo || pollData.totalTransacoes !== undefined) {
-                    setResumoStatus({
-                      totalTransacoes: pollData.totalTransacoes || 0,
-                      transacoesPendentes: pollData.transacoesPendentes || 0,
-                      resumo: pollData.resumo || null,
-                    });
-                  }
-
-                  // Se finalizou processamento, parar polling e carregar transações
-                  if (pollData.status === 'pendente' || pollData.status === 'concluida') {
-                    if (intervalId) {
-                      clearInterval(intervalId);
-                      intervalId = null;
-                    }
-                    setProcessando(false);
-                    // Recarregar transações
-                    if (!carregandoTransacoesRef.current) {
-                      carregarTransacoes();
-                    }
-                  }
-
-                  // Se erro, parar polling
-                  if (pollData.status === 'erro') {
-                    if (intervalId) {
-                      clearInterval(intervalId);
-                      intervalId = null;
-                    }
-                    setProcessando(false);
-                    setError(pollData.erros?.[0] || 'Erro ao processar arquivo');
-                    toast.error('Erro ao processar arquivo');
-                }
-              }
-              } catch (err) {
-                console.error('Erro ao verificar status durante polling:', err);
-            }
-            }, 2000); // Polling a cada 2 segundos
-        } else {
-            setProcessando(false);
-            // Se não está processando, pode carregar transações normalmente
-          }
+        if (statusData.status === 'erro') {
+          setError(statusData.erros?.[0] || 'Erro ao processar arquivo');
+          toast.error('Erro ao processar arquivo');
+          setLoading(false);
+          return;
         }
-      } catch (err) {
-        console.error('Erro ao verificar status da conciliação:', err);
-        // Se der erro, tentar carregar transações mesmo assim (compatibilidade)
+
+        if (statusData.status === 'processando') {
+          setLoading(false);
+          pollTimeoutRef.current = setTimeout(tick, 2000);
+          return;
+        }
+
         setProcessando(false);
+        await carregarPendentesOrdenados();
+        setLoading(false);
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Erro ao sincronizar conciliação:', err);
+          setError(err.message || 'Erro ao carregar conciliação');
+          toast.error('Erro ao carregar conciliação');
+          setLoading(false);
+        }
       }
     };
 
-    verificarStatus();
+    setLoading(true);
+    setError(null);
+    limparPoll();
+    tick();
 
-    // Cleanup
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      cancelled = true;
+      limparPoll();
     };
-  }, [conciliacaoId, carregarTransacoes]);
+  }, [conciliacaoId, aplicarPayloadStatus, carregarPendentesOrdenados]);
 
-  // 🔥 Buscar transações pendentes (otimizado - uma vez por conciliacaoId)
-  useEffect(() => {
-    // 🔥 Prevenir múltiplas chamadas simultâneas
-    if (carregandoTransacoesRef.current) {
-      console.log('⏳ Já carregando transações, ignorando chamada duplicada');
-      return;
-    }
-
-    // Se está processando, não carregar transações ainda
-    if (processando || statusProcessamento === 'processando') {
-      return;
-      }
-
-    carregarTransacoes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [conciliacaoId, processando, statusProcessamento]); // 🔥 Adicionar processando e statusProcessamento
-
+   
   const clienteId = empresaData?._id || empresaData?.id;
+
+  useEffect(() => {
+    setTransacoesConfirmadas([]);
+    setAbaAtiva(0);
+  }, [conciliacaoId]);
+
+  const atualizarResumoViaStatus = useCallback(async () => {
+    if (!conciliacaoId) return;
+    try {
+      const r = await obterStatusConciliacao(conciliacaoId);
+      const d = r.data?.data;
+      if (d) aplicarPayloadStatus(d);
+    } catch {
+      /* mantém estado local */
+    }
+  }, [conciliacaoId, aplicarPayloadStatus]);
 
   // Helper para obter nome do banco de várias formas possíveis
   const getNomeBanco = () => {
+    if (bancoInfo) {
+      return (
+        bancoInfo.instituicaoBancariaId?.nome ||
+        bancoInfo.instituicaoBancaria?.nome ||
+        bancoInfo.banco?.nome ||
+        bancoInfo.nome ||
+        'N/A'
+      );
+    }
     if (!conciliacao?.bancoId) return 'N/A';
-    console.log(conciliacao);
     const banco = conciliacao.bancoId;
+    if (typeof banco === 'string') return 'Banco selecionado';
     
     // Tentar diferentes caminhos onde o nome pode estar
     return (
@@ -361,6 +328,24 @@ export default function ValidacaoConciliacaoPage() {
       'N/A'
     );
   };
+
+  useEffect(() => {
+    const carregarBancoInfoInicial = async () => {
+      const bancoIdAtual = conciliacao?.bancoId?._id || conciliacao?.bancoId;
+      if (!clienteId || !bancoIdAtual || bancoInfo) return;
+      try {
+        const bancoResponse = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
+          { params: { clienteId } }
+        );
+        const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bancoIdAtual);
+        if (bancoEncontrado) setBancoInfo(bancoEncontrado);
+      } catch {
+        // mantém fallback do status
+      }
+    };
+    carregarBancoInfoInicial();
+  }, [clienteId, conciliacao?.bancoId, bancoInfo]);
 
   // Confirmar transação
   // 🔥 ATUALIZADO: Agora usa o novo endpoint /confirmar
@@ -373,14 +358,7 @@ export default function ValidacaoConciliacaoPage() {
     try {
       toast.loading('Confirmando transação...');
 
-      // 🔥 NOVO: Usa /conciliacao/confirmar sem conciliacaoId na URL
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}conciliacao/confirmar`,
-        {
-          transacaoId,      // 🔥 String ID (não objeto)
-          contaContabilId,  // 🔥 String ID (não objeto)
-        }
-      );
+      const response = await confirmarTransacao(transacaoId, contaContabilId);
 
       if (response.data?.success) {
         toast.dismiss();
@@ -400,7 +378,8 @@ export default function ValidacaoConciliacaoPage() {
         });
         
         // ✅ Recarregar informações do banco para atualizar saldo
-        if (conciliacao?.bancoId?._id) {
+        const bancoIdAtual = conciliacao?.bancoId?._id || conciliacao?.bancoId;
+        if (bancoIdAtual) {
           const clienteIdAtual = empresaData?._id || empresaData?.id;
           if (clienteIdAtual) {
             try {
@@ -408,8 +387,7 @@ export default function ValidacaoConciliacaoPage() {
                 `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
                 { params: { clienteId: clienteIdAtual } }
               );
-              // Encontrar o banco específico na lista
-              const bancoEncontrado = bancoResponse.data?.find(b => b._id === conciliacao.bancoId._id);
+              const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bancoIdAtual);
               if (bancoEncontrado) {
                 setBancoInfo(bancoEncontrado);
               }
@@ -418,11 +396,11 @@ export default function ValidacaoConciliacaoPage() {
             }
           }
         }
-        
-        // ✅ NOVO: Recarregar transações confirmadas após confirmação
-        buscarTransacoesConfirmadas();
-        
-        console.log('✅ Transação confirmada e removida da lista');
+
+        await atualizarResumoViaStatus();
+        if (abaAtiva === 1) {
+          buscarTransacoesConfirmadas();
+        }
       } else {
         throw new Error(response.data?.message || 'Erro ao confirmar transação');
       }
@@ -449,9 +427,7 @@ export default function ValidacaoConciliacaoPage() {
     try {
       toast.loading('Finalizando conciliação...');
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/finalizar`
-      );
+      const response = await finalizarConciliacao(conciliacaoId);
 
       toast.dismiss();
 
@@ -465,6 +441,20 @@ export default function ValidacaoConciliacaoPage() {
             ...conciliacao,
             status: 'concluida',
           });
+        }
+
+        if (clienteId) {
+          try {
+            const mlRes = await obterMlStatusCliente(clienteId);
+            const ml = mlRes.data?.data;
+            if (ml?.status === 'not_trained' && ml?.lastJob?.trainingResult === 'insufficient_samples') {
+              toast.message(
+                'Sugestões automáticas: o modelo ainda não tem amostras suficientes. Elas devem melhorar com o tempo.'
+              );
+            }
+          } catch {
+            /* opcional */
+          }
         }
         
         // Aguardar 2 segundos antes de redirecionar
@@ -486,111 +476,141 @@ export default function ValidacaoConciliacaoPage() {
   // 🔥 Todas as transações retornadas são PENDENTES
   // Não precisa filtrar, todas estão em `transacoes`
   const transacoesPendentes = transacoes;
+  const transacoesPendentesFiltradas = useMemo(() => {
+    const q = buscaPendentes.trim().toLowerCase();
+    if (!q) return transacoesPendentes;
+    return transacoesPendentes.filter((t) => {
+      const descricao = String(t.descricao || '').toLowerCase();
+      const valor = String(t.valor ?? '').toLowerCase();
+      return descricao.includes(q) || valor.includes(q);
+    });
+  }, [transacoesPendentes, buscaPendentes]);
 
-  // 🔥 Log quando resumoInicialFixo mudar
-  useEffect(() => {
-    if (resumoInicialFixo) {
-      console.log('📌 resumoInicialFixo mudou para:', resumoInicialFixo);
-    }
-  }, [resumoInicialFixo]);
+  const handleAplicarContaSemelhantes = useCallback(
+    (transacaoBase, contaContabilId) => {
+      const baseDescricao = String(transacaoBase?.descricao || '')
+        .normalize('NFD')
+        .replace(/\p{Diacritic}/gu, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!baseDescricao || !contaContabilId) return;
 
-  // ✅ NOVO: Buscar transações confirmadas
+      const chavesBase = baseDescricao.split(' ').filter((w) => w.length > 3).slice(0, 4);
+      if (chavesBase.length === 0) return;
+
+      let alteradas = 0;
+      setContasSelecionadas((prev) => {
+        const next = { ...prev };
+        transacoesPendentes.forEach((t) => {
+          const id = t._id || t.transacaoImportadaId;
+          if (!id) return;
+          const desc = String(t.descricao || '')
+            .normalize('NFD')
+            .replace(/\p{Diacritic}/gu, '')
+            .toLowerCase()
+            .replace(/\s+/g, ' ')
+            .trim();
+          const match = chavesBase.every((k) => desc.includes(k));
+          if (match) {
+            next[id] = contaContabilId;
+            alteradas += 1;
+          }
+        });
+        return next;
+      });
+
+      if (alteradas > 0) {
+        toast.success(`Conta aplicada para ${alteradas} transação(ões) semelhante(s).`);
+      } else {
+        toast.info('Nenhuma transação semelhante encontrada.');
+      }
+    },
+    [transacoesPendentes]
+  );
+
+  /** Lista completa só na aba Conciliadas — evita GET /transacoes em toda visita. */
   const buscarTransacoesConfirmadas = useCallback(async () => {
     if (!conciliacaoId || processando || statusProcessamento === 'processando') return;
-    
+
     try {
-      // ✅ Buscar todas as transações (incluindo confirmadas)
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/transacoes`
-      );
-      
-      console.log('🔍 Resposta completa da API /transacoes:', JSON.stringify(response.data, null, 2));
-      
+      const response = await buscarTransacoesConciliacao(conciliacaoId);
+
       if (response.data?.success && response.data.data) {
-        // ✅ CORREÇÃO: A API retorna { data: { todas: [], pendentes: [], confirmadas: [] } }
         const { confirmadas: confirmadasData, todas: todasData } = response.data.data;
         let confirmadas = [];
-        
-        // Prioridade 1: Tentar acessar diretamente o campo 'confirmadas'
-        if (confirmadasData && Array.isArray(confirmadasData)) {
+
+        if (Array.isArray(confirmadasData)) {
           confirmadas = confirmadasData;
-          console.log('✅ Encontradas transações confirmadas em data.confirmadas:', confirmadas.length);
-        }
-        // Prioridade 2: Se não tiver 'confirmadas', tentar filtrar de 'todas'
-        else if (todasData && Array.isArray(todasData)) {
-          console.log('🔍 Filtrando confirmadas de data.todas:', todasData.length);
-          confirmadas = todasData.filter(t => {
-            // Verificar se tem contaContabilId (string ou objeto)
-            const temContaId = t.contaContabilId || 
-                              (t.contaContabil && (typeof t.contaContabil === 'string' || t.contaContabil._id)) ||
-                              (t.transacaoImportada && (t.transacaoImportada.contaContabilId || t.transacaoImportada.contaContabil));
-            
-            // Verificar status
-            const temStatusConfirmado = t.status === 'confirmada' || 
-                                       t.status === 'conciliada' ||
-                                       (t.transacaoImportada && (t.transacaoImportada.status === 'confirmada' || t.transacaoImportada.status === 'conciliada'));
-            
+        } else if (Array.isArray(todasData)) {
+          confirmadas = todasData.filter((t) => {
+            const temContaId =
+              t.contaContabilId ||
+              (t.contaContabil && (typeof t.contaContabil === 'string' || t.contaContabil._id)) ||
+              (t.transacaoImportada &&
+                (t.transacaoImportada.contaContabilId || t.transacaoImportada.contaContabil));
+
+            const temStatusConfirmado =
+              t.status === 'confirmada' ||
+              t.status === 'conciliada' ||
+              (t.transacaoImportada &&
+                (t.transacaoImportada.status === 'confirmada' ||
+                  t.transacaoImportada.status === 'conciliada'));
+
             return temContaId || temStatusConfirmado;
           });
-          console.log('✅ Transações confirmadas filtradas de todas:', confirmadas.length);
         }
-        // Prioridade 3: Fallback - tentar endpoint específico para confirmadas
-        else {
-          console.warn('⚠️ Estrutura de resposta não esperada. Tentando endpoint /confirmadas...');
-          try {
-            const confirmadasResponse = await axios.get(
-              `${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/confirmadas`
-            );
-            
-            if (confirmadasResponse.data?.success && Array.isArray(confirmadasResponse.data.data)) {
-              confirmadas = confirmadasResponse.data.data;
-              console.log('✅ Encontradas transações confirmadas no endpoint /confirmadas:', confirmadas.length);
-            }
-          } catch (confirmadasErr) {
-            console.log('⚠️ Endpoint /confirmadas não existe ou retornou erro:', confirmadasErr.response?.status);
-          }
-        }
-        
-        console.log('📊 Total de transações confirmadas encontradas:', confirmadas.length);
-        if (confirmadas.length > 0) {
-          console.log('🔍 Exemplo de transação confirmada:', confirmadas[0]);
-        }
-        
+
         setTransacoesConfirmadas(confirmadas);
       } else {
-        console.warn('⚠️ API não retornou success ou data:', response.data);
         setTransacoesConfirmadas([]);
       }
     } catch (err) {
       console.error('Erro ao buscar transações confirmadas:', err);
-      console.error('Detalhes do erro:', err.response?.data);
-      console.error('Status do erro:', err.response?.status);
-      
-      // ✅ FALLBACK: Se o endpoint /transacoes não funcionar, tentar /confirmadas
-      if (err.response?.status === 404 || err.response?.status >= 500) {
-        try {
-          console.log('🔄 Tentando endpoint alternativo /confirmadas...');
-          const confirmadasResponse = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/confirmadas`
-          );
-          
-          if (confirmadasResponse.data?.success && Array.isArray(confirmadasResponse.data.data)) {
-            console.log('✅ Encontradas transações confirmadas no endpoint alternativo:', confirmadasResponse.data.data.length);
-            setTransacoesConfirmadas(confirmadasResponse.data.data);
-            return;
-          }
-        } catch (fallbackErr) {
-          console.error('Erro no endpoint alternativo:', fallbackErr);
-        }
-      }
-      
       setTransacoesConfirmadas([]);
     }
   }, [conciliacaoId, processando, statusProcessamento]);
 
   useEffect(() => {
+    if (abaAtiva !== 1) return;
     buscarTransacoesConfirmadas();
-  }, [buscarTransacoesConfirmadas]);
+  }, [abaAtiva, buscarTransacoesConfirmadas]);
+
+  const handleAlterarContaTransacaoConciliada = useCallback(
+    async (transacaoId, contaContabilId) => {
+      if (!transacaoId || !contaContabilId) return;
+      try {
+        setAlterandoContaId(transacaoId);
+        await axios.put(
+          `${process.env.NEXT_PUBLIC_API_URL}conciliacao/transacao/${transacaoId}`,
+          { contaContabilId }
+        );
+      } catch (updateErr) {
+        if (updateErr?.response?.status === 404 || updateErr?.response?.status === 405) {
+          await confirmarTransacao(transacaoId, contaContabilId);
+        } else {
+          throw updateErr;
+        }
+      } finally {
+        setAlterandoContaId(null);
+      }
+
+      await atualizarResumoViaStatus();
+      await buscarTransacoesConfirmadas();
+      toast.success('Conta contábil atualizada.');
+    },
+    [atualizarResumoViaStatus, buscarTransacoesConfirmadas]
+  );
+
+  const totalConfirmadasIndicador = useMemo(() => {
+    if (
+      resumoStatus?.totalTransacoes != null &&
+      resumoStatus?.transacoesPendentes != null
+    ) {
+      return Math.max(0, resumoStatus.totalTransacoes - resumoStatus.transacoesPendentes);
+    }
+    return transacoesConfirmadas.length;
+  }, [resumoStatus, transacoesConfirmadas.length]);
 
   // 🔥 Resumo financeiro - Usar valores fixos do status da API
   const resumoInicial = useMemo(() => {
@@ -611,15 +631,13 @@ export default function ValidacaoConciliacaoPage() {
     
     // Prioridade 3: Calcular das transações pendentes (fallback - apenas se ainda não tiver nenhum)
     if (transacoesPendentes.length === 0) {
-      console.log('⚠️ Sem transações pendentes, retornando zeros');
       return {
         totalCreditos: 0,
         totalDebitos: 0,
         saldoFinal: 0,
       };
     }
-    
-    console.log('⚠️ Calculando resumo de fallback das transações pendentes:', transacoesPendentes.length);
+
     const totalCreditos = transacoesPendentes
       .filter(t => t.tipo === 'credito')
       .reduce((sum, t) => {
@@ -633,14 +651,11 @@ export default function ValidacaoConciliacaoPage() {
         return sum + valor;
       }, 0);
     
-    const resumoCalculado = {
+    return {
       totalCreditos,
       totalDebitos,
       saldoFinal: totalCreditos - totalDebitos,
     };
-    
-    console.log('📊 Resumo calculado (fallback):', resumoCalculado);
-    return resumoCalculado;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumoStatus, resumoInicialFixo, conciliacao?.resumo, transacoesPendentes.length]);
 
@@ -717,8 +732,8 @@ export default function ValidacaoConciliacaoPage() {
           console.error('Erros ao confirmar transações:', errosDetalhes);
         }
         
-        // ✅ Recarregar informações do banco para atualizar saldo
-        if (conciliacao?.bancoId?._id) {
+        const bid = conciliacao?.bancoId?._id || conciliacao?.bancoId;
+        if (bid) {
           const clienteIdAtual = empresaData?._id || empresaData?.id;
           if (clienteIdAtual) {
             try {
@@ -726,7 +741,7 @@ export default function ValidacaoConciliacaoPage() {
                 `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
                 { params: { clienteId: clienteIdAtual } }
               );
-              const bancoEncontrado = bancoResponse.data?.find(b => b._id === conciliacao.bancoId._id);
+              const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bid);
               if (bancoEncontrado) {
                 setBancoInfo(bancoEncontrado);
               }
@@ -735,9 +750,11 @@ export default function ValidacaoConciliacaoPage() {
             }
           }
         }
-        
-        // ✅ NOVO: Recarregar transações confirmadas após confirmação
-        buscarTransacoesConfirmadas();
+
+        await atualizarResumoViaStatus();
+        if (abaAtiva === 1) {
+          buscarTransacoesConfirmadas();
+        }
       } else {
         throw new Error(response.data?.message || 'Erro ao confirmar transações');
       }
@@ -835,8 +852,8 @@ export default function ValidacaoConciliacaoPage() {
           console.error('Erros ao confirmar transações:', errosDetalhes);
         }
         
-        // ✅ Recarregar informações do banco para atualizar saldo
-        if (conciliacao?.bancoId?._id) {
+        const bid = conciliacao?.bancoId?._id || conciliacao?.bancoId;
+        if (bid) {
           const clienteIdAtual = empresaData?._id || empresaData?.id;
           if (clienteIdAtual) {
             try {
@@ -844,7 +861,7 @@ export default function ValidacaoConciliacaoPage() {
                 `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
                 { params: { clienteId: clienteIdAtual } }
               );
-              const bancoEncontrado = bancoResponse.data?.find(b => b._id === conciliacao.bancoId._id);
+              const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bid);
               if (bancoEncontrado) {
                 setBancoInfo(bancoEncontrado);
               }
@@ -853,9 +870,11 @@ export default function ValidacaoConciliacaoPage() {
             }
           }
         }
-        
-        // ✅ NOVO: Recarregar transações confirmadas após confirmação
-        buscarTransacoesConfirmadas();
+
+        await atualizarResumoViaStatus();
+        if (abaAtiva === 1) {
+          buscarTransacoesConfirmadas();
+        }
       } else {
         throw new Error(response.data?.message || 'Erro ao confirmar transações');
       }
@@ -866,11 +885,6 @@ export default function ValidacaoConciliacaoPage() {
       console.error(err);
     }
   };
-
-  console.log('📊 Transações pendentes:', {
-    total: transacoesPendentes.length,
-    comSugestao: transacoesComSugestao.length
-  });
 
   // 🔥 NOVO: Tela de processamento quando estiver processando
   if (processando || statusProcessamento === 'processando') {
@@ -1080,28 +1094,19 @@ export default function ValidacaoConciliacaoPage() {
                 : 'Clique em "Finalizar Conciliação" para concluir o processo.'}
             </Typography>
           </Alert>
-        ) : (
-          <Alert severity="info" icon={<Iconify icon="eva:info-fill" />}>
-            <Typography variant="subtitle1" fontWeight="bold">
-              📋 {transacoesPendentes.length} transação(ões) aguardando conciliação
-            </Typography>
-            <Typography variant="body2">
-              Selecione uma conta contábil para cada transação e confirme.
-            </Typography>
-          </Alert>
-        )}
+        ) : null}
       </Box>
 
       {/* Resumo Header */}
-      <Grid container spacing={3} mb={3}>
+      <Grid container spacing={2} mb={2}>
         {/* Informações Gerais */}
         <Grid xs={12} md={6}>
-          <Card sx={{ p: 3, height: '100%' }}>
-            <Typography variant="h6" gutterBottom>
+          <Card sx={{ p: 2, height: '100%' }}>
+            <Typography variant="subtitle1" gutterBottom>
               📋 Informações da Conciliação
             </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Stack spacing={2}>
+            <Divider sx={{ mb: 1.25 }} />
+            <Stack spacing={1.25}>
               <Stack direction="row" justifyContent="space-between">
                 <Typography variant="body2" color="text.secondary">
                   Banco:
@@ -1144,12 +1149,12 @@ export default function ValidacaoConciliacaoPage() {
 
         {/* Resumo Financeiro */}
         <Grid xs={12} md={6}>
-          <Card sx={{ p: 3, height: '100%', bgcolor: 'primary.lighter' }}>
-            <Typography variant="h6" gutterBottom>
+          <Card sx={{ p: 2, height: '100%', bgcolor: 'primary.lighter' }}>
+            <Typography variant="subtitle1" gutterBottom>
               💰 Resumo Financeiro
             </Typography>
-            <Divider sx={{ mb: 2 }} />
-            <Stack spacing={2}>
+            <Divider sx={{ mb: 1.25 }} />
+            <Stack spacing={1.25}>
               <Stack direction="row" justifyContent="space-between" alignItems="center">
                 <Typography variant="body2" color="text.secondary">
                   Total de Transações Pendentes:
@@ -1168,13 +1173,13 @@ export default function ValidacaoConciliacaoPage() {
                   </Typography>
                 </Stack>
               )}
-              {transacoesConfirmadas.length > 0 && (
+              {totalConfirmadasIndicador > 0 && (
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
                   <Typography variant="body2" color="text.secondary">
                     Transações Conciliadas:
                   </Typography>
                   <Typography variant="body2" fontWeight="bold" color="success.main">
-                    {transacoesConfirmadas.length}
+                    {totalConfirmadasIndicador}
                   </Typography>
                 </Stack>
               )}
@@ -1305,7 +1310,7 @@ export default function ValidacaoConciliacaoPage() {
                   <Typography variant="body2" fontWeight="medium">
                     Conciliadas
                   </Typography>
-                  {transacoesConfirmadas.length > 0 && (
+                  {totalConfirmadasIndicador > 0 && (
                     <Box
                       sx={{
                         bgcolor: 'success.main',
@@ -1320,7 +1325,7 @@ export default function ValidacaoConciliacaoPage() {
                         fontWeight: 'bold',
                       }}
                     >
-                      {transacoesConfirmadas.length}
+                      {totalConfirmadasIndicador}
                     </Box>
                   )}
                 </Stack>
@@ -1413,6 +1418,22 @@ export default function ValidacaoConciliacaoPage() {
                         💡 Selecione contas e use os botões acima para confirmar em massa
                       </Typography>
                     </Stack>
+                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} mt={1.5}>
+                      <TextField
+                        fullWidth
+                        size="small"
+                        value={buscaPendentes}
+                        onChange={(e) => setBuscaPendentes(e.target.value)}
+                        placeholder="Buscar por descrição ou valor..."
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <Iconify icon="eva:search-fill" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Stack>
                   </Card>
 
                   {transacoesPendentes.length > 5 && (
@@ -1423,7 +1444,7 @@ export default function ValidacaoConciliacaoPage() {
                     </Alert>
                   )}
                   <Stack spacing={1}>
-                    {transacoesPendentes.map((transacao, idx) => {
+                    {transacoesPendentesFiltradas.map((transacao, idx) => {
                       const transacaoId = transacao._id || transacao.transacaoImportadaId;
                       const temContaSelecionada = contasSelecionadas[transacaoId] || transacao.contaSugerida?._id;
                       
@@ -1452,6 +1473,7 @@ export default function ValidacaoConciliacaoPage() {
                             clienteId={clienteId}
                             onConfirmar={handleConfirmarTransacao}
                             onContaChange={handleContaChange}
+                            onAplicarSemelhantes={handleAplicarContaSemelhantes}
                           />
                         </Box>
                       );
@@ -1472,7 +1494,7 @@ export default function ValidacaoConciliacaoPage() {
                     Transações Já Conciliadas
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
-                    {transacoesConfirmadas.length} transação{transacoesConfirmadas.length !== 1 ? 'ões' : ''} já foi{transacoesConfirmadas.length !== 1 ? 'ram' : ''} conciliada{transacoesConfirmadas.length !== 1 ? 's' : ''} (somente visualização)
+                    {transacoesConfirmadas.length} transaç{transacoesConfirmadas.length !== 1 ? 'ões' : 'ão'} já {transacoesConfirmadas.length !== 1 ? 'foram' : 'foi'} conciliada{transacoesConfirmadas.length !== 1 ? 's' : ''}
                   </Typography>
                 </Box>
               </Stack>
@@ -1487,7 +1509,7 @@ export default function ValidacaoConciliacaoPage() {
                 <>
                   <Alert severity="info" icon={<Iconify icon="eva:info-fill" />} sx={{ mb: 2 }}>
                     <Typography variant="body2">
-                      As transações abaixo já foram conciliadas e não podem ser editadas. Elas são exibidas apenas para referência.
+                      As transações abaixo já foram conciliadas. Você pode alterar a conta contábil quando necessário.
                     </Typography>
                   </Alert>
 
@@ -1495,7 +1517,13 @@ export default function ValidacaoConciliacaoPage() {
                     {transacoesConfirmadas.map((transacao, idx) => {
                       const transacaoId = transacao._id || transacao.transacaoImportadaId || idx;
                       return (
-                        <TransacaoConfirmada key={transacaoId} transacao={transacao} />
+                        <TransacaoConfirmada
+                          key={transacaoId}
+                          transacao={transacao}
+                          clienteId={clienteId}
+                          alterandoConta={alterandoContaId === transacaoId}
+                          onAlterarConta={handleAlterarContaTransacaoConciliada}
+                        />
                       );
                     })}
                   </Stack>

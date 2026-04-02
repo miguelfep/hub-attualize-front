@@ -38,6 +38,8 @@ import { paths } from 'src/routes/paths';
 import axios from 'src/utils/axios';
 import { fDate, fDateUTC } from 'src/utils/format-time';
 
+import { obterConciliacao, buscarTransacoesConciliacao } from 'src/actions/conciliacao';
+
 import { Iconify } from 'src/components/iconify';
 import { SelectContaContabil } from 'src/components/plano-contas';
 
@@ -72,19 +74,15 @@ export default function DetalhesConciliacaoPage() {
       setError(null);
 
       try {
-        // 🔥 NOVA ROTA: Buscar todas as transações (pendentes + confirmadas) em uma única chamada
         const [detalhesResponse, transacoesResponse] = await Promise.allSettled([
-          // Buscar detalhes da conciliação (API antiga - para informações gerais)
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}reconciliation/${conciliacaoId}`),
-          // 🔥 NOVA ROTA: Buscar todas as transações com resumo
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/transacoes`),
+          obterConciliacao(conciliacaoId),
+          buscarTransacoesConciliacao(conciliacaoId),
         ]);
 
         let conciliacaoData = null;
         let todasTransacoes = [];
         let resumoTransacoesLocal = null;
 
-        // Processar resposta dos detalhes
         if (detalhesResponse.status === 'fulfilled' && detalhesResponse.value.data?.success) {
           conciliacaoData = detalhesResponse.value.data.data;
           setConciliacao(conciliacaoData);
@@ -92,77 +90,46 @@ export default function DetalhesConciliacaoPage() {
           throw new Error('Erro ao carregar conciliação');
         }
 
-        // Processar resposta das transações (NOVA ROTA)
         if (transacoesResponse.status === 'fulfilled' && transacoesResponse.value.data?.success) {
           const transacoesData = transacoesResponse.value.data.data;
-          const todasTransacoesRaw = transacoesData.todas || [];
-          
-          // 🔥 Mapear transações: se tem contaSugerida, é confirmada (conta vinculada)
-          // Se não tem contaSugerida, é pendente
-          todasTransacoes = todasTransacoesRaw.map(t => {
-            const temConta = !!t.contaSugerida;
-            const statusTransacao = temConta ? 'confirmada' : 'pendente';
-            
-            return {
+          const byId = new Map();
+
+          const mergeLista = (arr, status) => {
+            (arr || []).forEach((t) => {
+              const id = t._id || t.transacaoImportadaId;
+              if (!id) return;
+              byId.set(String(id), { ...t, status });
+            });
+          };
+
+          mergeLista(transacoesData.confirmadas, 'confirmada');
+          mergeLista(transacoesData.pendentes, 'pendente');
+
+          if (byId.size > 0) {
+            todasTransacoes = Array.from(byId.values());
+          } else if (Array.isArray(transacoesData.todas)) {
+            todasTransacoes = transacoesData.todas.map((t) => ({
               ...t,
-              // Se tem contaSugerida, significa que foi confirmada (conta vinculada)
-              status: statusTransacao,
-              // Para transações confirmadas, contaSugerida é na verdade a conta vinculada
-              contaContabilId: t.contaSugerida || null,
-            };
-          });
-          
+              status:
+                t.status ||
+                (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
+            }));
+          }
+
           resumoTransacoesLocal = transacoesData.resumo || null;
           setResumoTransacoes(resumoTransacoesLocal);
-          
-          console.log('📊 Transações carregadas (nova rota):', {
-            total: todasTransacoes.length,
-            pendentes: transacoesData.pendentes?.length || 0,
-            confirmadas: transacoesData.confirmadas?.length || 0,
-            resumo: resumoTransacoesLocal,
-            exemploConfirmada: todasTransacoes.find(t => t.status === 'confirmada'),
-            exemploPendente: todasTransacoes.find(t => t.status === 'pendente'),
-            primeiraTransacao: todasTransacoes[0],
-            statusPrimeira: todasTransacoes[0]?.status,
-            contaPrimeira: todasTransacoes[0]?.contaContabilId || todasTransacoes[0]?.contaSugerida,
-          });
         } else {
-          console.warn('⚠️ Não foi possível buscar transações (nova rota), tentando fallback...', transacoesResponse.reason);
-          
-          // Fallback: usar rota antiga se a nova não funcionar
           try {
             const transacoesPendentesResponse = await axios.get(
               `${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/pendentes`
             );
-            
+
             if (transacoesPendentesResponse.data?.success) {
               const transacoesPendentes = transacoesPendentesResponse.data.data || [];
-              const todasTransacoesDaConciliacao = conciliacaoData.transacoes || [];
-              const transacoesMap = new Map();
-              
-              // Adicionar todas as transações da conciliação
-              todasTransacoesDaConciliacao.forEach(t => {
-                const id = t._id || t.transacaoImportadaId || t.id;
-                if (id) {
-                  const statusTransacao = t.status || (t.contaContabilId ? 'confirmada' : 'pendente');
-                  transacoesMap.set(String(id), { ...t, status: statusTransacao });
-                }
-              });
-              
-              // Adicionar/atualizar com pendentes
-              transacoesPendentes.forEach(t => {
-                const id = t._id || t.transacaoImportadaId || t.id;
-                if (id) {
-                  transacoesMap.set(String(id), { ...t, status: t.status || 'pendente' });
-                }
-              });
-              
-              todasTransacoes = Array.from(transacoesMap.values());
-              console.log('✅ Usando fallback - transações carregadas:', todasTransacoes.length);
+              todasTransacoes = transacoesPendentes.map((t) => ({ ...t, status: 'pendente' }));
             }
           } catch (fallbackErr) {
-            console.error('❌ Erro no fallback:', fallbackErr);
-            // Continuar com array vazio se ambos falharem
+            console.error('Erro no fallback de transações:', fallbackErr);
           }
         }
         
@@ -271,10 +238,7 @@ export default function DetalhesConciliacaoPage() {
               setTransacoes(transacoesData.todas || []);
               setResumoTransacoes(transacoesData.resumo || null);
               
-              // Recarregar detalhes da conciliação também
-              const conciliacaoResponse = await axios.get(
-                `${process.env.NEXT_PUBLIC_API_URL}reconciliation/${conciliacaoId}`
-              );
+              const conciliacaoResponse = await obterConciliacao(conciliacaoId);
               if (conciliacaoResponse.data?.success) {
                 setConciliacao(conciliacaoResponse.data.data);
               }
@@ -304,19 +268,33 @@ export default function DetalhesConciliacaoPage() {
               
               // 🔥 Recarregar todas as transações usando a nova rota
               try {
-                const transacoesResponse = await axios.get(
-                  `${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/transacoes`
-                );
-                
+                const transacoesResponse = await buscarTransacoesConciliacao(conciliacaoId);
+
                 if (transacoesResponse.data?.success) {
                   const transacoesData = transacoesResponse.data.data;
-                  setTransacoes(transacoesData.todas || []);
+                  const byId = new Map();
+                  const mergeLista = (arr, status) => {
+                    (arr || []).forEach((t) => {
+                      const id = t._id || t.transacaoImportadaId;
+                      if (!id) return;
+                      byId.set(String(id), { ...t, status });
+                    });
+                  };
+                  mergeLista(transacoesData.confirmadas, 'confirmada');
+                  mergeLista(transacoesData.pendentes, 'pendente');
+                  const merged =
+                    byId.size > 0
+                      ? Array.from(byId.values())
+                      : (transacoesData.todas || []).map((t) => ({
+                          ...t,
+                          status:
+                            t.status ||
+                            (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
+                        }));
+                  setTransacoes(merged);
                   setResumoTransacoes(transacoesData.resumo || null);
-                  
-                  // Recarregar detalhes da conciliação também
-                  const conciliacaoResponse = await axios.get(
-                    `${process.env.NEXT_PUBLIC_API_URL}reconciliation/${conciliacaoId}`
-                  );
+
+                  const conciliacaoResponse = await obterConciliacao(conciliacaoId);
                   if (conciliacaoResponse.data?.success) {
                     setConciliacao(conciliacaoResponse.data.data);
                   }
@@ -387,8 +365,8 @@ export default function DetalhesConciliacaoPage() {
         
         // Recarregar dados da conciliação
         const [detalhesResponse, transacoesResponse] = await Promise.allSettled([
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}reconciliation/${conciliacaoId}`),
-          axios.get(`${process.env.NEXT_PUBLIC_API_URL}conciliacao/${conciliacaoId}/transacoes`),
+          obterConciliacao(conciliacaoId),
+          buscarTransacoesConciliacao(conciliacaoId),
         ]);
 
         if (detalhesResponse.status === 'fulfilled' && detalhesResponse.value.data?.success) {
@@ -397,7 +375,26 @@ export default function DetalhesConciliacaoPage() {
 
         if (transacoesResponse.status === 'fulfilled' && transacoesResponse.value.data?.success) {
           const transacoesData = transacoesResponse.value.data.data;
-          setTransacoes(transacoesData.todas || []);
+          const byId = new Map();
+          const mergeLista = (arr, status) => {
+            (arr || []).forEach((t) => {
+              const id = t._id || t.transacaoImportadaId;
+              if (!id) return;
+              byId.set(String(id), { ...t, status });
+            });
+          };
+          mergeLista(transacoesData.confirmadas, 'confirmada');
+          mergeLista(transacoesData.pendentes, 'pendente');
+          const merged =
+            byId.size > 0
+              ? Array.from(byId.values())
+              : (transacoesData.todas || []).map((t) => ({
+                  ...t,
+                  status:
+                    t.status ||
+                    (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
+                }));
+          setTransacoes(merged);
           setResumoTransacoes(transacoesData.resumo || null);
         }
       } else {

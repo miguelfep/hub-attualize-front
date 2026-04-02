@@ -52,8 +52,29 @@ const getTipoGuiaLabel = (tipo) => {
     FGTS: 'FGTS',
     HOLERITE: 'Holerite',
     EXTRATO_FOLHA_PAGAMENTO: 'Extrato Folha',
+    OUTROS: 'Outros',
   };
   return tipoMap[tipo] || tipo;
+};
+
+const getCategoriaLabel = (categoria) => {
+  const map = {
+    GUIA_FISCAL: 'Guia fiscal',
+    GUIA_DP: 'Guia DP',
+    DOCUMENTO_DP: 'Documento DP',
+    ARQUIVO_GERAL: 'Arquivo geral',
+  };
+  return map[categoria] || categoria;
+};
+
+const getCategoriaColor = (categoria) => {
+  const map = {
+    GUIA_FISCAL: 'primary',
+    GUIA_DP: 'info',
+    DOCUMENTO_DP: 'secondary',
+    ARQUIVO_GERAL: 'default',
+  };
+  return map[categoria] || 'default';
 };
 
 const getStatusPagamentoLabel = (statusPagamento) => {
@@ -68,7 +89,7 @@ const getStatusPagamentoLabel = (statusPagamento) => {
 
 // ----------------------------------------------------------------------
 
-export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtualizacao }) {
+export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtualizacao, onMove }) {
   const {
     _id,
     nomeArquivo,
@@ -101,6 +122,11 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
         <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2}>
           <Stack spacing={1} sx={{ flex: 1 }}>
             <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+              {categoria && (
+                <Label variant="soft" color={getCategoriaColor(categoria)} size="small">
+                  {getCategoriaLabel(categoria)}
+                </Label>
+              )}
               <Label variant="soft" color="info">
                 {getTipoGuiaLabel(tipoGuia)}
               </Label>
@@ -146,6 +172,13 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
           </Stack>
 
           <Stack direction="row" spacing={1}>
+            {onMove && (
+              <Tooltip title="Mover para outra pasta">
+                <IconButton size="small" onClick={onMove} sx={{ color: 'text.secondary' }}>
+                  <Iconify icon="mdi:folder-move-outline" />
+                </IconButton>
+              </Tooltip>
+            )}
             {onSolicitarAtualizacao && (
               <Tooltip title="Solicitar atualização desta guia">
                 <IconButton

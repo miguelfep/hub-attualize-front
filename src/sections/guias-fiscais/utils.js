@@ -54,3 +54,41 @@ export const formatCompetencia = (competencia) => {
  * @returns {string|null} - Competência ou null
  */
 export const getCompetencia = (guia) => guia?.competencia || guia?.dadosExtraidos?.competencia || null;
+
+/** Slug de subpasta: minúsculas, números e hífens */
+export const SLUG_PASTA_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
+export function suggestSlugFromNome(nome) {
+  if (!nome || typeof nome !== 'string') return 'pasta';
+  const s = nome
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return s || 'pasta';
+}
+
+export function collectPastaTreeItemIds(nodes, acc = []) {
+  if (!nodes?.length) return acc;
+  nodes.forEach((n) => {
+    acc.push(n._id);
+    if (n.children?.length) {
+      collectPastaTreeItemIds(n.children, acc);
+    }
+  });
+  return acc;
+}
+
+export function findPastaNodeById(nodes, id) {
+  if (!id || !nodes?.length) return null;
+  const stack = [...nodes];
+  while (stack.length) {
+    const n = stack.shift();
+    if (n._id === id) return n;
+    if (n.children?.length) {
+      stack.push(...n.children);
+    }
+  }
+  return null;
+}

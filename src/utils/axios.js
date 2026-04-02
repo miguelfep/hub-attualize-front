@@ -293,6 +293,11 @@ export const endpoints = {
   guiasFiscais: {
     upload: `${baseUrl}guias-fiscais/upload`,
     list: `${baseUrl}guias-fiscais`,
+    pastas: `${baseUrl}guias-fiscais/pastas`,
+    pastasSubpasta: (parentId) => `${baseUrl}guias-fiscais/pastas/${parentId}/subpastas`,
+    pastaDelete: (folderId) => `${baseUrl}guias-fiscais/pastas/${folderId}`,
+    pastaUpload: (folderId) => `${baseUrl}guias-fiscais/pastas/${folderId}/upload`,
+    moveToPasta: (guiaId) => `${baseUrl}guias-fiscais/${guiaId}/pasta`,
     get: (id) => `${baseUrl}guias-fiscais/${id}`,
     update: (id) => `${baseUrl}guias-fiscais/${id}`,
     delete: (id) => `${baseUrl}guias-fiscais/${id}`,
@@ -300,8 +305,10 @@ export const endpoints = {
     download: (id) => `${baseUrl}guias-fiscais/${id}/download`,
     portal: {
       list: `${baseUrl}portal/guias-fiscais`,
+      pastas: `${baseUrl}portal/guias-fiscais/pastas`,
       get: (id) => `${baseUrl}portal/guias-fiscais/${id}`,
       download: (id) => `${baseUrl}portal/guias-fiscais/${id}/download`,
+      solicitarAtualizacao: (id) => `${baseUrl}portal/guias-fiscais/${id}/solicitar-atualizacao`,
     },
   },
   // Indicação

@@ -1,6 +1,6 @@
 import { CONFIG } from 'src/config-global';
 
-import { GuiaFiscalPortalDetailsView } from 'src/sections/guias-fiscais/view';
+import { GuiaFiscalPortalDetailsView } from 'src/sections/guias-fiscais/view/guia-fiscal-portal-details-view';
 
 // ----------------------------------------------------------------------
 

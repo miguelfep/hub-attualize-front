@@ -129,16 +129,16 @@ export default function StatusConciliacaoPage() {
               const meses = response.data.data || [];
               mesesMap[banco._id] = meses;
               
-              // 🔥 NOVO: Verificar status de cada conciliação que pode estar processando
+              // Só consulta status na carga inicial quando o mês já veio como processando (evita N requisições)
               await Promise.all(
                 meses
-                  .filter(m => m.conciliacaoId && (m.status === 'enviada' || m.status === 'pendente' || !m.status))
+                  .filter((m) => m.conciliacaoId && m.status === 'processando')
                   .map(async (mes) => {
                     try {
                       const statusResponse = await obterStatusConciliacao(mes.conciliacaoId);
                       const statusData = statusResponse.data?.data;
-                      
-                      if (statusData && statusData.status === 'processando') {
+
+                      if (statusData?.status === 'processando') {
                         processamentosEncontrados[mes.conciliacaoId] = {
                           status: statusData.status,
                           progresso: statusData.progresso || 0,
@@ -147,7 +147,7 @@ export default function StatusConciliacaoPage() {
                         };
                       }
                     } catch (err) {
-                      // Ignorar erros ao verificar status individual
+                      /* ignorar */
                     }
                   })
               );

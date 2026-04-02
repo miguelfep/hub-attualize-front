@@ -3,6 +3,36 @@ import axios from 'src/utils/axios';
 const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
 /**
+ * Monta o objeto de contexto da conciliação a partir de GET /conciliacao/:id/status
+ * (substitui o uso legado de GET /reconciliation/:id no portal).
+ */
+export function mapearContextoConciliacao(statusData, conciliacaoIdFallback) {
+  const d = statusData && typeof statusData === 'object' ? statusData : {};
+  const mesAno = d.mesAno || d.periodo;
+  let mes;
+  let ano;
+  if (mesAno && /^\d{4}-\d{2}$/.test(String(mesAno))) {
+    const [y, m] = String(mesAno).split('-');
+    ano = parseInt(y, 10);
+    mes = parseInt(m, 10);
+  }
+  const bancoRaw = d.bancoId ?? d.banco ?? null;
+  const clienteRaw = d.clienteId ?? d.cliente ?? null;
+
+  return {
+    _id: d.conciliacaoId || d._id || conciliacaoIdFallback,
+    status: d.status || 'pendente',
+    mes,
+    ano,
+    mesAno: mesAno || (mes && ano ? `${ano}-${String(mes).padStart(2, '0')}` : undefined),
+    bancoId: bancoRaw,
+    clienteId: clienteRaw,
+    dataProcessamento: d.dataProcessamento || d.updatedAt || d.processadoEm || null,
+    resumo: d.resumo || null,
+  };
+}
+
+/**
  * Upload de arquivo para conciliação bancária
  * @param {string} clienteId - ID do cliente
  * @param {string} bancoId - ID do banco ⚠️ OBRIGATÓRIO
@@ -36,13 +66,21 @@ export async function listarConciliacoes(clienteId, params = {}) {
 }
 
 /**
- * Obter detalhes de uma conciliação
- * 🔥 USA API ANTIGA (reconciliation) - Endpoint documentado
+ * Obter detalhes/resumo de uma conciliação (via rota única de status)
  * @param {string} conciliacaoId - ID da conciliação
- * @returns {Promise}
+ * @returns {Promise} Mesmo formato axios; `data.data` é o contexto mapeado para telas
  */
 export async function obterConciliacao(conciliacaoId) {
-  return axios.get(`${baseUrl}reconciliation/${conciliacaoId}`);
+  const res = await obterStatusConciliacao(conciliacaoId);
+  const statusData = res.data?.data;
+  const mapped = mapearContextoConciliacao(statusData, conciliacaoId);
+  return {
+    ...res,
+    data: {
+      ...res.data,
+      data: mapped,
+    },
+  };
 }
 
 /**
@@ -109,6 +147,13 @@ export async function buscarTransacoesConciliacao(conciliacaoId) {
  */
 export async function finalizarConciliacao(conciliacaoId) {
   return axios.post(`${baseUrl}conciliacao/${conciliacaoId}/finalizar`);
+}
+
+/**
+ * Status do modelo ML de sugestão de contas (por cliente)
+ */
+export async function obterMlStatusCliente(clienteId) {
+  return axios.get(`${baseUrl}conciliacao/ml/status/${clienteId}`);
 }
 
 /**

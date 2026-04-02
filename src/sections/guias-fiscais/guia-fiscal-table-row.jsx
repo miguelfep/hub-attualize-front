@@ -81,6 +81,7 @@ const getTipoGuiaLabel = (tipo) => {
     // Documentos DP
     HOLERITE: 'Holerite',
     EXTRATO_FOLHA_PAGAMENTO: 'Extrato Folha',
+    OUTROS: 'Outros',
   };
   return tipoMap[tipo] || tipo;
 };
@@ -90,6 +91,7 @@ const getCategoriaLabel = (categoria) => {
     GUIA_FISCAL: 'Guia Fiscal',
     GUIA_DP: 'Guia DP',
     DOCUMENTO_DP: 'Documento DP',
+    ARQUIVO_GERAL: 'Arquivo geral',
   };
   return categoriaMap[categoria] || categoria;
 };
@@ -99,19 +101,36 @@ const getCategoriaColor = (categoria) => {
     GUIA_FISCAL: 'primary',
     GUIA_DP: 'info',
     DOCUMENTO_DP: 'secondary',
+    ARQUIVO_GERAL: 'default',
   };
   return categoriaMap[categoria] || 'default';
 };
 
+const formatPastaLabel = (folderId) => {
+  if (!folderId) return '-';
+  if (typeof folderId === 'object' && folderId.nome) return folderId.nome;
+  return '-';
+};
+
 // ----------------------------------------------------------------------
 
-export function GuiaFiscalTableRow({ row, selected, onSelectRow, onViewRow, onEditRow, onDeleteRow, onDownloadRow }) {
+export function GuiaFiscalTableRow({
+  row,
+  selected,
+  onSelectRow,
+  onViewRow,
+  onEditRow,
+  onDeleteRow,
+  onDownloadRow,
+  onMoveRow,
+}) {
   const {
     nomeArquivo,
     tipoGuia,
     categoria,
     cnpj,
     clienteId,
+    folderId,
     dataVencimento,
     status,
     statusProcessamento,
@@ -167,6 +186,14 @@ export function GuiaFiscalTableRow({ row, selected, onSelectRow, onViewRow, onEd
         <Typography variant="body2">{clienteId?.razaoSocial || '-'}</Typography>
       </TableCell>
 
+      <TableCell sx={{ maxWidth: 180 }}>
+        <Tooltip title={typeof folderId === 'object' && folderId?.slug ? folderId.slug : ''}>
+          <Typography variant="body2" noWrap>
+            {formatPastaLabel(folderId)}
+          </Typography>
+        </Tooltip>
+      </TableCell>
+
       <TableCell>
         <Stack spacing={0.5}>
           {getCompetencia(row) && (
@@ -216,6 +243,14 @@ export function GuiaFiscalTableRow({ row, selected, onSelectRow, onViewRow, onEd
               <Iconify icon="solar:pen-bold" />
             </IconButton>
           </Tooltip>
+
+          {onMoveRow && (
+            <Tooltip title="Mover para outra pasta">
+              <IconButton onClick={onMoveRow}>
+                <Iconify icon="mdi:folder-move-outline" />
+              </IconButton>
+            </Tooltip>
+          )}
 
           {onDownloadRow ? (
             <Tooltip title="Download">

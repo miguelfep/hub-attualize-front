@@ -13,7 +13,7 @@ import IconButton from '@mui/material/IconButton';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useGetGuiasFiscaisPortal } from 'src/actions/guias-fiscais';
+import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
 
 import { Iconify } from 'src/components/iconify';
 
