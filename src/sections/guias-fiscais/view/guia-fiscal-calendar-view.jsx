@@ -22,7 +22,8 @@ import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { useGetGuiasFiscaisPortal, downloadGuiaFiscalPortal } from 'src/actions/guias-fiscais';
+import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
+import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';

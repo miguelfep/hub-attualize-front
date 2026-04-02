@@ -15,8 +15,10 @@ import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { downloadGuiaFiscalPortal, useGetGuiaFiscalPortalById } from 'src/actions/guias-fiscais';
+import { useGetGuiaFiscalPortalById } from 'src/actions/cliente-portal-guias-api';
+import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
+import { toast } from 'src/components/snackbar';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
@@ -69,6 +71,11 @@ export function GuiaFiscalPortalDetailsView({ id }) {
       await downloadGuiaFiscalPortal(id, guia?.nomeArquivo || 'guia-fiscal.pdf');
     } catch (downloadError) {
       console.error('Erro ao fazer download:', downloadError);
+      const msg =
+        typeof downloadError === 'string'
+          ? downloadError
+          : downloadError?.message || 'Não foi possível baixar o arquivo.';
+      toast.error(msg);
     }
   };
 
@@ -83,11 +90,15 @@ export function GuiaFiscalPortalDetailsView({ id }) {
   }
 
   if (error || !guia) {
+    const msg =
+      (error && typeof error.message === 'string' && error.message) ||
+      (typeof error === 'string' && error) ||
+      'Não foi possível carregar este documento. Se o link não for seu, o acesso será negado.';
     return (
       <DashboardContent>
         <Card sx={{ p: 3 }}>
           <Typography variant="h6" color="error">
-            Erro ao carregar guia fiscal
+            {msg}
           </Typography>
         </Card>
       </DashboardContent>

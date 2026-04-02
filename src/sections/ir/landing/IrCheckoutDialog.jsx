@@ -106,7 +106,7 @@ const EMPTY_DADOS = {
  * @param {{
  *   open: boolean,
  *   onClose: () => void,
- *   plano: { modalidade: string, titulo: string, descricao: string, valorFinal: number|null, valorCheio: number|null } | null
+ *   plano: { _id?: string, modalidade: string, titulo: string, descricao: string, valorFinal: number|null, valorCheio: number|null } | null
  * }} props
  */
 export default function IrCheckoutDialog({ open, onClose, plano }) {
@@ -220,6 +220,7 @@ export default function IrCheckoutDialog({ open, onClose, plano }) {
   const buildCheckoutPayload = useCallback(
     (extra = {}) => ({
       modalidade: plano.modalidade,
+      ...(plano._id != null && String(plano._id).trim() !== '' ? { planId: plano._id } : {}),
       ano: plano.ano ?? 'IR2026',
       year: plano.year ?? 2026,
       paymentType: dados.paymentType,

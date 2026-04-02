@@ -14,7 +14,7 @@ import { useEmpresa } from 'src/hooks/use-empresa';
 
 import axios from 'src/utils/axios';
 
-import { useGetGuiasFiscaisPortal } from 'src/actions/guias-fiscais';
+import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
 import { useBancosCliente } from 'src/app/portal-cliente/conciliacao-bancaria/hooks/use-bancos-cliente';
 
 import { formatToCurrency } from 'src/components/animate';

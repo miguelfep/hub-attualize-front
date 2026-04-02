@@ -88,10 +88,10 @@ export function GuiaFiscalTableToolbar({
 
   return (
     <Stack
-      spacing={2}
+      spacing={1.5}
       alignItems={{ xs: 'flex-end', md: 'center' }}
       direction={{ xs: 'column', md: 'row' }}
-      sx={{ p: 2.5, pr: { xs: 2.5, md: 1 } }}
+      sx={{ p: 2, pr: { xs: 2, md: 1 } }}
     >
       <TextField
         fullWidth

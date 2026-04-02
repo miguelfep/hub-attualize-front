@@ -9,7 +9,7 @@ import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { PickersDay, DateCalendar, LocalizationProvider } from '@mui/x-date-pickers';
 import { Box, Card, Stack, Divider, Typography, CardHeader, IconButton as MuiIconButton } from '@mui/material';
 
-import { downloadGuiaFiscalPortal } from 'src/actions/guias-fiscais';
+import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';

@@ -190,114 +190,76 @@ export async function downloadGuiaFiscal(id, nomeArquivo) {
 }
 
 // ----------------------------------------------------------------------
-// ENDPOINTS DO PORTAL DO CLIENTE
+// Portal do cliente: use src/actions/cliente-portal-guias-api.js
 // ----------------------------------------------------------------------
 
-/**
- * Listar guias fiscais do cliente logado (Portal)
- * @param {Object} params - Parâmetros de filtro
- * @returns {Promise}
- */
-export async function getGuiasFiscaisPortal(params = {}) {
-  const res = await axios.get(endpoints.guiasFiscais.portal.list, { params });
+// ----------------------------------------------------------------------
+// Pastas (admin) — requer clienteId na query / body conforme API
+// ----------------------------------------------------------------------
+
+export async function getPastasGuiasAdmin(clienteId) {
+  const res = await axios.get(endpoints.guiasFiscais.pastas, {
+    params: { clienteId },
+  });
   return res.data;
 }
 
-// ----------------------------------------------------------------------
+export function useGetPastasGuiasAdmin(clienteId) {
+  const qs = clienteId ? new URLSearchParams({ clienteId }).toString() : '';
+  const url = clienteId ? `${endpoints.guiasFiscais.pastas}?${qs}` : null;
 
-/**
- * Hook para listar guias fiscais do portal
- * @param {Object} params - Parâmetros de filtro
- * @returns {Object}
- */
-export function useGetGuiasFiscaisPortal(params = {}) {
-  const queryString = new URLSearchParams(
-    Object.entries(params).filter(([_, v]) => v !== undefined && v !== null && v !== '')
-  ).toString();
-
-  const url = queryString 
-    ? `${endpoints.guiasFiscais.portal.list}?${queryString}` 
-    : endpoints.guiasFiscais.portal.list;
-
-  const { data, isLoading, error, mutate } = useSWR(
-    url,
-    fetcher,
-    {
-      revalidateIfStale: false,
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-    }
-  );
-
-  return useMemo(
-    () => ({
-      data: data?.data || { guias: [], total: 0 },
-      isLoading,
-      error,
-      mutate,
-    }),
-    [data, error, isLoading, mutate]
-  );
-}
-
-// ----------------------------------------------------------------------
-
-/**
- * Obter guia fiscal do portal por ID
- * @param {string} id - ID da guia
- * @returns {Promise}
- */
-export async function getGuiaFiscalPortalById(id) {
-  const res = await axios.get(endpoints.guiasFiscais.portal.get(id));
-  return res.data;
-}
-
-// ----------------------------------------------------------------------
-
-/**
- * Hook para obter guia fiscal do portal por ID
- * @param {string} id - ID da guia
- * @returns {Object}
- */
-export function useGetGuiaFiscalPortalById(id) {
-  const { data, isLoading, error, mutate } = useSWR(
-    id ? endpoints.guiasFiscais.portal.get(id) : null,
-    fetcher
-  );
-
-  return useMemo(
-    () => ({
-      data: data?.data || null,
-      isLoading,
-      error,
-      mutate,
-    }),
-    [data, error, isLoading, mutate]
-  );
-}
-
-// ----------------------------------------------------------------------
-
-/**
- * Download de guia fiscal do portal
- * @param {string} id - ID da guia
- * @param {string} nomeArquivo - Nome do arquivo para download
- * @returns {Promise}
- */
-export async function downloadGuiaFiscalPortal(id, nomeArquivo) {
-  const res = await axios.get(endpoints.guiasFiscais.portal.download(id), {
-    responseType: 'blob',
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher, {
+    revalidateIfStale: false,
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
   });
 
-  // Criar link para download
-  const url = window.URL.createObjectURL(new Blob([res.data]));
-  const link = document.createElement('a');
-  link.href = url;
-  link.setAttribute('download', nomeArquivo || 'guia-fiscal.pdf');
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  window.URL.revokeObjectURL(url);
+  return useMemo(
+    () => ({
+      folders: Array.isArray(data?.data) ? data.data : [],
+      isLoading,
+      error,
+      mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+}
 
+export async function createSubpastaGuiasAdmin(parentFolderId, payload) {
+  const res = await axios.post(endpoints.guiasFiscais.pastasSubpasta(parentFolderId), payload);
+  return res.data;
+}
+
+export async function deletePastaGuiasAdmin(folderId, clienteId) {
+  const res = await axios.delete(endpoints.guiasFiscais.pastaDelete(folderId), {
+    params: { clienteId },
+  });
+  return res.data;
+}
+
+export async function uploadManualPastaAdmin(folderId, files, { clienteId, dataVencimento, competencia }) {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  formData.append('clienteId', clienteId);
+  if (dataVencimento) {
+    formData.append('dataVencimento', dataVencimento);
+  }
+  if (competencia) {
+    formData.append('competencia', competencia);
+  }
+
+  const res = await axios.post(endpoints.guiasFiscais.pastaUpload(folderId), formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return res.data;
+}
+
+export async function moveGuiaParaPastaAdmin(guiaId, folderId) {
+  const res = await axios.patch(endpoints.guiasFiscais.moveToPasta(guiaId), { folderId });
   return res.data;
 }

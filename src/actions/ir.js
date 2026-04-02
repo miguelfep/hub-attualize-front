@@ -84,6 +84,7 @@ export async function iniciarCheckout(dados) {
  * A API vincula ao cliente existente via e-mail/CPF, se encontrado.
  * @param {{
  *   modalidade: 'basica'|'intermediaria'|'completa',
+ *   planId?: string,
  *   ano: string, year: number,
  *   paymentType: 'boleto'|'pix'|'credit_card',
  *   nome: string, email: string, cpfCnpj: string, telefone: string,
