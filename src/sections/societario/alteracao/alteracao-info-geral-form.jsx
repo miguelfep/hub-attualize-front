@@ -5,6 +5,11 @@ import { Box, Grid, Switch, Select,  Divider, MenuItem, TextField, Typography, F
 
 import { RHFPhoneInput } from 'src/components/hook-form';
 
+import {
+    FORMA_ATUACAO_OPTIONS as formaAtuacaoOptions,
+    REGIME_TRIBUTARIO_OPTIONS as regimeTributarioOptions,
+} from './alteracao-form-options';
+
 export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
 
     const { control, watch } = useFormContext();
@@ -13,22 +18,6 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
     const safeInfoGeralAlteracao = infoGeralAlteracao || {};
     // Garantir que socios seja um array válido
     const socios = safeInfoGeralAlteracao.socios || [];
-
-    const regimeTributarioOptions = [
-        { value: 'simples', label: 'Simples Nacional' },
-        { value: 'presumido', label: 'Lucro Presumido' },
-        { value: 'real', label: 'Lucro Real' },
-    ];
-
-    const formaAtuacaoOptions = [
-        { value: 'internet', label: 'Internet' },
-        { value: 'fora_estabelecimento', label: 'Fora do estabelecimento' },
-        { value: 'escritorio', label: 'Escritório administrativo' },
-        { value: 'local_proprio', label: 'Local próprio' },
-        { value: 'terceiro', label: 'Em estabelecimento de terceiros' },
-        { value: 'casa_cliente', label: 'Casa do cliente' },
-        { value: 'outros', label: 'Outros' },
-    ]
 
     return (
         <>

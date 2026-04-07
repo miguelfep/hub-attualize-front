@@ -27,6 +27,11 @@ import { formatRg, formatCpf } from 'src/utils/format-input';
 import { updateAlteracao, uploadArquivoAlteracao, deletarArquivoAlteracao, downloadArquivoAlteracao } from "src/actions/societario";
 
 import { prepareDataForAlteracao } from "./prepare-alteracao-payload";
+import {
+  ETNIA_OPTIONS as etniaOptions,
+  ESTADO_CIVIL_OPTIONS as estadoCivilOptions,
+  GRAU_ESCOLARIDADE_OPTIONS as grauEscolaridadeOptions,
+} from './alteracao-form-options';
 
 export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
   const { control, watch, setValue, getValues } = useFormContext();
@@ -37,37 +42,6 @@ export default function AlteracaoQuadroSocioetarioForm({ alteracaoId }) {
 
   const [openDialog, setOpenDialog] = useState(false);
   const [socioToDelete, setSocioToDelete] = useState(null);
-
-  const estadoCivilOptions = [
-    { value: "Solteiro", label: "Solteiro" },
-    { value: "Casado", label: "Casado" },
-    { value: "Divorciado", label: "Divorciado" },
-    { value: "Viuvo", label: "Viúvo" },
-    { value: "Uniao Estavel", label: "União Estável" },
-  ];
-
-  const etniaOptions = [
-    { value: "branca", label: "Branca" },
-    { value: "preta", label: "Preta" },
-    { value: "parda", label: "Parda" },
-    { value: "amarela", label: "Amarela" },
-    { value: "indigena", label: "Indigena" },
-    { value: "prefiroNaoInformar", label: "Prefiro não informar" },
-  ];
-
-  const grauEscolaridadeOptions = [
-    { value: "semInstrucao", label: "Sem Instrução" },
-    { value: "fundamentalIncompleto", label: "Ensino Fundamental Incompleto" },
-    { value: "fundamentalCompleto", label: "Ensino Fundamental Completo" },
-    { value: "medioIncompleto", label: "Ensino Médio Incompleto" },
-    { value: "medioCompleto", label: "Ensino Médio Completo" },
-    { value: "superiorIncompleto", label: "Ensino Superior Incompleto" },
-    { value: "superiorCompleto", label: "Ensino Superior Completo" },
-    { value: "posGraduacao", label: "Pós-graduação" },
-    { value: "mestrado", label: "Mestrado" },
-    { value: "doutorado", label: "Doutorado" },
-    { value: "prefiroNaoInformar", label: "Prefiro não informar" },
-  ];
 
   const getDocumentLabel = (type, index) => {
     const labels = {
