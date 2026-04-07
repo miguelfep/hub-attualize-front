@@ -33,6 +33,12 @@ import { Iconify } from 'src/components/iconify';
 import { PhoneInput } from 'src/components/phone-input';
 
 import { prepareDataForAlteracao } from './prepare-alteracao-payload';
+import {
+    REGIME_BENS_OPTIONS as regimeBensOptions,
+    ESTADO_CIVIL_OPTIONS as estadoCivilOptions,
+    FORMA_ATUACAO_OPTIONS as formaAtuacaoOptions,
+    REGIME_TRIBUTARIO_OPTIONS as regimeTributarioOptions,
+} from './alteracao-form-options';
 
 // Componente de Card de Documento (movido para fora para evitar re-render)
 function DocumentCard({ name, label, value, onUploadClick, onDownloadClick, onDeleteClick, readOnly }) {
@@ -110,58 +116,6 @@ export default function AlteracaoEmAlteracaoForm({ currentAlteracao, handleAdvan
     const [situacaoAlteracao, setSituacaoAlteracao] = useState(currentAlteracao?.situacaoAlteracao ?? 0);
     const [etapasCompletadas, setEtapasCompletadas] = useState(currentAlteracao?.etapasCompletadas || []);
     const [notificarWhats, setNotificarWhats] = useState(currentAlteracao?.notificarWhats ?? true);
-
-    const regimeBensOptions = [
-        { value: 'Comunhão Parcial de Bens', label: 'Comunhão Parcial de Bens' },
-        { value: 'Comunhão Universal de Bens', label: 'Comunhão Universal de Bens' },
-        { value: 'Separação Total de Bens', label: 'Separação Total de Bens' },
-    ];
-
-    const estadoCivilOptions = [
-        { value: 'Solteiro', label: 'Solteiro' },
-        { value: 'Casado', label: 'Casado' },
-        { value: 'Divorciado', label: 'Divorciado' },
-        { value: 'Viuvo', label: 'Viuvo' },
-    ];
-
-    const regimeTributarioOptions = [
-        { value: 'simples', label: 'Simples Nacional' },
-        { value: 'presumido', label: 'Lucro Presumido' },
-        { value: 'real', label: 'Lucro Real' },
-    ];
-
-    const formaAtuacaoOptions = [
-        { value: 'internet', label: 'Internet' },
-        { value: 'fora_estabelecimento', label: 'Fora do estabelecimento' },
-        { value: 'escritorio', label: 'Escritório administrativo' },
-        { value: 'local_proprio', label: 'Local próprio' },
-        { value: 'terceiro', label: 'Em estabelecimento de terceiros' },
-        { value: 'casa_cliente', label: 'Casa do cliente' },
-        { value: 'outros', label: 'Outros' },
-    ];
-
-    const etniaOptions = [
-        { value: "branca", label: "Branca" },
-        { value: "preta", label: "Preta" },
-        { value: "parda", label: "Parda" },
-        { value: "amarela", label: "Amarela" },
-        { value: "indigena", label: "Indigena" },
-        { value: "prefiroNaoInformar", label: "Prefiro não informar" },
-    ];
-
-    const grauEscolaridadeOptions = [
-        { value: "semInstrucao", label: "Sem Instrução" },
-        { value: "fundamentalIncompleto", label: "Ensino Fundamental Incompleto" },
-        { value: "fundamentalCompleto", label: "Ensino Fundamental Completo" },
-        { value: "medioIncompleto", label: "Ensino Médio Incompleto" },
-        { value: "medioCompleto", label: "Ensino Médio Completo" },
-        { value: "superiorIncompleto", label: "Ensino Superior Incompleto" },
-        { value: "superiorCompleto", label: "Ensino Superior Completo" },
-        { value: "posGraduacao", label: "Pós-graduação" },
-        { value: "mestrado", label: "Mestrado" },
-        { value: "doutorado", label: "Doutorado" },
-        { value: "prefiroNaoInformar", label: "Prefiro não informar" },
-    ];
 
     const { control, handleSubmit, reset, getValues, watch, setValue } = useForm({
         defaultValues: {
