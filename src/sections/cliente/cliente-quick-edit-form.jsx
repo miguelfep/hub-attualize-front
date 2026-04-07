@@ -26,7 +26,8 @@ export const USER_STATUS_OPTIONS = [
 ];
 
 export const REGIME_TRIBUTARIO_OPTIONS = [
-  { value: 'simples', label: 'Simples' },
+  { value: 'simples', label: 'Simples Nacional' },
+  { value: 'simei', label: 'SIMEI' },
   { value: 'presumido', label: 'Presumido' },
   { value: 'real', label: 'Real' },
   { value: 'pf', label: 'PF' },
@@ -47,9 +48,10 @@ export const TRIBUTACAO_OPTIONS = [
   { value: 'anexo3', label: 'Anexo III' },
   { value: 'anexo4', label: 'Anexo IV' },
   { value: 'anexo5', label: 'Anexo V' },
-  { value: 'simei', label: 'SIMEI' },
-  { value: 'autonomo', label: 'Autônomo' },
+  { value: 'hibrido', label: 'Híbrido' },
 ];
+
+const TRIBUTACAO_VALUES_ALLOWED = TRIBUTACAO_OPTIONS.map((o) => o.value);
 
 export const TIPO_CONTATO_OPTIONS = [
   { value: 'cliente', label: 'Cliente' },
@@ -115,7 +117,10 @@ export function ClienteQuickEditForm({ currentUser, open, onClose, onUpdate }) {
       dataSaida: currentUser?.dataSaida ? new Date(currentUser.dataSaida) : null,
       regimeTributario: currentUser?.regimeTributario || '',
       planoEmpresa: currentUser?.planoEmpresa || '',
-      tributacao: currentUser?.tributacao || [],
+      tributacao:
+        currentUser?.regimeTributario === 'simples'
+          ? (currentUser?.tributacao || []).filter((t) => TRIBUTACAO_VALUES_ALLOWED.includes(t))
+          : [],
     }),
     [currentUser, enderecoAtual]
   );
@@ -130,8 +135,17 @@ export function ClienteQuickEditForm({ currentUser, open, onClose, onUpdate }) {
     reset,
     handleSubmit,
     setValue,
+    watch,
     formState: { isSubmitting },
   } = methods;
+
+  const regimeTributarioWatch = watch('regimeTributario');
+
+  useEffect(() => {
+    if (regimeTributarioWatch !== 'simples') {
+      setValue('tributacao', []);
+    }
+  }, [regimeTributarioWatch, setValue]);
 
   useEffect(() => {
     if (currentUser) {
@@ -154,6 +168,10 @@ export function ClienteQuickEditForm({ currentUser, open, onClose, onUpdate }) {
         },
       ],
     };
+
+    if (formattedData.regimeTributario !== 'simples') {
+      formattedData.tributacao = [];
+    }
 
     const promise = updateCliente(currentUser._id, formattedData);
 
@@ -265,7 +283,13 @@ export function ClienteQuickEditForm({ currentUser, open, onClose, onUpdate }) {
                 </MenuItem>
               ))}
             </Field.Select>
-            <Field.MultiSelect name="tributacao" label="Tributação" options={TRIBUTACAO_OPTIONS} />
+            {regimeTributarioWatch === 'simples' && (
+              <Field.MultiSelect
+                name="tributacao"
+                label="Tributação (Simples)"
+                options={TRIBUTACAO_OPTIONS}
+              />
+            )}
           </Box>
           <Box sx={{ mt: 3 }}>
             <Field.Editor

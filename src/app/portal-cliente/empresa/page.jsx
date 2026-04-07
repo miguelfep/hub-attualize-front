@@ -479,7 +479,13 @@ export default function MinhaEmpresaView() {
         label: 'Pessoa Física',
         color: 'success',
         tooltipText: 'Regime tributário de sua empresa',
-      }
+      },
+      simei: {
+        icon: 'mdi:scale-balance',
+        label: 'SIMEI',
+        color: 'warning',
+        tooltipText: 'Regime tributário de sua empresa',
+      },
     };
 
     const regimeConfig = regimeMap[empresaData.regimeTributario] || {
@@ -511,6 +517,7 @@ export default function MinhaEmpresaView() {
       anexo3: { icon: 'mdi:star-circle-outline', label: 'Anexo III', color: 'info' },
       anexo4: { icon: 'mdi:star-circle-outline', label: 'Anexo IV', color: 'info' },
       anexo5: { icon: 'mdi:star-circle-outline', label: 'Anexo V', color: 'info' },
+      hibrido: { icon: 'mdi:star-circle-outline', label: 'Híbrido', color: 'info' },
       simei: { icon: 'mdi:star-circle-outline', label: 'SIMEI', color: 'info' },
       autonomo: { icon: 'mdi:star-circle-outline', label: 'Autônomo', color: 'info' },
     };

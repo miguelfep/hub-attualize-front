@@ -41,6 +41,7 @@ export function ClienteTableFiltersResult({ filters, onResetPage, totalResults, 
   const getRegimeLabel = (regime) => {
     const options = {
       simples: 'Simples Nacional',
+      simei: 'SIMEI',
       presumido: 'Lucro Presumido',
       real: 'Lucro Real',
       pf: 'Pessoa Física',
@@ -55,6 +56,7 @@ export function ClienteTableFiltersResult({ filters, onResetPage, totalResults, 
       anexo3: 'Anexo III',
       anexo4: 'Anexo IV',
       anexo5: 'Anexo V',
+      hibrido: 'Híbrido',
       simei: 'SIMEI',
       autonomo: 'Autônomo',
     };

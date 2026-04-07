@@ -10,17 +10,27 @@ import {
   Card,
   Chip,
   Stack,
+  Table,
   Button,
   Dialog,
   MenuItem,
+  TableRow,
   TextField,
+  TableBody,
+  TableCell,
+  TableHead,
   Typography,
   IconButton,
   DialogTitle,
   Autocomplete,
   DialogContent,
   DialogActions,
+  TableContainer,
+  CircularProgress,
 } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
 
 import { fDate } from 'src/utils/format-time';
 
@@ -51,8 +61,103 @@ const licencasBrasil = [
   { id: 7, nome: 'DFRV' },
 ];
 
+function clienteIdFromLicenca(lic) {
+  if (!lic) return null;
+  if (lic.cliente && typeof lic.cliente === 'object' && lic.cliente._id) return String(lic.cliente._id);
+  if (lic.clienteId) return String(lic.clienteId);
+  if (typeof lic.cliente === 'string') return lic.cliente;
+  return null;
+}
+
+/** Percorre todas as páginas de licenças e devolve o conjunto de IDs de cliente que possuem ao menos uma licença. */
+async function fetchAllClienteIdsComLicenca() {
+  const ids = new Set();
+  const pageSize = 100;
+  let depth = 0;
+  const maxDepth = 500;
+
+  const fetchPage = async (pageNum) => {
+    depth += 1;
+    if (depth > maxDepth) return;
+
+    const res = await listarLicencas({
+      page: pageNum,
+      limit: pageSize,
+      sortBy: 'dataVencimento',
+      sortOrder: 'desc',
+    });
+    const payload = res?.data;
+
+    if (Array.isArray(payload)) {
+      payload.forEach((lic) => {
+        const id = clienteIdFromLicenca(lic);
+        if (id) ids.add(id);
+      });
+      return;
+    }
+
+    const list = payload?.data || [];
+    list.forEach((lic) => {
+      const id = clienteIdFromLicenca(lic);
+      if (id) ids.add(id);
+    });
+
+    const effectiveLimit = payload?.limit || pageSize;
+    const totalPages =
+      payload?.totalPages ?? Math.max(1, Math.ceil((payload?.total || 0) / effectiveLimit));
+
+    if (pageNum < totalPages && list.length > 0) {
+      await fetchPage(pageNum + 1);
+    }
+  };
+
+  await fetchPage(1);
+  return ids;
+}
+
+function escapeCsvCell(value) {
+  const s = value == null ? '' : String(value);
+  if (/[",\n\r]/.test(s)) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+/** SIMEI e PF não entram na lista de empresas sem licença (escopo típico de alvarás). */
+function isRegimeExcluidoSemLicencaModal(regime) {
+  const r = String(regime || '').toLowerCase();
+  return r === 'simei' || r === 'pf';
+}
+
+function downloadClientesSemLicencaCsv(clientes) {
+  if (!clientes?.length) return;
+
+  const headers = ['Código', 'Razão social ou nome', 'CNPJ', 'ID do cliente'];
+  const dataRows = clientes.map((c) =>
+    [
+      escapeCsvCell(c.codigo ?? ''),
+      escapeCsvCell(c.razaoSocial || c.nome || ''),
+      escapeCsvCell(c.cnpj || ''),
+      escapeCsvCell(c._id || ''),
+    ].join(',')
+  );
+
+  const csvBody = [headers.join(','), ...dataRows].join('\r\n');
+  const blob = new Blob([`\uFEFF${csvBody}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  const date = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `empresas-sem-licenca_${date}.csv`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export default function LicencasPage() {
   const theme = useTheme();
+  const router = useRouter();
   const { user } = useAuthContext();
 
   const [loading, setLoading] = useState(false);
@@ -87,6 +192,10 @@ export default function LicencasPage() {
   });
   const [newLicenseFile, setNewLicenseFile] = useState(null);
   const [errors, setErrors] = useState({});
+
+  const [semLicencaDialogOpen, setSemLicencaDialogOpen] = useState(false);
+  const [clientesSemLicenca, setClientesSemLicenca] = useState([]);
+  const [loadingSemLicenca, setLoadingSemLicenca] = useState(false);
 
   const canView = useMemo(() => Boolean(user), [user]);
 
@@ -208,6 +317,48 @@ export default function LicencasPage() {
       fetchClientes();
     }
   }, [openCreateModal]);
+
+  useEffect(() => {
+    if (!semLicencaDialogOpen || !canView) {
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    const run = async () => {
+      setLoadingSemLicenca(true);
+      setClientesSemLicenca([]);
+      try {
+        const isActive = (s) => s === true || s === 'true' || s === 1;
+        const [clientesResp, idsComLicenca] = await Promise.all([
+          getClientes(),
+          fetchAllClienteIdsComLicenca(),
+        ]);
+        if (cancelled) return;
+        const ativos = (clientesResp || []).filter((c) => isActive(c.status));
+        const sem = ativos.filter(
+          (c) =>
+            c._id &&
+            !idsComLicenca.has(String(c._id)) &&
+            !isRegimeExcluidoSemLicencaModal(c.regimeTributario)
+        );
+        setClientesSemLicenca(sem);
+      } catch (e) {
+        console.error(e);
+        if (!cancelled) {
+          toast.error('Erro ao verificar empresas sem licença');
+          setClientesSemLicenca([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingSemLicenca(false);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [semLicencaDialogOpen, canView]);
 
   // Usar paginação da API se disponível, senão calcular
   const totalPages = pagination?.pages || Math.max(1, Math.ceil(total / limit));
@@ -353,9 +504,19 @@ export default function LicencasPage() {
               Controle centralizado de licenças: busque, filtre e acompanhe vencimentos.
             </Typography>
           </Box>
-          <Button variant="contained" color="primary" onClick={() => setOpenCreateModal(true)}>
-            Criar Licença
-          </Button>
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button
+              variant="outlined"
+              color="warning"
+              startIcon={<Iconify icon="solar:danger-circle-bold" />}
+              onClick={() => setSemLicencaDialogOpen(true)}
+            >
+              Empresas sem licença
+            </Button>
+            <Button variant="contained" color="primary" onClick={() => setOpenCreateModal(true)}>
+              Criar Licença
+            </Button>
+          </Stack>
         </Box>
       </Card>
 
@@ -749,6 +910,96 @@ export default function LicencasPage() {
           onClose={() => setSelectedLicense(null)}
         />
       )}
+
+      {/* Empresas ativas sem nenhuma licença cadastrada */}
+      <Dialog
+        open={semLicencaDialogOpen}
+        onClose={() => setSemLicencaDialogOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="solar:buildings-2-bold-duotone" width={24} />
+            <Typography variant="h6" component="span">
+              Empresas sem licença
+            </Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent dividers>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Clientes <strong>ativos</strong> sem licença neste módulo, excluindo regime{' '}
+            <strong>SIMEI</strong> e <strong>PF</strong>. A lista segue o cadastro de clientes (apenas ativos).
+            Se a API de clientes for paginada, considere ampliar o endpoint para esta conferência.
+          </Typography>
+          {loadingSemLicenca ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress />
+            </Box>
+          ) : clientesSemLicenca.length === 0 ? (
+            <Box sx={{ py: 3, textAlign: 'center' }}>
+              <Chip color="success" label="Nenhuma empresa ativa sem licença" />
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                Nenhuma empresa ativa (fora SIMEI e PF) aparece sem licença neste recorte, ou todas já possuem
+                licença cadastrada.
+              </Typography>
+            </Box>
+          ) : (
+            <>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                {clientesSemLicenca.length} empresa{clientesSemLicenca.length !== 1 ? 's' : ''} sem licença
+              </Typography>
+              <TableContainer sx={{ maxHeight: 420 }}>
+                <Table size="small" stickyHeader>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={{ width: 88 }}>Código</TableCell>
+                      <TableCell>Razão social / Nome</TableCell>
+                      <TableCell>CNPJ</TableCell>
+                      <TableCell align="right">Ação</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {clientesSemLicenca.map((c) => (
+                      <TableRow key={c._id}>
+                        <TableCell>{c.codigo != null && c.codigo !== '' ? c.codigo : '—'}</TableCell>
+                        <TableCell>{c.razaoSocial || c.nome || '—'}</TableCell>
+                        <TableCell>{c.cnpj || '—'}</TableCell>
+                        <TableCell align="right">
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                              setSemLicencaDialogOpen(false);
+                              router.push(paths.dashboard.cliente.edit(c._id));
+                            }}
+                          >
+                            Abrir cadastro
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+            </>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+          <Button
+            variant="outlined"
+            startIcon={<Iconify icon="solar:file-text-bold" />}
+            disabled={loadingSemLicenca || clientesSemLicenca.length === 0}
+            onClick={() => {
+              downloadClientesSemLicencaCsv(clientesSemLicenca);
+              toast.success('Arquivo CSV baixado.');
+            }}
+          >
+            Exportar CSV
+          </Button>
+          <Button onClick={() => setSemLicencaDialogOpen(false)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Dialog de Confirmação de Exclusão */}
       <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>

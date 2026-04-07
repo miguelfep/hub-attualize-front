@@ -116,10 +116,12 @@ export function ClienteTableRow({
           {row.regimeTributario ? (
             <Label variant="soft" color="info">
               {row.regimeTributario === 'simples' && 'Simples'}
+              {row.regimeTributario === 'simei' && 'SIMEI'}
               {row.regimeTributario === 'presumido' && 'Presumido'}
               {row.regimeTributario === 'real' && 'Real'}
               {row.regimeTributario === 'pf' && 'PF'}
-              {!['simples', 'presumido', 'real', 'pf'].includes(row.regimeTributario) && row.regimeTributario}
+              {!['simples', 'simei', 'presumido', 'real', 'pf'].includes(row.regimeTributario) &&
+                row.regimeTributario}
             </Label>
           ) : (
             <Box
@@ -143,9 +145,12 @@ export function ClienteTableRow({
                   {trib === 'anexo3' && 'Anexo III'}
                   {trib === 'anexo4' && 'Anexo IV'}
                   {trib === 'anexo5' && 'Anexo V'}
+                  {trib === 'hibrido' && 'Híbrido'}
                   {trib === 'simei' && 'SIMEI'}
                   {trib === 'autonomo' && 'Autônomo'}
-                  {!['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'simei', 'autonomo'].includes(trib) && trib}
+                  {!['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'hibrido', 'simei', 'autonomo'].includes(
+                    trib
+                  ) && trib}
                 </Label>
               ))}
               {row.tributacao.length > 2 && (

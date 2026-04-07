@@ -75,6 +75,7 @@ export const CLIENTE_STATUS_OPTIONS = [
 export const REGIME_TRIBUTARIO_OPTIONS = [
   { value: 'all', label: 'Todos' },
   { value: 'simples', label: 'Simples Nacional' },
+  { value: 'simei', label: 'SIMEI' },
   { value: 'presumido', label: 'Lucro Presumido' },
   { value: 'real', label: 'Lucro Real' },
   { value: 'pf', label: 'Pessoa Física' },
@@ -87,8 +88,9 @@ export const PLANO_TRIBUTACAO_OPTIONS = [
   { value: 'anexo3', label: 'Anexo III' },
   { value: 'anexo4', label: 'Anexo IV' },
   { value: 'anexo5', label: 'Anexo V' },
-  { value: 'simei', label: 'SIMEI' },
-  { value: 'autonomo', label: 'Autônomo' },
+  { value: 'hibrido', label: 'Híbrido' },
+  { value: 'simei', label: 'SIMEI (legado em tributação)' },
+  { value: 'autonomo', label: 'Autônomo (legado)' },
 ];
 
 const DEFAULT_FILTERS = {
