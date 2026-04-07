@@ -1,6 +1,7 @@
 import dayjs from 'dayjs';
 import { z as zod } from 'zod';
 import { useMemo, useState } from 'react';
+import { NumericFormat } from 'react-number-format';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
@@ -40,6 +41,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import SociosForm from './cliete-socios-form';
 import ClienteBancosSection from './cliente-bancos-section';
+import ClienteLicencasSection from './cliente-licencas-section';
 import { ClientePortalSettings } from './cliente-portal-settings';
 import PlanoContasClienteSection from './plano-contas-cliente-section';
 import { HistoricoComercialCliente } from './historico-comecial-cliente';
@@ -53,6 +55,42 @@ export const TRIBUTACAO_OPTIONS = [
   { value: 'simei', label: 'SIMEI' },
   { value: 'autonomo', label: 'Autônomo' },
 ];
+
+/** Zod: selects enviam '' quando vazios; enum().optional() só aceita undefined, não ''. */
+const emptyToUndefined = (val) => (val === '' || val === null ? undefined : val);
+
+/** API persiste capital social em centavos (ex.: 3_000_000 → R$ 30.000,00). Formulário trabalha em reais. */
+function capitalSocialFromApi(raw) {
+  if (raw == null || raw === '') return undefined;
+  const n = Number(raw);
+  if (Number.isNaN(n)) return undefined;
+  return n / 100;
+}
+
+function capitalSocialToApi(reais) {
+  if (reais == null || reais === undefined) return undefined;
+  const n = Number(reais);
+  if (Number.isNaN(n)) return undefined;
+  return Math.round(n * 100);
+}
+
+function getFirstFormErrorMessage(errors) {
+  if (!errors) return null;
+  if (Array.isArray(errors)) {
+    const msg = errors
+      .map((item) => getFirstFormErrorMessage(item))
+      .find(Boolean);
+    return msg || null;
+  }
+  if (typeof errors === 'object') {
+    if (typeof errors.message === 'string') return errors.message;
+    const msg = Object.values(errors)
+      .map((v) => getFirstFormErrorMessage(v))
+      .find(Boolean);
+    if (msg) return msg;
+  }
+  return null;
+}
 
 export const TIPONEGOCIO = [
   { value: 'servico', label: 'Serviço' },
@@ -75,6 +113,13 @@ export const NewUClienteSchema = zod.object({
   nome: zod.string().min(1, { message: 'Nome é obrigatório!' }),
   nomeFantasia: zod.string().optional(),
   razaoSocial: zod.string().optional(),
+  capitalSocial: zod
+    .preprocess((v) => {
+      if (v === '' || v === null || v === undefined) return undefined;
+      if (typeof v === 'number' && !Number.isNaN(v)) return v;
+      return undefined;
+    }, zod.number().nonnegative().optional())
+    .optional(),
   cnpj: zod.string().min(1, { message: 'CNPJ é obrigatório!' }),
   codigo: zod
     .preprocess((val) => (val ? Number(val) : undefined), zod.number().optional())
@@ -108,8 +153,14 @@ export const NewUClienteSchema = zod.object({
     .optional(),
   dataEntrada: zod.date().optional().nullable(),
   dataSaida: zod.date().optional().nullable(),
-  regimeTributario: zod.enum(['simples', 'presumido', 'real', 'pf'], { message: 'Seleciona uma opção valida' }).optional(),
-  planoEmpresa: zod.enum(['carneleao', 'mei', 'start', 'pleno', 'premium', 'plus'], { message: 'Seleciona uma opção valida' }).optional(),
+  regimeTributario: zod.preprocess(
+    emptyToUndefined,
+    zod.enum(['simples', 'presumido', 'real', 'pf'], { message: 'Seleciona uma opção valida' }).optional()
+  ),
+  planoEmpresa: zod.preprocess(
+    emptyToUndefined,
+    zod.enum(['carneleao', 'mei', 'start', 'pleno', 'premium', 'plus'], { message: 'Seleciona uma opção valida' }).optional()
+  ),
   tributacao: zod
     .array(zod.enum(['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'simei', 'autonomo']))
     .optional(),
@@ -144,11 +195,18 @@ export const NewUClienteSchema = zod.object({
   socios: zod
     .array(
       zod.object({
-        nome: zod.string(),
-        cpf: zod.string(),
-        rg: zod.string(),
-        cnh: zod.string().optional(),
-        administrador: zod.boolean(),
+        // API pode enviar null; .optional() sozinho não aceita null só undefined
+        nome: zod.string().nullish(),
+        cpf: zod.string().nullish(),
+        rg: zod.string().nullish(),
+        cnh: zod.string().nullish(),
+        administrador: zod.boolean().nullish(),
+        dataInclusao: zod.preprocess((v) => {
+          if (v === '' || v == null) return undefined;
+          if (v instanceof Date) return Number.isNaN(v.getTime()) ? undefined : v;
+          const d = new Date(v);
+          return Number.isNaN(d.getTime()) ? undefined : d;
+        }, zod.date().optional()),
       })
     )
     .optional(),
@@ -231,9 +289,10 @@ export function ClienteNewEditForm({ currentCliente }) {
   const router = useRouter();
   const { user } = useAuthContext();
   const canSeeHistorico = ['admin', 'comercial'].includes(user?.role);
-  const historicoTabIndex = 5; // posição quando visível
-  const bancosTabIndex = canSeeHistorico ? 6 : 5; // ✅ Nova tab de Bancos
-  const portalTabIndex = canSeeHistorico ? 7 : 6; // Ajustado para depois de Bancos
+  const historicoTabIndex = 5;
+  const bancosTabIndex = canSeeHistorico ? 6 : 5;
+  const licencasTabIndex = canSeeHistorico ? 7 : 6;
+  const portalTabIndex = canSeeHistorico ? 8 : 7;
 
   const normalizePhoneBR = (input) => {
     const raw = String(input || '');
@@ -250,6 +309,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       nome: currentCliente?.nome || '',
       nomeFantasia: currentCliente?.nomeFantasia || '',
       razaoSocial: currentCliente?.razaoSocial || '',
+      capitalSocial: capitalSocialFromApi(currentCliente?.capitalSocial),
       cnpj: currentCliente?.cnpj || '',
       codigo: currentCliente?.codigo || 0,
       email: currentCliente?.email || '',
@@ -280,7 +340,14 @@ export function ClienteNewEditForm({ currentCliente }) {
         { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
       ],
       tributacao: currentCliente?.tributacao || [],
-      socios: currentCliente?.socios || [],
+      socios: (currentCliente?.socios || []).map((s) => ({
+        nome: s?.nome ?? '',
+        cpf: s?.cpf ?? '',
+        rg: s?.rg ?? '',
+        cnh: s?.cnh ?? '',
+        administrador: s?.administrador === true,
+        dataInclusao: s?.dataInclusao ? new Date(s.dataInclusao) : undefined,
+      })),
       contratoSocialUrl: currentCliente?.contratoSocialUrl || '',
       cartaoCnpjUrl: currentCliente?.cartaoCnpjUrl || '',
       contratoSocialFile: null,
@@ -358,6 +425,10 @@ const onSubmit = handleSubmit(
         delete cleaned.contratoSocialUrl;
         delete cleaned.cartaoCnpjUrl;
 
+        if (cleaned.capitalSocial !== undefined && cleaned.capitalSocial !== null) {
+          cleaned.capitalSocial = capitalSocialToApi(cleaned.capitalSocial);
+        }
+
         formData.append('data', JSON.stringify(cleaned));
 
         if (currentCliente) {
@@ -366,6 +437,7 @@ const onSubmit = handleSubmit(
           const updatedCliente = await getClienteById(currentCliente._id);
           reset({
             ...updatedCliente,
+            capitalSocial: capitalSocialFromApi(updatedCliente.capitalSocial),
             status: updatedCliente.status !== undefined ? updatedCliente.status : true,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
             dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
@@ -382,11 +454,17 @@ const onSubmit = handleSubmit(
         }
       } catch (error) {
         console.error(error);
-        toast.error(error.message);
+        const msg =
+          typeof error === 'string'
+            ? error
+            : error?.message || error?.error || error?.msg || 'Erro ao salvar o cliente.';
+        toast.error(typeof msg === 'string' ? msg : 'Erro ao salvar o cliente.');
       }
     },
-    (error) => {
-      console.log('Validation Errors:', error);
+    (validationErrors) => {
+      console.warn('Validation Errors:', validationErrors);
+      const first = getFirstFormErrorMessage(validationErrors);
+      toast.error(first || 'Corrija os campos destacados antes de salvar.');
     }
   );
 
@@ -432,39 +510,29 @@ const onSubmit = handleSubmit(
 
   return (
     <Form methods={methods} onSubmit={onSubmit}>
-      {/* Toggle de Status Ativo/Inativo */}
-      <Card sx={{ p: 2, mb: 2 }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Box>
-            <Typography variant="h6" gutterBottom>
-              Status do Cliente
+      {/* Status compacto — menos rolagem no painel do admin */}
+      <Card sx={{ px: 2, py: 1.25, mb: 1.5 }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="subtitle2" fontWeight={600}>
+              Status do cliente
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {statusAtivo 
-                ? 'Cliente ativo - Todos os campos podem ser editados' 
-                : 'Cliente inativo - Campos bloqueados para edição'}
+            <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }} display="block">
+              {statusAtivo ? 'Ativo — edição liberada' : 'Inativo — campos bloqueados'}
             </Typography>
           </Box>
-          <FormControlLabel
-            control={
-              <Controller
-                name="status"
-                control={control}
-                render={({ field }) => (
-                  <Switch
-                    {...field}
-                    checked={field.value ?? true}
-                    color="success"
-                  />
-                )}
-              />
-            }
-            label={
-              <Typography variant="body1" fontWeight="medium">
-                {statusAtivo ? 'Ativo' : 'Inativo'}
-              </Typography>
-            }
-          />
+          <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0 }}>
+            <Typography variant="caption" color="text.secondary" fontWeight={600}>
+              {statusAtivo ? 'Ativo' : 'Inativo'}
+            </Typography>
+            <Controller
+              name="status"
+              control={control}
+              render={({ field }) => (
+                <Switch {...field} checked={field.value ?? true} color="success" size="small" />
+              )}
+            />
+          </Stack>
         </Stack>
       </Card>
 
@@ -476,6 +544,7 @@ const onSubmit = handleSubmit(
         <Tab label="Departamento Pessoal" />
         {canSeeHistorico && <Tab label="Histórico Comercial" />}
         <Tab label="Bancos" />
+        <Tab label="Licenças" />
         <Tab label="Configurações do Portal" />
       </Tabs>
       <Grid container spacing={3} mt={2}>
@@ -520,7 +589,7 @@ const onSubmit = handleSubmit(
                     render={({ field }) => (
                       <TextField
                         {...field}
-                        valeu={field.value ?? 0}
+                        value={field.value ?? ''}
                         type="number"
                         label="Código"
                         fullWidth
@@ -538,33 +607,124 @@ const onSubmit = handleSubmit(
                     <MenuItem value="lead">Lead</MenuItem>
                   </Field.Select>
                 </Grid>
+
+                <Grid xs={12} sm={6}>
+                  <Field.Text
+                    name="razaoSocial"
+                    label="Razão social"
+                    placeholder="Razão social conforme cartão CNPJ"
+                    fullWidth
+                    disabled={!statusAtivo}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <Field.Text
+                    name="nomeFantasia"
+                    label="Nome fantasia"
+                    placeholder="Nome fantasia na Receita Federal"
+                    fullWidth
+                    disabled={!statusAtivo}
+                  />
+                </Grid>
+
+                <Grid xs={12} sm={4}>
+                  <Field.Text
+                    name="cnpj"
+                    label="CNPJ"
+                    placeholder="00.000.000/0000-00"
+                    fullWidth
+                    disabled={!statusAtivo}
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <Field.Text
+                    name="nome"
+                    label="Nome de exibição"
+                    placeholder="Como o cliente aparece no sistema e relatórios"
+                    helperText="Diferente de razão social e nome fantasia"
+                    fullWidth
+                    disabled={!statusAtivo}
+                  />
+                </Grid>
+                <Grid xs={12} sm={4}>
+                  <Controller
+                    name="capitalSocial"
+                    control={control}
+                    render={({ field, fieldState }) => (
+                      <NumericFormat
+                        customInput={TextField}
+                        fullWidth
+                        label="Capital social (R$)"
+                        value={field.value ?? ''}
+                        onValueChange={(vals) => {
+                          field.onChange(vals.floatValue === undefined ? undefined : vals.floatValue);
+                        }}
+                        thousandSeparator="."
+                        decimalSeparator=","
+                        prefix="R$ "
+                        decimalScale={2}
+                        fixedDecimalScale
+                        disabled={!statusAtivo}
+                        error={!!fieldState.error}
+                        helperText={
+                          fieldState.error?.message ||
+                          'Conforme contrato social / Receita Federal'
+                        }
+                      />
+                    )}
+                  />
+                </Grid>
+
                 <Grid xs={12}>
-                  <Field.Text name="razaoSocial" label="Razão Social" fullWidth disabled={!statusAtivo} />
+                  <Divider sx={{ my: 2 }} />
+                  <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                    Contato e comunicação
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                    E-mails para notificações e telefones com DDI (bandeira do país).
+                  </Typography>
                 </Grid>
-                <Grid xs={12} sm={3}>
-                  <Field.Text name="cnpj" label="CNPJ" fullWidth disabled={!statusAtivo} />
+
+                <Grid xs={12} sm={6}>
+                  <Field.Text
+                    name="email"
+                    label="E-mail principal"
+                    type="email"
+                    placeholder="contato@empresa.com.br"
+                    fullWidth
+                    disabled={!statusAtivo}
+                  />
                 </Grid>
-                <Grid xs={12} sm={4}>
-                  <Field.Text name="nome" label="Nome" fullWidth disabled={!statusAtivo} />
+                <Grid xs={12} sm={6}>
+                  <Field.Text
+                    name="emailFinanceiro"
+                    label="E-mail financeiro"
+                    type="email"
+                    placeholder="financeiro@empresa.com.br"
+                    helperText="Faturamento, boletos e cobranças"
+                    fullWidth
+                    disabled={!statusAtivo}
+                  />
                 </Grid>
-                <Grid xs={12} sm={5}>
-                  <Field.Text name="nomeFantasia" label="Nome Fantasia" fullWidth disabled={!statusAtivo} />
+
+                <Grid xs={12} sm={6}>
+                  <Field.Phone
+                    name="whatsapp"
+                    label="WhatsApp"
+                    placeholder="+55 (00) 00000-0000"
+                    fullWidth
+                    disabled={!statusAtivo}
+                  />
                 </Grid>
-                <Grid xs={12}>
-                  <Divider sx={{ my: 1 }} />
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Contato</Typography>
-                </Grid>
-                <Grid xs={12} sm={4}>
-                  <Field.Text name="email" label="Email" fullWidth disabled={!statusAtivo} />
-                </Grid>
-                <Grid xs={12} sm={4}>
-                  <Field.Text name="emailFinanceiro" label="Email Financeiro" fullWidth disabled={!statusAtivo} />
-                </Grid>
-                <Grid xs={12} sm={4}>
-                  <Field.Phone name="whatsapp" label="Whatsapp" fullWidth disabled={!statusAtivo} />
-                </Grid>
-                <Grid xs={12} sm={4}>
-                  <Field.Phone name="telefoneComercial" label="Telefone Comercial" fullWidth disabled={!statusAtivo} />
+                <Grid xs={12} sm={6}>
+                  <Field.Phone
+                    name="telefoneComercial"
+                    label="Telefone comercial"
+                    placeholder="+55 (00) 0000-0000"
+                    helperText="Fixo ou ramal corporativo"
+                    fullWidth
+                    disabled={!statusAtivo}
+                  />
                 </Grid>
                 <Grid xs={12}>
                   <Divider sx={{ my: 1 }} />
@@ -1009,6 +1169,13 @@ const onSubmit = handleSubmit(
           <Grid xs={12}>
             <Card sx={{ p: 3 }}>
               <ClienteBancosSection clienteId={currentCliente?._id} />
+            </Card>
+          </Grid>
+        )}
+        {tabIndex === licencasTabIndex && (
+          <Grid xs={12}>
+            <Card sx={{ p: 3 }}>
+              <ClienteLicencasSection clienteId={currentCliente?._id} />
             </Card>
           </Grid>
         )}
