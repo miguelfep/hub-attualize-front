@@ -1,6 +1,6 @@
 import { toast } from 'sonner';
 import { useState } from 'react';
-import { useFieldArray, useFormContext } from 'react-hook-form';
+import { useFieldArray, useFormContext, useWatch } from 'react-hook-form';
 
 import FormControlLabel from '@mui/material/FormControlLabel';
 import {
@@ -25,8 +25,16 @@ import {
 
 import { Iconify } from 'src/components/iconify';
 
+function formatDataInclusao(value) {
+  if (!value) return '—';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+}
+
 function SociosForm() {
   const { control, setValue } = useFormContext();
+  const sociosValues = useWatch({ control, name: 'socios' });
   const {
     fields: sociosFields,
     append: appendSocio,
@@ -81,6 +89,7 @@ function SociosForm() {
               <TableCell>CPF</TableCell>
               <TableCell>RG</TableCell>
               <TableCell>CNH</TableCell>
+              <TableCell>Data de inclusão</TableCell>
               <TableCell>Administrador</TableCell>
               <TableCell>Ações</TableCell>
             </TableRow>
@@ -139,6 +148,9 @@ function SociosForm() {
                       {field.cnh}
                     </span>
                   </Tooltip>
+                </TableCell>
+                <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                  {formatDataInclusao(sociosValues?.[index]?.dataInclusao ?? field.dataInclusao)}
                 </TableCell>
                 <TableCell>
                   <Switch

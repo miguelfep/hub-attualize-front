@@ -6,7 +6,7 @@ import { NumericFormat } from 'react-number-format';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Grid from '@mui/material/Grid';
+import Grid from '@mui/material/Unstable_Grid2';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
@@ -60,6 +60,17 @@ const formatarDataISO = (dataISO) => {
   }
 };
 
+/** Axios interceptor retorna `response.data` no reject — não há `error.response`. */
+function getApiErrorMessage(error) {
+  if (typeof error === 'string') return error;
+  if (!error || typeof error !== 'object') return 'Erro ao processar solicitação';
+  if (typeof error.message === 'string' && error.message) return error.message;
+  if (typeof error.error === 'string') return error.error;
+  if (error.error && typeof error.error === 'object' && error.error.message) return error.error.message;
+  if (Array.isArray(error.errors)) return error.errors.filter(Boolean).join(', ');
+  return 'Erro ao processar solicitação';
+}
+
 /**
  * Componente para gerenciar bancos do cliente no dashboard
  */
@@ -99,7 +110,7 @@ export default function ClienteBancosSection({ clienteId }) {
         setBancos(response.data || []);
       } catch (error) {
         console.error('Erro ao carregar bancos:', error);
-        toast.error('Erro ao carregar bancos');
+        toast.error(getApiErrorMessage(error));
       } finally {
         setLoading(false);
       }
@@ -118,9 +129,8 @@ export default function ClienteBancosSection({ clienteId }) {
     }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
+  /** Não usar <form> aqui: este bloco fica dentro do formulário principal do cliente (HTML inválido e submit errado). */
+  const cadastrarConta = async () => {
     if (!formData.codigo || !formData.conta) {
       toast.error('Selecione o banco e informe a conta');
       return;
@@ -131,8 +141,17 @@ export default function ClienteBancosSection({ clienteId }) {
       return;
     }
 
-    if (formData.saldoInicial === undefined || formData.saldoInicial === null) {
+    const saldoRaw = formData.saldoInicial;
+    if (saldoRaw === '' || saldoRaw === null || saldoRaw === undefined) {
       toast.error('Saldo inicial é obrigatório');
+      return;
+    }
+    const saldoNum =
+      typeof saldoRaw === 'number'
+        ? saldoRaw
+        : parseFloat(String(saldoRaw).replace(/\./g, '').replace(',', '.'));
+    if (Number.isNaN(saldoNum)) {
+      toast.error('Informe um saldo inicial válido');
       return;
     }
 
@@ -141,19 +160,19 @@ export default function ClienteBancosSection({ clienteId }) {
         codigo: formData.codigo,
         conta: formData.conta,
         tipoConta: formData.tipoConta,
-        dataInicio: new Date(formData.dataInicio).toISOString(),
-        saldoInicial: parseFloat(formData.saldoInicial),
-        saldo: parseFloat(formData.saldoInicial),
+        dataInicio: new Date(`${formData.dataInicio}T12:00:00`).toISOString(),
+        saldoInicial: saldoNum,
+        saldo: saldoNum,
       };
 
       if (formData.agencia) dados.agencia = formData.agencia;
       if (formData.digitoConta) dados.digitoConta = formData.digitoConta;
       if (formData.contaContabilId) dados.contaContabilId = formData.contaContabilId;
 
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}financeiro/banco/cadastrar`,
-        { ...dados, clienteId }
-      );
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}financeiro/banco/cadastrar`, {
+        ...dados,
+        clienteId,
+      });
 
       toast.success('Conta bancária cadastrada com sucesso!');
       setMostrarForm(false);
@@ -168,14 +187,13 @@ export default function ClienteBancosSection({ clienteId }) {
         contaContabilId: '',
       });
 
-      // Recarregar bancos
-      const bancosResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
-        { params: { clienteId, incluirInativos: true } }
-      );
+      const bancosResponse = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`, {
+        params: { clienteId, incluirInativos: true },
+      });
       setBancos(bancosResponse.data || []);
     } catch (error) {
-      toast.error(error?.response?.data?.error || error.message || 'Erro ao cadastrar conta');
+      console.error('Erro ao cadastrar conta:', error);
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -237,8 +255,11 @@ export default function ClienteBancosSection({ clienteId }) {
         conta: formData.conta,
         digitoConta: formData.digitoConta || undefined,
         tipoConta: formData.tipoConta,
-        dataInicio: new Date(formData.dataInicio).toISOString(),
-        saldoInicial: parseFloat(formData.saldoInicial),
+        dataInicio: new Date(`${formData.dataInicio}T12:00:00`).toISOString(),
+        saldoInicial:
+          typeof formData.saldoInicial === 'number'
+            ? formData.saldoInicial
+            : parseFloat(String(formData.saldoInicial).replace(/\./g, '').replace(',', '.')),
         contaContabilId: formData.contaContabilId || undefined,
       };
 
@@ -258,7 +279,6 @@ export default function ClienteBancosSection({ clienteId }) {
           toast.success('Banco atualizado com sucesso!');
         }
 
-        // Recarregar bancos
         const bancosResponse = await axios.get(
           `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
           { params: { clienteId, incluirInativos: true } }
@@ -270,11 +290,7 @@ export default function ClienteBancosSection({ clienteId }) {
       }
     } catch (error) {
       console.error('Erro ao atualizar banco:', error);
-      const errorMessage =
-        error?.response?.data?.error ||
-        error?.message ||
-        'Erro ao atualizar banco';
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -294,7 +310,7 @@ export default function ClienteBancosSection({ clienteId }) {
       );
       setBancos(bancosResponse.data || []);
     } catch (error) {
-      toast.error(error?.response?.data?.error || error.message || 'Erro ao desativar banco');
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -322,7 +338,7 @@ export default function ClienteBancosSection({ clienteId }) {
         setBancos(bancosResponse.data || []);
       }
     } catch (error) {
-      toast.error(error?.response?.data?.error || error.message || 'Erro ao reativar banco');
+      toast.error(getApiErrorMessage(error));
     }
   };
 
@@ -358,9 +374,9 @@ export default function ClienteBancosSection({ clienteId }) {
           </Typography>
           <Divider sx={{ mb: 3 }} />
 
-          <form onSubmit={handleSubmit}>
+          <Stack spacing={3}>
             <Grid container spacing={3}>
-              <Grid xs={12} md={12}>
+              <Grid xs={12}>
                 <Autocomplete
                   options={instituicoes}
                   value={instituicoes.find((inst) => inst.codigo === formData.codigo) || null}
@@ -466,9 +482,12 @@ export default function ClienteBancosSection({ clienteId }) {
                   fullWidth
                   required
                   label="Saldo Inicial (R$) *"
-                  value={formData.saldoInicial}
+                  value={formData.saldoInicial === undefined ? '' : formData.saldoInicial}
                   onValueChange={(values) => {
-                    handleChange('saldoInicial', values.value);
+                    handleChange(
+                      'saldoInicial',
+                      values.floatValue === undefined ? undefined : values.floatValue
+                    );
                   }}
                   thousandSeparator="."
                   decimalSeparator=","
@@ -506,15 +525,15 @@ export default function ClienteBancosSection({ clienteId }) {
               </Grid>
             </Grid>
 
-            <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
-              <Button variant="outlined" onClick={() => setMostrarForm(false)}>
+            <Stack direction="row" spacing={2} justifyContent="flex-end">
+              <Button type="button" variant="outlined" onClick={() => setMostrarForm(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" variant="contained">
+              <Button type="button" variant="contained" onClick={cadastrarConta}>
                 Cadastrar Conta
               </Button>
             </Stack>
-          </form>
+          </Stack>
         </Card>
       )}
 
@@ -897,9 +916,12 @@ export default function ClienteBancosSection({ clienteId }) {
                     fullWidth
                     required
                     label="Saldo Inicial (R$) *"
-                    value={formData.saldoInicial}
+                    value={formData.saldoInicial === undefined ? '' : formData.saldoInicial}
                     onValueChange={(values) => {
-                      handleChange('saldoInicial', values.value);
+                      handleChange(
+                        'saldoInicial',
+                        values.floatValue === undefined ? undefined : values.floatValue
+                      );
                     }}
                     thousandSeparator="."
                     decimalSeparator=","
@@ -938,7 +960,7 @@ export default function ClienteBancosSection({ clienteId }) {
             </Stack>
           </DialogContent>
           <DialogActions sx={{ p: 3, pt: 2 }}>
-            <Button variant="outlined" onClick={handleFecharEdicao}>
+            <Button type="button" variant="outlined" onClick={handleFecharEdicao}>
               Cancelar
             </Button>
             <Button type="submit" variant="contained">
