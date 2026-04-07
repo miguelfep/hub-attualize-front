@@ -1,7 +1,7 @@
 import dayjs from 'dayjs';
 import { z as zod } from 'zod';
-import { useMemo, useState } from 'react';
 import { NumericFormat } from 'react-number-format';
+import { useMemo, useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
@@ -46,15 +46,25 @@ import { ClientePortalSettings } from './cliente-portal-settings';
 import PlanoContasClienteSection from './plano-contas-cliente-section';
 import { HistoricoComercialCliente } from './historico-comecial-cliente';
 
+/** Anexos e híbrido — usados apenas quando regime tributário = Simples Nacional. */
 export const TRIBUTACAO_OPTIONS = [
   { value: 'anexo1', label: 'Anexo I' },
   { value: 'anexo2', label: 'Anexo II' },
   { value: 'anexo3', label: 'Anexo III' },
   { value: 'anexo4', label: 'Anexo IV' },
   { value: 'anexo5', label: 'Anexo V' },
-  { value: 'simei', label: 'SIMEI' },
-  { value: 'autonomo', label: 'Autônomo' },
+  { value: 'hibrido', label: 'Híbrido' },
 ];
+
+export const REGIME_TRIBUTARIO_OPTIONS = [
+  { value: 'simples', label: 'Simples Nacional' },
+  { value: 'simei', label: 'SIMEI' },
+  { value: 'presumido', label: 'Lucro presumido' },
+  { value: 'real', label: 'Lucro real' },
+  { value: 'pf', label: 'Pessoa física' },
+];
+
+const TRIBUTACAO_VALUES_ALLOWED = TRIBUTACAO_OPTIONS.map((o) => o.value);
 
 /** Zod: selects enviam '' quando vazios; enum().optional() só aceita undefined, não ''. */
 const emptyToUndefined = (val) => (val === '' || val === null ? undefined : val);
@@ -155,14 +165,16 @@ export const NewUClienteSchema = zod.object({
   dataSaida: zod.date().optional().nullable(),
   regimeTributario: zod.preprocess(
     emptyToUndefined,
-    zod.enum(['simples', 'presumido', 'real', 'pf'], { message: 'Seleciona uma opção valida' }).optional()
+    zod
+      .enum(['simples', 'simei', 'presumido', 'real', 'pf'], { message: 'Seleciona uma opção valida' })
+      .optional()
   ),
   planoEmpresa: zod.preprocess(
     emptyToUndefined,
     zod.enum(['carneleao', 'mei', 'start', 'pleno', 'premium', 'plus'], { message: 'Seleciona uma opção valida' }).optional()
   ),
   tributacao: zod
-    .array(zod.enum(['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'simei', 'autonomo']))
+    .array(zod.enum(['anexo1', 'anexo2', 'anexo3', 'anexo4', 'anexo5', 'hibrido']))
     .optional(),
   dadosFiscal: zod.string().optional(),
   importarNotasSieg: zod.boolean().optional(),
@@ -339,7 +351,10 @@ export function ClienteNewEditForm({ currentCliente }) {
       endereco: currentCliente?.endereco || [
         { rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '' },
       ],
-      tributacao: currentCliente?.tributacao || [],
+      tributacao:
+        currentCliente?.regimeTributario === 'simples'
+          ? (currentCliente?.tributacao || []).filter((t) => TRIBUTACAO_VALUES_ALLOWED.includes(t))
+          : [],
       socios: (currentCliente?.socios || []).map((s) => ({
         nome: s?.nome ?? '',
         cpf: s?.cpf ?? '',
@@ -381,6 +396,13 @@ export function ClienteNewEditForm({ currentCliente }) {
 
   const clienteVip = watch('clienteVip'); // Observar o valor de clienteVip
   const statusAtivo = watch('status') !== undefined ? watch('status') : true; // Observar o valor de status do banco
+  const regimeTributarioWatch = watch('regimeTributario');
+
+  useEffect(() => {
+    if (regimeTributarioWatch !== 'simples') {
+      setValue('tributacao', []);
+    }
+  }, [regimeTributarioWatch, setValue]);
 
   const {
     fields: enderecoFields,
@@ -420,6 +442,10 @@ const onSubmit = handleSubmit(
           }));
         }
 
+        if (cleaned.regimeTributario !== 'simples') {
+          cleaned.tributacao = [];
+        }
+
         delete cleaned.contratoSocialFile;
         delete cleaned.cartaoCnpjFile;
         delete cleaned.contratoSocialUrl;
@@ -438,6 +464,12 @@ const onSubmit = handleSubmit(
           reset({
             ...updatedCliente,
             capitalSocial: capitalSocialFromApi(updatedCliente.capitalSocial),
+            tributacao:
+              updatedCliente.regimeTributario === 'simples'
+                ? (updatedCliente?.tributacao || []).filter((t) =>
+                    TRIBUTACAO_VALUES_ALLOWED.includes(t)
+                  )
+                : [],
             status: updatedCliente.status !== undefined ? updatedCliente.status : true,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
             dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
@@ -880,9 +912,9 @@ const onSubmit = handleSubmit(
                 </Grid>
                 <Grid xs={12} sm={6}>
                   <Field.Select name="regimeTributario" label="Regime Tributário" fullWidth disabled={!statusAtivo}>
-                    {['simples', 'presumido', 'real', 'pf'].map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
+                    {REGIME_TRIBUTARIO_OPTIONS.map(({ value, label }) => (
+                      <MenuItem key={value} value={value}>
+                        {label}
                       </MenuItem>
                     ))}
                   </Field.Select>
@@ -896,14 +928,17 @@ const onSubmit = handleSubmit(
                     ))}
                   </Field.Select>
                 </Grid>
-                <Grid xs={12}>
-                  <Field.MultiSelect
-                    name="tributacao"
-                    label="Tributação"
-                    options={TRIBUTACAO_OPTIONS}
-                    fullWidth
-                  />
-                </Grid>
+                {regimeTributarioWatch === 'simples' && (
+                  <Grid xs={12}>
+                    <Field.MultiSelect
+                      name="tributacao"
+                      label="Tributação (Simples Nacional)"
+                      options={TRIBUTACAO_OPTIONS}
+                      helperText="Anexos I a V ou híbrido — apenas para empresas no Simples Nacional."
+                      fullWidth
+                    />
+                  </Grid>
+                )}
                 <Grid xs={12}>
                   <Field.MultiSelect
                     name="tipoNegocio"
