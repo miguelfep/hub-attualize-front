@@ -32,6 +32,7 @@ import { Iconify } from 'src/components/iconify';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { useBancosCliente } from '../hooks';
+import { UploadDocumentosContabeisDialog } from '../components';
 
 // ✅ Helper para formatar data ISO sem problemas de timezone
 const formatarDataISO = (dataISO) => {
@@ -71,6 +72,7 @@ export default function StatusConciliacaoPage() {
   const [empresaData, setEmpresaData] = useState(null);
   const [mesesPorBanco, setMesesPorBanco] = useState({});
   const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear()); // 🔥 Ano atual por padrão
+  const [uploadContabilOpen, setUploadContabilOpen] = useState(false);
   
   // 🔥 NOVO: Estados para processamento assíncrono
   const [processamentosEmAndamento, setProcessamentosEmAndamento] = useState({}); // { conciliacaoId: { status, progresso, mesAno, bancoId } }
@@ -608,7 +610,7 @@ export default function StatusConciliacaoPage() {
   return (
     <Box sx={{ p: 3 }}>
       {/* Header - Simplificado */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={4}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={4} flexWrap="wrap" gap={2}>
         <div>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
             Conciliação Bancária
@@ -617,14 +619,25 @@ export default function StatusConciliacaoPage() {
             {empresaData.razaoSocial || empresaData.nome || 'Não identificado'}
           </Typography>
         </div>
-        <Button
-          variant="outlined"
-          startIcon={<Iconify icon="eva:credit-card-fill" />}
-          onClick={() => router.push(`${paths.cliente.conciliacaoBancaria}/bancos`)}
-        >
-         Gerenciar Bancos
-        </Button>
+        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
+          <Button
+            variant="outlined"
+            startIcon={<Iconify icon="solar:document-text-bold" />}
+            onClick={() => setUploadContabilOpen(true)}
+          >
+            Enviar documentos contábeis
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<Iconify icon="eva:credit-card-fill" />}
+            onClick={() => router.push(`${paths.cliente.conciliacaoBancaria}/bancos`)}
+          >
+            Gerenciar Bancos
+          </Button>
+        </Stack>
       </Stack>
+
+      <UploadDocumentosContabeisDialog open={uploadContabilOpen} onClose={() => setUploadContabilOpen(false)} />
 
       {/* 🔥 Card Fixo de Processamentos em Andamento - Bem no Topo */}
       {(() => {
