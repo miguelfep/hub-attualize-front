@@ -8,7 +8,15 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 export function usePortalNavData() {
-  const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos, possuiExtrato } = useSettings();
+  const {
+    podeGerenciarClientes,
+    podeGerenciarServicos,
+    podeCriarOrcamentos,
+    possuiExtrato,
+    possuiFuncionario,
+  } = useSettings();
+
+  console.log('possuiFuncionario', possuiFuncionario);
 
   const vendasChildren = [
     podeGerenciarClientes && {
@@ -47,8 +55,9 @@ export function usePortalNavData() {
   
   ];
 
+  const comercialChildren = [...vendasChildren].filter(Boolean);
+
   const financeiroChildren = [
-    ...vendasChildren,
     {
       title: 'Meu Faturamento',
       path: paths.cliente.faturamentos.root,
@@ -69,12 +78,17 @@ export function usePortalNavData() {
       path: paths.cliente.recompensas.root,
       icon: <Iconify icon="solar:wallet-money-bold-duotone" />,
     },
-    {
-      title: 'Indicações',
-      path: paths.cliente.indicacoes.root,
-      icon: <Iconify icon="solar:share-bold-duotone" />,
-    },
   ].filter(Boolean);
+
+  const comercialNavItem =
+    comercialChildren.length > 0
+      ? {
+          title: 'Comercial',
+          path: comercialChildren[0].path,
+          icon: <Iconify icon="solar:case-minimalistic-bold-duotone" />,
+          children: comercialChildren,
+        }
+      : null;
 
   return [
     {
@@ -85,7 +99,12 @@ export function usePortalNavData() {
           path: paths.cliente.dashboard,
           icon: <Iconify icon="solar:home-2-bold-duotone" />,
         },
-      ],
+        possuiFuncionario && {
+          title: 'Departamento Pessoal',
+          path: paths.cliente.departamentoPessoal.root,
+          icon: <Iconify icon="solar:users-group-rounded-bold-duotone" />,
+        },
+      ].filter(Boolean),
     },
     {
       items: [
@@ -121,13 +140,19 @@ export function usePortalNavData() {
   
     {
       items: [
+        comercialNavItem,
         {
-          title: 'Comercial e Financeiro',
+          title: 'Financeiro',
           path: paths.cliente.financeiro.root,
-          icon: <Iconify icon="solar:money-bag-bold" />,
+          icon: <Iconify icon="solar:chat-round-money-bold" />,
           children: financeiroChildren,
         },
-      ],
+        {
+          title: 'Programa de indicação',
+          path: paths.cliente.indicacoes.root,
+          icon: <Iconify icon="solar:share-bold-duotone" />,
+        },
+      ].filter(Boolean),
     },
     {
       subheader: 'Comunidade',
