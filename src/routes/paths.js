@@ -139,6 +139,14 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/cliente/list`,
       new: `${ROOTS.DASHBOARD}/cliente/new`,
       edit: (id) => `${ROOTS.DASHBOARD}/cliente/${id}/edit`,
+      departamentoPessoal: (clienteId) =>
+        `${ROOTS.DASHBOARD}/cliente/${clienteId}/departamento-pessoal`,
+      departamentoPessoalNovo: (clienteId) =>
+        `${ROOTS.DASHBOARD}/cliente/${clienteId}/departamento-pessoal/novo`,
+    },
+    departamentoPessoal: {
+      root: `${ROOTS.DASHBOARD}/departamento-pessoal`,
+      funcionario: (id) => `${ROOTS.DASHBOARD}/departamento-pessoal/funcionarios/${id}`,
     },
     general: {
       app: `${ROOTS.DASHBOARD}/app`,
@@ -367,6 +375,13 @@ export const paths = {
     },
     recompensas: {
       root: `${ROOTS.CLIENTE}/recompensas`,
+    },
+    departamentoPessoal: {
+      root: `${ROOTS.CLIENTE}/departamento-pessoal`,
+      novo: `${ROOTS.CLIENTE}/departamento-pessoal/novo`,
+      details: (id) => `${ROOTS.CLIENTE}/departamento-pessoal/${id}`,
+      rubricas: (id) => `${ROOTS.CLIENTE}/departamento-pessoal/${id}/rubricas`,
+      demissao: (id) => `${ROOTS.CLIENTE}/departamento-pessoal/${id}/demissao`,
     },
     comunidade: {
       root: `${ROOTS.CLIENTE}/comunidade`,

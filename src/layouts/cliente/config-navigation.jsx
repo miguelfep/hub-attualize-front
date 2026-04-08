@@ -8,7 +8,15 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 export function usePortalNavData() {
-  const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos, possuiExtrato } = useSettings();
+  const {
+    podeGerenciarClientes,
+    podeGerenciarServicos,
+    podeCriarOrcamentos,
+    possuiExtrato,
+    possuiFuncionario,
+  } = useSettings();
+
+  console.log('possuiFuncionario', possuiFuncionario);
 
   const vendasChildren = [
     podeGerenciarClientes && {
@@ -91,7 +99,12 @@ export function usePortalNavData() {
           path: paths.cliente.dashboard,
           icon: <Iconify icon="solar:home-2-bold-duotone" />,
         },
-      ],
+        possuiFuncionario && {
+          title: 'Departamento Pessoal',
+          path: paths.cliente.departamentoPessoal.root,
+          icon: <Iconify icon="solar:users-group-rounded-bold-duotone" />,
+        },
+      ].filter(Boolean),
     },
     {
       items: [

@@ -15,6 +15,7 @@ import {
   Card,
   Tabs,
   Stack,
+  Alert,
   Button,
   Switch,
   Divider,
@@ -27,6 +28,7 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { RouterLink } from 'src/routes/components';
 
 import { buscarCep } from 'src/actions/cep';
 import { criarCliente, updateCliente, getClienteById, atualizarDadosCliente } from 'src/actions/clientes';
@@ -1206,6 +1208,38 @@ const onSubmit = handleSubmit(
                     )}
                   />
                 </Grid>
+                {currentCliente?._id && (
+                  <Grid xs={12}>
+                    <Alert severity="info" variant="outlined" sx={{ py: 1.5 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                        Funcionários (cadastro e aprovação)
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                        Cadastre colaboradores pelo escritório ou acompanhe a fila de aprovação. O cliente só acessa o
+                        módulo no portal se esta opção estiver ativa e salva.
+                      </Typography>
+                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" useFlexGap>
+                        <Button
+                          component={RouterLink}
+                          href={paths.dashboard.cliente.departamentoPessoal(currentCliente._id)}
+                          size="small"
+                          variant="soft"
+                          color="primary"
+                        >
+                          Lista de funcionários
+                        </Button>
+                        <Button
+                          component={RouterLink}
+                          href={paths.dashboard.cliente.departamentoPessoalNovo(currentCliente._id)}
+                          size="small"
+                          variant="contained"
+                        >
+                          Novo funcionário
+                        </Button>
+                      </Stack>
+                    </Alert>
+                  </Grid>
+                )}
                 <Grid xs={12}>
                   <Field.Editor
                     name="dadosDepartamentoPessoal"
