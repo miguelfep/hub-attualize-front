@@ -148,8 +148,15 @@ function applyFilter({ inputData, comparator, filters }) {
     if (statusA !== statusB) {
       return statusA - statusB;
     }
-    
-    // Depois, aplica a ordenação do usuário (se houver)
+
+    // Simples Nacional antes dos demais regimes (dentro do mesmo status)
+    const simplesA = a[0].regimeTributario === 'simples' ? 0 : 1;
+    const simplesB = b[0].regimeTributario === 'simples' ? 0 : 1;
+    if (simplesA !== simplesB) {
+      return simplesA - simplesB;
+    }
+
+    // Depois, aplica a ordenação do usuário (clique nas colunas)
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
     

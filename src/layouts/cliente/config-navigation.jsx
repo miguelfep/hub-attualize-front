@@ -47,8 +47,9 @@ export function usePortalNavData() {
   
   ];
 
+  const comercialChildren = [...vendasChildren].filter(Boolean);
+
   const financeiroChildren = [
-    ...vendasChildren,
     {
       title: 'Meu Faturamento',
       path: paths.cliente.faturamentos.root,
@@ -69,12 +70,17 @@ export function usePortalNavData() {
       path: paths.cliente.recompensas.root,
       icon: <Iconify icon="solar:wallet-money-bold-duotone" />,
     },
-    {
-      title: 'Indicações',
-      path: paths.cliente.indicacoes.root,
-      icon: <Iconify icon="solar:share-bold-duotone" />,
-    },
   ].filter(Boolean);
+
+  const comercialNavItem =
+    comercialChildren.length > 0
+      ? {
+          title: 'Comercial',
+          path: comercialChildren[0].path,
+          icon: <Iconify icon="solar:case-minimalistic-bold-duotone" />,
+          children: comercialChildren,
+        }
+      : null;
 
   return [
     {
@@ -121,13 +127,19 @@ export function usePortalNavData() {
   
     {
       items: [
+        comercialNavItem,
         {
-          title: 'Comercial e Financeiro',
+          title: 'Financeiro',
           path: paths.cliente.financeiro.root,
-          icon: <Iconify icon="solar:money-bag-bold" />,
+          icon: <Iconify icon="solar:chat-round-money-bold" />,
           children: financeiroChildren,
         },
-      ],
+        {
+          title: 'Programa de indicação',
+          path: paths.cliente.indicacoes.root,
+          icon: <Iconify icon="solar:share-bold-duotone" />,
+        },
+      ].filter(Boolean),
     },
     {
       subheader: 'Comunidade',

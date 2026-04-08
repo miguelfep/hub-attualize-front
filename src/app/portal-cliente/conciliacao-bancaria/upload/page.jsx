@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 import { useDropzone } from 'react-dropzone';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 import Box from '@mui/material/Box';
@@ -74,6 +74,11 @@ const MIME_TYPES_ACEITOS = [
   'application/pdf',
   'application/x-ofx',
 ];
+
+function isBancoAtivoPortal(banco) {
+  if (!banco) return false;
+  return banco.status !== false && banco.ativo !== false;
+}
 
 export default function UploadExtratoPage() {
   const router = useRouter();
@@ -171,6 +176,13 @@ export default function UploadExtratoPage() {
   // Hook de bancos (buscar bancos reais da API)
   const { bancos, loading: loadingBancos } = useBancosCliente(clienteId);
 
+  const bancoSelecionadoUpload = useMemo(
+    () => bancos.find((b) => b._id === bancoId),
+    [bancos, bancoId]
+  );
+  const uploadBloqueadoBancoInativo =
+    Boolean(bancoId && bancoSelecionadoUpload) && !isBancoAtivoPortal(bancoSelecionadoUpload);
+
   // Dropzone
   const onDrop = useCallback((acceptedFiles) => {
     if (acceptedFiles.length > 0) {
@@ -188,6 +200,7 @@ export default function UploadExtratoPage() {
       'application/x-ofx': ['.ofx'],
     },
     multiple: false,
+    disabled: uploadBloqueadoBancoInativo,
   });
 
   // Validar arquivo
@@ -299,6 +312,14 @@ export default function UploadExtratoPage() {
 
     if (!clienteId) {
       toast.error('Cliente não identificado');
+      return;
+    }
+
+    const bancoParaUpload = bancos.find((b) => b._id === bancoId);
+    if (bancoParaUpload && !isBancoAtivoPortal(bancoParaUpload)) {
+      toast.error(
+        'Este banco está inativo. Envio de extrato não é permitido. Reative a conta em Gerenciar Bancos.'
+      );
       return;
     }
 
@@ -533,13 +554,17 @@ export default function UploadExtratoPage() {
                   <MenuItem value="">
                     <em>Selecione o banco</em>
                   </MenuItem>
-                  {bancos.map((banco) => (
-                    <MenuItem key={banco._id} value={banco._id}>
-                      🏦 {banco.instituicaoBancariaId?.nome || banco.nome || 'Banco'} (
-                      {banco.instituicaoBancariaId?.codigo || banco.codigo || 'N/A'}) - Ag:{' '}
-                      {banco.agencia || 'N/A'} Conta: {banco.conta}
-                    </MenuItem>
-                  ))}
+                  {bancos.map((banco) => {
+                    const ativo = isBancoAtivoPortal(banco);
+                    return (
+                      <MenuItem key={banco._id} value={banco._id}>
+                        🏦 {banco.instituicaoBancariaId?.nome || banco.nome || 'Banco'} (
+                        {banco.instituicaoBancariaId?.codigo || banco.codigo || 'N/A'}) - Ag:{' '}
+                        {banco.agencia || 'N/A'} Conta: {banco.conta}
+                        {!ativo ? ' (Inativo)' : ''}
+                      </MenuItem>
+                    );
+                  })}
                 </Select>
               </FormControl>
 
@@ -560,6 +585,18 @@ export default function UploadExtratoPage() {
                 📅 Período do Extrato *
               </Typography>
               
+              {uploadBloqueadoBancoInativo && (
+                <Alert severity="warning" icon={<Iconify icon="eva:info-outline" />} sx={{ mb: 2 }}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Banco inativo
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Não é possível enviar extratos (OFX, PDF etc.) para contas inativas. Reative o banco em{' '}
+                    <strong>Gerenciar Bancos</strong> ou selecione outra conta.
+                  </Typography>
+                </Alert>
+              )}
+
               {statusMes === 'fechado_sem_movimento' && (
                 <Alert severity="error" icon={<Iconify icon="eva:lock-fill" />} sx={{ mb: 2 }}>
                   <Typography variant="body2" fontWeight="bold">
@@ -629,15 +666,18 @@ export default function UploadExtratoPage() {
             p: 5,
             textAlign: 'center',
             bgcolor: isDragActive ? 'primary.lighter' : arquivo ? 'success.lighter' : 'background.neutral',
-            cursor: 'pointer',
+            cursor: uploadBloqueadoBancoInativo ? 'not-allowed' : 'pointer',
+            opacity: uploadBloqueadoBancoInativo ? 0.65 : 1,
             transition: 'all 0.3s',
             border: 2,
             borderStyle: 'dashed',
             borderColor: isDragActive ? 'primary.main' : arquivo ? 'success.main' : 'grey.300',
-            '&:hover': {
-              borderColor: 'primary.main',
-              bgcolor: 'primary.lighter',
-            },
+            '&:hover': uploadBloqueadoBancoInativo
+              ? {}
+              : {
+                  borderColor: 'primary.main',
+                  bgcolor: 'primary.lighter',
+                },
           }}
         >
           <input {...getInputProps()} />
@@ -692,7 +732,7 @@ export default function UploadExtratoPage() {
           size="large"
           fullWidth
           onClick={handleUpload}
-          disabled={!arquivo || !bancoId || !mesAno}
+          disabled={!arquivo || !bancoId || !mesAno || uploadBloqueadoBancoInativo}
           startIcon={<Iconify icon="eva:upload-fill" />}
           sx={{ 
             mb: 3,

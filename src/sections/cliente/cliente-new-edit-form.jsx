@@ -508,7 +508,31 @@ const onSubmit = handleSubmit(
     setLoadingReceita(true);
     try {
       const clienteAtualizado = await atualizarDadosCliente(currentCliente._id);
-      reset(clienteAtualizado);
+      reset({
+        ...clienteAtualizado,
+        capitalSocial: capitalSocialFromApi(clienteAtualizado.capitalSocial),
+        tributacao:
+          clienteAtualizado.regimeTributario === 'simples'
+            ? (clienteAtualizado?.tributacao || []).filter((t) =>
+                TRIBUTACAO_VALUES_ALLOWED.includes(t)
+              )
+            : [],
+        status: clienteAtualizado.status !== undefined ? clienteAtualizado.status : true,
+        dataEntrada: clienteAtualizado.dataEntrada ? new Date(clienteAtualizado.dataEntrada) : null,
+        dataSaida: clienteAtualizado.dataSaida ? new Date(clienteAtualizado.dataSaida) : null,
+        whatsapp: normalizePhoneBR(clienteAtualizado.whatsapp),
+        telefoneComercial: normalizePhoneBR(clienteAtualizado.telefoneComercial),
+        socios: (clienteAtualizado?.socios || []).map((s) => ({
+          nome: s?.nome ?? '',
+          cpf: s?.cpf ?? '',
+          rg: s?.rg ?? '',
+          cnh: s?.cnh ?? '',
+          administrador: s?.administrador === true,
+          dataInclusao: s?.dataInclusao ? new Date(s.dataInclusao) : undefined,
+        })),
+        contratoSocialFile: null,
+        cartaoCnpjFile: null,
+      });
 
       toast.success('Dados da Receita atualizados com sucesso!');
     } catch (error) {
