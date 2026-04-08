@@ -1,8 +1,5 @@
 'use client';
 
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
@@ -10,14 +7,17 @@ import Avatar from '@mui/material/Avatar';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
+import MenuList from '@mui/material/MenuList';
+import MenuItem from '@mui/material/MenuItem';
 import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
-import { fDate } from 'src/utils/format-time';
+import { formatDate } from 'src/utils/formatters';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
+import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 import { isGuia, getCompetencia, formatCompetencia } from './utils';
 
@@ -112,6 +112,15 @@ const formatPastaLabel = (folderId) => {
   return '-';
 };
 
+const compactLabelSx = {
+  height: 20,
+  minHeight: 20,
+  px: 0.75,
+  fontSize: '0.66rem',
+  lineHeight: 1,
+  '& .MuiLabel-icon': { fontSize: 12 },
+};
+
 // ----------------------------------------------------------------------
 
 export function GuiaFiscalTableRow({
@@ -124,6 +133,8 @@ export function GuiaFiscalTableRow({
   onDownloadRow,
   onMoveRow,
 }) {
+  const popover = usePopover();
+
   const {
     nomeArquivo,
     tipoGuia,
@@ -143,21 +154,36 @@ export function GuiaFiscalTableRow({
   const currentStatus = statusProcessamento || status;
 
   return (
-    <TableRow hover tabIndex={-1} role="checkbox" selected={selected}>
+    <TableRow
+      hover
+      tabIndex={-1}
+      role="checkbox"
+      selected={selected}
+      sx={{ '& .MuiTableCell-root': { py: 0.5 } }}
+    >
       <TableCell padding="checkbox">
-        <Checkbox disableRipple checked={selected} onChange={onSelectRow} />
+        <Checkbox disableRipple size="small" checked={selected} onChange={onSelectRow} />
       </TableCell>
 
       <TableCell>
-        <Stack direction="row" alignItems="center" spacing={2}>
-          <Avatar variant="rounded" sx={{ width: 36, height: 36 }}>
-            <Iconify icon="solar:file-text-bold-duotone" />
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Avatar variant="rounded" sx={{ width: 24, height: 24 }}>
+            <Iconify icon="solar:file-text-bold-duotone" width={14} />
           </Avatar>
           <Box>
             <Link
               color="inherit"
               onClick={onViewRow}
-              sx={{ cursor: 'pointer', '&:hover': { textDecoration: 'underline' } }}
+              sx={{
+                cursor: 'pointer',
+                display: 'inline-block',
+                maxWidth: 180,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontSize: '0.8125rem',
+                '&:hover': { textDecoration: 'underline' },
+              }}
             >
               {nomeArquivo || 'Sem nome'}
             </Link>
@@ -168,27 +194,29 @@ export function GuiaFiscalTableRow({
       <TableCell>
         <Stack spacing={0.5}>
           {categoria && (
-            <Label variant="soft" color={getCategoriaColor(categoria)} size="small">
+            <Label variant="soft" color={getCategoriaColor(categoria)} size="small" sx={compactLabelSx}>
               {getCategoriaLabel(categoria)}
             </Label>
           )}
-          <Label variant="soft" color="info">
+          <Label variant="soft" color="info" size="small" sx={compactLabelSx}>
             {getTipoGuiaLabel(tipoGuia)}
           </Label>
         </Stack>
       </TableCell>
 
       <TableCell>
-        <Typography variant="body2">{cnpj || '-'}</Typography>
+        <Typography variant="caption">{cnpj || '-'}</Typography>
       </TableCell>
 
       <TableCell>
-        <Typography variant="body2">{clienteId?.razaoSocial || '-'}</Typography>
+        <Typography variant="caption" noWrap sx={{ display: 'block', maxWidth: 140 }}>
+          {clienteId?.razaoSocial || '-'}
+        </Typography>
       </TableCell>
 
       <TableCell sx={{ maxWidth: 180 }}>
         <Tooltip title={typeof folderId === 'object' && folderId?.slug ? folderId.slug : ''}>
-          <Typography variant="body2" noWrap>
+          <Typography variant="caption" noWrap>
             {formatPastaLabel(folderId)}
           </Typography>
         </Tooltip>
@@ -197,16 +225,20 @@ export function GuiaFiscalTableRow({
       <TableCell>
         <Stack spacing={0.5}>
           {getCompetencia(row) && (
-            <Typography variant="body2" color="text.secondary">
-              {formatCompetencia(getCompetencia(row))}
+            <Typography variant="caption" color="text.secondary">
+              {(() => {
+                const competencia = getCompetencia(row);
+                const formatted = formatDate(competencia);
+                return formatted === '-' ? formatCompetencia(competencia) : formatted;
+              })()}
             </Typography>
           )}
           {/* Vencimento - apenas para guias (não para documentos) */}
           {isGuia(categoria) && dataVencimento && (
-            <Tooltip title={format(new Date(dataVencimento), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}>
+            <Tooltip title={formatDate(dataVencimento)}>
               <Box>
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
-                  Venc: {fDate(dataVencimento)}
+                <Typography variant="caption" color="text.secondary">
+                  {formatDate(dataVencimento)}
                 </Typography>
               </Box>
             </Tooltip>
@@ -217,55 +249,86 @@ export function GuiaFiscalTableRow({
 
       <TableCell>
         <Stack spacing={0.5}>
-          <Label variant="soft" color={getStatusColor(currentStatus)}>
+          <Label variant="soft" color={getStatusColor(currentStatus)} size="small" sx={compactLabelSx}>
             {getStatusLabel(currentStatus)}
           </Label>
           {statusPagamento && (
-            <Label variant="soft" color={getStatusPagamentoColor(statusPagamento)} size="small">
+            <Label variant="soft" color={getStatusPagamentoColor(statusPagamento)} size="small" sx={compactLabelSx}>
               {getStatusPagamentoLabel(statusPagamento)}
             </Label>
           )}
         </Stack>
       </TableCell>
 
-      <TableCell>{createdAt ? fDate(createdAt) : '-'}</TableCell>
+      <TableCell>
+        <Typography variant="caption">{formatDate(createdAt)}</Typography>
+      </TableCell>
 
       <TableCell align="right">
-        <Stack direction="row" spacing={1} justifyContent="flex-end">
-          <Tooltip title="Visualizar">
-            <IconButton onClick={onViewRow}>
-              <Iconify icon="solar:eye-bold" />
-            </IconButton>
-          </Tooltip>
+        <Tooltip title="Ações">
+          <IconButton size="small" color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+            <Iconify icon="eva:more-vertical-fill" width={18} />
+          </IconButton>
+        </Tooltip>
 
-          <Tooltip title="Editar">
-            <IconButton onClick={onEditRow}>
-              <Iconify icon="solar:pen-bold" />
-            </IconButton>
-          </Tooltip>
+        <CustomPopover open={popover.open} anchorEl={popover.anchorEl} onClose={popover.onClose}>
+          <MenuList>
+            <MenuItem
+              onClick={() => {
+                popover.onClose();
+                onViewRow?.();
+              }}
+            >
+              <Iconify icon="solar:eye-bold" width={18} />
+              Visualizar
+            </MenuItem>
 
-          {onMoveRow && (
-            <Tooltip title="Mover para outra pasta">
-              <IconButton onClick={onMoveRow}>
-                <Iconify icon="mdi:folder-move-outline" />
-              </IconButton>
-            </Tooltip>
-          )}
+            <MenuItem
+              onClick={() => {
+                popover.onClose();
+                onEditRow?.();
+              }}
+            >
+              <Iconify icon="solar:pen-bold" width={18} />
+              Editar
+            </MenuItem>
 
-          {onDownloadRow ? (
-            <Tooltip title="Download">
-              <IconButton onClick={() => onDownloadRow(row._id, row.nomeArquivo)}>
-                <Iconify icon="solar:download-bold" />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Tooltip title="Deletar">
-              <IconButton color="error" onClick={onDeleteRow}>
-                <Iconify icon="solar:trash-bin-trash-bold" />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Stack>
+            {onMoveRow && (
+              <MenuItem
+                onClick={() => {
+                  popover.onClose();
+                  onMoveRow();
+                }}
+              >
+                <Iconify icon="mdi:folder-move-outline" width={18} />
+                Mover para outra pasta
+              </MenuItem>
+            )}
+
+            {onDownloadRow && (
+              <MenuItem
+                onClick={() => {
+                  popover.onClose();
+                  onDownloadRow(row._id, row.nomeArquivo);
+                }}
+              >
+                <Iconify icon="solar:download-bold" width={18} />
+                Download
+              </MenuItem>
+            )}
+
+            <MenuItem
+              onClick={() => {
+                popover.onClose();
+                onDeleteRow?.();
+              }}
+              sx={{ color: 'error.main' }}
+            >
+              <Iconify icon="solar:trash-bin-trash-bold" width={18} />
+              Deletar
+            </MenuItem>
+          </MenuList>
+        </CustomPopover>
       </TableCell>
     </TableRow>
   );

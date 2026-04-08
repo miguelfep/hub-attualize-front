@@ -88,19 +88,32 @@ export function GuiaFiscalTableToolbar({
 
   return (
     <Stack
-      spacing={1.5}
+      spacing={1}
       alignItems={{ xs: 'flex-end', md: 'center' }}
       direction={{ xs: 'column', md: 'row' }}
-      sx={{ p: 2, pr: { xs: 2, md: 1 } }}
+      sx={{ p: 1.25, pr: { xs: 1.25, md: 1 } }}
     >
       <TextField
         fullWidth
         select
+        size="small"
         label="Cliente"
         value={filters.clienteId || ''}
         onChange={handleFilterCliente}
         disabled={loadingClientes}
-        sx={{ maxWidth: { md: 320 } }}
+        sx={{ maxWidth: { md: 280 } }}
+        SelectProps={{
+          MenuProps: {
+            PaperProps: {
+              sx: {
+                maxHeight: 280,
+              },
+            },
+            MenuListProps: {
+              dense: true,
+            },
+          },
+        }}
       >
         <MenuItem value="">
           <em>Todos os clientes</em>
@@ -116,10 +129,19 @@ export function GuiaFiscalTableToolbar({
         <TextField
           fullWidth
           select
+          size="small"
           label="Categoria"
           value={filters.categoria || 'all'}
           onChange={handleFilterCategoria}
-          sx={{ maxWidth: { md: 160 } }}
+          sx={{ maxWidth: { md: 140 } }}
+          SelectProps={{
+            MenuProps: {
+              PaperProps: {
+                sx: { maxHeight: 280 },
+              },
+              MenuListProps: { dense: true },
+            },
+          }}
         >
           {categoriaOptions.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -132,10 +154,19 @@ export function GuiaFiscalTableToolbar({
       <TextField
         fullWidth
         select
+        size="small"
         label="Tipo"
         value={filters.tipoGuia}
         onChange={handleFilterTipoGuia}
-        sx={{ maxWidth: { md: 200 } }}
+        sx={{ maxWidth: { md: 170 } }}
+        SelectProps={{
+          MenuProps: {
+            PaperProps: {
+              sx: { maxHeight: 280 },
+            },
+            MenuListProps: { dense: true },
+          },
+        }}
       >
         {tipoGuiaOptions.map((option) => (
           <MenuItem key={option.value} value={option.value}>
@@ -147,10 +178,19 @@ export function GuiaFiscalTableToolbar({
       <TextField
         fullWidth
         select
+        size="small"
         label="Status"
         value={filters.status}
         onChange={handleFilterStatus}
-        sx={{ maxWidth: { md: 160 } }}
+        sx={{ maxWidth: { md: 140 } }}
+        SelectProps={{
+          MenuProps: {
+            PaperProps: {
+              sx: { maxHeight: 280 },
+            },
+            MenuListProps: { dense: true },
+          },
+        }}
       >
         <MenuItem value="all">Todos</MenuItem>
         <MenuItem value="pendente">Pendente</MenuItem>

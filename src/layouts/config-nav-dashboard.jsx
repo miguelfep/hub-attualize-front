@@ -159,6 +159,11 @@ export const navData = [
             path: paths.dashboard.guiasFiscais.list,
             roles: ['admin', 'operacional'],
           },
+          {
+            title: 'Upload em Massa',
+            path: paths.dashboard.guiasFiscais.upload,
+            roles: ['admin', 'operacional'],
+          },
         ],
       },
       {

@@ -5,6 +5,7 @@ import { useCallback } from 'react';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Typography from '@mui/material/Typography';
 
 import { fDate } from 'src/utils/format-time';
 
@@ -43,7 +44,7 @@ export function GuiaFiscalTableFiltersResult({
   }, [filters, onFilters]);
 
   return (
-    <Stack spacing={1.5} sx={{ p: 2.5 }}>
+    <Stack spacing={1.25} sx={{ px: 2, py: 1.25 }}>
       <Stack flexWrap="wrap" direction="row" spacing={1}>
         {!!filters.clienteId && (
           <Chip
@@ -55,6 +56,7 @@ export function GuiaFiscalTableFiltersResult({
             }`}
             onDelete={handleRemoveCliente}
             deleteIcon={<Iconify icon="solar:close-circle-bold" />}
+            size="small"
           />
         )}
 
@@ -65,6 +67,7 @@ export function GuiaFiscalTableFiltersResult({
             }`}
             onDelete={handleRemoveCategoria}
             deleteIcon={<Iconify icon="solar:close-circle-bold" />}
+            size="small"
           />
         )}
 
@@ -75,6 +78,7 @@ export function GuiaFiscalTableFiltersResult({
             }`}
             onDelete={handleRemoveTipoGuia}
             deleteIcon={<Iconify icon="solar:close-circle-bold" />}
+            size="small"
           />
         )}
 
@@ -85,6 +89,7 @@ export function GuiaFiscalTableFiltersResult({
             }`}
             onDelete={handleRemoveStatus}
             deleteIcon={<Iconify icon="solar:close-circle-bold" />}
+            size="small"
           />
         )}
 
@@ -99,14 +104,26 @@ export function GuiaFiscalTableFiltersResult({
             }`}
             onDelete={handleRemoveDateRange}
             deleteIcon={<Iconify icon="solar:close-circle-bold" />}
+            size="small"
           />
         )}
       </Stack>
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ typography: 'body2' }}>
-        <strong>{results}</strong> resultado(s) encontrado(s)
+      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1.5}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}
+        >
+          {results} resultado(s) encontrado(s)
+        </Typography>
 
-        <Button color="error" onClick={onResetFilters} startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}>
+        <Button
+          color="error"
+          size="small"
+          onClick={onResetFilters}
+          startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
+        >
           Limpar tudo
         </Button>
       </Stack>

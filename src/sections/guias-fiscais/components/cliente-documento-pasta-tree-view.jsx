@@ -1,10 +1,12 @@
 'use client';
 
+import { useMemo, useState, useEffect } from 'react';
+
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { alpha, useTheme } from '@mui/material/styles';
 import { TreeItem } from '@mui/x-tree-view/TreeItem';
+import { alpha, useTheme } from '@mui/material/styles';
 import { SimpleTreeView } from '@mui/x-tree-view/SimpleTreeView';
 
 import { Iconify } from 'src/components/iconify';
@@ -48,20 +50,33 @@ function FolderTreeItem({ node, selectedId, onSelect }) {
     >
       {hasChildren
         ? node.children.map((ch) => (
-            <FolderTreeItem key={ch._id} node={ch} selectedId={selectedId} onSelect={onSelect} />
-          ))
+          <FolderTreeItem key={ch._id} node={ch} selectedId={selectedId} onSelect={onSelect} />
+        ))
         : null}
     </TreeItem>
   );
 }
 
 export function ClienteDocumentoPastaTreeView({ folders, selectedId, onSelect, defaultExpandedItems }) {
-  const roots = folders?.length ? folders.map((f) => f._id) : [];
+  const roots = useMemo(() => (folders?.length ? folders.map((f) => f._id) : []), [folders]);
+  const initialExpanded = useMemo(() => defaultExpandedItems ?? roots, [defaultExpandedItems, roots]);
+  const [expandedItems, setExpandedItems] = useState(initialExpanded);
+  const selectedItems = useMemo(() => (selectedId ? [selectedId] : []), [selectedId]);
+
+  useEffect(() => {
+    setExpandedItems(initialExpanded);
+  }, [initialExpanded]);
+
   return (
-    <SimpleTreeView defaultExpandedItems={defaultExpandedItems ?? roots} sx={{ width: '100%' }}>
+    <SimpleTreeView
+      expandedItems={expandedItems}
+      selectedItems={selectedItems}
+      onExpandedItemsChange={(event, itemIds) => setExpandedItems(itemIds)}
+      sx={{ width: '100%' }}
+    >
       {folders?.map((node) => (
         <FolderTreeItem key={node._id} node={node} selectedId={selectedId} onSelect={onSelect} />
       ))}
-    </SimpleTreeView>
+    </SimpleTreeView >
   );
 }

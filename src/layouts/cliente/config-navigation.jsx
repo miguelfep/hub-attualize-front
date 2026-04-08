@@ -10,7 +10,7 @@ import { Iconify } from 'src/components/iconify';
 export function usePortalNavData() {
   const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos, possuiExtrato } = useSettings();
 
-  const vendasChildren = [
+  const comercialChildren = [
     podeGerenciarClientes && {
       title: 'Clientes',
       path: paths.cliente.clientes,
@@ -48,7 +48,6 @@ export function usePortalNavData() {
   ];
 
   const financeiroChildren = [
-    ...vendasChildren,
     {
       title: 'Meu Faturamento',
       path: paths.cliente.faturamentos.root,
@@ -122,7 +121,13 @@ export function usePortalNavData() {
     {
       items: [
         {
-          title: 'Comercial e Financeiro',
+          title: 'Comercial',
+          path: paths.cliente.clientes,
+          icon: <Iconify icon="solar:shop-2-bold-duotone" />,
+          children: comercialChildren,
+        },
+        {
+          title: 'Financeiro',
           path: paths.cliente.financeiro.root,
           icon: <Iconify icon="solar:money-bag-bold" />,
           children: financeiroChildren,

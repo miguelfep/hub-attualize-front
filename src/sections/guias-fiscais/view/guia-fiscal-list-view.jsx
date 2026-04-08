@@ -7,6 +7,7 @@ import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -223,7 +224,7 @@ export function GuiaFiscalListView() {
     const handleFocus = () => {
       mutate();
     };
-    
+
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [mutate]);
@@ -290,22 +291,22 @@ export function GuiaFiscalListView() {
 
       try {
         const result = await deleteGuiasFiscaisBatch(selectedIds);
-        
+
         if (result.success) {
           const { deletadas, naoEncontradas, erros } = result.data || {};
-          
+
           if (deletadas > 0) {
             toast.success(`${deletadas} guia(s) deletada(s) com sucesso!`);
           }
-          
+
           if (naoEncontradas && naoEncontradas.length > 0) {
             toast.warning(`${naoEncontradas.length} guia(s) não encontrada(s)`);
           }
-          
+
           if (erros && erros.length > 0) {
             toast.error(`${erros.length} erro(s) ao deletar`);
           }
-          
+
           table.onSelectAllRows(false);
           mutate();
         } else {
@@ -328,7 +329,7 @@ export function GuiaFiscalListView() {
 
   const handleFilterStatus = useCallback(
     (event) => {
-      const {value} = event.target;
+      const { value } = event.target;
       filters.setState({ status: value });
       table.onResetPage();
     },
@@ -337,7 +338,7 @@ export function GuiaFiscalListView() {
 
   const handleFilterTipoGuia = useCallback(
     (event) => {
-      const {value} = event.target;
+      const { value } = event.target;
       filters.setState({ tipoGuia: value });
       table.onResetPage();
     },
@@ -346,7 +347,7 @@ export function GuiaFiscalListView() {
 
   const handleFilterCategoria = useCallback(
     (event) => {
-      const {value} = event.target;
+      const { value } = event.target;
       filters.setState({ categoria: value });
       table.onResetPage();
     },
@@ -508,234 +509,287 @@ export function GuiaFiscalListView() {
     <DashboardContent
       maxWidth={false}
       sx={{
-        pt: { xs: 1, md: 1.5 },
-        pb: 2,
-        px: { xs: 1.5, sm: 2, md: 2.5, lg: 3 },
-        width: 1,
-        maxWidth: 1,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 2,
+        py: 2,
       }}
     >
-      <CustomBreadcrumbs
-        heading="Guias e Documentos"
-        links={[
-          { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Guias e Documentos', href: paths.dashboard.guiasFiscais.root },
-        ]}
-        action={
-          <Button
-            component={RouterLink}
-            href={paths.dashboard.guiasFiscais.upload}
-            variant="contained"
-            size="small"
-            startIcon={<Iconify icon="mingcute:add-line" />}
-          >
-            Upload
-          </Button>
-        }
-        sx={{ mb: 2 }}
-      />
+      {/* 1. CABEÇALHO E AÇÃO PRINCIPAL */}
+      <Box sx={{ px: { lg: 1 } }}>
+        <CustomBreadcrumbs
+          heading="Gerenciador de Arquivos"
+          links={[
+            { name: 'Dashboard', href: paths.dashboard.root },
+            { name: 'Guias e Documentos', href: paths.dashboard.guiasFiscais.root },
+          ]}
+          action={
+            <Button
+              component={RouterLink}
+              href={paths.dashboard.guiasFiscais.upload}
+              variant="contained"
+              startIcon={<Iconify icon="mingcute:add-line" />}
+            >
+              Novo Upload
+            </Button>
+          }
+          sx={{ mb: 0 }}
+        />
+      </Box>
 
+      {/* 2. ÁREA PRINCIPAL: PASTAS (ESQUERDA) + FILTROS/TABELA (DIREITA) */}
       <Stack
         direction={{ xs: 'column', lg: 'row' }}
         spacing={2}
-        sx={{ alignItems: 'stretch', minHeight: 0, flex: 1 }}
+        sx={{ flex: 1, minHeight: 0, alignItems: 'stretch' }}
       >
+        {/* ESTRUTURA DE PASTAS (ESQUERDA) */}
         <Box
           sx={{
-            width: { xs: '100%', lg: 300 },
+            width: { xs: '100%', lg: 270 },
             flexShrink: 0,
             display: 'flex',
             flexDirection: 'column',
-            minHeight: { xs: 'auto', lg: 400 },
+            minHeight: { xs: 260, lg: 0 },
           }}
         >
-          {filters.state.clienteId ? (
-            <GuiaFiscalAdminPastasPanel
-              clienteId={filters.state.clienteId}
-              folders={folders}
-              loadingFolders={loadingPastas}
-              selectedFolderId={selectedFolderId}
-              onSelectFolder={(id) => {
-                setSelectedFolderId(id);
-                table.onResetPage();
-              }}
-              onRefreshTree={() => mutatePastas()}
-              onUploadedDocuments={() => mutate()}
-              onQueueFilesForUpload={queuePastaUploadFiles}
-              uploading={pastaUploading}
-            />
-          ) : (
-            <Card variant="outlined" sx={{ height: '100%', p: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Stack spacing={1} alignItems="center" textAlign="center">
-                <Iconify icon="solar:users-group-rounded-bold-duotone" width={40} sx={{ color: 'text.disabled' }} />
-                <Typography variant="subtitle2" color="text.secondary">
-                  Selecione um cliente nos filtros
+          <Card
+            variant="outlined"
+            sx={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              bgcolor: 'background.neutral',
+              border: (t) => `solid 1px ${t.palette.divider}`,
+              borderRadius: 1.5,
+            }}
+          >
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={1}
+              sx={{ px: 2, py: 1.5, borderBottom: (t) => `dashed 1px ${t.palette.divider}` }}
+            >
+              <Iconify icon="solar:folder-2-bold-duotone" sx={{ color: 'primary.main' }} />
+              <Typography variant="subtitle2">Estrutura de Pastas</Typography>
+            </Stack>
+
+            {filters.state.clienteId ? (
+              <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                <GuiaFiscalAdminPastasPanel
+                  clienteId={filters.state.clienteId}
+                  folders={folders}
+                  loadingFolders={loadingPastas}
+                  selectedFolderId={selectedFolderId}
+                  onSelectFolder={(id) => {
+                    setSelectedFolderId(id);
+                    table.onResetPage();
+                  }}
+                  onRefreshTree={() => mutatePastas()}
+                  onUploadedDocuments={() => mutate()}
+                  onQueueFilesForUpload={queuePastaUploadFiles}
+                  uploading={pastaUploading}
+                />
+              </Box>
+            ) : (
+              <Stack flexGrow={1} alignItems="center" justifyContent="center" spacing={1} sx={{ p: 2, textAlign: 'center' }}>
+                <Iconify icon="solar:users-group-rounded-bold-duotone" width={48} sx={{ color: 'text.disabled', opacity: 0.5 }} />
+                <Typography variant="body2" sx={{ color: 'text.secondary', fontWeight: 500 }}>
+                  Nenhum cliente selecionado
                 </Typography>
-                <Typography variant="caption" color="text.disabled">
-                  As pastas aparecem à esquerda; documentos e datas à direita.
+                <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                  Selecione um cliente no filtro acima para visualizar suas pastas e arquivos.
                 </Typography>
               </Stack>
-            </Card>
-          )}
+            )}
+          </Card>
         </Box>
 
+        {/* CONTEÚDO (DIREITA): FILTRO ACIMA DA TABELA */}
         <Box
-          sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            minHeight: 0,
+            position: 'relative',
+          }}
           onDragEnter={handleListaDragEnter}
           onDragLeave={handleListaDragLeave}
           onDragOver={handleListaDragOver}
           onDrop={handleListaDrop}
         >
+          {/* DROP ZONE OVERLAY - Mais moderno */}
           {dragOverLista && filters.state.clienteId && selectedFolderId && (
             <Box
               sx={{
-                pointerEvents: 'none',
                 position: 'absolute',
                 inset: 0,
-                zIndex: 2,
-                borderRadius: 1,
+                zIndex: 10,
+                borderRadius: 1.5,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                bgcolor: alpha(theme.palette.primary.main, 0.12),
-                border: `2px dashed ${theme.palette.primary.main}`,
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.1),
+                border: (t) => `2px dashed ${t.palette.primary.main}`,
+                backdropFilter: 'blur(4px)',
+                transition: 'all 0.3s',
               }}
             >
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <Iconify icon="solar:cloud-upload-bold-duotone" width={32} />
-                <Typography variant="subtitle1" fontWeight={600}>
-                  Solte para enviar à pasta selecionada
+              <Stack alignItems="center" spacing={1}>
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: '50%',
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    boxShadow: (t) => t.customShadows.primary,
+                  }}
+                >
+                  <Iconify icon="solar:cloud-upload-bold-duotone" width={32} />
+                </Box>
+                <Typography variant="h6" sx={{ color: 'primary.darker' }}>
+                  Soltar para Upload
                 </Typography>
               </Stack>
             </Box>
           )}
-      <Card
-        sx={{
-          flex: 1,
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: 0,
-          transition: theme.transitions.create(['box-shadow', 'border-color']),
-          ...(dragOverLista &&
-            filters.state.clienteId &&
-            selectedFolderId && {
-              boxShadow: `0 0 0 2px ${theme.palette.primary.main} inset`,
-            }),
-        }}
-      >
-        <GuiaFiscalTableToolbar
-          filters={filters.state}
-          onFilters={(key, value) => {
-            filters.setState({ [key]: value });
-            table.onResetPage();
-          }}
-          onFilterCliente={handleFilterCliente}
-          onFilterStatus={handleFilterStatus}
-          onFilterTipoGuia={handleFilterTipoGuia}
-          onFilterCategoria={handleFilterCategoria}
-          onResetFilters={handleResetFilters}
-          canReset={canReset}
-          tipoGuiaOptions={TIPO_GUIA_OPTIONS}
-          categoriaOptions={CATEGORIA_OPTIONS}
-          clientes={clientes}
-          loadingClientes={loadingClientes}
-          numSelected={table.selected.length}
-          onDeleteBatch={() => confirmBatch.onTrue()}
-        />
 
-        {filters.state.clienteId && selectedFolderId && (
-          <Typography variant="caption" sx={{ px: 2, pt: 0, pb: 0.5, display: 'block' }} color="text.secondary">
-            Também pode arrastar PDF ou Excel para esta área (lista) — o mesmo modal de vencimento e competência será aberto.
-          </Typography>
-        )}
+          <Card
+            variant="outlined"
+            sx={{
+              height: '100%',
+              display: 'flex',
+              flexDirection: 'column',
+              bgcolor: 'background.neutral',
+              border: (t) => `solid 1px ${t.palette.divider}`,
+              borderRadius: 1.5,
+              boxShadow: 'none',
+            }}
+          >
+            <Box sx={{ px: 2.25, pt: 2, pb: 1.25, borderBottom: (t) => `dashed 1px ${t.palette.divider}` }}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Iconify icon="solar:list-check-bold-duotone" width={22} sx={{ color: 'primary.main' }} />
+                <Typography variant="subtitle1">Filtros e Documentos</Typography>
+              </Stack>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                Refine os filtros para localizar guias e documentos com mais rapidez.
+              </Typography>
+            </Box>
 
-        {canReset && (
-          <GuiaFiscalTableFiltersResult
-            filters={filters.state}
-            onFilters={(newFilters) => filters.setState(newFilters)}
-            onResetFilters={handleResetFilters}
-            results={dataFiltered.length}
-            tipoGuiaOptions={TIPO_GUIA_OPTIONS}
-            statusOptions={STATUS_OPTIONS}
-            categoriaOptions={CATEGORIA_OPTIONS}
-            clientes={clientes}
-          />
-        )}
+            <GuiaFiscalTableToolbar
+              filters={filters.state}
+              onFilters={(key, value) => {
+                filters.setState({ [key]: value });
+                table.onResetPage();
+              }}
+              onFilterCliente={handleFilterCliente}
+              onFilterStatus={handleFilterStatus}
+              onFilterTipoGuia={handleFilterTipoGuia}
+              onFilterCategoria={handleFilterCategoria}
+              onResetFilters={handleResetFilters}
+              canReset={canReset}
+              tipoGuiaOptions={TIPO_GUIA_OPTIONS}
+              categoriaOptions={CATEGORIA_OPTIONS}
+              clientes={clientes}
+              loadingClientes={loadingClientes}
+              numSelected={table.selected.length}
+              onDeleteBatch={() => confirmBatch.onTrue()}
+            />
 
-        <TableContainer sx={{ position: 'relative', overflow: 'auto', flex: 1, minHeight: 280 }}>
-          <Scrollbar>
-            <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
-              <TableHeadCustom
-                order={table.order}
-                orderBy={table.orderBy}
-                headLabel={TABLE_HEAD}
-                rowCount={dataFiltered.length}
-                numSelected={table.selected.length}
-                onSelectAllRows={(checked) => {
-                  if (checked) {
-                    const allIds = dataFiltered.map((row) => row._id);
-                    table.onSelectAllRows(checked, allIds);
-                  } else {
-                    table.onSelectAllRows(checked, []);
-                  }
-                }}
-                onSort={table.onSort}
+            {canReset && (
+              <GuiaFiscalTableFiltersResult
+                filters={filters.state}
+                onFilters={(newFilters) => filters.setState(newFilters)}
+                onResetFilters={handleResetFilters}
+                results={dataFiltered.length}
+                tipoGuiaOptions={TIPO_GUIA_OPTIONS}
+                statusOptions={STATUS_OPTIONS}
+                categoriaOptions={CATEGORIA_OPTIONS}
+                clientes={clientes}
               />
+            )}
 
-              <TableBody>
-                {isLoading ? (
-                  <TableNoData notFound loading />
-                ) : notFound ? (
-                  <TableNoData notFound />
-                ) : (
-                  dataFiltered.map((row) => (
-                    <GuiaFiscalTableRow
-                      key={row._id}
-                      row={row}
-                      selected={table.selected.includes(row._id)}
-                      onSelectRow={() => table.onSelectRow(row._id)}
-                      onViewRow={() => handleViewRow(row._id)}
-                      onEditRow={() => handleEditRow(row._id)}
-                      onDeleteRow={() => handleOpenConfirm(row._id)}
-                      onMoveRow={
-                        filters.state.clienteId
-                          ? () => handleOpenMoveGuia(row._id)
-                          : undefined
-                      }
-                    />
-                  ))
-                )}
+            <Divider sx={{ borderStyle: 'dashed', mx: 2.25 }} />
 
-                <TableEmptyRows
-                  height={table.dense ? 52 : 72}
-                  emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered.length)}
-                />
-              </TableBody>
-            </Table>
-          </Scrollbar>
-        </TableContainer>
+            {/* INFO DE ATALHO */}
+            {filters.state.clienteId && selectedFolderId && (
+              <Box
+                sx={{
+                  mx: 2.25,
+                  mt: 1,
+                  mb: 0.5,
+                  px: 1.25,
+                  py: 0.85,
+                  bgcolor: 'background.paper',
+                  border: (t) => `solid 1px ${t.palette.divider}`,
+                  borderRadius: 1,
+                }}
+              >
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Iconify icon="solar:info-circle-bold" width={14} />
+                  Dica: Arraste PDF ou Excel diretamente para a lista para upload rápido.
+                </Typography>
+              </Box>
+            )}
 
-        <TablePaginationCustom
-          count={total}
-          page={table.page}
-          rowsPerPage={table.rowsPerPage}
-          onPageChange={table.onChangePage}
-          onRowsPerPageChange={table.onChangeRowsPerPage}
-          dense={table.dense}
-          onChangeDense={table.onChangeDense}
-        />
-      </Card>
+            <TableContainer sx={{ position: 'relative', overflow: 'auto', flex: 1, minHeight: 320 }}>
+              <Scrollbar>
+                <Table size="small" sx={{ minWidth: 780 }}>
+                  <TableHeadCustom
+                    order={table.order}
+                    orderBy={table.orderBy}
+                    headLabel={TABLE_HEAD}
+                    rowCount={dataFiltered.length}
+                    numSelected={table.selected.length}
+                    onSelectAllRows={(checked) => {
+                      const allIds = dataFiltered.map((row) => row._id);
+                      table.onSelectAllRows(checked, allIds);
+                    }}
+                    onSort={table.onSort}
+                  />
+
+                  <TableBody>
+                    {isLoading ? (
+                      <TableNoData notFound loading />
+                    ) : notFound ? (
+                      <TableNoData notFound />
+                    ) : (
+                      dataFiltered.map((row) => (
+                        <GuiaFiscalTableRow
+                          key={row._id}
+                          row={row}
+                          selected={table.selected.includes(row._id)}
+                          onSelectRow={() => table.onSelectRow(row._id)}
+                          onViewRow={() => handleViewRow(row._id)}
+                          onEditRow={() => handleEditRow(row._id)}
+                          onDeleteRow={() => handleOpenConfirm(row._id)}
+                          onMoveRow={filters.state.clienteId ? () => handleOpenMoveGuia(row._id) : undefined}
+                        />
+                      ))
+                    )}
+                    <TableEmptyRows height={40} emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered?.length ?? 0)} />
+                  </TableBody>
+                </Table>
+              </Scrollbar>
+            </TableContainer>
+
+            <Divider sx={{ borderStyle: 'dashed' }} />
+
+            <TablePaginationCustom
+              count={total}
+              page={table.page}
+              rowsPerPage={table.rowsPerPage}
+              onPageChange={table.onChangePage}
+              onRowsPerPageChange={table.onChangeRowsPerPage}
+            />
+          </Card>
         </Box>
       </Stack>
 
+      {/* DIALOGS - Mantidos no final por organização */}
       <GuiaFiscalPastaUploadDialog
         open={pastaUploadOpen}
-        onClose={() => {
-          if (!pastaUploading) {
-            setPastaUploadOpen(false);
-            setPastaUploadFiles([]);
-          }
-        }}
+        onClose={() => { if (!pastaUploading) { setPastaUploadOpen(false); setPastaUploadFiles([]); } }}
         files={pastaUploadFiles}
         pastaNome={pastaSelecionadaNome}
         uploading={pastaUploading}
@@ -744,12 +798,7 @@ export function GuiaFiscalListView() {
 
       <GuiaFiscalMovePastaDialog
         open={moveDialog.value}
-        onClose={() => {
-          if (!movingGuia) {
-            moveDialog.onFalse();
-            setGuiaIdToMove(null);
-          }
-        }}
+        onClose={() => { if (!movingGuia) { moveDialog.onFalse(); setGuiaIdToMove(null); } }}
         folders={folders}
         onConfirm={handleConfirmMoveGuia}
         loading={movingGuia}
@@ -759,44 +808,16 @@ export function GuiaFiscalListView() {
         open={confirm.value}
         onClose={confirm.onFalse}
         title="Deletar"
-        content={
-          <>
-            Tem certeza que deseja deletar esta guia fiscal? Esta ação não pode ser desfeita.
-          </>
-        }
-        action={
-          <Button
-            variant="contained"
-            color="error"
-            onClick={() => {
-              if (guiaIdToDelete) {
-                handleDeleteRow(guiaIdToDelete);
-              }
-            }}
-          >
-            Deletar
-          </Button>
-        }
+        content="Tem certeza que deseja deletar esta guia fiscal? Esta ação não pode ser desfeita."
+        action={<Button variant="contained" color="error" onClick={() => guiaIdToDelete && handleDeleteRow(guiaIdToDelete)}>Deletar</Button>}
       />
 
       <ConfirmDialog
         open={confirmBatch.value}
         onClose={confirmBatch.onFalse}
         title="Deletar Múltiplas Guias"
-        content={
-          <>
-            Tem certeza que deseja deletar {table.selected.length} guia(s) fiscal(is)? Esta ação não pode ser desfeita.
-          </>
-        }
-        action={
-          <Button
-            variant="contained"
-            color="error"
-            onClick={handleDeleteBatch}
-          >
-            Deletar {table.selected.length} guia(s)
-          </Button>
-        }
+        content={`Tem certeza que deseja deletar ${table.selected.length} guia(s) fiscal(is)?`}
+        action={<Button variant="contained" color="error" onClick={handleDeleteBatch}>Deletar Selecionados</Button>}
       />
     </DashboardContent>
   );
