@@ -258,11 +258,11 @@ export function GuiaFiscalUploadView() {
   return (
     <DashboardContent>
       <CustomBreadcrumbs
-        heading="Upload de Guias e Documentos"
+        heading="Express"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Guias e Documentos', href: paths.dashboard.guiasFiscais.list },
-          { name: 'Upload' },
+          { name: 'Gerenciador de Arquivos', href: paths.dashboard.guiasFiscais.list },
+          { name: 'Express' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />

@@ -16,7 +16,6 @@ export function usePortalNavData() {
     possuiFuncionario,
   } = useSettings();
 
-  console.log('possuiFuncionario', possuiFuncionario);
 
   const vendasChildren = [
     podeGerenciarClientes && {
@@ -110,18 +109,18 @@ export function usePortalNavData() {
       items: [
         {
           title: 'Meus Documentos',
-          path: paths.cliente.guiasFiscais.list,
+          path: paths.cliente.guiasEDocumentos.list,
           icon: <Iconify icon="solar:documents-bold-duotone" />,
           children: [
+            {
+              title: 'Guias',
+              path: paths.cliente.guiasEDocumentos.list,
+              icon: <Iconify icon="solar:folder-with-files-bold-duotone" />,
+            },
             {
               title: 'Empresa',
               path: paths.cliente.empresa,
               icon: <Iconify icon="solar:buildings-2-bold-duotone" />,
-            },
-            {
-              title: 'Guias',
-              path: paths.cliente.guiasFiscais.list,
-              icon: <Iconify icon="solar:file-text-bold-duotone" />,
             },
             {
               title: 'Licenças',

@@ -376,7 +376,7 @@ export default function PortalClienteDash2View() {
               />
             )}
           </Box>
-          <Box sx={{ flex: 1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, minHeight: 280, minWidth: 0, overflow: 'hidden' }}>
             {loadingDashboard || !chartData || chartData.length === 0 ? (
               <BudgetOverviewChartSkeleton />
             ) : (

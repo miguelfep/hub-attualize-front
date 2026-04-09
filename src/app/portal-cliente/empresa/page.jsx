@@ -23,6 +23,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 
 // App Utils & Components
 import { formatCNPJ } from 'src/utils/formatter';
+import { formatRg, formatCpf } from 'src/utils/format-input';
 
 import { Iconify } from 'src/components/iconify';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
@@ -84,12 +85,12 @@ const InfoRow = ({ icon, label, value, isCopyable = false }) => {
     if (!canBeCopied) return;
 
     if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
+      clearTimeout(copyTimeoutRef.current);
     }
-    navigator.clipboard.writeText(String(value)); 
+    navigator.clipboard.writeText(String(value));
     setTooltipTitle('Copiado!');
     setIsCopied(true);
-    
+
     copyTimeoutRef.current = setTimeout(() => {
       setTooltipTitle('Copiar');
       setIsCopied(false);
@@ -98,7 +99,7 @@ const InfoRow = ({ icon, label, value, isCopyable = false }) => {
 
   useEffect(() => () => {
     if (copyTimeoutRef.current) {
-        clearTimeout(copyTimeoutRef.current);
+      clearTimeout(copyTimeoutRef.current);
     }
   }, []);
 
@@ -280,11 +281,11 @@ const AddressDisplay = ({ endereco }) => {
     if (copyTimeoutRef.current) {
       clearTimeout(copyTimeoutRef.current);
     }
-    
+
     navigator.clipboard.writeText(addressString);
     setTooltipTitle('Copiado!');
     setIsCopied(true);
-    
+
     copyTimeoutRef.current = setTimeout(() => {
       setTooltipTitle('Copiar Endereço Completo');
       setIsCopied(false);
@@ -391,7 +392,7 @@ const SocioCard = ({ socio }) => {
             CPF
           </Typography>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {socio.cpf || '—'}
+            {formatCpf(socio.cpf || '') || '—'}
           </Typography>
         </Stack>
         <Stack spacing={1}>
@@ -402,7 +403,7 @@ const SocioCard = ({ socio }) => {
             RG
           </Typography>
           <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            {socio.rg || '—'}
+            {formatRg(socio.rg || '') || '—'}
           </Typography>
         </Stack>
       </Stack>
@@ -443,17 +444,17 @@ export default function MinhaEmpresaView() {
 
     const statusConfig = empresaData.status
       ? {
-          icon: 'mdi:check-circle-outline',
-          label: 'Ativo',
-          color: 'success',
-          tooltipText: 'A empresa está operacional.',
-        }
+        icon: 'mdi:check-circle-outline',
+        label: 'Ativo',
+        color: 'success',
+        tooltipText: 'A empresa está operacional.',
+      }
       : {
-          icon: 'mdi:close-circle-outline',
-          label: 'Inativo',
-          color: 'error',
-          tooltipText: 'A empresa não está operacional.',
-        };
+        icon: 'mdi:close-circle-outline',
+        label: 'Inativo',
+        color: 'error',
+        tooltipText: 'A empresa não está operacional.',
+      };
 
     const regimeMap = {
       simples: {
@@ -510,7 +511,7 @@ export default function MinhaEmpresaView() {
     };
 
     planoConfig.tooltipText = `Plano de serviços contratado: ${planoConfig.label}`;
-    
+
     const tributacaoMap = {
       anexo1: { icon: 'mdi:star-circle-outline', label: 'Anexo I', color: 'info' },
       anexo2: { icon: 'mdi:star-circle-outline', label: 'Anexo II', color: 'info' },
@@ -525,13 +526,13 @@ export default function MinhaEmpresaView() {
     const tributacaoConfigs =
       empresaData.tributacao && Array.isArray(empresaData.tributacao)
         ? empresaData.tributacao.map(
-            (tributo) =>
-              tributacaoMap[tributo] || {
-                icon: 'mdi:help-circle-outline',
-                label: `Tributo: ${tributo}`,
-                color: 'default',
-              }
-          )
+          (tributo) =>
+            tributacaoMap[tributo] || {
+              icon: 'mdi:help-circle-outline',
+              label: `Tributo: ${tributo}`,
+              color: 'default',
+            }
+        )
         : [];
 
     return { statusConfig, regimeConfig, planoConfig, tributacaoConfigs };
@@ -564,7 +565,7 @@ export default function MinhaEmpresaView() {
     <LazyMotion features={domAnimation}>
       <Box sx={{ position: 'relative' }}>
         <Card
-          sx={{ borderRadius: 3,boxShadow: `0 4px 20px ${alpha(theme.palette.grey[500], 0.15)}`  }}
+          sx={{ borderRadius: 3, boxShadow: `0 4px 20px ${alpha(theme.palette.grey[500], 0.15)}` }}
         >
           {/* CABEÇALHO */}
           <CardContent
@@ -589,7 +590,7 @@ export default function MinhaEmpresaView() {
                   variant="h4"
                   component="h1"
                   sx={{ fontWeight: 700, color: 'text.primary' }}
-                  >
+                >
                   {empresaData.razaoSocial}
                 </Typography>
                 <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
@@ -611,7 +612,7 @@ export default function MinhaEmpresaView() {
 
           {/* SEÇÃO 1: DADOS CADASTRAIS E CONTATO */}
           <Section icon="mdi:office-building-outline" title="Dados Cadastrais e Contato">
-            <Grid container spacing={3}>
+            <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
               <Grid xs={12} md={6}>
                 <Stack divider={<CustomDivider />}>
                   <InfoRow
@@ -620,11 +621,11 @@ export default function MinhaEmpresaView() {
                     value={formatCNPJ(empresaData.cnpj)}
                     isCopyable
                   />
-                  <InfoRow 
-                    icon="mdi:pound" 
-                    label="Código" 
-                    value={empresaData.codigo} 
-                    isCopyable 
+                  <InfoRow
+                    icon="mdi:pound"
+                    label="Código"
+                    value={empresaData.codigo}
+                    isCopyable
                   />
                   <InfoRow
                     icon="mdi:file-document-outline"
@@ -689,7 +690,7 @@ export default function MinhaEmpresaView() {
 
           {/* SEÇÃO 2: ATIVIDADES */}
           <Section icon="mdi:briefcase-outline" title="Atividades da Empresa">
-            <Grid container spacing={3}>
+            <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
               <Grid xs={12} md={6}>
                 <ActivitySection
                   title="Atividade Principal"
@@ -712,11 +713,10 @@ export default function MinhaEmpresaView() {
           {/* SEÇÃO 3: QUADRO SOCIETÁRIO */}
           <Section icon="solar:users-group-rounded-bold-duotone" title="Quadro Societário">
             {empresaData.socios?.length > 0 ? (
-              <Grid container spacing={2}>
+              <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
                 {empresaData.socios.map((socio, index) => (
                   <MotionGrid
                     key={index}
-                    item
                     xs={12}
                     sm={6}
                     md={4}

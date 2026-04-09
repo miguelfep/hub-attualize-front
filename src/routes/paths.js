@@ -279,11 +279,15 @@ export const paths = {
       relatorios: `${ROOTS.DASHBOARD}/pix/relatorios`,
     },
     guiasFiscais: {
-      root: `${ROOTS.DASHBOARD}/guias-fiscais`,
-      list: `${ROOTS.DASHBOARD}/guias-fiscais`,
-      upload: `${ROOTS.DASHBOARD}/guias-fiscais/upload`,
-      details: (id) => `${ROOTS.DASHBOARD}/guias-fiscais/${id}`,
-      edit: (id) => `${ROOTS.DASHBOARD}/guias-fiscais/${id}/edit`,
+      root: `${ROOTS.DASHBOARD}/gerenciador-de-arquivos`,
+      list: `${ROOTS.DASHBOARD}/gerenciador-de-arquivos`,
+      upload: `${ROOTS.DASHBOARD}/gerenciador-de-arquivos/upload`,
+      details: (id) => `${ROOTS.DASHBOARD}/gerenciador-de-arquivos/${id}`,
+      edit: (id) => `${ROOTS.DASHBOARD}/gerenciador-de-arquivos/${id}/edit`,
+    },
+    guiasEDocumentos: {
+      root: `${ROOTS.DASHBOARD}/guias-e-documentos`,
+      list: `${ROOTS.DASHBOARD}/guias-e-documentos`,
     },
     recompensas: {
       root: `${ROOTS.DASHBOARD}/recompensas`,
@@ -360,10 +364,14 @@ export const paths = {
     },
     aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
     guiasFiscais: {
-      root: `${ROOTS.CLIENTE}/guias-fiscais`,
-      list: `${ROOTS.CLIENTE}/guias-fiscais`,
-      calendar: `${ROOTS.CLIENTE}/guias-fiscais/calendario`,
-      details: (id) => `${ROOTS.CLIENTE}/guias-fiscais/${id}`,
+      root: `${ROOTS.CLIENTE}/guias-e-documentos`,
+      list: `${ROOTS.CLIENTE}/guias-e-documentos`,
+      details: (id) => `${ROOTS.CLIENTE}/guias-e-documentos/${id}`,
+    },
+    guiasEDocumentos: {
+      root: `${ROOTS.CLIENTE}/guias-e-documentos`,
+      list: `${ROOTS.CLIENTE}/guias-e-documentos`,
+      details: (id) => `${ROOTS.CLIENTE}/guias-e-documentos/${id}`,
     },
     indicacoes: {
       root: `${ROOTS.CLIENTE}/indicacoes`,

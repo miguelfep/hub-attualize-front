@@ -14,6 +14,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
 import { isGuia, getCompetencia, formatCompetencia } from '../utils';
+import { isDocumentoNovoParaClientePortal } from '../guia-documento-visualizacao';
 
 // ----------------------------------------------------------------------
 
@@ -139,6 +140,11 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
                   color={statusPagamento === 'pago' ? 'success' : statusPagamento === 'vencido' ? 'error' : 'warning'}
                 >
                   {getStatusPagamentoLabel(statusPagamento)}
+                </Label>
+              )}
+              {isDocumentoNovoParaClientePortal(guia) && (
+                <Label variant="soft" color="info" size="small">
+                  Novo
                 </Label>
               )}
             </Stack>

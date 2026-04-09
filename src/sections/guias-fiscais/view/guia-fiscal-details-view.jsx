@@ -3,9 +3,13 @@
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import TableRow from '@mui/material/TableRow';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -24,6 +28,12 @@ import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { isGuia, getCompetencia, formatCompetencia } from '../utils';
+import {
+  getClienteVisualizouEm,
+  getLeiturasPortalItensAdmin,
+  clienteJaVisualizouDocumento,
+  temInformacaoLeituraPortalAdmin,
+} from '../guia-documento-visualizacao';
 
 // ----------------------------------------------------------------------
 
@@ -149,7 +159,7 @@ export function GuiaFiscalDetailsView({ id }) {
         heading="Detalhes do Documento"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Guias e Documentos', href: paths.dashboard.guiasFiscais.list },
+          { name: 'Gerenciador de Arquivos', href: paths.dashboard.guiasFiscais.list },
           { name: 'Detalhes' },
         ]}
         action={
@@ -316,6 +326,79 @@ export function GuiaFiscalDetailsView({ id }) {
                 </Stack>
               </Box>
             )}
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                Leituras no portal
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+                Visualização ou download feito por usuários no portal do cliente. Última data agregada e lista
+                dependem dos campos enviados pela API admin (ex.: <code>leiturasPortal</code>,{' '}
+                <code>quantidadeLeiturasPortal</code>, <code>ultimaVisualizacaoPortalEm</code>).
+              </Typography>
+
+              <Stack spacing={2}>
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
+                  <Typography variant="body2" color="text.secondary">
+                    Houve leitura no portal:
+                  </Typography>
+                  <Label variant="soft" color={clienteJaVisualizouDocumento(guia) ? 'success' : 'default'}>
+                    {clienteJaVisualizouDocumento(guia) ? 'Sim' : 'Não'}
+                  </Label>
+                </Stack>
+
+                {typeof guia.quantidadeLeiturasPortal === 'number' && (
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography variant="body2" color="text.secondary">
+                      Quantidade de registros:
+                    </Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {guia.quantidadeLeiturasPortal}
+                    </Typography>
+                  </Stack>
+                )}
+
+                {getClienteVisualizouEm(guia) && (
+                  <Stack direction="row" justifyContent="space-between">
+                    <Typography variant="body2" color="text.secondary">
+                      Última visualização (resumo):
+                    </Typography>
+                    <Typography variant="body2" fontWeight="medium">
+                      {fDate(getClienteVisualizouEm(guia))}
+                    </Typography>
+                  </Stack>
+                )}
+
+                {getLeiturasPortalItensAdmin(guia).length > 0 ? (
+                  <Table size="small">
+                    <TableBody>
+                      {getLeiturasPortalItensAdmin(guia).map((row, idx) => (
+                        <TableRow key={`${row.label}-${idx}`}>
+                          <TableCell sx={{ border: 0, pl: 0 }}>
+                            <Typography variant="body2">{row.label}</Typography>
+                          </TableCell>
+                          <TableCell align="right" sx={{ border: 0, pr: 0 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              {row.vistoEm ? fDate(row.vistoEm) : '—'}
+                            </Typography>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  !temInformacaoLeituraPortalAdmin(guia) &&
+                  !getClienteVisualizouEm(guia) &&
+                  typeof guia.quantidadeLeiturasPortal !== 'number' && (
+                    <Typography variant="body2" color="text.secondary">
+                      Nenhum detalhe de leitura no portal retornado para este documento. Quando o backend incluir
+                      os campos no GET admin do documento, a lista por usuário e as datas aparecerão aqui.
+                    </Typography>
+                  )
+                )}
+              </Stack>
+            </Box>
 
             <Box>
               <Typography variant="subtitle2" sx={{ mb: 1 }}>

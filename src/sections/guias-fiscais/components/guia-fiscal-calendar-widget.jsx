@@ -13,9 +13,14 @@ import IconButton from '@mui/material/IconButton';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
+import {
+  useGetGuiasFiscaisPortal,
+  navegarParaDetalheGuiaPortal,
+} from 'src/actions/cliente-portal-guias-api';
 
 import { Iconify } from 'src/components/iconify';
+
+import { isDocumentoNovoParaClientePortal } from '../guia-documento-visualizacao';
 
 // Lazy load FullCalendar e plugins para melhorar performance inicial
 const CalendarWithPlugins = dynamic(
@@ -95,24 +100,27 @@ export function GuiaFiscalCalendarWidget() {
     return guias
       .filter((guia) => guia.dataVencimento)
       .slice(0, 20) // Limitar a 20 eventos para não sobrecarregar
-      .map((guia) => ({
-        id: guia._id,
-        title: getTipoGuiaLabel(guia.tipoGuia),
-        start: guia.dataVencimento,
-        backgroundColor: getStatusColor(guia.statusProcessamento || guia.status),
-        borderColor: getStatusColor(guia.statusProcessamento || guia.status),
-        extendedProps: {
-          guia,
-        },
-      }));
+      .map((guia) => {
+        const novo = isDocumentoNovoParaClientePortal(guia);
+        return {
+          id: guia._id,
+          title: `${getTipoGuiaLabel(guia.tipoGuia)}${novo ? ' •' : ''}`,
+          start: guia.dataVencimento,
+          backgroundColor: getStatusColor(guia.statusProcessamento || guia.status),
+          borderColor: novo ? '#29b6f6' : getStatusColor(guia.statusProcessamento || guia.status),
+          extendedProps: {
+            guia,
+          },
+        };
+      });
   }, [data?.guias]);
 
   const handleEventClick = (info) => {
-    router.push(paths.cliente.guiasFiscais.details(info.event.id));
+    navegarParaDetalheGuiaPortal(router, info.event.id);
   };
 
   const handleViewAll = () => {
-    router.push(paths.cliente.guiasFiscais.calendar);
+    router.push(paths.cliente.guiasEDocumentos.list);
   };
 
   const handlePrevMonth = useCallback(() => {
