@@ -20,11 +20,14 @@ import ListItemText from '@mui/material/ListItemText';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
+import { paths } from 'src/routes/paths';
+import { useRouter } from 'src/routes/hooks';
+
 import { endpoints } from 'src/utils/axios';
 
 import {
-  uploadParaPastaPortal,
-  ensurePortalContabilCompetenciaFolderId,
+  uploadContabilCompetenciaPortal,
+  SESSION_STORAGE_GUIAS_CONTABIL_UPLOAD_TOAST,
 } from 'src/actions/cliente-portal-guias-api';
 
 import { Iconify } from 'src/components/iconify';
@@ -75,6 +78,7 @@ function arquivoPermitido(file) {
 const TOAST_UPLOAD_ID = 'upload-documentos-contabeis';
 
 export function UploadDocumentosContabeisDialog({ open, onClose }) {
+  const router = useRouter();
   const { mutate } = useSWRConfig();
   const fileInputRef = useRef(null);
   const now = useMemo(() => new Date(), []);
@@ -132,13 +136,9 @@ export function UploadDocumentosContabeisDialog({ open, onClose }) {
     }
     try {
       setUploading(true);
-      toast.loading('A localizar ou criar pastas (contábil → ano → mês)…', { id: TOAST_UPLOAD_ID });
+      toast.loading('A enviar…', { id: TOAST_UPLOAD_ID });
 
-      const folderId = await ensurePortalContabilCompetenciaFolderId(mes, ano);
-
-      toast.loading('A enviar ficheiros…', { id: TOAST_UPLOAD_ID });
-
-      const res = await uploadParaPastaPortal(folderId, files, { competencia });
+      const res = await uploadContabilCompetenciaPortal(files, { competencia });
       if (res.success === false) {
         toast.error(res.message || 'Falha no envio.', { id: TOAST_UPLOAD_ID });
         return;
@@ -146,12 +146,22 @@ export function UploadDocumentosContabeisDialog({ open, onClose }) {
 
       await mutate(endpoints.guiasFiscais.portal.pastas);
 
-      toast.success(
+      const successMessage =
         res.message ||
-          `${res?.data?.total ?? files.length} arquivo(s) enviado(s) para ${competencia}. Consulte em Guias e documentos.`,
-        { id: TOAST_UPLOAD_ID }
-      );
+        `${res?.data?.total ?? files.length} arquivo(s) enviado(s) para ${competencia}. Os ficheiros estão em Guias e documentos, pasta Contábil.`;
+
+      try {
+        sessionStorage.setItem(
+          SESSION_STORAGE_GUIAS_CONTABIL_UPLOAD_TOAST,
+          JSON.stringify({ message: successMessage })
+        );
+      } catch {
+        /* ignore quota / private mode */
+      }
+
+      toast.dismiss(TOAST_UPLOAD_ID);
       onClose();
+      router.push(paths.cliente.guiasFiscais.list);
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -172,17 +182,17 @@ export function UploadDocumentosContabeisDialog({ open, onClose }) {
           <span>Enviar documentos contábeis</span>
         </Stack>
         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 400 }}>
-          Planilhas, PDFs e outros documentos do período (não são extratos bancários). Os ficheiros vão
-          para <strong>contábil → ano → mês</strong>. Se ainda não existir a pasta do ano ou do mês,
-          o sistema tenta criá-las automaticamente (subpastas no portal).
+          Planilhas, PDFs e outros documentos do período (não são extratos bancários). O sistema
+          grava em <strong>Contábil → ano → mês (01–12) </strong>.
         </Typography>
       </DialogTitle>
 
       <DialogContent dividers>
         <Stack spacing={2.5}>
           <Typography variant="caption" color="text.secondary" display="block">
-            Mês e ano de competência. Slugs do mês seguem o servidor:{' '}
-            <code>janeiro</code>, <code>fevereiro</code>, <code>marco</code>, etc.
+            Competência enviada como <strong>MM/AAAA</strong> (obrigatória na API). O mês na árvore é
+            em dois dígitos (<code>01</code>…<code>12</code>), não o nome em português como no lote
+            fiscal.
           </Typography>
           <Stack direction="column" spacing={2}>
             <FormControl fullWidth size="small">

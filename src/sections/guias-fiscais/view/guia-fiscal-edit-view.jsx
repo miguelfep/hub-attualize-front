@@ -150,7 +150,7 @@ export function GuiaFiscalEditView({ id }) {
         heading="Editar Documento"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Guias e Documentos', href: paths.dashboard.guiasFiscais.list },
+          { name: 'Gerenciador de Arquivos', href: paths.dashboard.guiasFiscais.list },
           { name: 'Editar' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}

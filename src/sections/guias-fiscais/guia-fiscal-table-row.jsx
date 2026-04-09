@@ -20,6 +20,7 @@ import { Iconify } from 'src/components/iconify';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
 import { isGuia, getCompetencia, formatCompetencia } from './utils';
+import { GuiaFiscalPortalReadEye } from './components/guia-fiscal-portal-read-eye';
 
 // ----------------------------------------------------------------------
 
@@ -262,6 +263,10 @@ export function GuiaFiscalTableRow({
 
       <TableCell>
         <Typography variant="caption">{formatDate(createdAt)}</Typography>
+      </TableCell>
+
+      <TableCell align="center" sx={{ width: 72 }}>
+        <GuiaFiscalPortalReadEye guia={row} />
       </TableCell>
 
       <TableCell align="right">

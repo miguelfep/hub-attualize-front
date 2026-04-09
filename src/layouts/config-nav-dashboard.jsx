@@ -149,18 +149,23 @@ export const navData = [
         ],
       },
       {
-        title: 'Express',
-        path: paths.dashboard.guiasFiscais.list,
+        title: 'Documentos',
+        path: paths.dashboard.guiasEDocumentos.list,
         icon: ICONS.file,
         roles: ['admin', 'operacional'],
         children: [
           {
-            title: 'Guias e Documentos',
+            title: 'Documentos e guias',
+            path: paths.dashboard.guiasEDocumentos.list,
+            roles: ['admin', 'operacional'],
+          },
+          {
+            title: 'Gerenciador de Arquivos',
             path: paths.dashboard.guiasFiscais.list,
             roles: ['admin', 'operacional'],
           },
           {
-            title: 'Upload em Massa',
+            title: 'Express',
             path: paths.dashboard.guiasFiscais.upload,
             roles: ['admin', 'operacional'],
           },

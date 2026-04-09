@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSWRConfig } from 'swr';
 import { m, LazyMotion, domAnimation } from 'framer-motion';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -9,24 +10,30 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Grid from '@mui/material/Unstable_Grid2';
 import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
-import CircularProgress from '@mui/material/CircularProgress';
-import Grid from '@mui/material/Unstable_Grid2';
 import { alpha, useTheme } from '@mui/material/styles';
+import CircularProgress from '@mui/material/CircularProgress';
 
-import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { useGetGuiasFiscaisPortal, useGetPastasGuiasPortal } from 'src/actions/cliente-portal-guias-api';
+import { endpoints } from 'src/utils/axios';
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
+
+import {
+  useGetPastasGuiasPortal,
+  useGetGuiasFiscaisPortal,
+  navegarParaDetalheGuiaPortal,
+  SESSION_STORAGE_GUIAS_CONTABIL_UPLOAD_TOAST,
+} from 'src/actions/cliente-portal-guias-api';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { TablePaginationCustom } from 'src/components/table';
 
-import { collectPastaTreeItemIds, findPastaNodeById } from '../utils';
+import { findPastaNodeById, collectPastaTreeItemIds } from '../utils';
 import { GuiaFiscalPortalCard } from '../components/guia-fiscal-portal-card';
 import { ClienteDocumentoPastaTreeView } from '../components/cliente-documento-pasta-tree-view';
 
@@ -40,6 +47,7 @@ function apiErr(err) {
 
 export function GuiaFiscalPortalListViewImproved() {
   const router = useRouter();
+  const { mutate: mutateGlobal } = useSWRConfig();
   const theme = useTheme();
 
   const [selectedFolderId, setSelectedFolderId] = useState(null);
@@ -73,9 +81,30 @@ export function GuiaFiscalPortalListViewImproved() {
     setPage(0);
   }, [selectedFolderId]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const raw = sessionStorage.getItem(SESSION_STORAGE_GUIAS_CONTABIL_UPLOAD_TOAST);
+    if (!raw) return;
+    sessionStorage.removeItem(SESSION_STORAGE_GUIAS_CONTABIL_UPLOAD_TOAST);
+    try {
+      const parsed = JSON.parse(raw);
+      toast.success(parsed?.message || 'Arquivos enviados com sucesso.');
+    } catch {
+      toast.success('Arquivos enviados com sucesso.');
+    }
+    const prefix = endpoints.guiasFiscais.portal.list.replace(/\?.*$/, '');
+    mutateGlobal(
+      (key) => typeof key === 'string' && (key.startsWith(prefix) || key === endpoints.guiasFiscais.portal.pastas)
+    );
+  }, [mutateGlobal]);
+
   const handleViewDetails = useCallback(
-    (id) => {
-      router.push(paths.cliente.guiasFiscais.details(id));
+    async (id) => {
+      try {
+        await navegarParaDetalheGuiaPortal(router, id);
+      } catch (e) {
+        toast.error(apiErr(e));
+      }
     },
     [router]
   );
@@ -103,30 +132,17 @@ export function GuiaFiscalPortalListViewImproved() {
               bgcolor: 'background.neutral',
               borderRadius: '16px 16px 0 0',
               background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`,
-              display: 'flex',
-              flexWrap: 'wrap',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              gap: 2,
             }}
           >
             <Box>
               <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-                Guias e documentos
+                Meus Documentos
               </Typography>
               <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
                 Navegue pelas pastas e baixe os arquivos disponíveis. Envio e organização ficam no painel
                 administrativo.
               </Typography>
             </Box>
-            <Button
-              component="a"
-              href={paths.cliente.guiasFiscais.calendar}
-              variant="outlined"
-              startIcon={<Iconify icon="solar:calendar-bold" />}
-            >
-              Ver Calendário
-            </Button>
           </Box>
 
           <CardContent sx={{ p: { xs: 2, md: 3 } }}>
@@ -168,6 +184,10 @@ export function GuiaFiscalPortalListViewImproved() {
                           Pastas
                         </Typography>
                       </Stack>
+                      <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.45 }}>
+                        Cada bloco é uma pasta raiz independente (Fiscal, Contábil, etc.). Subpastas ficam
+                        só dentro do bloco correspondente.
+                      </Typography>
                       <Button size="small" variant="outlined" onClick={() => setSelectedFolderId(null)}>
                         Ver todas
                       </Button>

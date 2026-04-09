@@ -4,7 +4,7 @@ import { GuiaFiscalUploadView } from 'src/sections/guias-fiscais/view/guia-fisca
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Upload de Guias e Documentos | Dashboard - ${CONFIG.site.name}` };
+export const metadata = { title: `Express | Dashboard - ${CONFIG.site.name}` };
 
 export default function Page() {
   return <GuiaFiscalUploadView />;

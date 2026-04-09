@@ -4,18 +4,20 @@ import { useMemo, useState, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
-import Button from '@mui/material/Button';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { DashboardContent } from 'src/layouts/dashboard';
-import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
-import { Iconify } from 'src/components/iconify';
+import { DashboardContent } from 'src/layouts/dashboard';
+import {
+  useGetGuiasFiscaisPortal,
+  navegarParaDetalheGuiaPortal,
+} from 'src/actions/cliente-portal-guias-api';
+
 import { Scrollbar } from 'src/components/scrollbar';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import {
@@ -140,8 +142,8 @@ export function GuiaFiscalPortalListView() {
   const notFound = (!dataFiltered.length && canReset) || (!dataFiltered.length && !isLoading);
 
   const handleViewRow = useCallback(
-    (id) => {
-      router.push(paths.cliente.guiasFiscais.details(id));
+    async (id) => {
+      await navegarParaDetalheGuiaPortal(router, id);
     },
     [router]
   );
@@ -160,21 +162,11 @@ export function GuiaFiscalPortalListView() {
   return (
     <DashboardContent>
       <CustomBreadcrumbs
-        heading="Guias Fiscais"
+        heading="Meus Documentos"
         links={[
           { name: 'Dashboard', href: paths.cliente.dashboard },
-          { name: 'Guias Fiscais' },
+          { name: 'Meus Documentos' },
         ]}
-        action={
-          <Button
-            component="a"
-            href={paths.cliente.guiasFiscais.calendar}
-            variant="outlined"
-            startIcon={<Iconify icon="solar:calendar-bold" />}
-          >
-            Ver Calendário
-          </Button>
-        }
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 

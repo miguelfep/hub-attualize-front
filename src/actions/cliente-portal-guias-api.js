@@ -1,78 +1,73 @@
 'use client';
 
-import useSWR from 'swr';
 import { useMemo } from 'react';
+import useSWR, { mutate as globalMutate } from 'swr';
+
+import { paths } from 'src/routes/paths';
 
 import axios, { fetcher, endpoints } from 'src/utils/axios';
 
-import { suggestSlugFromNome } from 'src/sections/guias-fiscais/utils';
-
 // ----------------------------------------------------------------------
 // API do portal (cliente) para guias/documentos.
-// Nome do arquivo evita colisão com `guias-fiscais.js` no Turbopack/HMR.
-//
-// Contábil → ano → mês: se faltar nível na árvore, criamos via
-// POST portal/guias-fiscais/pastas/:parentId/subpastas (JSON: slug, nome; sem clienteId).
 // ----------------------------------------------------------------------
 
-const NOMES_MES_PT = [
-  'Janeiro',
-  'Fevereiro',
-  'Março',
-  'Abril',
-  'Maio',
-  'Junho',
-  'Julho',
-  'Agosto',
-  'Setembro',
-  'Outubro',
-  'Novembro',
-  'Dezembro',
-];
+/** Após upload contábil: redirecionar para guias-fiscais e ler esta chave para o toast. */
+export const SESSION_STORAGE_GUIAS_CONTABIL_UPLOAD_TOAST =
+  'attualize:portal:guias-contabil-upload-toast';
 
-function findFolderBySlugDeep(nodes, slug) {
-  if (!nodes?.length || !slug) return null;
-  const target = slug.toLowerCase();
-  const stack = [...nodes];
-  while (stack.length) {
-    const n = stack.shift();
-    if ((n.slug || '').toLowerCase() === target) {
-      return n;
-    }
-    if (n.children?.length) {
-      stack.push(...n.children);
-    }
-  }
-  return null;
+/**
+ * Normaliza competência para o upload contábil (§6.4 / §2.3.1): MM/AAAA.
+ * Aceita separador / . -
+ */
+export function normalizeCompetenciaContabilUpload(competencia) {
+  const t = (competencia || '').trim();
+  const m = t.match(/^(\d{1,2})\s*[/.-]\s*(\d{4})$/);
+  if (!m) return null;
+  const mes = parseInt(m[1], 10);
+  const ano = parseInt(m[2], 10);
+  if (mes < 1 || mes > 12) return null;
+  return `${String(mes).padStart(2, '0')}/${ano}`;
 }
 
-function findChildBySlug(parent, slug) {
-  if (!parent?.children?.length || !slug) return null;
-  const target = slug.toLowerCase();
-  return parent.children.find((c) => (c.slug || '').toLowerCase() === target) || null;
-}
+// ----------------------------------------------------------------------
 
-function extractNewFolderId(res) {
-  if (!res || typeof res !== 'object') return null;
-  if (res.success === false) return null;
-  const d = res.data !== undefined ? res.data : res;
-  if (d && typeof d === 'object') {
-    return d._id || d.id || d.folder?._id || d.folder?.id || d.data?._id || d.data?.id || null;
-  }
-  return null;
-}
-
-function apiMessageFromError(err) {
-  return (
-    err?.response?.data?.message ||
-    err?.response?.data?.error ||
-    (typeof err?.response?.data === 'string' ? err.response.data : null) ||
-    err?.message ||
-    null
+/**
+ * Revalida listagens SWR do portal (guias por pasta + árvore de pastas).
+ * Chame após: abrir detalhe (leitura registrada no GET), download concluído, upload, etc.
+ */
+export function revalidarCachesListagemGuiasPortal() {
+  const listBase = endpoints.guiasFiscais.portal.list.split('?')[0];
+  return globalMutate(
+    (key) =>
+      typeof key === 'string' &&
+      (key.startsWith(listBase) || key === endpoints.guiasFiscais.portal.pastas)
   );
 }
 
-// ----------------------------------------------------------------------
+/**
+ * GET detalhe no portal — o backend registra leitura (§6.8).
+ * Atualiza cache SWR do detalhe e revalida listagens para badge "Novo" / drive.
+ */
+export async function registrarVisualizacaoPortalAntesDeAbrirDetalhe(documentoId) {
+  if (!documentoId) return;
+  const res = await axios.get(endpoints.guiasFiscais.portal.get(documentoId));
+  const key = endpoints.guiasFiscais.portal.get(documentoId);
+  await globalMutate(key, res.data, { revalidate: false });
+  await revalidarCachesListagemGuiasPortal();
+}
+
+/**
+ * Use ao clicar em "Ver": garante registro de visualização mesmo se o detalhe vier de cache no próximo passo.
+ * Se o GET falhar, ainda navega — a página de detalhe tentará de novo.
+ */
+export async function navegarParaDetalheGuiaPortal(router, documentoId) {
+  try {
+    await registrarVisualizacaoPortalAntesDeAbrirDetalhe(documentoId);
+  } catch {
+    /* detalhe refaz GET ao montar */
+  }
+  router.push(paths.cliente.guiasFiscais.details(documentoId));
+}
 
 /**
  * Listar guias fiscais do cliente logado (Portal)
@@ -154,7 +149,7 @@ export async function getPastasGuiasPortalTree() {
 }
 
 /**
- * Criar subpasta no portal (corpo típico: slug + nome; empresa inferida pelo token).
+ * Criar subpasta no portal (§6.2 — JSON: slug + nome; sem clienteId).
  */
 export async function createSubpastaGuiasPortal(parentFolderId, payload) {
   const res = await axios.post(endpoints.guiasFiscais.portal.pastasSubpasta(parentFolderId), payload, {
@@ -164,8 +159,7 @@ export async function createSubpastaGuiasPortal(parentFolderId, payload) {
 }
 
 /**
- * Upload manual no portal — multipart com campo `files` (§6.2).
- * `competencia` / `dataVencimento` opcionais, como no admin.
+ * Upload manual no portal — multipart com campo `files` (§6.3).
  */
 export async function uploadParaPastaPortal(folderId, files, options = {}) {
   const { competencia, dataVencimento } = options;
@@ -190,124 +184,47 @@ export async function uploadParaPastaPortal(folderId, files, options = {}) {
 }
 
 /**
- * Garante contabil → {ano} → {mês}: reutiliza pastas existentes ou cria subpastas no portal.
- * Slugs: ano string numérica; mês em PT sem acento (`marco`, `abril` — como no lote §2.3).
+ * Upload contábil por competência (§6.4) — `competencia` obrigatória (MM/AAAA após normalização).
+ * Servidor resolve/cria `contabil / {ano} / {MM}`.
  *
- * @param {number} mes 1–12
- * @param {number} ano ex. 2026
- * @returns {Promise<string>} folderId folha (mês)
+ * @param {File[]} files
+ * @param {{ competencia: string, dataVencimento?: string }} options
  */
-export async function ensurePortalContabilCompetenciaFolderId(mes, ano) {
-  const mesLabel = NOMES_MES_PT[mes - 1];
-  if (!mesLabel) {
-    throw new Error('Mês de competência inválido.');
-  }
-  const mesSlug = suggestSlugFromNome(mesLabel);
-  const yearSlug = String(ano);
-
-  let folders = await getPastasGuiasPortalTree();
-  let contabil = findFolderBySlugDeep(folders, 'contabil');
-  if (!contabil) {
+export async function uploadContabilCompetenciaPortal(files, options = {}) {
+  const { competencia: competenciaRaw, dataVencimento } = options;
+  const competencia = normalizeCompetenciaContabilUpload(competenciaRaw);
+  if (!competencia) {
     throw new Error(
-      'Pasta contábil (slug "contabil") não encontrada. As pastas padrão podem ainda não ter sido geradas — contacte o suporte.'
+      'Competência obrigatória e inválida. Use MM/AAAA (ex.: 03/2026), com /, - ou . entre mês e ano.'
     );
   }
-
-  let yearNode = findChildBySlug(contabil, yearSlug);
-  if (!yearNode) {
-    try {
-      const res = await createSubpastaGuiasPortal(contabil._id, { slug: yearSlug, nome: yearSlug });
-      if (res?.success === false) {
-        throw new Error(res.message || 'Não foi possível criar a pasta do ano.');
-      }
-      const newYearId = extractNewFolderId(res);
-      if (newYearId) {
-        yearNode = { _id: newYearId, children: [] };
-      }
-    } catch (err) {
-      if (err?.response?.status === 409) {
-        folders = await getPastasGuiasPortalTree();
-        contabil = findFolderBySlugDeep(folders, 'contabil');
-        yearNode = contabil ? findChildBySlug(contabil, yearSlug) : null;
-      } else if (err?.response?.status === 404) {
-        throw new Error(
-          'O servidor não expõe criação de subpastas no portal (404). É necessário implementar POST /api/portal/guias-fiscais/pastas/:folderId/subpastas no backend.'
-        );
-      } else {
-        throw new Error(apiMessageFromError(err) || 'Não foi possível criar a pasta do ano.');
-      }
-    }
-    if (!yearNode) {
-      folders = await getPastasGuiasPortalTree();
-      contabil = findFolderBySlugDeep(folders, 'contabil');
-      yearNode = contabil ? findChildBySlug(contabil, yearSlug) : null;
-    }
+  if (!files?.length) {
+    throw new Error('Selecione pelo menos um ficheiro.');
   }
 
-  if (!yearNode?._id) {
-    throw new Error('Não foi possível obter a pasta do ano em Contábil.');
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+  formData.append('competencia', competencia);
+  if (dataVencimento) {
+    formData.append('dataVencimento', dataVencimento);
   }
 
-  let monthNode = findChildBySlug(yearNode, mesSlug);
-  if (!monthNode) {
-    try {
-      const res = await createSubpastaGuiasPortal(yearNode._id, { slug: mesSlug, nome: mesLabel });
-      if (res?.success === false) {
-        throw new Error(res.message || 'Não foi possível criar a pasta do mês.');
-      }
-      const newMonthId = extractNewFolderId(res);
-      if (newMonthId) {
-        return newMonthId;
-      }
-    } catch (err) {
-      if (err?.response?.status === 409) {
-        folders = await getPastasGuiasPortalTree();
-        contabil = findFolderBySlugDeep(folders, 'contabil');
-        const y = contabil ? findChildBySlug(contabil, yearSlug) : null;
-        monthNode = y ? findChildBySlug(y, mesSlug) : null;
-        if (monthNode?._id) {
-          return monthNode._id;
-        }
-      } else if (err?.response?.status === 404) {
-        throw new Error(
-          'O servidor não expõe criação de subpastas no portal (404). É necessário implementar POST /api/portal/guias-fiscais/pastas/:folderId/subpastas no backend.'
-        );
-      } else {
-        throw new Error(apiMessageFromError(err) || 'Não foi possível criar a pasta do mês.');
-      }
-    }
-    folders = await getPastasGuiasPortalTree();
-    contabil = findFolderBySlugDeep(folders, 'contabil');
-    const yAfter = contabil ? findChildBySlug(contabil, yearSlug) : null;
-    monthNode = yAfter ? findChildBySlug(yAfter, mesSlug) : null;
-  }
+  const res = await axios.post(endpoints.guiasFiscais.portal.contabilUpload, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
 
-  if (!monthNode?._id) {
-    throw new Error('Não foi possível obter a pasta do mês em Contábil.');
-  }
-
-  return monthNode._id;
+  return res.data;
 }
 
 /**
- * Envio de documentos contábeis a partir da competência MM/AAAA (resolve pastas + upload).
- *
- * @param {File[]} files
- * @param {{ competencia: string }} options - MM/AAAA
+ * @deprecated Prefira `uploadContabilCompetenciaPortal`. Mantém nome antigo.
  */
-export async function uploadDocumentosContabilPortal(files, { competencia }) {
-  const trimmed = (competencia || '').trim();
-  const match = trimmed.match(/^(\d{1,2})\/(\d{4})$/);
-  if (!match) {
-    throw new Error('Competência inválida. Use o formato MM/AAAA.');
-  }
-  const mes = parseInt(match[1], 10);
-  const ano = parseInt(match[2], 10);
-  if (mes < 1 || mes > 12) {
-    throw new Error('Mês inválido na competência.');
-  }
-  const folderId = await ensurePortalContabilCompetenciaFolderId(mes, ano);
-  return uploadParaPastaPortal(folderId, files, { competencia: trimmed });
+export async function uploadDocumentosContabilPortal(files, { competencia, dataVencimento } = {}) {
+  return uploadContabilCompetenciaPortal(files, { competencia, dataVencimento });
 }
 
 /**

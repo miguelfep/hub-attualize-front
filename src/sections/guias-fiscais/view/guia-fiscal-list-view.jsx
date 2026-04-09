@@ -65,6 +65,7 @@ const TABLE_HEAD = [
   { id: 'dataVencimento', label: 'Competência / Vencimento' },
   { id: 'status', label: 'Status' },
   { id: 'createdAt', label: 'Enviado em' },
+  { id: 'clienteVisualizou', label: 'Cliente (portal)' },
   { id: '', width: 120 },
 ];
 
@@ -521,7 +522,7 @@ export function GuiaFiscalListView() {
           heading="Gerenciador de Arquivos"
           links={[
             { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'Guias e Documentos', href: paths.dashboard.guiasFiscais.root },
+            { name: 'Gerenciador de Arquivos', href: paths.dashboard.guiasFiscais.root },
           ]}
           action={
             <Button
@@ -530,7 +531,7 @@ export function GuiaFiscalListView() {
               variant="contained"
               startIcon={<Iconify icon="mingcute:add-line" />}
             >
-              Novo Upload
+              Express
             </Button>
           }
           sx={{ mb: 0 }}

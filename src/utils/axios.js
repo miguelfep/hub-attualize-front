@@ -308,6 +308,8 @@ export const endpoints = {
       pastas: `${baseUrl}portal/guias-fiscais/pastas`,
       pastasSubpasta: (parentId) => `${baseUrl}portal/guias-fiscais/pastas/${parentId}/subpastas`,
       pastaUpload: (folderId) => `${baseUrl}portal/guias-fiscais/pastas/${folderId}/upload`,
+      /** §6.4 — competência obrigatória; servidor cria contabil / ano / MM */
+      contabilUpload: `${baseUrl}portal/guias-fiscais/contabil/upload`,
       get: (id) => `${baseUrl}portal/guias-fiscais/${id}`,
       download: (id) => `${baseUrl}portal/guias-fiscais/${id}/download`,
       solicitarAtualizacao: (id) => `${baseUrl}portal/guias-fiscais/${id}/solicitar-atualizacao`,

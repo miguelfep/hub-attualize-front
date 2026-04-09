@@ -8,9 +8,16 @@ import { Iconify } from 'src/components/iconify';
 // ----------------------------------------------------------------------
 
 export function usePortalNavData() {
-  const { podeGerenciarClientes, podeGerenciarServicos, podeCriarOrcamentos, possuiExtrato } = useSettings();
+  const {
+    podeGerenciarClientes,
+    podeGerenciarServicos,
+    podeCriarOrcamentos,
+    possuiExtrato,
+    possuiFuncionario,
+  } = useSettings();
 
-  const comercialChildren = [
+
+  const vendasChildren = [
     podeGerenciarClientes && {
       title: 'Clientes',
       path: paths.cliente.clientes,
@@ -47,6 +54,8 @@ export function usePortalNavData() {
   
   ];
 
+  const comercialChildren = [...vendasChildren].filter(Boolean);
+
   const financeiroChildren = [
     {
       title: 'Meu Faturamento',
@@ -68,12 +77,17 @@ export function usePortalNavData() {
       path: paths.cliente.recompensas.root,
       icon: <Iconify icon="solar:wallet-money-bold-duotone" />,
     },
-    {
-      title: 'Indicações',
-      path: paths.cliente.indicacoes.root,
-      icon: <Iconify icon="solar:share-bold-duotone" />,
-    },
   ].filter(Boolean);
+
+  const comercialNavItem =
+    comercialChildren.length > 0
+      ? {
+          title: 'Comercial',
+          path: comercialChildren[0].path,
+          icon: <Iconify icon="solar:case-minimalistic-bold-duotone" />,
+          children: comercialChildren,
+        }
+      : null;
 
   return [
     {
@@ -84,24 +98,29 @@ export function usePortalNavData() {
           path: paths.cliente.dashboard,
           icon: <Iconify icon="solar:home-2-bold-duotone" />,
         },
-      ],
+        possuiFuncionario && {
+          title: 'Departamento Pessoal',
+          path: paths.cliente.departamentoPessoal.root,
+          icon: <Iconify icon="solar:users-group-rounded-bold-duotone" />,
+        },
+      ].filter(Boolean),
     },
     {
       items: [
         {
           title: 'Meus Documentos',
-          path: paths.cliente.guiasFiscais.list,
+          path: paths.cliente.guiasEDocumentos.list,
           icon: <Iconify icon="solar:documents-bold-duotone" />,
           children: [
+            {
+              title: 'Guias',
+              path: paths.cliente.guiasEDocumentos.list,
+              icon: <Iconify icon="solar:folder-with-files-bold-duotone" />,
+            },
             {
               title: 'Empresa',
               path: paths.cliente.empresa,
               icon: <Iconify icon="solar:buildings-2-bold-duotone" />,
-            },
-            {
-              title: 'Guias',
-              path: paths.cliente.guiasFiscais.list,
-              icon: <Iconify icon="solar:file-text-bold-duotone" />,
             },
             {
               title: 'Licenças',
@@ -120,19 +139,19 @@ export function usePortalNavData() {
   
     {
       items: [
-        {
-          title: 'Comercial',
-          path: paths.cliente.clientes,
-          icon: <Iconify icon="solar:shop-2-bold-duotone" />,
-          children: comercialChildren,
-        },
+        comercialNavItem,
         {
           title: 'Financeiro',
           path: paths.cliente.financeiro.root,
-          icon: <Iconify icon="solar:money-bag-bold" />,
+          icon: <Iconify icon="solar:chat-round-money-bold" />,
           children: financeiroChildren,
         },
-      ],
+        {
+          title: 'Programa de indicação',
+          path: paths.cliente.indicacoes.root,
+          icon: <Iconify icon="solar:share-bold-duotone" />,
+        },
+      ].filter(Boolean),
     },
     {
       subheader: 'Comunidade',

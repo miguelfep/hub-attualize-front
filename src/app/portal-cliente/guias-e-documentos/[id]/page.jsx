@@ -4,7 +4,7 @@ import { GuiaFiscalPortalDetailsView } from 'src/sections/guias-fiscais/view/gui
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Detalhes da Guia Fiscal | Portal do Cliente - ${CONFIG.site.name}` };
+export const metadata = { title: `Detalhes do documento | Portal do Cliente - ${CONFIG.site.name}` };
 
 export default async function Page({ params }) {
   const { id } = await params;
