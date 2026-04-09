@@ -39,6 +39,7 @@ import {
   deletePastaGuiasAdmin,
   useGetPastasGuiasAdmin,
   uploadManualPastaAdmin,
+  moveGuiaParaPastaAdmin,
   createSubpastaGuiasAdmin,
 } from 'src/actions/guias-fiscais';
 
@@ -48,6 +49,7 @@ import { ConfirmDialog } from 'src/components/custom-dialog';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { GuiaFiscalPortalReadEye } from '../components/guia-fiscal-portal-read-eye';
+import { GuiaFiscalMovePastaDialog } from '../components/guia-fiscal-move-pasta-dialog';
 import { GuiaFiscalPastaUploadDialog } from '../components/guia-fiscal-pasta-upload-dialog';
 import { getCompetencia, SLUG_PASTA_REGEX, findPastaNodeById, formatCompetencia, suggestSlugFromNome } from '../utils';
 
@@ -156,6 +158,10 @@ export function GuiaFiscalDriveAdminView() {
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [filesBulkDelete, setFilesBulkDelete] = useState([]);
   const [deletingBulk, setDeletingBulk] = useState(false);
+
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [guiaIdsToMove, setGuiaIdsToMove] = useState([]);
+  const [movingGuias, setMovingGuias] = useState(false);
 
   const { data: clientes = [], isLoading: loadingClientes } = useGetAllClientes({ status: true });
   const { folders, isLoading: loadingFolders, mutate: mutateFolders } = useGetPastasGuiasAdmin(clienteId || null);
@@ -279,6 +285,71 @@ export function GuiaFiscalDriveAdminView() {
       setDeletingBulk(false);
     }
   }, [filesBulkDelete, mutateFiles]);
+
+  const openMoveDialogFromFileMenu = useCallback(
+    (file) => {
+      if (!file?._id || !clienteId) return;
+      setGuiaIdsToMove([file._id]);
+      setMoveDialogOpen(true);
+      closeFileMenu();
+    },
+    [clienteId, closeFileMenu]
+  );
+
+  const openBulkMoveDialog = useCallback(() => {
+    const ids = selectedFileIds.filter(Boolean);
+    if (!ids.length || !clienteId) return;
+    setGuiaIdsToMove(ids);
+    setMoveDialogOpen(true);
+  }, [selectedFileIds, clienteId]);
+
+  const handleConfirmMoveGuias = useCallback(
+    async (folderIdDestino) => {
+      if (!folderIdDestino || !guiaIdsToMove.length) return;
+      if (currentFolderId && folderIdDestino === currentFolderId) {
+        toast.error('Selecione uma pasta diferente da pasta em que você está.');
+        return;
+      }
+      setMovingGuias(true);
+      let ok = 0;
+      let fail = 0;
+      try {
+        await guiaIdsToMove.reduce(
+          (promiseChain, guiaId) =>
+            promiseChain.then(async () => {
+              try {
+                const res = await moveGuiaParaPastaAdmin(guiaId, folderIdDestino);
+                if (res.success !== false) {
+                  ok += 1;
+                } else {
+                  fail += 1;
+                  toast.error(res.message || 'Não foi possível mover um dos documentos.');
+                }
+              } catch (err) {
+                fail += 1;
+                toast.error(apiErrMsg(err) || 'Erro ao mover documento.');
+              }
+            }),
+          Promise.resolve()
+        );
+        setMoveDialogOpen(false);
+        setGuiaIdsToMove([]);
+        setSelectedFileIds([]);
+        await mutateFiles();
+        await mutateFolders();
+        if (ok && !fail) {
+          toast.success(ok > 1 ? `${ok} documentos movidos.` : 'Documento movido.');
+        } else if (ok && fail) {
+          toast.warning(`${ok} movido(s), ${fail} com erro.`);
+        } else if (fail) {
+          toast.error('Não foi possível mover os documentos.');
+        }
+      } finally {
+        setMovingGuias(false);
+      }
+    },
+    [guiaIdsToMove, currentFolderId, mutateFiles, mutateFolders]
+  );
 
   const handleFileContextMenu = useCallback(
     (e, file) => {
@@ -626,7 +697,8 @@ export function GuiaFiscalDriveAdminView() {
                     </Alert>
 
                     <Typography variant="caption" color="text.secondary">
-                      Pastas: botão direito na área vazia ou no cartão da pasta. Arquivos: marque os checkboxes para excluir em massa; botão direito ou
+                      Pastas: botão direito na área vazia ou no cartão da pasta. Arquivos: marque os checkboxes para mover ou excluir em massa; botão
+                      direito ou
                       três pontos para excluir um a um.
                     </Typography>
 
@@ -695,6 +767,16 @@ export function GuiaFiscalDriveAdminView() {
                                 onClick={() => setSelectedFileIds([])}
                               >
                                 Limpar seleção
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="soft"
+                                color="primary"
+                                disabled={!selectedFileIds.length}
+                                startIcon={<Iconify icon="solar:transfer-horizontal-bold" width={18} />}
+                                onClick={openBulkMoveDialog}
+                              >
+                                Mover ({selectedFileIds.length})
                               </Button>
                               <Button
                                 size="small"
@@ -1132,6 +1214,18 @@ export function GuiaFiscalDriveAdminView() {
             </ListItemIcon>
             <ListItemText primary="Baixar" />
           </MenuItem>
+          <MenuItem
+            disabled={!clienteId}
+            onClick={() => {
+              const f = fileMenuState?.file;
+              if (f) openMoveDialogFromFileMenu(f);
+            }}
+          >
+            <ListItemIcon>
+              <Iconify icon="solar:transfer-horizontal-bold" width={20} />
+            </ListItemIcon>
+            <ListItemText primary="Mover para pasta" />
+          </MenuItem>
           <Divider sx={{ my: 0.5 }} />
           <MenuItem
             onClick={() => {
@@ -1198,6 +1292,22 @@ export function GuiaFiscalDriveAdminView() {
               {deletingBulk ? 'Excluindo…' : `Excluir ${filesBulkDelete.length}`}
             </Button>
           }
+        />
+
+        <GuiaFiscalMovePastaDialog
+          open={moveDialogOpen}
+          onClose={() => {
+            if (!movingGuias) {
+              setMoveDialogOpen(false);
+              setGuiaIdsToMove([]);
+            }
+          }}
+          title={
+            guiaIdsToMove.length > 1 ? `Mover ${guiaIdsToMove.length} documentos` : 'Mover para pasta'
+          }
+          folders={folders}
+          loading={movingGuias}
+          onConfirm={handleConfirmMoveGuias}
         />
 
         <GuiaFiscalPastaUploadDialog
