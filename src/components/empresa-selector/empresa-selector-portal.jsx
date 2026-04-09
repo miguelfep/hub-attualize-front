@@ -13,6 +13,7 @@ import FormControl from '@mui/material/FormControl';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import axios from 'src/utils/axios';
+import { mergeClientePortalContext } from 'src/utils/cliente-portal-flags';
 
 import { useSettingsContext } from 'src/contexts/SettingsContext';
 
@@ -45,9 +46,15 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
         if (settings) {
           updateSettings(settings);
         }
-        // ✅ Atualizar dados do cliente incluindo possuiExtrato
-        if (cliente) {
-          updateClienteData(cliente);
+        const empresaAtivaId = empresaAtivaData?._id ?? empresaAtivaData;
+        const merged = mergeClientePortalContext({
+          cliente,
+          settings,
+          empresas: empresasData,
+          empresaAtivaId,
+        });
+        if (merged) {
+          updateClienteData(merged);
         }
       }
     } catch (error) {
@@ -87,9 +94,15 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
         if (settings) {
           updateSettings(settings);
         }
-        // ✅ Atualizar dados do cliente incluindo possuiExtrato
-        if (cliente) {
-          updateClienteData(cliente);
+        const novaId = novaAtiva?._id ?? novaAtiva ?? novaEmpresaId;
+        const merged = mergeClientePortalContext({
+          cliente,
+          settings,
+          empresas,
+          empresaAtivaId: novaId,
+        });
+        if (merged) {
+          updateClienteData(merged);
         }
         if (onEmpresaChange) onEmpresaChange(response.data.data.empresaAtiva);
         // Navegação suave mantendo o header

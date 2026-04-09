@@ -377,6 +377,29 @@ export const endpoints = {
       planoEncerrar: (id) => `${baseUrl}ir/admin/planos/${id}/encerrar`,
     },
   },
+  // Departamento Pessoal (funcionários, rubricas, demissão)
+  departamentoPessoal: {
+    portal: {
+      funcionarios: (clienteProprietarioId) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/funcionarios`,
+      funcionario: (clienteProprietarioId, id) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/funcionarios/${id}`,
+      rubricas: (clienteProprietarioId, funcionarioId) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/funcionarios/${funcionarioId}/rubricas`,
+      solicitarDemissao: (clienteProprietarioId, funcionarioId) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/funcionarios/${funcionarioId}/solicitar-demissao`,
+    },
+    admin: {
+      funcionariosByCliente: (clienteId) =>
+        `${baseUrl}departamento-pessoal/clientes/${clienteId}/funcionarios`,
+      funcionario: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}`,
+      aprovarCadastro: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/aprovar-cadastro`,
+      reprovarCadastro: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/reprovar-cadastro`,
+      demissaoEmAnalise: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/em-analise`,
+      demissaoAprovar: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/aprovar`,
+      demissaoRejeitar: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/rejeitar`,
+    },
+  },
   // Comunidade (baseUrl já inclui /api quando necessário; paths relativos ao serverUrl)
   comunidade: {
     materiais: {

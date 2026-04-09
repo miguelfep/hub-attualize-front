@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -65,6 +65,12 @@ const formatarDataISO = (dataISO) => {
   }
 };
 
+/** Conta ativa para conciliação / upload (alinha à tela Gerenciar Bancos). */
+function isBancoAtivoConciliacao(banco) {
+  if (!banco) return false;
+  return banco.status !== false && banco.ativo !== false;
+}
+
 export default function StatusConciliacaoPage() {
   const router = useRouter();
   const { user } = useAuthContext();
@@ -110,6 +116,16 @@ export default function StatusConciliacaoPage() {
 
   // Hook de bancos (buscar bancos reais da API)
   const { bancos, loading: loadingBancos } = useBancosCliente(clienteId);
+
+  const bancosOrdenados = useMemo(
+    () =>
+      [...bancos].sort((a, b) => {
+        const aa = isBancoAtivoConciliacao(a) ? 0 : 1;
+        const bb = isBancoAtivoConciliacao(b) ? 0 : 1;
+        return aa - bb;
+      }),
+    [bancos]
+  );
 
   // Carregar meses para cada banco
   useEffect(() => {
@@ -553,9 +569,17 @@ export default function StatusConciliacaoPage() {
   };
 
   const handleEnviarExtrato = (bancoId, mesAno = null) => {
+    const bancoRef = bancos.find((b) => b._id === bancoId);
+    if (bancoRef && !isBancoAtivoConciliacao(bancoRef)) {
+      toast.error(
+        'Este banco está inativo. Envio de extrato (OFX, PDF etc.) não é permitido. Reative a conta em Gerenciar Bancos.'
+      );
+      return;
+    }
+
     if (mesAno) {
       const statusMes = obterStatusMes(bancoId, mesAno);
-      
+
       // Se está fechado sem movimento, bloquear
       if (statusMes.status === 'fechado_sem_movimento') {
         toast.error('🔒 Este período está fechado sem movimento. Entre em contato com o suporte para liberar.');
@@ -958,7 +982,8 @@ export default function StatusConciliacaoPage() {
       {/* ✅ Accordions por Banco */}
       {!loadingBancos && bancos.length > 0 && (
         <Stack spacing={2}>
-          {bancos.map((banco) => {
+          {bancosOrdenados.map((banco) => {
+            const bancoAtivo = isBancoAtivoConciliacao(banco);
             // ✅ Gerar meses do ano selecionado FILTRADOS pela dataInicio do banco
             const mesesDoAnoFiltrados = gerarMesesDoAno(anoSelecionado, banco);
             
@@ -974,7 +999,11 @@ export default function StatusConciliacaoPage() {
             const totalMeses = mesesDoAnoFiltrados.length;
             
             return (
-              <Accordion key={banco._id} defaultExpanded={bancos.length === 1}>
+              <Accordion
+                key={banco._id}
+                defaultExpanded={bancosOrdenados.length === 1}
+                sx={!bancoAtivo ? { opacity: 0.92 } : undefined}
+              >
                 <AccordionSummary
                   expandIcon={<Iconify icon="eva:arrow-down-fill" />}
                   sx={{
@@ -988,9 +1017,14 @@ export default function StatusConciliacaoPage() {
                     <Stack direction="row" alignItems="center" spacing={2}>
                       <Iconify icon="eva:credit-card-fill" width={24} />
                       <div>
-                        <Typography variant="subtitle1" fontWeight="bold">
-                          {banco.instituicaoBancariaId?.nome || banco.nome || 'Banco'}
-                        </Typography>
+                        <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
+                          <Typography variant="subtitle1" fontWeight="bold">
+                            {banco.instituicaoBancariaId?.nome || banco.nome || 'Banco'}
+                          </Typography>
+                          {!bancoAtivo && (
+                            <Chip label="Inativo" size="small" color="default" variant="outlined" />
+                          )}
+                        </Stack>
                         <Typography variant="caption" color="text.secondary">
                           Código: {banco.instituicaoBancariaId?.codigo || banco.codigo || 'N/A'} | 
                           Ag: {banco.agencia || 'N/A'} | 
@@ -1041,6 +1075,15 @@ export default function StatusConciliacaoPage() {
                 </AccordionSummary>
                 
                 <AccordionDetails>
+                  {!bancoAtivo && (
+                    <Alert severity="info" sx={{ mb: 2 }} icon={<Iconify icon="eva:info-outline" />}>
+                      <Typography variant="body2">
+                        Esta conta está <strong>inativa</strong>. Você pode consultar conciliações já registradas, mas{' '}
+                        <strong>não é possível enviar novos extratos</strong> (OFX, PDF, CSV etc.). Para enviar arquivos
+                        novamente, reative a conta em <strong>Gerenciar Bancos</strong>.
+                      </Typography>
+                    </Alert>
+                  )}
                   {/* Aviso se não há meses disponíveis */}
                   {mesesDoAnoFiltrados.length === 0 && (
                     <Alert severity="info" icon={<Iconify icon="eva:info-outline" />} sx={{ mb: 2 }}>
@@ -1078,13 +1121,42 @@ export default function StatusConciliacaoPage() {
                               })(),
                               bgcolor: 'background.paper',
                               transition: 'all 0.2s ease',
-                              cursor: status.status === 'fechado_sem_movimento' || status.status === 'processando' ? 'default' : 'pointer',
+                              cursor:
+                                status.status === 'fechado_sem_movimento' ||
+                                status.status === 'processando' ||
+                                (!bancoAtivo &&
+                                  (status.status === 'nao_enviado' ||
+                                    (status.status === 'pendente' && !status.totalTransacoes)))
+                                  ? 'default'
+                                  : 'pointer',
                               '&:hover': {
-                                boxShadow: status.status === 'fechado_sem_movimento' || status.status === 'processando' ? 2 : 4,
-                                transform: status.status === 'fechado_sem_movimento' || status.status === 'processando' ? 'none' : 'translateY(-2px)',
+                                boxShadow:
+                                  status.status === 'fechado_sem_movimento' ||
+                                  status.status === 'processando' ||
+                                  (!bancoAtivo &&
+                                    (status.status === 'nao_enviado' ||
+                                      (status.status === 'pendente' && !status.totalTransacoes)))
+                                    ? 2
+                                    : 4,
+                                transform:
+                                  status.status === 'fechado_sem_movimento' ||
+                                  status.status === 'processando' ||
+                                  (!bancoAtivo &&
+                                    (status.status === 'nao_enviado' ||
+                                      (status.status === 'pendente' && !status.totalTransacoes)))
+                                    ? 'none'
+                                    : 'translateY(-2px)',
                                 borderColor: (() => {
                                 const statusInfo = obterCorStatus(status.status);
-                                  if (status.status === 'fechado_sem_movimento' || status.status === 'processando') return 'inherit';
+                                  if (
+                                    status.status === 'fechado_sem_movimento' ||
+                                    status.status === 'processando' ||
+                                    (!bancoAtivo &&
+                                      (status.status === 'nao_enviado' ||
+                                        (status.status === 'pendente' && !status.totalTransacoes)))
+                                  ) {
+                                    return 'inherit';
+                                  }
                                 switch (statusInfo.color) {
                                     case 'success': return 'success.dark';
                                     case 'warning': return 'warning.dark';
@@ -1261,36 +1333,58 @@ export default function StatusConciliacaoPage() {
                                         >
                                           Ver Conciliação
                                     </Button>
-                                    <Button
-                                      variant="outlined"
-                                      size="small"
-                                          color="primary"
-                                      fullWidth
-                                      startIcon={<Iconify icon="eva:upload-fill" />}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleEnviarExtrato(banco._id, mes.mesAno);
-                                      }}
+                                    <Tooltip
+                                      title={
+                                        !bancoAtivo
+                                          ? 'Banco inativo — reative em Gerenciar Bancos para enviar extratos.'
+                                          : 'Enviar novo arquivo (OFX, PDF etc.)'
+                                      }
                                     >
+                                      <span style={{ width: '100%', display: 'block' }}>
+                                        <Button
+                                          variant="outlined"
+                                          size="small"
+                                          color="primary"
+                                          fullWidth
+                                          disabled={!bancoAtivo}
+                                          startIcon={<Iconify icon="eva:upload-fill" />}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleEnviarExtrato(banco._id, mes.mesAno);
+                                          }}
+                                        >
                                           Reenviar Arquivo
-                                    </Button>
+                                        </Button>
+                                      </span>
+                                    </Tooltip>
                                       </>
                                     )}
                                   </Stack>
                                 ) : (
-                                  <Button
-                                    variant="contained"
-                                    size="small"
-                                    color="primary"
-                                    fullWidth
-                                    startIcon={<Iconify icon="eva:upload-fill" />}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEnviarExtrato(banco._id, mes.mesAno);
-                                    }}
+                                  <Tooltip
+                                    title={
+                                      !bancoAtivo
+                                        ? 'Banco inativo — reative em Gerenciar Bancos para enviar extratos.'
+                                        : 'Enviar extrato (OFX, PDF etc.)'
+                                    }
                                   >
-                                    Enviar Extrato
-                                  </Button>
+                                    <span style={{ width: '100%', display: 'block' }}>
+                                      <Button
+                                        variant="contained"
+                                        size="small"
+                                        color="primary"
+                                        fullWidth
+                                        disabled={!bancoAtivo}
+                                        startIcon={<Iconify icon="eva:upload-fill" />}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleEnviarExtrato(banco._id, mes.mesAno);
+                                        }}
+                                      >
+                                        Enviar Extrato
+                                      </Button>
+                                    </span>
+                                  </Tooltip>
                                 )}
                               </Box>
                             </Stack>
