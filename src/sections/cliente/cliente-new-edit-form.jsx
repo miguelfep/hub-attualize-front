@@ -15,7 +15,6 @@ import {
   Card,
   Tabs,
   Stack,
-  Alert,
   Button,
   Switch,
   Divider,
@@ -183,6 +182,16 @@ export const NewUClienteSchema = zod.object({
   possuiExtrato: zod.boolean().optional(),
   dadosContabil: zod.string().optional(),
   possuiFuncionario: zod.boolean().optional(),
+  diaFechamentoFolha: zod.preprocess(
+    (v) => {
+      if (v === '' || v === null || v === undefined) return undefined;
+      const n = typeof v === 'number' ? v : Number(String(v).trim());
+      if (!Number.isFinite(n)) return undefined;
+      return n;
+    },
+    zod.number().int().min(1, { message: 'Use um dia entre 1 e 31' }).max(31, { message: 'Use um dia entre 1 e 31' }).optional()
+  ),
+  folhaComPlano: zod.boolean().default(false),
   dadosDepartamentoPessoal: zod.string().optional(),
   status: zod.boolean().optional(),
   tipoContato: zod.enum(['cliente', 'lead']).optional(),
@@ -341,6 +350,11 @@ export function ClienteNewEditForm({ currentCliente }) {
       possuiExtrato: currentCliente?.possuiExtrato || false,
       dadosContabil: currentCliente?.dadosContabil || '',
       possuiFuncionario: currentCliente?.possuiFuncionario || false,
+      diaFechamentoFolha:
+        currentCliente?.diaFechamentoFolha != null && currentCliente?.diaFechamentoFolha !== ''
+          ? String(currentCliente.diaFechamentoFolha)
+          : '',
+      folhaComPlano: currentCliente?.folhaComPlano ?? false,
       dadosDepartamentoPessoal: currentCliente?.dadosDepartamentoPessoal || '',
       planoEmpresa: currentCliente?.planoEmpresa || '',
       status: currentCliente?.status !== undefined ? currentCliente.status : true,
@@ -399,6 +413,7 @@ export function ClienteNewEditForm({ currentCliente }) {
   const clienteVip = watch('clienteVip'); // Observar o valor de clienteVip
   const statusAtivo = watch('status') !== undefined ? watch('status') : true; // Observar o valor de status do banco
   const regimeTributarioWatch = watch('regimeTributario');
+  const possuiFuncionarioWatch = watch('possuiFuncionario');
 
   useEffect(() => {
     if (regimeTributarioWatch !== 'simples') {
@@ -475,6 +490,11 @@ const onSubmit = handleSubmit(
             status: updatedCliente.status !== undefined ? updatedCliente.status : true,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
             dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
+            diaFechamentoFolha:
+              updatedCliente.diaFechamentoFolha != null && updatedCliente.diaFechamentoFolha !== ''
+                ? String(updatedCliente.diaFechamentoFolha)
+                : '',
+            folhaComPlano: updatedCliente.folhaComPlano ?? false,
             contratoSocialFile: null,
             cartaoCnpjFile: null,
           });
@@ -522,6 +542,11 @@ const onSubmit = handleSubmit(
         status: clienteAtualizado.status !== undefined ? clienteAtualizado.status : true,
         dataEntrada: clienteAtualizado.dataEntrada ? new Date(clienteAtualizado.dataEntrada) : null,
         dataSaida: clienteAtualizado.dataSaida ? new Date(clienteAtualizado.dataSaida) : null,
+        diaFechamentoFolha:
+          clienteAtualizado.diaFechamentoFolha != null && clienteAtualizado.diaFechamentoFolha !== ''
+            ? String(clienteAtualizado.diaFechamentoFolha)
+            : '',
+        folhaComPlano: clienteAtualizado.folhaComPlano ?? false,
         whatsapp: normalizePhoneBR(clienteAtualizado.whatsapp),
         telefoneComercial: normalizePhoneBR(clienteAtualizado.telefoneComercial),
         socios: (clienteAtualizado?.socios || []).map((s) => ({
@@ -1202,45 +1227,85 @@ const onSubmit = handleSubmit(
                     control={control}
                     render={({ field }) => (
                       <FormControlLabel
-                        control={<Switch {...field} checked={field.value} />}
+                        control={
+                          <Switch
+                            {...field}
+                            checked={Boolean(field.value)}
+                            disabled={!statusAtivo}
+                          />
+                        }
                         label="Possui Funcionário ?"
                       />
                     )}
                   />
                 </Grid>
-                {currentCliente?._id && (
+                {possuiFuncionarioWatch && currentCliente?._id && (
                   <Grid xs={12}>
-                    <Alert severity="info" variant="outlined" sx={{ py: 1.5 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                        Funcionários (cadastro e aprovação)
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                        Cadastre colaboradores pelo escritório ou acompanhe a fila de aprovação. O cliente só acessa o
-                        módulo no portal se esta opção estiver ativa e salva.
-                      </Typography>
-                      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" useFlexGap>
-                        <Button
-                          component={RouterLink}
-                          href={paths.dashboard.cliente.departamentoPessoal(currentCliente._id)}
-                          size="small"
-                          variant="soft"
-                          color="primary"
-                        >
-                          Lista de funcionários
-                        </Button>
-                        <Button
-                          component={RouterLink}
-                          href={paths.dashboard.cliente.departamentoPessoalNovo(currentCliente._id)}
-                          size="small"
-                          variant="contained"
-                        >
-                          Novo funcionário
-                        </Button>
-                      </Stack>
-                    </Alert>
+                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} flexWrap="wrap" useFlexGap>
+                      <Button
+                        component={RouterLink}
+                        href={paths.dashboard.cliente.departamentoPessoal(currentCliente._id)}
+                        size="small"
+                        variant="soft"
+                        color="primary"
+                      >
+                        Lista de funcionários
+                      </Button>
+                      <Button
+                        component={RouterLink}
+                        href={paths.dashboard.cliente.departamentoPessoalNovo(currentCliente._id)}
+                        size="small"
+                        variant="contained"
+                      >
+                        Novo funcionário
+                      </Button>
+                    </Stack>
                   </Grid>
                 )}
+                {possuiFuncionarioWatch && (
+                  <>
+                    <Grid xs={12}>
+                      <Divider sx={{ my: 0.5 }} />
+                      <Typography variant="subtitle2" color="text.secondary" sx={{ mt: 2, mb: 1 }}>
+                        Parâmetros da folha
+                      </Typography>
+                    </Grid>
+                    <Grid xs={12} md={4}>
+                      <Field.Text
+                        name="diaFechamentoFolha"
+                        label="Dia fechamento da folha"
+                        type="number"
+                        placeholder="Ex.: 5"
+                        disabled={!statusAtivo}
+                        inputProps={{ min: 1, max: 31 }}
+                        helperText="Opcional. Dia do mês (1 a 31)."
+                      />
+                    </Grid>
+                    <Grid xs={12} md={8}>
+                      <Controller
+                        name="folhaComPlano"
+                        control={control}
+                        render={({ field }) => (
+                          <FormControlLabel
+                            control={
+                              <Switch
+                                {...field}
+                                checked={Boolean(field.value)}
+                                disabled={!statusAtivo}
+                              />
+                            }
+                            label="Folha com plano"
+                          />
+                        )}
+                      />
+                      <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                        Indica se a folha de pagamento segue plano específico (padrão: não).
+                      </Typography>
+                    </Grid>
+                  </>
+                )}
                 <Grid xs={12}>
+                  <Divider sx={{ my: possuiFuncionarioWatch ? 1 : 0 }} />
                   <Field.Editor
                     name="dadosDepartamentoPessoal"
                     label="Dados do Departamento Pessoal"

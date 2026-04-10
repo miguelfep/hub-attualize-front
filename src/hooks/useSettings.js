@@ -2,8 +2,13 @@ import { isClientePortalFlagAtiva } from 'src/utils/cliente-portal-flags';
 
 import { useSettingsContext } from 'src/contexts/SettingsContext';
 
+const noopFuncionalidade = () => false;
+
 export function useSettings() {
-  const { settings, isFuncionalidadeAtiva, clienteData } = useSettingsContext();
+  const ctx = useSettingsContext();
+  const settings = ctx?.settings ?? null;
+  const clienteData = ctx?.clienteData ?? null;
+  const isFuncionalidadeAtiva = ctx?.isFuncionalidadeAtiva ?? noopFuncionalidade;
 
   // Retornar objeto padrão seguro quando settings é null
   const settingsSafe = settings || {

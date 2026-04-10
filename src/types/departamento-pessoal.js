@@ -28,6 +28,7 @@
  * @property {string} cpf
  * @property {string} [email]
  * @property {string} [cargo]
+ * @property {number} [codigoFolha] — código no sistema de folha de pagamento
  * @property {string} [dataAdmissao]
  * @property {string} [observacoes]
  * @property {StatusCadastroFuncionario} statusCadastro
@@ -48,6 +49,8 @@
  * @property {number} [quantidade]
  * @property {number} [valor]
  * @property {string} [observacao]
+ * @property {string[]} [dias] — ISO YYYY-MM-DD (ex.: falta)
+ * @property {number} [horas] — horas extras / atraso
  */
 
 /**
@@ -80,11 +83,32 @@
  * @property {string} updatedAt
  */
 
+/**
+ * Situação da competência (validação mensal de apontamentos — portal).
+ * @typedef {'em_aberto'|'validado_com_apontamentos'|'validado_sem_apontamentos'|'encerrado_automaticamente'} SituacaoApontamentosMes
+ */
+
+/**
+ * Detalhe de um mês em GET .../apontamentos/competencia/:ano ou :ano/:mes.
+ * @typedef {Object} DetalheApontamentosMes
+ * @property {number} ano
+ * @property {number} mes
+ * @property {SituacaoApontamentosMes} situacao
+ * @property {string} [fechadoEm]
+ * @property {string} [fechadoPor]
+ * @property {string} [registroId]
+ * @property {string} dataLimiteEnvioISO
+ * @property {boolean} passouDoPrazo
+ * @property {boolean} podeEditarRubricas
+ * @property {boolean} possuiAlgumApontamentoLancado
+ */
+
+/** Opções de tipo de apontamento (API aceita qualquer `codigo`; estes são os sugeridos). */
 export const CODIGOS_RUBRICA_SUGERIDOS = [
-  { value: 'FALTA', label: 'Falta' },
-  { value: 'HORA_EXTRA_50', label: 'Hora extra 50%' },
-  { value: 'HORA_EXTRA_100', label: 'Hora extra 100%' },
-  { value: 'ATRASO', label: 'Atraso' },
+  { value: 'FALTA', label: 'Falta (dias)' },
+  { value: 'HORA_EXTRA_50', label: 'Hora extra dias úteis' },
+  { value: 'HORA_EXTRA_100', label: 'Hora extra domingo ou feriados' },
+  { value: 'ATRASO', label: 'Atraso (horas)' },
   { value: 'ADICIONAL_NOTURNO', label: 'Adicional noturno' },
   { value: 'OUTRO', label: 'Outro' },
 ];

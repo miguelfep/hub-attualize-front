@@ -12,6 +12,7 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
@@ -34,11 +35,21 @@ import {
 
 // ----------------------------------------------------------------------
 
+const codigoFolhaField = zod
+  .string()
+  .optional()
+  .refine((s) => !s?.trim() || /^\d{1,12}$/.test(s.trim()), { message: 'Código folha: apenas números inteiros' })
+  .transform((s) => {
+    const t = s?.trim();
+    return t ? Number.parseInt(t, 10) : undefined;
+  });
+
 const editSchema = zod.object({
   nome: zod.string().min(3, 'Informe o nome'),
   cpf: zod.string().refine((v) => validateCPF(v), { message: 'CPF inválido' }),
   email: zod.string().email('E-mail inválido').optional().or(zod.literal('')),
   cargo: zod.string().optional(),
+  codigoFolha: codigoFolhaField,
   dataAdmissao: zod.string().optional(),
   observacoes: zod.string().optional(),
 });
@@ -61,6 +72,7 @@ export function PortalDpDetalheView({ funcionarioId }) {
       cpf: '',
       email: '',
       cargo: '',
+      codigoFolha: '',
       dataAdmissao: '',
       observacoes: '',
     },
@@ -75,6 +87,7 @@ export function PortalDpDetalheView({ funcionarioId }) {
       cpf: f.cpf ? formatCPF(f.cpf) : '',
       email: f.email || '',
       cargo: f.cargo || '',
+      codigoFolha: f.codigoFolha != null && f.codigoFolha !== '' ? String(f.codigoFolha) : '',
       dataAdmissao: f.dataAdmissao ? String(f.dataAdmissao).slice(0, 10) : '',
       observacoes: f.observacoes || '',
     });
@@ -88,6 +101,7 @@ export function PortalDpDetalheView({ funcionarioId }) {
         cpf: onlyDigits(data.cpf),
         email: data.email?.trim() || undefined,
         cargo: data.cargo?.trim() || undefined,
+        codigoFolha: data.codigoFolha === undefined ? null : data.codigoFolha,
         dataAdmissao: data.dataAdmissao || undefined,
         observacoes: data.observacoes?.trim() || undefined,
       });
@@ -147,11 +161,11 @@ export function PortalDpDetalheView({ funcionarioId }) {
           <>
             <Button
               component={RouterLink}
-              href={paths.cliente.departamentoPessoal.rubricas(funcionarioId)}
+              href={paths.cliente.departamentoPessoal.apontamentosLancar({ funcionario: funcionarioId })}
               variant="contained"
               color="primary"
             >
-              Rubricas por competência
+              Lançar apontamentos
             </Button>
             {f.demissao?.status !== 'solicitada' && f.demissao?.status !== 'em_analise' && (
               <Button
@@ -186,6 +200,15 @@ export function PortalDpDetalheView({ funcionarioId }) {
                 <strong>Cargo:</strong> {f.cargo}
               </Typography>
             )}
+            <TextField
+              label="Código folha"
+              value={f.codigoFolha != null && f.codigoFolha !== '' ? String(f.codigoFolha) : ''}
+              disabled
+              size="small"
+              placeholder="—"
+              sx={{ maxWidth: 400 }}
+              helperText="Só é possível alterar pelo portal enquanto o cadastro estiver pendente de aprovação."
+            />
             {f.dataAdmissao && (
               <Typography variant="body2">
                 <strong>Admissão:</strong> {fDate(f.dataAdmissao)}
@@ -209,6 +232,13 @@ export function PortalDpDetalheView({ funcionarioId }) {
               <Field.Text name="cpf" label="CPF" />
               <Field.Text name="email" label="E-mail" />
               <Field.Text name="cargo" label="Cargo" />
+              <Field.Text
+                name="codigoFolha"
+                label="Código folha"
+                placeholder="Ex.: 42"
+                helperText="Opcional. Matrícula ou código no sistema de folha de pagamento (inteiro)."
+                inputProps={{ inputMode: 'numeric', maxLength: 12 }}
+              />
               <Field.Text name="dataAdmissao" label="Data de admissão" type="date" InputLabelProps={{ shrink: true }} />
               <Field.Text name="observacoes" label="Observações" multiline rows={3} />
               <Divider sx={{ my: 1 }} />

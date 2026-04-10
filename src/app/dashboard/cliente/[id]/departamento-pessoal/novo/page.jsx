@@ -24,7 +24,7 @@ export default async function Page({ params }) {
           { name: 'Departamento Pessoal', href: paths.dashboard.cliente.departamentoPessoal(id) },
           { name: 'Novo' },
         ]}
-        sx={{ mb: 3 }}
+        sx={{ mb: 2 }}
       />
       <AdminDpNovoView clienteId={id} />
     </DashboardContent>
