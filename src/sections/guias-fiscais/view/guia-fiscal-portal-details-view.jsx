@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -66,6 +67,12 @@ const getTipoGuiaLabel = (tipo) => {
 export function GuiaFiscalPortalDetailsView({ id }) {
   const { data: guia, isLoading, error } = useGetGuiaFiscalPortalById(id);
 
+  useEffect(() => {
+    if (!isLoading && guia?._id && id) {
+      revalidarCachesListagemGuiasPortal();
+    }
+  }, [isLoading, guia?._id, id]);
+
   const handleDownload = async () => {
     try {
       await downloadGuiaFiscalPortal(id, guia?.nomeArquivo || 'guia-fiscal.pdf');
@@ -111,7 +118,7 @@ export function GuiaFiscalPortalDetailsView({ id }) {
         heading="Detalhes da Guia Fiscal"
         links={[
           { name: 'Dashboard', href: paths.cliente.dashboard },
-          { name: 'Guias Fiscais', href: paths.cliente.guiasFiscais.list },
+          { name: 'Meus Documentos', href: paths.cliente.guiasEDocumentos.list },
           { name: 'Detalhes' },
         ]}
         action={

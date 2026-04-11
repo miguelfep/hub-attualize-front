@@ -30,6 +30,11 @@ import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { isGuia, getCompetencia, formatCompetencia } from '../utils';
+import {
+  getClienteVisualizouEm,
+  clienteJaVisualizouDocumento,
+  isDocumentoNovoParaClientePortal,
+} from '../guia-documento-visualizacao';
 
 // Lazy load FullCalendar e plugins para melhorar performance inicial
 const CalendarWithPlugins = dynamic(
@@ -111,17 +116,20 @@ export function GuiaFiscalCalendarView() {
     const guias = data?.guias || [];
     return guias
       .filter((guia) => guia.dataVencimento)
-      .map((guia) => ({
-        id: guia._id,
-        title: `${getTipoGuiaLabel(guia.tipoGuia)} - ${guia.nomeArquivo || 'Guia Fiscal'}`,
-        start: guia.dataVencimento,
-        backgroundColor: getStatusColor(guia.status),
-        borderColor: getStatusColor(guia.status),
-        extendedProps: {
-          guia,
-        },
-      }));
-  }, [data?.guias]);
+      .map((guia) => {
+        const novo = isDocumentoNovoParaClientePortal(guia);
+        return {
+          id: guia._id,
+          title: `${getTipoGuiaLabel(guia.tipoGuia)} — ${guia.nomeArquivo || 'Documento'}${novo ? ' • novo' : ''}`,
+          start: guia.dataVencimento,
+          backgroundColor: getStatusColor(guia.status),
+          borderColor: novo ? theme.palette.info.main : getStatusColor(guia.status),
+          extendedProps: {
+            guia,
+          },
+        };
+      });
+  }, [data?.guias, theme.palette.info.main]);
 
   const handleEventClick = (info) => {
     const {guia} = info.event.extendedProps;
@@ -129,17 +137,21 @@ export function GuiaFiscalCalendarView() {
     dialog.onTrue();
   };
 
-  const handleViewDetails = () => {
-    if (selectedGuia) {
-      router.push(paths.cliente.guiasFiscais.details(selectedGuia._id));
-      dialog.onFalse();
-    }
+  const handleViewDetails = async () => {
+    if (!selectedGuia) return;
+    await navegarParaDetalheGuiaPortal(router, selectedGuia._id);
+    dialog.onFalse();
   };
 
   const handleDownload = async () => {
     if (selectedGuia) {
       try {
         await downloadGuiaFiscalPortal(selectedGuia._id, selectedGuia.nomeArquivo);
+        setSelectedGuia((prev) =>
+          prev
+            ? { ...prev, lidoPeloUsuario: true, vistoEmUsuario: new Date().toISOString() }
+            : prev
+        );
         dialog.onFalse();
       } catch (error) {
         console.error('Erro ao fazer download:', error);
@@ -153,17 +165,17 @@ export function GuiaFiscalCalendarView() {
         heading="Calendário de Vencimentos"
         links={[
           { name: 'Dashboard', href: paths.cliente.dashboard },
-          { name: 'Guias Fiscais', href: paths.cliente.guiasFiscais.list },
+          { name: 'Meus Documentos', href: paths.cliente.guiasEDocumentos.list },
           { name: 'Calendário' },
         ]}
         action={
           <Button
             component="a"
-            href={paths.cliente.guiasFiscais.list}
+            href={paths.cliente.guiasEDocumentos.list}
             variant="outlined"
             startIcon={<Iconify icon="solar:list-bold" />}
           >
-            Ver Lista
+            Meus Documentos
           </Button>
         }
         sx={{ mb: { xs: 3, md: 5 } }}
@@ -253,6 +265,28 @@ export function GuiaFiscalCalendarView() {
                       : 'Pendente'}
                 </Label>
               </Stack>
+
+              <Stack direction="row" justifyContent="space-between" alignItems="center">
+                <Typography variant="body2" color="text.secondary">
+                  Você já viu/baixou:
+                </Typography>
+                <Label
+                  variant="soft"
+                  color={clienteJaVisualizouDocumento(selectedGuia) ? 'success' : 'warning'}
+                >
+                  {clienteJaVisualizouDocumento(selectedGuia) ? 'Sim' : 'Não'}
+                </Label>
+              </Stack>
+              {getClienteVisualizouEm(selectedGuia) && (
+                <Stack direction="row" justifyContent="space-between">
+                  <Typography variant="body2" color="text.secondary">
+                    Registrado em:
+                  </Typography>
+                  <Typography variant="body2" fontWeight="medium">
+                    {fDate(getClienteVisualizouEm(selectedGuia))}
+                  </Typography>
+                </Stack>
+              )}
 
               {selectedGuia.dadosExtraidos?.valor && (
                 <Stack direction="row" justifyContent="space-between">

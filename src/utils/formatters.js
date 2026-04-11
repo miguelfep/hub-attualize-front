@@ -22,7 +22,9 @@ export function formatCurrency(value) {
  */
 export function formatDate(date) {
   if (!date) return '-';
-  return new Date(date).toLocaleDateString('pt-BR');
+  const parsed = date instanceof Date ? date : new Date(date);
+  if (Number.isNaN(parsed.getTime())) return '-';
+  return parsed.toLocaleDateString('pt-BR');
 }
 
 /**

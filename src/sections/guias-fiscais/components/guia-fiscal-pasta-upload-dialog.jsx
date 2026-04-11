@@ -13,6 +13,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import ListItemText from '@mui/material/ListItemText';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import LinearProgress from '@mui/material/LinearProgress';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 
 import { Iconify } from 'src/components/iconify';
@@ -25,6 +26,7 @@ export function GuiaFiscalPastaUploadDialog({
   files = [],
   pastaNome,
   uploading,
+  uploadProgress,
   onConfirm,
 }) {
   const [dataVencimento, setDataVencimento] = useState(null);
@@ -92,6 +94,18 @@ export function GuiaFiscalPastaUploadDialog({
             size="small"
             helperText="Referência do período do documento, se aplicável."
           />
+
+          {uploading && uploadProgress?.total > 1 ? (
+            <Stack spacing={1}>
+              <Typography variant="caption" color="text.secondary">
+                Enviando arquivo {uploadProgress.current} de {uploadProgress.total}…
+              </Typography>
+              <LinearProgress
+                variant="determinate"
+                value={Math.round((uploadProgress.current / uploadProgress.total) * 100)}
+              />
+            </Stack>
+          ) : null}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -99,7 +113,11 @@ export function GuiaFiscalPastaUploadDialog({
           Cancelar
         </Button>
         <Button variant="contained" onClick={handleSubmit} disabled={uploading || !files.length}>
-          {uploading ? 'Enviando…' : 'Enviar documentos'}
+          {uploading
+            ? uploadProgress?.total > 1
+              ? `Enviando ${uploadProgress.current}/${uploadProgress.total}…`
+              : 'Enviando…'
+            : 'Enviar documentos'}
         </Button>
       </DialogActions>
     </Dialog>

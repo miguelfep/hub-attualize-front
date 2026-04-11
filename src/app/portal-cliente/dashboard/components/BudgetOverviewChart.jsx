@@ -47,7 +47,7 @@ export default function BudgetOverviewChart({ data = BUDGET_OVERVIEW_DATA, onMon
       },
     },
     grid: {
-      padding: { top: 20, bottom: 0, left: 15, right: 15 },
+      padding: { top: 20, bottom: 20, left: 15, right: 15 },
       strokeDashArray: 4,
       borderColor: theme.palette.divider,
     },
@@ -102,7 +102,7 @@ export default function BudgetOverviewChart({ data = BUDGET_OVERVIEW_DATA, onMon
         }}
       />
 
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', px: 1.5, pb: 2 }}>
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', px: 1.5, pb: 2.5, minHeight: 200, overflow: 'visible' }}>
         <Chart dir="ltr" type="area" series={series} options={chartOptions} width="100%" height={280} />
       </Box>
     </Card>

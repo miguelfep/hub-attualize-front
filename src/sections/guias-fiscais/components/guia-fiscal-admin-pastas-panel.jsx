@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import CardHeader from '@mui/material/CardHeader';
@@ -202,88 +203,56 @@ export function GuiaFiscalAdminPastasPanel({
             </Stack>
           }
           subheader="Arraste PDF/Excel aqui ou use o botão. Depois informe vencimento e competência."
-          sx={{ pb: 0, '& .MuiCardHeader-subheader': { lineHeight: 1.4 } }}
+          sx={{ px: 2.25, pt: 2, pb: 0.5, '& .MuiCardHeader-subheader': { lineHeight: 1.45, mt: 0.25 } }}
         />
-        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.5, pt: 1, minHeight: 0 }}>
-          <Stack direction="row" flexWrap="wrap" gap={1}>
-            <Button size="small" variant="outlined" onClick={() => onSelectFolder(null)}>
+        <CardContent sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1.75, pt: 1.25, px: 2.25, pb: 2, minHeight: 0 }}>
+          <Stack spacing={1}>
+            <Button size="small" variant="outlined" fullWidth onClick={() => onSelectFolder(null)}>
               Todas as pastas
             </Button>
             <Button
               size="small"
-              variant="contained"
-              startIcon={<Iconify icon="solar:add-folder-bold" />}
-              onClick={handleOpenCreate}
-              disabled={!selectedFolderId}
+              variant="outlined"
+              fullWidth
+              startIcon={
+                uploading ? <CircularProgress size={16} color="inherit" /> : <Iconify icon="solar:upload-bold" />
+              }
+              onClick={handlePickFiles}
+              disabled={uploading || !selectedFolderId}
             >
-              Nova subpasta
+              Escolher arquivos
             </Button>
             <Button
               size="small"
               color="error"
               variant="outlined"
+              fullWidth
               startIcon={<Iconify icon="solar:trash-bin-trash-bold" />}
               onClick={() => setDeleteOpen(true)}
               disabled={!podeExcluirPasta}
             >
               Excluir pasta
             </Button>
+            <Button
+              size="small"
+              variant="contained"
+              fullWidth
+              startIcon={<Iconify icon="solar:add-folder-bold" />}
+              onClick={handleOpenCreate}
+              disabled={!selectedFolderId}
+            >
+              Nova subpasta
+            </Button>
           </Stack>
 
-          <Button
-            size="small"
-            variant="soft"
-            color="primary"
-            startIcon={
-              uploading ? <CircularProgress size={18} color="inherit" /> : <Iconify icon="solar:upload-bold" />
-            }
-            onClick={handlePickFiles}
-            disabled={uploading || !selectedFolderId}
-          >
-            Escolher arquivos
-          </Button>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            hidden
-            accept={ACCEPT_TYPES}
-            onChange={handleFilesChange}
-          />
-
-          <Box
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            sx={{
-              border: '2px dashed',
-              borderColor: dragOver ? 'primary.main' : 'divider',
-              borderRadius: 1,
-              px: 1.5,
-              py: 2,
-              textAlign: 'center',
-              bgcolor: dragOver ? alpha(theme.palette.primary.main, 0.08) : 'background.neutral',
-              transition: theme.transitions.create(['border-color', 'background-color'], {
-                duration: theme.transitions.duration.shorter,
-              }),
-              pointerEvents: selectedFolderId ? 'auto' : 'none',
-              opacity: selectedFolderId ? 1 : 0.5,
-            }}
-          >
-            <Iconify icon="solar:cloud-upload-bold-duotone" width={32} sx={{ color: 'text.secondary', mb: 0.5 }} />
-            <Typography variant="caption" display="block" color="text.secondary">
-              {selectedFolderId ? 'Solte os arquivos aqui' : 'Selecione uma pasta na árvore'}
-            </Typography>
-          </Box>
-
           {nodeSelecionado && (
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" color="text.secondary" sx={{ px: 0.25 }}>
               Pasta: <strong>{nodeSelecionado.nome}</strong>
               {nodeSelecionado.slug ? ` (${nodeSelecionado.slug})` : ''}
             </Typography>
           )}
 
-          <Box sx={{ flex: 1, minHeight: 200, maxHeight: { xs: 360, md: 'min(52vh, 480px)' }, overflow: 'auto' }}>
+          <Box sx={{ flex: 1, minHeight: 220, maxHeight: { xs: 380, md: 'min(52vh, 520px)' }, overflow: 'auto' }}>
             {loadingFolders ? (
               <Stack alignItems="center" justifyContent="center" sx={{ py: 4 }}>
                 <CircularProgress size={32} />
@@ -301,6 +270,53 @@ export function GuiaFiscalAdminPastasPanel({
               </Typography>
             )}
           </Box>
+
+          <Divider sx={{ borderStyle: 'dashed', mx: 0.25 }} />
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            hidden
+            accept={ACCEPT_TYPES}
+            onChange={handleFilesChange}
+          />
+
+          <Box
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            sx={{
+              border: '2px dashed',
+              borderColor: dragOver ? 'primary.main' : 'divider',
+              borderRadius: 1.25,
+              px: 1.5,
+              py: 1.5,
+              minHeight: 96,
+              textAlign: 'center',
+              bgcolor: dragOver ? alpha(theme.palette.primary.main, 0.08) : 'background.neutral',
+              transition: theme.transitions.create(['border-color', 'background-color'], {
+                duration: theme.transitions.duration.shorter,
+              }),
+              pointerEvents: selectedFolderId ? 'auto' : 'none',
+              opacity: selectedFolderId ? 1 : 0.55,
+            }}
+          >
+            <Iconify icon="solar:cloud-upload-bold-duotone" width={26} sx={{ color: 'text.secondary', mb: 0.25 }} />
+            <Typography variant="caption" display="block" color="text.secondary">
+              {selectedFolderId ? 'Solte os arquivos aqui' : 'Selecione uma pasta na árvore'}
+            </Typography>
+          </Box>
+          <Button
+            size="small"
+            variant="text"
+            color="primary"
+            sx={{ alignSelf: 'flex-start', mt: -0.5, ml: 0.25 }}
+            onClick={handlePickFiles}
+            disabled={uploading || !selectedFolderId}
+          >
+            Ou clique para escolher arquivos
+          </Button>
         </CardContent>
       </Card>
 
