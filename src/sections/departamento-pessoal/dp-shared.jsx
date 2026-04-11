@@ -1,24 +1,45 @@
 'use client';
 
+import { useContext } from 'react';
+
 import Chip from '@mui/material/Chip';
 
 import { useEmpresa } from 'src/hooks/use-empresa';
-import { useSettings } from 'src/hooks/useSettings';
 
 import { isClientePortalFlagAtiva } from 'src/utils/cliente-portal-flags';
+
+import { PortalClienteSettingsContext } from 'src/contexts/SettingsContext';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-/** Uma única leitura de empresa + flag possuiFuncionario (settings ou cadastro da empresa). */
+/**
+ * Módulo DP no portal só é exibido com `possuiFuncionario` no Cliente (espelho em settings).
+ * Com empresa ativa carregada, a fonte da verdade é a linha da empresa em `empresas[]`.
+ *
+ * Usa `useContext(PortalClienteSettingsContext)` direto (e não `useSettings`) para evitar colisão de nome
+ * com o `SettingsContext` do tema do dashboard e para funcionar fora do `SettingsProvider` do portal.
+ */
 export function useDpPortalContext() {
-  const { possuiFuncionario } = useSettings();
+  const { settings, clienteData } = useContext(PortalClienteSettingsContext);
+  const settingsSafe = settings || {
+    funcionalidades: {},
+    configuracoes: {},
+    eNotasConfig: {},
+    possuiExtrato: false,
+    possuiFuncionario: false,
+  };
+  const possuiFuncionario =
+    isClientePortalFlagAtiva(clienteData?.possuiFuncionario) ||
+    isClientePortalFlagAtiva(settingsSafe?.possuiFuncionario);
   const { user } = useAuthContext();
   const userId = user?.id || user?._id || user?.userId;
   const { empresaAtiva, empresaAtivaData, loadingEmpresas } = useEmpresa(userId);
   const enabled =
-    possuiFuncionario || isClientePortalFlagAtiva(empresaAtivaData?.possuiFuncionario);
+    empresaAtivaData != null
+      ? isClientePortalFlagAtiva(empresaAtivaData.possuiFuncionario)
+      : possuiFuncionario;
   return { enabled, loadingEmpresas, clienteProprietarioId: empresaAtiva, empresaAtivaData };
 }
 

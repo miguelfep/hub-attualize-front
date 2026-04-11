@@ -1,8 +1,12 @@
 import { getServerSideSitemap } from 'next-sitemap';
 
-import { getPosts } from 'src/actions/blog-ssr';
+import { getPostsSitemapMeta } from 'src/actions/blog-ssr';
 
 const SITE_URL = 'https://attualize.com.br';
+
+/** Sitemap precisa de várias chamadas ao WP; planos Vercel Pro+ permitem até 60s. */
+export const maxDuration = 60;
+export const dynamic = 'force-dynamic';
 
 // Função para normalizar datas para o formato ISO 8601 válido do sitemap
 function normalizeDate(dateString) {
@@ -26,23 +30,27 @@ function normalizeDate(dateString) {
   }
 }
 
-export async function GET(request) {
+export async function GET() {
   try {
-    // Buscar todos os posts do blog
-    const allPosts = [];
-    let currentPage = 1;
-    let hasMore = true;
+    const perPage = 100;
+    const first = await getPostsSitemapMeta(1, perPage);
+    const allPosts = [...first.posts];
 
-    // Buscar todos os posts paginando
-    while (hasMore) {
-      // eslint-disable-next-line no-await-in-loop
-      const { posts, totalPages } = await getPosts(currentPage, 100); // 100 posts por página
-      allPosts.push(...posts);
-
-      if (currentPage >= totalPages) {
-        hasMore = false;
-      } else {
-        currentPage += 1;
+    if (first.totalPages > 1) {
+      const pageNumbers = Array.from(
+        { length: first.totalPages - 1 },
+        (_, i) => i + 2
+      );
+      const concurrency = 5;
+      for (let i = 0; i < pageNumbers.length; i += concurrency) {
+        const slice = pageNumbers.slice(i, i + concurrency);
+        // eslint-disable-next-line no-await-in-loop
+        const batches = await Promise.all(
+          slice.map((p) => getPostsSitemapMeta(p, perPage))
+        );
+        batches.forEach(({ posts }) => {
+          allPosts.push(...posts);
+        });
       }
     }
 

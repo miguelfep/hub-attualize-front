@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
@@ -14,6 +15,8 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
+import CardContent from '@mui/material/CardContent';
+import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 
 import { paths } from 'src/routes/paths';
@@ -30,109 +33,176 @@ import { ChipStatusVinculo, ChipStatusCadastro, ChipStatusDemissao } from '../dp
 
 // ----------------------------------------------------------------------
 
-export function AdminDpListView({ clienteId }) {
-  const [statusCadastro, setStatusCadastro] = useState('pendente_aprovacao');
+export function AdminDpListView({ clienteId, topSlot, clienteRazaoSocial }) {
+  const theme = useTheme();
+  const [statusCadastro, setStatusCadastro] = useState('');
   const params = statusCadastro ? { statusCadastro } : {};
-  const { data: funcionarios, isLoading } = useAdminFuncionarios(clienteId, params);
+  const hasCliente = Boolean(clienteId);
+  const { data: funcionarios, isLoading } = useAdminFuncionarios(
+    hasCliente ? clienteId : null,
+    params
+  );
 
   return (
-    <Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mb: 3 }}>
-        <div>
-          <Typography variant="h4">Funcionários (DP)</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Cliente: {clienteId}
+    <Card sx={{ borderRadius: 3 }}>
+      <Box
+        sx={{
+          p: 3,
+          display: 'flex',
+          flexDirection: { xs: 'column', md: 'row' },
+          alignItems: { md: 'center' },
+          justifyContent: 'space-between',
+          gap: 2,
+          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`,
+        }}
+      >
+        <Box>
+          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+            Departamento Pessoal - Funcionários
           </Typography>
-        </div>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+            Visualize e gerencie os funcionários deste cliente (cadastro, vínculo e demissão).
+          </Typography>
+        </Box>
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1}
+          alignItems={{ sm: 'center' }}
+          sx={{ flexShrink: 0 }}
+        >
+          {hasCliente && clienteRazaoSocial ? (
+            <Chip
+              label={clienteRazaoSocial}
+              variant="outlined"
+              sx={{
+                maxWidth: { xs: '100%', sm: 320 },
+                height: 'auto',
+                py: 0.5,
+                '& .MuiChip-label': { whiteSpace: 'normal', textAlign: 'left' },
+              }}
+            />
+          ) : null}
+          {hasCliente ? (
+            <Button
+              component={RouterLink}
+              href={paths.dashboard.cliente.departamentoPessoalNovo(clienteId)}
+              variant="contained"
+            >
+              Novo funcionário
+            </Button>
+          ) : (
+            <Button variant="contained" disabled>
+              Novo funcionário
+            </Button>
+          )}
           <Button
             component={RouterLink}
-            href={paths.dashboard.cliente.departamentoPessoalNovo(clienteId)}
-            variant="contained"
+            href={hasCliente ? paths.dashboard.cliente.edit(clienteId) : paths.dashboard.cliente.root}
+            variant="outlined"
+            color="inherit"
           >
-            Novo funcionário
-          </Button>
-          <Button component={RouterLink} href={paths.dashboard.cliente.edit(clienteId)} variant="outlined">
-            Voltar ao cliente
+            {hasCliente ? 'Voltar ao cliente' : 'Lista de clientes'}
           </Button>
         </Stack>
-      </Stack>
+      </Box>
 
-      <Card sx={{ p: 2, mb: 2 }}>
-        <TextField
-          select
-          label="Fila / status do cadastro"
-          value={statusCadastro}
-          onChange={(e) => setStatusCadastro(e.target.value)}
-          size="small"
-          sx={{ minWidth: 260 }}
-        >
-          <MenuItem value="pendente_aprovacao">Pendentes de aprovação</MenuItem>
-          <MenuItem value="">Todos</MenuItem>
-          <MenuItem value="aprovado">Aprovados</MenuItem>
-          <MenuItem value="reprovado">Reprovados</MenuItem>
-        </TextField>
-      </Card>
+      <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+        {topSlot ? <Box sx={{ mb: 3 }}>{topSlot}</Box> : null}
 
-      <Card>
-        <TableContainer>
-          <Scrollbar>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>Nome</TableCell>
-                  <TableCell>CPF</TableCell>
-                  <TableCell>Cadastro</TableCell>
-                  <TableCell>Vínculo</TableCell>
-                  <TableCell>Demissão</TableCell>
-                  <TableCell align="right" />
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {isLoading && (
+        <Box sx={{ mb: 3 }}>
+          <TextField
+            select
+            label="Fila / status do cadastro"
+            value={statusCadastro}
+            onChange={(e) => setStatusCadastro(e.target.value)}
+            size="small"
+            sx={{ minWidth: { xs: '100%', sm: 280 } }}
+            disabled={!hasCliente}
+          >
+            <MenuItem value="">Todos</MenuItem>
+            <MenuItem value="pendente_aprovacao">Pendentes de aprovação</MenuItem>
+            <MenuItem value="aprovado">Aprovados</MenuItem>
+            <MenuItem value="reprovado">Reprovados</MenuItem>
+          </TextField>
+        </Box>
+
+        <Card variant="outlined" sx={{ overflow: 'hidden' }}>
+          <TableContainer>
+            <Scrollbar>
+              <Table size="small">
+                <TableHead>
                   <TableRow>
-                    <TableCell colSpan={6}>
-                      <Typography variant="body2">Carregando…</Typography>
-                    </TableCell>
+                    <TableCell>Nome</TableCell>
+                    <TableCell>CPF</TableCell>
+                    <TableCell>Cód. folha</TableCell>
+                    <TableCell>Cadastro</TableCell>
+                    <TableCell>Vínculo</TableCell>
+                    <TableCell>Demissão</TableCell>
+                    <TableCell align="right" />
                   </TableRow>
-                )}
-                {!isLoading && (!funcionarios || funcionarios.length === 0) && (
-                  <TableRow>
-                    <TableCell colSpan={6}>
-                      <EmptyContent title="Nenhum registro" filled sx={{ py: 4 }} />
-                    </TableCell>
-                  </TableRow>
-                )}
-                {funcionarios?.map((row) => (
-                  <TableRow key={row._id} hover>
-                    <TableCell>{row.nome}</TableCell>
-                    <TableCell>{formatCPF(row.cpf || '')}</TableCell>
-                    <TableCell>
-                      <ChipStatusCadastro status={row.statusCadastro} />
-                    </TableCell>
-                    <TableCell>
-                      <ChipStatusVinculo status={row.statusVinculo} />
-                    </TableCell>
-                    <TableCell>
-                      <ChipStatusDemissao status={row.demissao?.status} />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Button
-                        component={RouterLink}
-                        href={paths.dashboard.departamentoPessoal.funcionario(row._id)}
-                        size="small"
-                        variant="contained"
-                      >
-                        Abrir
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Scrollbar>
-        </TableContainer>
-      </Card>
-    </Box>
+                </TableHead>
+                <TableBody>
+                  {!hasCliente && (
+                    <TableRow>
+                      <TableCell colSpan={7}>
+                        <EmptyContent
+                          title="Selecione um cliente"
+                          description="Escolha uma empresa na lista acima para carregar os funcionários."
+                          filled
+                          sx={{ py: 4 }}
+                        />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {hasCliente && isLoading && (
+                    <TableRow>
+                      <TableCell colSpan={7}>
+                        <Typography variant="body2">Carregando…</Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {hasCliente && !isLoading && (!funcionarios || funcionarios.length === 0) && (
+                    <TableRow>
+                      <TableCell colSpan={7}>
+                        <EmptyContent title="Nenhum registro" filled sx={{ py: 4 }} />
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {hasCliente &&
+                    funcionarios?.map((row) => (
+                    <TableRow key={row._id} hover>
+                      <TableCell>{row.nome}</TableCell>
+                      <TableCell>{formatCPF(row.cpf || '')}</TableCell>
+                      <TableCell sx={{ color: 'text.secondary' }}>
+                        {row.codigoFolha != null && row.codigoFolha !== '' ? row.codigoFolha : '—'}
+                      </TableCell>
+                      <TableCell>
+                        <ChipStatusCadastro status={row.statusCadastro} />
+                      </TableCell>
+                      <TableCell>
+                        <ChipStatusVinculo status={row.statusVinculo} />
+                      </TableCell>
+                      <TableCell>
+                        <ChipStatusDemissao status={row.demissao?.status} />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Button
+                          component={RouterLink}
+                          href={paths.dashboard.departamentoPessoal.funcionario(row._id)}
+                          size="small"
+                          variant="contained"
+                        >
+                          Abrir
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </Scrollbar>
+          </TableContainer>
+        </Card>
+      </CardContent>
+    </Card>
   );
 }

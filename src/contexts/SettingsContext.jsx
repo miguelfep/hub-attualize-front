@@ -1,6 +1,17 @@
 import { useMemo, useState, useContext, useCallback, createContext } from 'react';
 
-const SettingsContext = createContext();
+/** Valor usado fora de `SettingsProvider` (ex.: rotas do dashboard que montam UI do portal). */
+const defaultPortalSettingsValue = {
+  settings: null,
+  clienteData: null,
+  updateSettings: () => {},
+  updateClienteData: () => {},
+  isFuncionalidadeAtiva: () => false,
+  loading: false,
+};
+
+/** Nome explícito para não colidir com `SettingsContext` do tema (`src/components/settings`). */
+export const PortalClienteSettingsContext = createContext(defaultPortalSettingsValue);
 
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(null);
@@ -34,10 +45,10 @@ export function SettingsProvider({ children }) {
   );
 
   return (
-    <SettingsContext.Provider value={value}>{children}</SettingsContext.Provider>
+    <PortalClienteSettingsContext.Provider value={value}>{children}</PortalClienteSettingsContext.Provider>
   );
 }
 
-export const useSettingsContext = () => useContext(SettingsContext);
+export const useSettingsContext = () => useContext(PortalClienteSettingsContext);
 
 

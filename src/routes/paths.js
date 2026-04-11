@@ -139,10 +139,25 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/cliente/list`,
       new: `${ROOTS.DASHBOARD}/cliente/new`,
       edit: (id) => `${ROOTS.DASHBOARD}/cliente/${id}/edit`,
+      /** Hub com seletor de cliente (query `?cliente=id`). */
+      departamentoPessoalHub: `${ROOTS.DASHBOARD}/cliente/departamento-pessoal`,
       departamentoPessoal: (clienteId) =>
-        `${ROOTS.DASHBOARD}/cliente/${clienteId}/departamento-pessoal`,
+        clienteId
+          ? `${ROOTS.DASHBOARD}/cliente/departamento-pessoal?cliente=${encodeURIComponent(clienteId)}`
+          : `${ROOTS.DASHBOARD}/cliente/departamento-pessoal`,
       departamentoPessoalNovo: (clienteId) =>
         `${ROOTS.DASHBOARD}/cliente/${clienteId}/departamento-pessoal/novo`,
+      departamentoPessoalApontamentos: `${ROOTS.DASHBOARD}/cliente/departamento-pessoal/apontamentos`,
+      /** @param {{ cliente?: string, ano?: number|string, mes?: number|string }} [opts] */
+      departamentoPessoalApontamentosHub: (opts = {}) => {
+        const base = `${ROOTS.DASHBOARD}/cliente/departamento-pessoal/apontamentos/hub`;
+        const params = new URLSearchParams();
+        if (opts.cliente) params.set('cliente', opts.cliente);
+        if (opts.ano != null && opts.ano !== '') params.set('ano', String(opts.ano));
+        if (opts.mes != null && opts.mes !== '') params.set('mes', String(opts.mes));
+        const s = params.toString();
+        return s ? `${base}?${s}` : base;
+      },
     },
     departamentoPessoal: {
       root: `${ROOTS.DASHBOARD}/departamento-pessoal`,
@@ -387,8 +402,21 @@ export const paths = {
     departamentoPessoal: {
       root: `${ROOTS.CLIENTE}/departamento-pessoal`,
       novo: `${ROOTS.CLIENTE}/departamento-pessoal/novo`,
+      apontamentos: `${ROOTS.CLIENTE}/departamento-pessoal/apontamentos`,
+      apontamentosLancarPath: `${ROOTS.CLIENTE}/departamento-pessoal/apontamentos/lancar`,
+      /** @param {{ ano?: number, mes?: number, funcionario?: string }} [q] */
+      apontamentosLancar: (q = {}) => {
+        const base = `${ROOTS.CLIENTE}/departamento-pessoal/apontamentos/lancar`;
+        const params = new URLSearchParams();
+        if (q.ano != null && q.ano !== '') params.set('ano', String(q.ano));
+        if (q.mes != null && q.mes !== '') params.set('mes', String(q.mes));
+        if (q.funcionario) params.set('funcionario', q.funcionario);
+        const s = params.toString();
+        return s ? `${base}?${s}` : base;
+      },
       details: (id) => `${ROOTS.CLIENTE}/departamento-pessoal/${id}`,
-      rubricas: (id) => `${ROOTS.CLIENTE}/departamento-pessoal/${id}/rubricas`,
+      /** @deprecated Use apontamentosLancar({ funcionario: id }). */
+      rubricas: (id) => `${ROOTS.CLIENTE}/departamento-pessoal/apontamentos/lancar?funcionario=${encodeURIComponent(id)}`,
       demissao: (id) => `${ROOTS.CLIENTE}/departamento-pessoal/${id}/demissao`,
     },
     comunidade: {

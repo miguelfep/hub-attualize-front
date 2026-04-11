@@ -18,7 +18,10 @@ import { paths } from 'src/routes/paths';
 
 import { onlyDigits, validateCPF } from 'src/utils/format-number';
 
-import { portalCreateFuncionario } from 'src/actions/departamento-pessoal';
+import {
+  portalCreateFuncionario,
+  revalidatePortalFuncionariosByCliente,
+} from 'src/actions/departamento-pessoal';
 
 import { Form, Field } from 'src/components/hook-form';
 
@@ -26,11 +29,21 @@ import { useDpPortalContext } from '../dp-shared';
 
 // ----------------------------------------------------------------------
 
+const codigoFolhaField = zod
+  .string()
+  .optional()
+  .refine((s) => !s?.trim() || /^\d{1,12}$/.test(s.trim()), { message: 'Código folha: apenas números inteiros' })
+  .transform((s) => {
+    const t = s?.trim();
+    return t ? Number.parseInt(t, 10) : undefined;
+  });
+
 const schema = zod.object({
   nome: zod.string().min(3, 'Informe o nome'),
   cpf: zod.string().refine((v) => validateCPF(v), { message: 'CPF inválido' }),
   email: zod.string().email('E-mail inválido').optional().or(zod.literal('')),
   cargo: zod.string().optional(),
+  codigoFolha: codigoFolhaField,
   dataAdmissao: zod.string().optional(),
   observacoes: zod.string().optional(),
 });
@@ -51,6 +64,7 @@ export function PortalDpNovoView() {
       cpf: '',
       email: '',
       cargo: '',
+      codigoFolha: '',
       dataAdmissao: '',
       observacoes: '',
     },
@@ -70,9 +84,11 @@ export function PortalDpNovoView() {
         cpf: onlyDigits(data.cpf),
         email: data.email?.trim() || undefined,
         cargo: data.cargo?.trim() || undefined,
+        ...(data.codigoFolha !== undefined ? { codigoFolha: data.codigoFolha } : {}),
         dataAdmissao: data.dataAdmissao || undefined,
         observacoes: data.observacoes?.trim() || undefined,
       });
+      await revalidatePortalFuncionariosByCliente(clienteProprietarioId);
       toast.success('Funcionário cadastrado e enviado para aprovação.');
       router.push(paths.cliente.departamentoPessoal.root);
     } catch (err) {
@@ -112,6 +128,13 @@ export function PortalDpNovoView() {
             <Field.Text name="cpf" label="CPF" placeholder="000.000.000-00" />
             <Field.Text name="email" label="E-mail" />
             <Field.Text name="cargo" label="Cargo" />
+            <Field.Text
+              name="codigoFolha"
+              label="Código folha"
+              placeholder="Ex.: 42"
+              helperText="Opcional. Matrícula ou código no sistema de folha de pagamento (inteiro)."
+              inputProps={{ inputMode: 'numeric', maxLength: 12 }}
+            />
             <Field.Text name="dataAdmissao" label="Data de admissão" type="date" InputLabelProps={{ shrink: true }} />
             <Field.Text name="observacoes" label="Observações" multiline rows={3} />
 

@@ -156,14 +156,26 @@ export function PortalDpListView() {
                       <ChipStatusDemissao status={row.demissao?.status} />
                     </TableCell>
                     <TableCell align="right">
-                      <Button
-                        component={RouterLink}
-                        href={paths.cliente.departamentoPessoal.details(row._id)}
-                        size="small"
-                        variant="outlined"
-                      >
-                        Abrir
-                      </Button>
+                      <Stack direction="row" spacing={0.75} justifyContent="flex-end" flexWrap="wrap" useFlexGap>
+                        <Button
+                          component={RouterLink}
+                          href={paths.cliente.departamentoPessoal.details(row._id)}
+                          size="small"
+                          variant="outlined"
+                        >
+                          Abrir
+                        </Button>
+                        {row.statusCadastro === 'aprovado' && row.statusVinculo === 'ativo' && (
+                          <Button
+                            component={RouterLink}
+                            href={paths.cliente.departamentoPessoal.apontamentosLancar({ funcionario: row._id })}
+                            size="small"
+                            variant="contained"
+                          >
+                            Apontamentos
+                          </Button>
+                        )}
+                      </Stack>
                     </TableCell>
                   </TableRow>
                 ))}

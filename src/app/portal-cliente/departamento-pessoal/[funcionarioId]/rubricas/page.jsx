@@ -1,12 +1,11 @@
-import { CONFIG } from 'src/config-global';
+import { redirect } from 'next/navigation';
 
-import { PortalDpRubricasView } from 'src/sections/departamento-pessoal/view/portal-dp-rubricas-view';
+import { paths } from 'src/routes/paths';
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Rubricas | Portal - ${CONFIG.site.name}` };
-
+/** Rota antiga: apontamentos passaram a ficar só em `/departamento-pessoal/apontamentos`. */
 export default async function Page({ params }) {
   const { funcionarioId } = await params;
-  return <PortalDpRubricasView funcionarioId={funcionarioId} />;
+  redirect(paths.cliente.departamentoPessoal.apontamentosLancar({ funcionario: funcionarioId }));
 }

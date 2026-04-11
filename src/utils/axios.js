@@ -388,6 +388,14 @@ export const endpoints = {
         `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/funcionarios/${funcionarioId}/rubricas`,
       solicitarDemissao: (clienteProprietarioId, funcionarioId) =>
         `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/funcionarios/${funcionarioId}/solicitar-demissao`,
+      apontamentosCompetenciaAno: (clienteProprietarioId, ano) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia/${ano}`,
+      apontamentosCompetenciaMes: (clienteProprietarioId, ano, mes) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia/${ano}/${mes}`,
+      apontamentosFecharCompetencia: (clienteProprietarioId, ano, mes) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia/${ano}/${mes}/fechar`,
+      apontamentosExportarTxt: (clienteProprietarioId, ano, mes) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia/${ano}/${mes}/exportar-txt`,
     },
     admin: {
       funcionariosByCliente: (clienteId) =>
@@ -398,6 +406,12 @@ export const endpoints = {
       demissaoEmAnalise: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/em-analise`,
       demissaoAprovar: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/aprovar`,
       demissaoRejeitar: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/rejeitar`,
+      /** POST — reabrir competência fechada (equipe interna). Body opcional. */
+      apontamentosReabrirCompetencia: (clienteId, ano, mes) =>
+        `${baseUrl}departamento-pessoal/clientes/${clienteId}/apontamentos/competencia/${ano}/${mes}/reabrir`,
+      /** GET — TXT de lançamentos; layout/nome/codificação conforme `folhaComPlano` do Cliente na API. */
+      apontamentosExportarTxt: (clienteId, ano, mes) =>
+        `${baseUrl}departamento-pessoal/clientes/${clienteId}/apontamentos/${ano}/${mes}/exportar-txt`,
     },
   },
   // Comunidade (baseUrl já inclui /api quando necessário; paths relativos ao serverUrl)

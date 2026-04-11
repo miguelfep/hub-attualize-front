@@ -1,5 +1,7 @@
 module.exports = {
   root: true,
+  /** Tipos TS pontuais sem @typescript-eslint/parser no projeto. */
+  ignorePatterns: ['src/models/Cliente.ts'],
   env: { browser: true, es2020: true },
   plugins: ['perfectionist', 'unused-imports', 'prettier'],
   extends: ['airbnb', 'airbnb/hooks', 'prettier'],

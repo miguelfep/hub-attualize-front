@@ -16,6 +16,18 @@ export function usePortalNavData() {
     possuiFuncionario,
   } = useSettings();
 
+  const departamentoPessoalChildren = [
+    {
+      title: 'Lista de funcionários',
+      path: paths.cliente.departamentoPessoal.root,
+      icon: <Iconify icon="solar:users-group-rounded-bold-duotone" />,
+    },
+    {
+      title: 'Apontamentos',
+      path: paths.cliente.departamentoPessoal.apontamentos,
+      icon: <Iconify icon="solar:calendar-mark-bold-duotone" />,
+    },
+  ];
 
   const vendasChildren = [
     podeGerenciarClientes && {
@@ -98,11 +110,6 @@ export function usePortalNavData() {
           path: paths.cliente.dashboard,
           icon: <Iconify icon="solar:home-2-bold-duotone" />,
         },
-        possuiFuncionario && {
-          title: 'Departamento Pessoal',
-          path: paths.cliente.departamentoPessoal.root,
-          icon: <Iconify icon="solar:users-group-rounded-bold-duotone" />,
-        },
       ].filter(Boolean),
     },
     {
@@ -145,6 +152,12 @@ export function usePortalNavData() {
           path: paths.cliente.financeiro.root,
           icon: <Iconify icon="solar:chat-round-money-bold" />,
           children: financeiroChildren,
+        },
+        possuiFuncionario && {
+          title: 'Departamento Pessoal',
+          path: paths.cliente.departamentoPessoal.root,
+          icon: <Iconify icon="solar:users-group-rounded-bold-duotone" />,
+          children: departamentoPessoalChildren,
         },
         {
           title: 'Programa de indicação',
