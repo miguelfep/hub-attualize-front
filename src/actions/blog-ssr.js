@@ -41,6 +41,41 @@ export async function getPosts(page = 1, perPage = 10) {
 }
 
 // ----------------------------------------------------------------------
+// Metadados mínimos para sitemap (sem _embed): resposta pequena e sem cache Data Cache (>2MB).
+
+export async function getPostsSitemapMeta(page = 1, perPage = 100) {
+  try {
+    const params = new URLSearchParams({
+      per_page: perPage.toString(),
+      page: page.toString(),
+      _fields: 'slug,modified,date',
+    });
+
+    const res = await fetch(
+      `https://attualizecontabil.com.br/wp-json/wp/v2/posts?${params.toString()}`,
+      { cache: 'no-store' }
+    );
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch posts for sitemap');
+    }
+
+    const data = await res.json();
+    const totalPosts = parseInt(res.headers.get('x-wp-total') || '0', 10);
+    const totalPages = parseInt(res.headers.get('x-wp-totalpages') || '0', 10);
+
+    return {
+      posts: data,
+      totalPosts,
+      totalPages,
+    };
+  } catch (error) {
+    console.error('Failed to fetch sitemap posts:', error);
+    return { posts: [], totalPosts: 0, totalPages: 0 };
+  }
+}
+
+// ----------------------------------------------------------------------
 
 export async function getPostBySlug(slug) {
   try {
