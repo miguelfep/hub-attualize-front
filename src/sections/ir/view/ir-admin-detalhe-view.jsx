@@ -57,6 +57,7 @@ import PixCopiaCola from 'src/components/ir/PixCopiaCola';
 import IrStatusBadge from 'src/components/ir/IrStatusBadge';
 import IrDocumentList from 'src/components/ir/IrDocumentList';
 import IrStatusStepper from 'src/components/ir/IrStatusStepper';
+import UploadMultiArquivo from 'src/components/ir/UploadMultiArquivo';
 import BoletoLinhaDigitavel from 'src/components/ir/BoletoLinhaDigitavel';
 
 // ----------------------------------------------------------------------
@@ -292,11 +293,8 @@ export default function IrAdminDetalheView({ id }) {
   const [salvandoStatus, setSalvandoStatus] = useState(false);
 
   const [tipoDocAdmin, setTipoDocAdmin] = useState('');
-  const [arquivoAdmin, setArquivoAdmin] = useState(null);
-  const [fileErrorAdmin, setFileErrorAdmin] = useState('');
-  const [uploadingAdmin, setUploadingAdmin] = useState(false);
+  const [modalUploadAdmin, setModalUploadAdmin] = useState(false);
 
-  const [tipoDocDeclaracao] = useState('declaracao');
   const [arquivoDeclaracao, setArquivoDeclaracao] = useState(null);
   const [arquivoRecibo, setArquivoRecibo] = useState(null);
   const [fileErrorRecibo, setFileErrorRecibo] = useState('');
@@ -336,44 +334,6 @@ export default function IrAdminDetalheView({ id }) {
       toast.error(err?.message || 'Erro ao atualizar status.');
     } finally {
       setSalvandoStatus(false);
-    }
-  };
-
-  // ─── Upload de documento (admin) ────────────────────────────────────────────
-
-  const handleFileAdminChange = (e) => {
-    const file = e.target.files?.[0];
-    setFileErrorAdmin('');
-    setArquivoAdmin(null);
-    if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      setFileErrorAdmin('Formato inválido. Aceito: PDF, JPG, PNG.');
-      return;
-    }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      setFileErrorAdmin(`Arquivo muito grande. Máximo: ${MAX_SIZE_MB}MB.`);
-      return;
-    }
-    setArquivoAdmin(file);
-  };
-
-  const handleUploadAdmin = async (e) => {
-    e.preventDefault();
-    if (!tipoDocAdmin.trim() || !arquivoAdmin) return;
-    setUploadingAdmin(true);
-    try {
-      const formData = new FormData();
-      formData.append('file', arquivoAdmin);
-      formData.append('tipo_documento', tipoDocAdmin.trim());
-      const result = await uploadDocumentoIrAdmin(id, formData);
-      toast.success('Documento enviado!');
-      setTipoDocAdmin('');
-      setArquivoAdmin(null);
-      mutate({ order: result.order }, false);
-    } catch (err) {
-      toast.error(err?.message || 'Erro ao enviar documento.');
-    } finally {
-      setUploadingAdmin(false);
     }
   };
 
@@ -424,7 +384,7 @@ export default function IrAdminDetalheView({ id }) {
       }
       const formData = new FormData();
       formData.append('file', arquivoDeclaracao);
-      formData.append('tipo_documento', tipoDocDeclaracao);
+      formData.append('tipo_documento', 'declaracao');
       const result = await uploadDocumentoIrAdmin(id, formData);
       toast.success('Declaração entregue! O cliente foi notificado via WhatsApp.');
       setArquivoDeclaracao(null);
@@ -817,6 +777,7 @@ export default function IrAdminDetalheView({ id }) {
                   { field: 'declarouIrUltimoAno', label: 'Declarou IR no último ano' },
                   { field: 'possuiDependentes', label: 'Possui dependentes (filhos, cônjuge dependente, etc.)' },
                   { field: 'trabalhouAutonomo', label: 'Trabalhou como autônomo' },
+                  { field: 'trabalhouClt', label: 'Trabalhou como CLT no ano anterior' },
                   { field: 'compraVendaBem', label: 'Compra ou venda de bem' },
                   { field: 'possuiContaBancaria', label: 'Conta bancária / aplicações' },
                   { field: 'possuiEmpresaExterior', label: 'Empresa no exterior' },
@@ -852,6 +813,18 @@ export default function IrAdminDetalheView({ id }) {
                       />
                       <Typography variant="body2" color={order.formulario.emitirNotaAutonomo ? 'text.primary' : 'text.secondary'}>
                         Emitiu Nota Fiscal ou recibo como autônomo
+                      </Typography>
+                    </Stack>
+                  </Grid>
+                )}
+
+                {/* Sub-pergunta: Quantidade de empregos CLT */}
+                {(order.formulario.trabalhouClt === true && order.formulario.quantidadeEmpregosClt > 0) && (
+                  <Grid xs={12} sm={6} md={4}>
+                    <Stack direction="row" spacing={1} alignItems="center">
+                      <Iconify icon="eva:briefcase-outline" width={18} color="primary.main" />
+                      <Typography variant="body2">
+                        {order.formulario.quantidadeEmpregosClt} emprego(s) CLT
                       </Typography>
                     </Stack>
                   </Grid>
@@ -1145,60 +1118,19 @@ export default function IrAdminDetalheView({ id }) {
               <Divider />
 
               <Box>
-                <Typography variant="subtitle2" gutterBottom>
-                  Enviar documento (admin)
-                </Typography>
-                <Box component="form" onSubmit={handleUploadAdmin}>
-                  <Grid container spacing={2} alignItems="flex-start">
-                    <Grid xs={12} sm={5}>
-                      <TextField
-                        label="Tipo do documento"
-                        placeholder='Ex: recibo, rascunho_declaracao'
-                        value={tipoDocAdmin}
-                        onChange={(e) => setTipoDocAdmin(e.target.value)}
-                        fullWidth
-                        size="small"
-                        required
-                        disabled={uploadingAdmin}
-                      />
-                    </Grid>
-                    <Grid xs={12} sm={4}>
-                      <Button
-                        component="label"
-                        variant="outlined"
-                        size="small"
-                        disabled={uploadingAdmin}
-                        color={fileErrorAdmin ? 'error' : 'inherit'}
-                        fullWidth
-                      >
-                        {arquivoAdmin ? arquivoAdmin.name : 'Selecionar arquivo'}
-                        <input
-                          type="file"
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          hidden
-                          onChange={handleFileAdminChange}
-                        />
-                      </Button>
-                      {fileErrorAdmin && (
-                        <Typography variant="caption" color="error" display="block">
-                          {fileErrorAdmin}
-                        </Typography>
-                      )}
-                    </Grid>
-                    <Grid xs={12} sm={3}>
-                      <LoadingButton
-                        type="submit"
-                        variant="contained"
-                        size="small"
-                        fullWidth
-                        loading={uploadingAdmin}
-                        disabled={!arquivoAdmin || !!fileErrorAdmin || !tipoDocAdmin}
-                      >
-                        Enviar
-                      </LoadingButton>
-                    </Grid>
-                  </Grid>
-                </Box>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                  <Typography variant="subtitle2">
+                    Enviar documento (admin)
+                  </Typography>
+                  <Button
+                    variant="contained"
+                    size="small"
+                    startIcon={<Iconify icon="eva:cloud-upload-outline" width={18} />}
+                    onClick={() => setModalUploadAdmin(true)}
+                  >
+                    Enviar arquivo(s)
+                  </Button>
+                </Stack>
               </Box>
             </Stack>
           </CardContent>
@@ -1441,6 +1373,81 @@ export default function IrAdminDetalheView({ id }) {
           >
             Confirmar entrega
           </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de upload admin com compressão */}
+      <Dialog
+        open={modalUploadAdmin}
+        onClose={() => setModalUploadAdmin(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2, maxWidth: 520 } }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
+              sx={{
+                width: 40,
+                height: 40,
+                borderRadius: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: (t) => alpha(t.palette.primary.main, 0.08),
+              }}
+            >
+              <Iconify icon="eva:cloud-upload-fill" width={22} sx={{ color: 'primary.main' }} />
+            </Box>
+            <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                Enviar documento (admin)
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Informe o tipo e selecione os arquivos. Serão comprimidos automaticamente.
+              </Typography>
+            </Stack>
+          </Stack>
+        </DialogTitle>
+
+        <DialogContent sx={{ px: 3, pb: 0 }}>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <TextField
+              label="Tipo do documento"
+              placeholder="Ex: recibo, rascunho_declaracao"
+              value={tipoDocAdmin}
+              onChange={(e) => setTipoDocAdmin(e.target.value)}
+              fullWidth
+              size="small"
+              required
+            />
+            {tipoDocAdmin.trim() && (
+              <UploadMultiArquivo
+                token={id}
+                tipoDoc={tipoDocAdmin.trim()}
+                documentos={order?.documents || []}
+                onSuccess={() => mutate()}
+                uploadFn={uploadDocumentoIrAdmin}
+              />
+            )}
+            {!tipoDocAdmin.trim() && (
+              <Typography variant="body2" color="text.disabled" sx={{ py: 2, textAlign: 'center' }}>
+                Preencha o tipo do documento acima para habilitar o envio.
+              </Typography>
+            )}
+          </Stack>
+        </DialogContent>
+
+        <DialogActions sx={{ px: 3, pb: 2.5, pt: 2 }}>
+          <Button
+            fullWidth
+            variant="soft"
+            color="inherit"
+            onClick={() => { setModalUploadAdmin(false); setTipoDocAdmin(''); }}
+            startIcon={<Iconify icon="eva:close-outline" width={18} />}
+          >
+            Fechar
+          </Button>
         </DialogActions>
       </Dialog>
     </Container>

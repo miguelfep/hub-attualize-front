@@ -6,6 +6,7 @@ import { useMemo, useState } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import Rating from '@mui/material/Rating';
+import Autocomplete from '@mui/material/Autocomplete';
 import {
   Box,
   Card,
@@ -33,6 +34,8 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+
+import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
 import { useGetAllClientes } from 'src/actions/clientes';
 import { DashboardContent } from 'src/layouts/dashboard/main';
@@ -90,13 +93,6 @@ function getStatusColor(status) {
   }
 }
 
-function getClienteLabel(cliente) {
-  if (!cliente) return '';
-  return (
-    cliente.razaoSocial || cliente.nomeFantasia || cliente.nome || cliente.email || cliente._id || ''
-  );
-}
-
 function getAvaliacaoId(avaliacao) {
   return avaliacao?._id || avaliacao?.id || '';
 }
@@ -134,8 +130,11 @@ export default function AvaliacoesDashboardPage() {
     },
   });
 
-  const { data: clientesData, isLoading: loadingClientes } = useGetAllClientes();
-  const clientes = Array.isArray(clientesData) ? clientesData : clientesData?.data || [];
+  const { data: clientesData, isLoading: loadingClientes } = useGetAllClientes({ status: true });
+  const clientes = useMemo(
+    () => (Array.isArray(clientesData) ? clientesData : clientesData?.data || []),
+    [clientesData]
+  );
 
   const { data: tiposFeedbackData } = useAvaliacoesTiposFeedback(filters.clienteProprietarioId || undefined);
   const feedbackOptions = useMemo(() => {
@@ -304,14 +303,14 @@ export default function AvaliacoesDashboardPage() {
       <Stack spacing={3}>
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2} alignItems={{ xs: 'flex-start', md: 'center' }}>
           <Stack spacing={0.5}>
-            <Typography variant="h4">Avaliacoes e Comentarios</Typography>
+            <Typography variant="h4">Avaliações e Comentários</Typography>
             <Typography variant="body2" color="text.secondary">
-              Centralize o acompanhamento dos feedbacks enviados pelos clientes. Crie, responda e modere avaliacoes.
+              Centralize o acompanhamento dos feedbacks enviados pelos clientes. Crie, responda e modere avaliações.
             </Typography>
           </Stack>
 
           <Button variant="contained" startIcon={<Icon icon="solar:add-circle-bold" />} onClick={handleOpenCreateDialog}>
-            Nova avaliacao
+            Nova avaliação
           </Button>
         </Stack>
 
@@ -319,22 +318,33 @@ export default function AvaliacoesDashboardPage() {
           <CardContent>
             <Stack spacing={2.5}>
               <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-                <TextField
-                  select
+                <Autocomplete
                   fullWidth
                   size="small"
-                  label="Cliente"
-                  value={filters.clienteProprietarioId}
-                  onChange={(event) => handleFilters('clienteProprietarioId', event.target.value)}
+                  options={clientes}
+                  loading={loadingClientes}
                   disabled={loadingClientes}
-                >
-                  <MenuItem value="">Todos</MenuItem>
-                  {clientes.map((cliente) => (
-                    <MenuItem key={cliente._id} value={cliente._id}>
-                      {getClienteLabel(cliente)}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                  getOptionLabel={(option) => formatClienteCodigoRazao(option)}
+                  isOptionEqualToValue={(option, value) =>
+                    String(option._id || option.id) === String(value?._id || value?.id)
+                  }
+                  value={
+                    filters.clienteProprietarioId
+                      ? clientes.find(
+                          (c) => String(c._id || c.id) === String(filters.clienteProprietarioId)
+                        ) || null
+                      : null
+                  }
+                  onChange={(_event, newValue) => {
+                    const clienteId = newValue ? String(newValue._id || newValue.id || '') : '';
+                    handleFilters('clienteProprietarioId', clienteId);
+                  }}
+                  renderInput={(params) => (
+                    <TextField {...params} label="Cliente" placeholder="Todos os clientes" />
+                  )}
+                  sx={{ maxWidth: { md: 280 } }}
+                  ListboxProps={{ sx: { maxHeight: 280 } }}
+                />
 
                 <TextField
                   select
@@ -447,7 +457,7 @@ export default function AvaliacoesDashboardPage() {
                 )}
 
                 {!isLoading && rows.map((avaliacao) => {
-                  const clienteNome = getClienteLabel(avaliacao?.clienteProprietarioId);
+                  const clienteNome = formatClienteCodigoRazao(avaliacao?.clienteProprietarioId);
                   const comentario = avaliacao?.comentario || '';
                   const avaliacaoId = getAvaliacaoId(avaliacao);
                   return (
@@ -557,23 +567,37 @@ export default function AvaliacoesDashboardPage() {
         <DialogTitle>Nova avaliacao</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5} sx={{ mt: 1 }}>
-            <TextField
-              select
-              label="Cliente"
-              value={novaAvaliacao.clienteProprietarioId}
-              onChange={(event) =>
-                setNovaAvaliacao((prev) => ({ ...prev, clienteProprietarioId: event.target.value }))
+            <Autocomplete
+              fullWidth
+              options={clientes}
+              loading={loadingClientes}
+              disabled={loadingClientes}
+              getOptionLabel={(option) => formatClienteCodigoRazao(option)}
+              isOptionEqualToValue={(option, value) =>
+                String(option._id || option.id) === String(value?._id || value?.id)
               }
-              required
-              helperText="Selecione a empresa a ser avaliada"
-            >
-              <MenuItem value="">Selecione...</MenuItem>
-              {clientes.map((cliente) => (
-                <MenuItem key={cliente._id} value={cliente._id}>
-                  {getClienteLabel(cliente)}
-                </MenuItem>
-              ))}
-            </TextField>
+              value={
+                novaAvaliacao.clienteProprietarioId
+                  ? clientes.find(
+                      (c) => String(c._id || c.id) === String(novaAvaliacao.clienteProprietarioId)
+                    ) || null
+                  : null
+              }
+              onChange={(_event, newValue) => {
+                const clienteId = newValue ? String(newValue._id || newValue.id || '') : '';
+                setNovaAvaliacao((prev) => ({ ...prev, clienteProprietarioId: clienteId }));
+              }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Cliente"
+                  placeholder="Todos os clientes"
+                  required
+                  helperText="Selecione a empresa a ser avaliada"
+                />
+              )}
+              ListboxProps={{ sx: { maxHeight: 280 } }}
+            />
 
             <TextField
               label="Tipo de feedback"

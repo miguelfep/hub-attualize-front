@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Grid from '@mui/material/Unstable_Grid2';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -9,58 +9,87 @@ import {
   Card,
   Chip,
   Stack,
+  Table,
   Button,
   Switch,
   MenuItem,
+  TableRow,
+  TableBody,
+  TableCell,
   TextField,
   Typography,
+  Autocomplete,
+  TableContainer,
+  CircularProgress,
   FormControlLabel,
 } from '@mui/material';
 
-import { useRouter } from 'src/routes/hooks';
+import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
+import { useGetAllClientes } from 'src/actions/clientes';
 import { listarCertificados, getCorStatusCertificado, getIconeStatusCertificado } from 'src/actions/certificados';
 
 import { Iconify } from 'src/components/iconify';
+import { useTable, TableNoData, TableHeadCustom, TablePaginationCustom } from 'src/components/table';
 
 import { useAuthContext } from 'src/auth/hooks';
+
+// ----------------------------------------------------------------------
+
+const TABLE_HEAD = [
+  { id: 'cliente', label: 'Cliente' },
+  { id: 'cnpj', label: 'CNPJ' },
+  { id: 'status', label: 'Status', width: 140 },
+  { id: 'validTo', label: 'Validade', width: 120 },
+  { id: 'situacao', label: 'Situação', width: 140 },
+  { id: 'uploadedAt', label: 'Enviado em', width: 160 },
+];
+
+function rowKey(row, index) {
+  const id = row?._id ?? row?.id;
+  if (id != null && id !== '') return String(id);
+  return `cert-row-${index}`;
+}
+
+// ----------------------------------------------------------------------
 
 export default function CertificadosPage() {
   const theme = useTheme();
   const { user } = useAuthContext();
-  const router = useRouter();
+
+  const table = useTable({ defaultRowsPerPage: 20, defaultOrderBy: 'validTo', defaultOrder: 'desc' });
 
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
   const [total, setTotal] = useState(0);
 
   const [status, setStatus] = useState('');
   const [vencidos, setVencidos] = useState(false);
   const [expiraEmDias, setExpiraEmDias] = useState('');
-  const [cliente, setCliente] = useState('');
+  const [clienteSelecionado, setClienteSelecionado] = useState(null);
   const [sortBy, setSortBy] = useState('validTo');
   const [sortOrder, setSortOrder] = useState('desc');
 
+  const { data: clientesData, isLoading: loadingClientes } = useGetAllClientes({ status: true });
+  const clientes = Array.isArray(clientesData) ? clientesData : [];
+
   const canView = useMemo(() => Boolean(user), [user]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const params = {
-        page,
-        limit,
+        page: table.page + 1,
+        limit: table.rowsPerPage,
         sortBy,
         sortOrder,
       };
       if (status) params.status = status;
       if (vencidos) params.vencidos = true;
       if (expiraEmDias) params.expiraEmDias = Number(expiraEmDias);
-      if (cliente) params.cliente = cliente;
+      if (clienteSelecionado?._id) params.clienteId = clienteSelecionado._id;
 
       const { data } = await listarCertificados(params);
-      // Assumindo formato: { items, total, page, limit }
       setRows(data?.data || []);
       setTotal(data?.total || 0);
     } catch (err) {
@@ -69,14 +98,40 @@ export default function CertificadosPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [
+    table.page,
+    table.rowsPerPage,
+    status,
+    vencidos,
+    expiraEmDias,
+    clienteSelecionado,
+    sortBy,
+    sortOrder,
+  ]);
 
   useEffect(() => {
     if (canView) fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, limit, status, vencidos, expiraEmDias, cliente, sortBy, sortOrder, canView]);
+  }, [canView, fetchData]);
 
-  const totalPages = Math.max(1, Math.ceil(total / limit));
+  const handleLimparFiltros = useCallback(() => {
+    setStatus('');
+    setVencidos(false);
+    setExpiraEmDias('');
+    setClienteSelecionado(null);
+    setSortBy('validTo');
+    setSortOrder('desc');
+    table.onResetPage();
+  }, [table]);
+
+  const handleClienteChange = useCallback(
+    (_event, newValue) => {
+      setClienteSelecionado(newValue);
+      table.onResetPage();
+    },
+    [table]
+  );
+
+  const notFound = !loading && rows.length === 0;
 
   return (
     <Box>
@@ -111,7 +166,10 @@ export default function CertificadosPage() {
               fullWidth
               label="Status"
               value={status}
-              onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                table.onResetPage();
+              }}
             >
               <MenuItem value="">Todos</MenuItem>
               <MenuItem value="ativo">Ativo</MenuItem>
@@ -126,26 +184,65 @@ export default function CertificadosPage() {
               type="number"
               label="Expira em (dias)"
               value={expiraEmDias}
-              onChange={(e) => { setExpiraEmDias(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setExpiraEmDias(e.target.value);
+                table.onResetPage();
+              }}
               inputProps={{ min: 0 }}
             />
           </Grid>
           <Grid xs={12} md={4}>
-            <TextField
+            <Autocomplete
               fullWidth
-              label="Buscar cliente (nome/razão/CNPJ)"
-              value={cliente}
-              onChange={(e) => { setCliente(e.target.value); setPage(1); }}
+              options={clientes}
+              loading={loadingClientes}
+              getOptionLabel={(option) => formatClienteCodigoRazao(option)}
+              isOptionEqualToValue={(option, value) =>
+                String(option._id || option.id) === String(value?._id || value?.id)
+              }
+              value={clienteSelecionado}
+              onChange={handleClienteChange}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Cliente"
+                  placeholder="Todos os clientes"
+                  InputProps={{
+                    ...params.InputProps,
+                    endAdornment: (
+                      <>
+                        {loadingClientes ? <CircularProgress color="inherit" size={20} /> : null}
+                        {params.InputProps.endAdornment}
+                      </>
+                    ),
+                  }}
+                />
+              )}
+              ListboxProps={{ sx: { maxHeight: 280 } }}
             />
           </Grid>
           <Grid xs={12} md={2}>
             <FormControlLabel
-              control={<Switch checked={vencidos} onChange={(e) => { setVencidos(e.target.checked); setPage(1); }} />}
+              control={
+                <Switch
+                  checked={vencidos}
+                  onChange={(e) => {
+                    setVencidos(e.target.checked);
+                    table.onResetPage();
+                  }}
+                />
+              }
               label="Vencidos"
             />
           </Grid>
           <Grid xs={12} md={3}>
-            <TextField select fullWidth label="Ordenar por" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+            <TextField
+              select
+              fullWidth
+              label="Ordenar por"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
               <MenuItem value="validTo">Validade</MenuItem>
               <MenuItem value="uploadedAt">Upload</MenuItem>
               <MenuItem value="status">Status</MenuItem>
@@ -159,71 +256,87 @@ export default function CertificadosPage() {
           </Grid>
           <Grid xs={12} md={6}>
             <Stack direction="row" spacing={1} justifyContent="flex-end">
-              <Button variant="outlined" onClick={() => { setStatus(''); setVencidos(false); setExpiraEmDias(''); setCliente(''); setSortBy('validTo'); setSortOrder('desc'); setPage(1); }}>Limpar filtros</Button>
-              <Button variant="contained" onClick={() => { setPage(1); fetchData(); }} startIcon={<Iconify icon="eva:refresh-fill" />}>Atualizar</Button>
+              <Button variant="outlined" onClick={handleLimparFiltros}>
+                Limpar filtros
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  table.onResetPage();
+                  fetchData();
+                }}
+                startIcon={<Iconify icon="eva:refresh-fill" />}
+              >
+                Atualizar
+              </Button>
             </Stack>
           </Grid>
         </Grid>
       </Card>
 
-      <Card sx={{ p: 2 }}>
-        <Box sx={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-            <thead>
-              <tr>
-                <th style={{ textAlign: 'left', padding: 8 }}>Cliente</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>CNPJ</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Status</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Validade</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Situação</th>
-                <th style={{ textAlign: 'left', padding: 8 }}>Enviado em</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const statusColor = getCorStatusCertificado(row.status);
-                const statusIcon = getIconeStatusCertificado(row.status);
-                const validade = row.validTo ? new Date(row.validTo).toLocaleDateString('pt-BR') : '-';
-                const uploadedAt = row.uploadedAt ? new Date(row.uploadedAt).toLocaleString('pt-BR') : '-';
-                const situacao = row.isExpired
-                  ? 'Vencido'
-                  : (typeof row.daysToExpire === 'number' ? `Em ${row.daysToExpire} dias` : '-');
-                return (
-                  <tr key={row._id}>
-                    <td style={{ padding: 8 }}>{row?.cliente?.razaoSocial || row?.cliente?.nome || '-'}</td>
-                    <td style={{ padding: 8 }}>{row?.cliente?.cnpj || '-'}</td>
-                    <td style={{ padding: 8 }}>
-                      <Chip color={statusColor} variant="soft" size="small" icon={<Iconify icon={statusIcon} />} label={row.status} />
-                    </td>
-                    <td style={{ padding: 8 }}>{validade}</td>
-                    <td style={{ padding: 8 }}>{situacao}</td>
-                    <td style={{ padding: 8 }}>{uploadedAt}</td>
-                  </tr>
-                );
-              })}
-              {!loading && rows.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ padding: 16 }}>
-                    <Typography variant="body2">Nenhum certificado encontrado.</Typography>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </Box>
+      <Card sx={{ p: 0 }}>
+        <TableContainer sx={{ position: 'relative', overflow: 'auto' }}>
+          <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 720 }}>
+            <TableHeadCustom headLabel={TABLE_HEAD} />
 
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 2 }}>
-          <Typography variant="body2">Página {page} de {totalPages} — {total} resultados</Typography>
-          <Stack direction="row" spacing={1}>
-            <Button size="small" disabled={page <= 1} onClick={() => setPage((p) => Math.max(1, p - 1))}>Anterior</Button>
-            <TextField select size="small" value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
-              <MenuItem value={10}>10</MenuItem>
-              <MenuItem value={20}>20</MenuItem>
-              <MenuItem value={50}>50</MenuItem>
-            </TextField>
-            <Button size="small" disabled={page >= totalPages} onClick={() => setPage((p) => Math.min(totalPages, p + 1))}>Próxima</Button>
-          </Stack>
-        </Stack>
+            <TableBody>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                    <Stack direction="row" alignItems="center" justifyContent="center" spacing={2}>
+                      <CircularProgress size={24} />
+                      <Typography variant="body2" color="text.secondary">
+                        Carregando certificados…
+                      </Typography>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ) : notFound ? (
+                <TableNoData notFound />
+              ) : (
+                rows.map((row, index) => {
+                  const statusColor = getCorStatusCertificado(row.status);
+                  const statusIcon = getIconeStatusCertificado(row.status);
+                  const validade = row.validTo ? new Date(row.validTo).toLocaleDateString('pt-BR') : '-';
+                  const uploadedAt = row.uploadedAt ? new Date(row.uploadedAt).toLocaleString('pt-BR') : '-';
+                  const situacao = row.isExpired
+                    ? 'Vencido'
+                    : typeof row.daysToExpire === 'number'
+                      ? `Em ${row.daysToExpire} dias`
+                      : '-';
+
+                  return (
+                    <TableRow key={rowKey(row, index)} hover>
+                      <TableCell>{row?.cliente?.razaoSocial || row?.cliente?.nome || '-'}</TableCell>
+                      <TableCell>{row?.cliente?.cnpj || '-'}</TableCell>
+                      <TableCell>
+                        <Chip
+                          color={statusColor}
+                          variant="soft"
+                          size="small"
+                          icon={<Iconify icon={statusIcon} />}
+                          label={row.status}
+                        />
+                      </TableCell>
+                      <TableCell>{validade}</TableCell>
+                      <TableCell>{situacao}</TableCell>
+                      <TableCell>{uploadedAt}</TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </TableContainer>
+
+        <TablePaginationCustom
+          count={total}
+          page={table.page}
+          rowsPerPage={table.rowsPerPage}
+          onPageChange={table.onChangePage}
+          onRowsPerPageChange={table.onChangeRowsPerPage}
+          rowsPerPageOptions={[10, 20, 50]}
+        />
       </Card>
     </Box>
   );

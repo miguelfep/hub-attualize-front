@@ -6,6 +6,9 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
+import Autocomplete from '@mui/material/Autocomplete';
+
+import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
 import { Iconify } from 'src/components/iconify';
 import { CustomDateRangePicker } from 'src/components/custom-date-range-picker';
@@ -29,13 +32,11 @@ export function GuiaFiscalTableToolbar({
   onDeleteBatch,
 }) {
   const handleFilterCliente = useCallback(
-    (event) => {
-      const clienteId = event.target.value || '';
-      // Se tiver callback específico para cliente, usar ele (que reseta a página)
+    (_event, newValue) => {
+      const clienteId = newValue ? String(newValue._id || newValue.id || '') : '';
       if (onFilterCliente) {
         onFilterCliente(clienteId);
       } else {
-        // Caso contrário, usar o onFilters genérico
         onFilters('clienteId', clienteId);
       }
     },
@@ -93,37 +94,30 @@ export function GuiaFiscalTableToolbar({
       direction={{ xs: 'column', md: 'row' }}
       sx={{ p: 1.25, pr: { xs: 1.25, md: 1 } }}
     >
-      <TextField
+      <Autocomplete
         fullWidth
-        select
         size="small"
-        label="Cliente"
-        value={filters.clienteId || ''}
-        onChange={handleFilterCliente}
+        options={clientes}
+        loading={loadingClientes}
         disabled={loadingClientes}
+        getOptionLabel={(option) => formatClienteCodigoRazao(option)}
+        isOptionEqualToValue={(option, value) =>
+          String(option._id || option.id) === String(value?._id || value?.id)
+        }
+        value={
+          filters.clienteId
+            ? clientes.find(
+                (c) => String(c._id || c.id) === String(filters.clienteId)
+              ) || null
+            : null
+        }
+        onChange={handleFilterCliente}
+        renderInput={(params) => (
+          <TextField {...params} label="Cliente" placeholder="Todos os clientes" />
+        )}
         sx={{ maxWidth: { md: 280 } }}
-        SelectProps={{
-          MenuProps: {
-            PaperProps: {
-              sx: {
-                maxHeight: 280,
-              },
-            },
-            MenuListProps: {
-              dense: true,
-            },
-          },
-        }}
-      >
-        <MenuItem value="">
-          <em>Todos os clientes</em>
-        </MenuItem>
-        {clientes.map((cliente) => (
-          <MenuItem key={cliente._id || cliente.id} value={cliente._id || cliente.id}>
-            {cliente.name || cliente.razaoSocial || cliente.nome}
-          </MenuItem>
-        ))}
-      </TextField>
+        ListboxProps={{ sx: { maxHeight: 280 } }}
+      />
 
       {categoriaOptions && (
         <TextField

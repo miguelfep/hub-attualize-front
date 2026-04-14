@@ -74,7 +74,7 @@ export function ClienteTableRow({
                   display: 'block'
                 }}
               >
-                {row.nome}
+                {row.codigo} - {row.razaoSocial || row.nome}
                 {row.clienteVip && (
                   <Iconify
                     icon="mdi:star" // Ícone de estrela VIP

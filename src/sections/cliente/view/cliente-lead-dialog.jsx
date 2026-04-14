@@ -12,10 +12,32 @@ import InputAdornment from '@mui/material/InputAdornment';
 
 import { useTabs } from 'src/hooks/use-tabs';
 
+import { formatClienteCodigoRazao } from 'src/utils/formatter';
+
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { CustomTabs } from 'src/components/custom-tabs';
 import { SearchNotFound } from 'src/components/search-not-found';
+
+
+// ----------------------------------------------------------------------
+
+function getItemSearchBlob(item) {
+  const base = [
+    item.nome,
+    item.nomeFantasia,
+    item.razaoSocial,
+    item.codigo,
+    item.cnpj,
+    item.email,
+    item.telefone,
+    item.whatsapp,
+  ];
+  if (item.__type === 'cliente') {
+    base.push(formatClienteCodigoRazao(item));
+  }
+  return base.filter(Boolean).join(' ');
+}
 
 // ----------------------------------------------------------------------
 
@@ -59,12 +81,20 @@ export function ClienteLeadDialog({
 
         return [...listaClientes, ...listaLeads]
             .filter((item) => {
-                const dadosCombinados = `${item.nome} ${item.razaoSocial} ${item.cnpj} ${item.email} ${item.telefone || ''} ${item.whatsapp || ''}`;
+                const dadosCombinados = getItemSearchBlob(item);
                 return dadosCombinados.toLowerCase().includes(termo);
             })
             .sort((a, b) => {
-                const aComeca = a.nome?.toLowerCase().startsWith(termo);
-                const bComeca = b.nome?.toLowerCase().startsWith(termo);
+                const textA =
+                    a.__type === 'cliente'
+                        ? formatClienteCodigoRazao(a) || a.nome || ''
+                        : a.nome || '';
+                const textB =
+                    b.__type === 'cliente'
+                        ? formatClienteCodigoRazao(b) || b.nome || ''
+                        : b.nome || '';
+                const aComeca = textA.toLowerCase().startsWith(termo);
+                const bComeca = textB.toLowerCase().startsWith(termo);
                 return (bComeca ? 1 : 0) - (aComeca ? 1 : 0);
             });
     }, [searchQuery, tabs.value, normalizedClientes, normalizedLeads]);
@@ -120,7 +150,9 @@ export function ClienteLeadDialog({
                     >
                         <Stack direction="row" justifyContent="space-between" spacing={1} sx={{ width: 1 }}>
                             <Typography variant="subtitle2">
-                                {item.nome}
+                                {isCliente
+                                    ? formatClienteCodigoRazao(item) || item.nome || '-'
+                                    : item.nome}
                             </Typography>
                             {searchQuery && (
                                 <Chip
@@ -133,7 +165,7 @@ export function ClienteLeadDialog({
                             )}
                         </Stack>
 
-                        {item.razaoSocial && (
+                        {isLead && item.razaoSocial && (
                             <Box sx={{ color: 'primary.main', typography: 'caption' }}>
                                 {item.razaoSocial}
                             </Box>
@@ -227,6 +259,13 @@ function applyFilter({ inputData, query, type }) {
     return data.filter((item) => {
         const nomeMatch = item.nome?.toLowerCase().indexOf(queryLower) !== -1;
         const razaoSocialMatch = item.razaoSocial?.toLowerCase().indexOf(queryLower) !== -1;
+        const nomeFantasiaMatch = item.nomeFantasia?.toLowerCase().indexOf(queryLower) !== -1;
+        const codigoMatch =
+            item.codigo != null &&
+            String(item.codigo).toLowerCase().indexOf(queryLower) !== -1;
+        const labelClienteMatch =
+            type !== 'lead' &&
+            formatClienteCodigoRazao(item).toLowerCase().indexOf(queryLower) !== -1;
         const cnpjMatch = item.cnpj?.toLowerCase().indexOf(queryLower) !== -1;
         const emailMatch = item.email?.toLowerCase().indexOf(queryLower) !== -1;
 
@@ -237,6 +276,15 @@ function applyFilter({ inputData, query, type }) {
                 ? item.telefone?.toLowerCase().indexOf(queryLower) !== -1
                 : item.whatsapp?.toLowerCase().indexOf(queryLower) !== -1;
 
-        return nomeMatch || razaoSocialMatch || cnpjMatch || emailMatch || telefoneMatch;
+        return (
+            nomeMatch ||
+            razaoSocialMatch ||
+            nomeFantasiaMatch ||
+            codigoMatch ||
+            labelClienteMatch ||
+            cnpjMatch ||
+            emailMatch ||
+            telefoneMatch
+        );
     });
 }

@@ -10,9 +10,10 @@ import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import MenuList from '@mui/material/MenuList';
 import MenuItem from '@mui/material/MenuItem';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import TextField from '@mui/material/TextField';
-import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import CardContent from '@mui/material/CardContent';
@@ -119,7 +120,6 @@ function ServicoTableRow({ row, onEdit, onToggle }) {
 export default function ServicosAdminPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const theme = useTheme();
   const table = useTable({ defaultOrderBy: 'nome' });
 
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
@@ -209,7 +209,7 @@ export default function ServicosAdminPage() {
               fullWidth
               required
               options={Array.isArray(clientes) ? clientes : []}
-              getOptionLabel={(option) => option.razaoSocial || option.nomeFantasia || option.email || ''}
+              getOptionLabel={(option) => `${option.codigo} - ${option.razaoSocial || option.nomeFantasia || option.nome || '' }`.trim()}
               loading={loadingClientes}
               value={clienteSelecionado}
               onChange={(event, newValue) => {
@@ -275,18 +275,32 @@ export default function ServicosAdminPage() {
             />
 
             <TableBody>
-              {loadingServicos ? (
+              {!clienteSelecionado ? (
+                <TableRow>
+                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                    <Stack spacing={1} alignItems="center">
+                      <Iconify icon="solar:user-search-bold-duotone" width={64} sx={{ color: 'text.disabled' }} />
+                      <Typography variant="h6" color="text.secondary">
+                        Selecione um cliente
+                      </Typography>
+                      <Typography variant="body2" color="text.disabled">
+                        Escolha um cliente acima para visualizar seus serviços
+                      </Typography>
+                    </Stack>
+                  </TableCell>
+                </TableRow>
+              ) : loadingServicos ? (
                 [...Array(5)].map((_, index) => (
-                  <tr key={index}>
-                    <td colSpan={6} style={{ padding: 16 }}>
+                  <TableRow key={index}>
+                    <TableCell colSpan={6} sx={{ py: 2 }}>
                       <Stack direction="row" alignItems="center" spacing={2}>
                         <CircularProgress size={20} />
                         <Typography variant="body2" color="text.secondary">
                           Carregando...
                         </Typography>
                       </Stack>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))
               ) : (
                 <>
@@ -302,26 +316,10 @@ export default function ServicosAdminPage() {
                         onEdit={() => handleEditServico(row._id)}
                       />
                     ))}
+                  {isNotFound && <TableNoData notFound={isNotFound} />}
                 </>
               )}
             </TableBody>
-
-            {!clienteSelecionado && (
-              <tr>
-                <td colSpan={6} style={{ padding: 16, textAlign: 'center' }}>
-                  <Stack spacing={1} alignItems="center">
-                    <Iconify icon="solar:user-search-bold-duotone" width={64} sx={{ color: 'text.disabled' }} />
-                    <Typography variant="h6" color="text.secondary">
-                      Selecione um cliente
-                    </Typography>
-                    <Typography variant="body2" color="text.disabled">
-                      Escolha um cliente acima para visualizar seus serviços
-                    </Typography>
-                  </Stack>
-                </td>
-              </tr>
-            )}
-            {clienteSelecionado && isNotFound && <TableNoData notFound={isNotFound} />}
           </Table>
         </TableContainer>
 
