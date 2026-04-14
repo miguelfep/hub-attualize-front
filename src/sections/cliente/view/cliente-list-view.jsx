@@ -171,8 +171,9 @@ function applyFilter({ inputData, comparator, filters }) {
     const searchLower = search.toLowerCase().trim();
     filteredData = filteredData.filter(
       (cliente) =>
-        cliente.nome?.toLowerCase().includes(searchLower) ||
+        cliente.codigo?.toString().includes(searchLower) ||
         cliente.razaoSocial?.toLowerCase().includes(searchLower) ||
+        cliente.nome?.toLowerCase().includes(searchLower) ||
         cliente.email?.toLowerCase().includes(searchLower)
     );
   }

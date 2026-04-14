@@ -45,3 +45,26 @@ export const formatToCamelCase = (str) => {
     .replace(/[^a-z0-9]+(.)/g, (_, char) => char.toUpperCase())
     .replace(/^./, (char) => char.toLowerCase());
 };
+
+/**
+ * Label padrão para exibição e busca: `código - razão social` (com fallbacks).
+ * Usar em selects, autocomplete, tabelas e strings de busca.
+ *
+ * @param {unknown} cliente - Objeto cliente ou string (ex.: id já resolvido como texto)
+ * @returns {string}
+ */
+export const formatClienteCodigoRazao = (cliente) => {
+  if (cliente == null || cliente === '') return '';
+  if (typeof cliente === 'string') return cliente;
+
+  const nome =
+    cliente.razaoSocial || cliente.nomeFantasia || cliente.nome || '';
+  const codigo =
+    cliente.codigo != null && String(cliente.codigo).trim() !== ''
+      ? String(cliente.codigo).trim()
+      : '';
+
+  if (codigo && nome) return `${codigo} - ${nome}`;
+  if (codigo) return codigo;
+  return nome;
+};

@@ -19,11 +19,13 @@ import MenuItem from '@mui/material/MenuItem';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
@@ -33,6 +35,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
+import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
 import { getClientes } from 'src/actions/clientes';
 import { listarMesesDisponiveis } from 'src/actions/conciliacao';
@@ -501,27 +504,34 @@ export default function ConciliaçõesPage() {
         {/* Filtros */}
         <Card sx={{ p: 2, mb: 3 }}>
           <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <FormControl size="small" sx={{ minWidth: 250 }}>
-              <InputLabel>Selecione o Cliente *</InputLabel>
-              <Select
-                value={clienteSelecionadoId}
-                onChange={(e) => {
-                  setClienteSelecionadoId(e.target.value);
-                  setBancoSelecionadoId(''); // Resetar banco quando cliente muda
-                }}
-                label="Selecione o Cliente *"
-                disabled={loading}
-              >
-                <MenuItem value="">
-                  <em>Selecione um cliente</em>
-                </MenuItem>
-                {clientes.map((cliente) => (
-                  <MenuItem key={cliente._id || cliente.id} value={cliente._id || cliente.id}>
-                    {cliente.razaoSocial || cliente.nomeFantasia || 'N/A'}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Autocomplete
+              size="small"
+              sx={{ minWidth: 450 }}
+              options={clientes}
+              getOptionLabel={(option) => formatClienteCodigoRazao(option)}
+              isOptionEqualToValue={(option, value) =>
+                String(option._id || option.id) === String(value?._id || value?.id)
+              }
+              value={
+                clienteSelecionadoId
+                  ? clientes.find((c) => String(c._id || c.id) === String(clienteSelecionadoId)) ||
+                  null
+                  : null
+              }
+              onChange={(_event, newValue) => {
+                setClienteSelecionadoId(newValue ? String(newValue._id || newValue.id) : '');
+                setBancoSelecionadoId('');
+              }}
+              disabled={loading}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Selecione o Cliente *"
+                  placeholder="Selecione um cliente"
+                />
+              )}
+              ListboxProps={{ sx: { maxHeight: 280 } }}
+            />
 
             {clienteSelecionadoId && (
               <FormControl size="small" sx={{ minWidth: 250 }}>

@@ -41,11 +41,9 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { PhoneInput } from 'src/components/phone-input';
 import IrDocumentList from 'src/components/ir/IrDocumentList';
+import UploadMultiArquivo from 'src/components/ir/UploadMultiArquivo';
 
 // ----------------------------------------------------------------------
-
-const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-const MAX_SIZE_MB = 15;
 
 const OPCOES_DESPESAS = [
   { value: 'escola', label: 'Escola (Infantil, Fundamental, Médio)', icon: 'eva:book-outline' },
@@ -87,6 +85,34 @@ const TIPO_DOC_INFORME_RENDIMENTOS = 'informe_rendimentos_bancarios';
 const TIPO_DOC_EMPRESA_EXTERIOR = 'empresa_exterior_docs';
 const TIPO_DOC_REMESSA_EXTERIOR = 'remessa_exterior_comprovantes';
 const TIPO_DOC_CONTA_EXTERIOR = 'conta_exterior_informe';
+const TIPO_DOC_INFORME_CLT = 'informe_rendimentos_clt';
+
+const UPLOAD_FISCAL_CONFIG = {
+  [TIPO_DOC_INFORME_CLT]: {
+    titulo: 'Informe(s) de rendimentos CLT',
+    descricao: 'Anexe o informe de rendimentos de cada emprego. Se trabalhou em mais de um, envie todos.',
+  },
+  [TIPO_DOC_COMPRA_VENDA]: {
+    titulo: 'Compra e venda de bens',
+    descricao: 'Anexe todos os arquivos referentes (Transferência veicular, escritura, contrato).',
+  },
+  [TIPO_DOC_INFORME_RENDIMENTOS]: {
+    titulo: 'Informes de rendimentos bancários',
+    descricao: 'Anexe todos os informes de rendimentos bancários, capitalização, etc.',
+  },
+  [TIPO_DOC_EMPRESA_EXTERIOR]: {
+    titulo: 'Empresa no exterior',
+    descricao: 'Anexe todos os documentos comprobatórios.',
+  },
+  [TIPO_DOC_REMESSA_EXTERIOR]: {
+    titulo: 'Remessa para o exterior',
+    descricao: 'Anexe comprovantes de remessas.',
+  },
+  [TIPO_DOC_CONTA_EXTERIOR]: {
+    titulo: 'Conta bancária no exterior',
+    descricao: 'Anexe informe da conta.',
+  },
+};
 
 // Perguntas fiscais com sub-perguntas condicionais
 const PERGUNTAS_FISCAIS = [
@@ -103,6 +129,13 @@ const PERGUNTAS_FISCAIS = [
     label: 'Trabalhou como autônomo ou prestou serviços no ano?',
     subPerguntas: [
       { field: 'emitirNotaAutonomo', label: 'Emitiu Nota Fiscal ou recibo como autônomo?' },
+    ],
+  },
+  {
+    field: 'trabalhouClt',
+    label: 'Trabalhou como CLT (carteira assinada) no ano anterior?',
+    subPerguntas: [
+      { field: 'quantidadeEmpregosClt', label: 'Em quantos empregos esteve registrado(a)?', tipo: 'number' },
     ],
   },
   {
@@ -152,6 +185,8 @@ const FORM_VAZIO = {
   },
   trabalhouAutonomo: null,
   emitirNotaAutonomo: null,
+  trabalhouClt: null,
+  quantidadeEmpregosClt: '',
   compraVendaBem: null,
   compraVendaBemTipo: '',
   possuiContaBancaria: null,
@@ -257,71 +292,6 @@ function SectionTitle({ icon, title, subtitle }) {
   );
 }
 
-function UploadLinha({ token, tipoDoc, documentos, onSuccess }) {
-  const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState('');
-  const list = (documentos || []).filter((d) => d.tipo_documento === tipoDoc);
-
-  const handleFile = (e) => {
-    const f = e.target.files?.[0];
-    setErr('');
-    setFile(null);
-    if (!f) return;
-    if (!ACCEPTED_TYPES.includes(f.type)) { setErr('Aceito: PDF, JPG, PNG.'); return; }
-    if (f.size > MAX_SIZE_MB * 1024 * 1024) { setErr(`Máximo ${MAX_SIZE_MB}MB.`); return; }
-    setFile(f);
-  };
-
-  const handleUpload = async () => {
-    if (!file) return;
-    setLoading(true);
-    try {
-      const fd = new FormData();
-      fd.append('file', file);
-      fd.append('tipo_documento', tipoDoc);
-      const result = await uploadDocumentoPorToken(token, fd);
-      toast.success('Documento enviado.');
-      setFile(null);
-      onSuccess?.();
-      if (result?.documents) onSuccess?.();
-    } catch (e) {
-      toast.error(e?.message || 'Erro ao enviar.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Stack spacing={1}>
-      {list.length > 0 && (
-        <Typography variant="caption" color="text.secondary">
-          {list.length} arquivo(s) anexado(s).
-        </Typography>
-      )}
-      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-        <Button
-          component="label"
-          variant="outlined"
-          size="small"
-          color={err ? 'error' : 'inherit'}
-          startIcon={<Iconify icon="eva:attach-outline" width={18} />}
-          disabled={loading}
-        >
-          {file ? file.name : 'Selecionar arquivo'}
-          <input type="file" accept=".pdf,.jpg,.jpeg,.png" hidden onChange={handleFile} />
-        </Button>
-        {file && (
-          <LoadingButton size="small" variant="contained" onClick={handleUpload} loading={loading}>
-            Enviar
-          </LoadingButton>
-        )}
-      </Stack>
-      {err && <Typography variant="caption" color="error">{err}</Typography>}
-    </Stack>
-  );
-}
-
 // ─── Componente principal ─────────────────────────────────────────────────────
 
 export default function IrColetaView({ token }) {
@@ -334,12 +304,8 @@ export default function IrColetaView({ token }) {
   const [pendente, setPendente] = useState(false);
   const [coletaEnviada, setColetaEnviada] = useState(false);
 
-  // Upload (genérico e modal despesa)
-  const [tipoDocumento, setTipoDocumento] = useState('');
-  const [arquivo, setArquivo] = useState(null);
-  const [fileError, setFileError] = useState('');
-  const [uploading, setUploading] = useState(false);
   const [modalDespesa, setModalDespesa] = useState(null);
+  const [modalUploadFiscal, setModalUploadFiscal] = useState(null);
   const [modalSemDespesas, setModalSemDespesas] = useState(false);
   const [timerSemDespesas, setTimerSemDespesas] = useState(15);
   const [cienteSemDespesas, setCienteSemDespesas] = useState(false);
@@ -385,6 +351,8 @@ export default function IrColetaView({ token }) {
       })(),
       trabalhouAutonomo: f?.trabalhouAutonomo ?? null,
       emitirNotaAutonomo: f?.emitirNotaAutonomo ?? null,
+      trabalhouClt: f?.trabalhouClt ?? null,
+      quantidadeEmpregosClt: f?.quantidadeEmpregosClt ?? '',
       compraVendaBem: f?.compraVendaBem ?? null,
       compraVendaBemTipo: f?.compraVendaBemTipo || '',
       possuiContaBancaria: f?.possuiContaBancaria ?? null,
@@ -525,14 +493,6 @@ export default function IrColetaView({ token }) {
     }
   };
 
-  const uploadArquivoCondicional = async (tipoDoc, file) => {
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('tipo_documento', tipoDoc);
-    const result = await uploadDocumentoPorToken(token, fd);
-    mutate((c) => ({ ...c, documents: result.documents ?? c.documents ?? [] }), !result.documents);
-  };
-
   const salvarPayload = useCallback(async (payload) => {
     const clean = { ...payload };
     if (!clean.dataNascimento) delete clean.dataNascimento;
@@ -560,39 +520,6 @@ export default function IrColetaView({ token }) {
     }
   };
 
-
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    setFileError('');
-    setArquivo(null);
-    if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) { setFileError('Aceito: PDF, JPG, PNG.'); return; }
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) { setFileError(`Máximo ${MAX_SIZE_MB}MB.`); return; }
-    setArquivo(file);
-  };
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!tipoDocumento.trim()) { toast.error('Informe o tipo do documento.'); return; }
-    if (!arquivo) { toast.error('Selecione um arquivo.'); return; }
-    setUploading(true);
-    try {
-      const fd = new FormData();
-      fd.append('file', arquivo);
-      fd.append('tipo_documento', tipoDocumento.trim());
-      const result = await uploadDocumentoPorToken(token, fd);
-      toast.success('Documento enviado com sucesso!');
-      setTipoDocumento('');
-      setArquivo(null);
-      const updatedDocs = result.documents ?? (order?.documents || []);
-      mutate((c) => ({ ...c, documents: updatedDocs }), !result.documents);
-      setStepsSalvos((prev) => [...new Set([...prev, 3])]);
-    } catch (err) {
-      toast.error(err?.message || 'Erro ao enviar.');
-    } finally {
-      setUploading(false);
-    }
-  };
 
   // ─── Loading / Erro ────────────────────────────────────────────────────────
 
@@ -1129,19 +1056,38 @@ export default function IrColetaView({ token }) {
                         {subPerguntas && form[field] === true && (
                           <Collapse in>
                             <Stack spacing={1.5} mt={1} pl={2} sx={{ borderLeft: '3px solid', borderColor: 'primary.lighter' }}>
-                              {subPerguntas.map((sp) => (
-                                sp.tipo === 'text' ? (
-                                  <TextField
-                                    key={sp.field}
-                                    label={sp.label}
-                                    value={form[sp.field] || ''}
-                                    onChange={(e) => setField(sp.field, e.target.value)}
-                                    size="small"
-                                    fullWidth
-                                    disabled={salvandoForm}
-                                    placeholder="Descreva brevemente"
-                                  />
-                                ) : (
+                              {subPerguntas.map((sp) => {
+                                if (sp.tipo === 'text') {
+                                  return (
+                                    <TextField
+                                      key={sp.field}
+                                      label={sp.label}
+                                      value={form[sp.field] || ''}
+                                      onChange={(e) => setField(sp.field, e.target.value)}
+                                      size="small"
+                                      fullWidth
+                                      disabled={salvandoForm}
+                                      placeholder="Descreva brevemente"
+                                    />
+                                  );
+                                }
+                                if (sp.tipo === 'number') {
+                                  return (
+                                    <TextField
+                                      key={sp.field}
+                                      label={sp.label}
+                                      type="number"
+                                      value={form[sp.field] ?? ''}
+                                      onChange={(e) => setField(sp.field, e.target.value)}
+                                      size="small"
+                                      fullWidth
+                                      disabled={salvandoForm}
+                                      inputProps={{ min: 1 }}
+                                      placeholder="1"
+                                    />
+                                  );
+                                }
+                                return (
                                   <BoolRadio
                                     key={sp.field}
                                     label={sp.label}
@@ -1150,66 +1096,55 @@ export default function IrColetaView({ token }) {
                                     disabled={salvandoForm}
                                     compact
                                   />
-                                )
-                              ))}
+                                );
+                              })}
                             </Stack>
                           </Collapse>
                         )}
 
-                        {/* Upload logo após a pergunta (compra/venda de bem) */}
-                        {field === 'compraVendaBem' && form.compraVendaBem === true && (
-                          <Box sx={{ mt: 1.5, p: 2, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: (t) => alpha(t.palette.primary.main, 0.04) }}>
-                            <Typography variant="subtitle2" gutterBottom>Upload: compra/venda de bens</Typography>
-                            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-                              Anexe todos os arquivos referentes (Transferência veicular, escritura, contrato).
-                            </Typography>
-                            <UploadLinha token={token} tipoDoc={TIPO_DOC_COMPRA_VENDA} documentos={documentos} onSuccess={() => mutate()} />
-                          </Box>
-                        )}
-
-                        {/* Upload logo após a pergunta (conta bancária) */}
-                        {field === 'possuiContaBancaria' && form.possuiContaBancaria === true && (
-                          <Box sx={{ mt: 1.5, p: 2, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: (t) => alpha(t.palette.primary.main, 0.04) }}>
-                            <Typography variant="subtitle2" gutterBottom>Informes de rendimentos</Typography>
-                            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-                              Anexe todos os informes de rendimentos bancários, capitalização, etc.
-                            </Typography>
-                            <UploadLinha token={token} tipoDoc={TIPO_DOC_INFORME_RENDIMENTOS} documentos={documentos} onSuccess={() => mutate()} />
-                          </Box>
-                        )}
-
-                        {/* Upload logo após a pergunta (empresa no exterior) */}
-                        {field === 'possuiEmpresaExterior' && form.possuiEmpresaExterior === true && (
-                          <Box sx={{ mt: 1.5, p: 2, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: (t) => alpha(t.palette.primary.main, 0.04) }}>
-                            <Typography variant="subtitle2" gutterBottom>Empresa no exterior</Typography>
-                            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-                              Anexe todos os documentos comprobatórios.
-                            </Typography>
-                            <UploadLinha token={token} tipoDoc={TIPO_DOC_EMPRESA_EXTERIOR} documentos={documentos} onSuccess={() => mutate()} />
-                          </Box>
-                        )}
-
-                        {/* Upload logo após a pergunta (remessa para o exterior) */}
-                        {field === 'enviouRemessaExterior' && form.enviouRemessaExterior === true && (
-                          <Box sx={{ mt: 1.5, p: 2, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: (t) => alpha(t.palette.primary.main, 0.04) }}>
-                            <Typography variant="subtitle2" gutterBottom>Remessa para o exterior</Typography>
-                            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-                              Anexe comprovantes de remessas.
-                            </Typography>
-                            <UploadLinha token={token} tipoDoc={TIPO_DOC_REMESSA_EXTERIOR} documentos={documentos} onSuccess={() => mutate()} />
-                          </Box>
-                        )}
-
-                        {/* Upload logo após a pergunta (conta bancária no exterior) */}
-                        {field === 'possuiContaBancariaExterior' && form.possuiContaBancariaExterior === true && (
-                          <Box sx={{ mt: 1.5, p: 2, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: (t) => alpha(t.palette.primary.main, 0.04) }}>
-                            <Typography variant="subtitle2" gutterBottom>Conta bancária no exterior</Typography>
-                            <Typography variant="caption" color="text.secondary" display="block" mb={1}>
-                              Anexe informe da conta.
-                            </Typography>
-                            <UploadLinha token={token} tipoDoc={TIPO_DOC_CONTA_EXTERIOR} documentos={documentos} onSuccess={() => mutate()} />
-                          </Box>
-                        )}
+                        {/* Botão de anexar documentos por tipo (abre modal) */}
+                        {[
+                          { field: 'trabalhouClt', condition: form.trabalhouClt === true, tipoDoc: TIPO_DOC_INFORME_CLT },
+                          { field: 'compraVendaBem', condition: form.compraVendaBem === true, tipoDoc: TIPO_DOC_COMPRA_VENDA },
+                          { field: 'possuiContaBancaria', condition: form.possuiContaBancaria === true, tipoDoc: TIPO_DOC_INFORME_RENDIMENTOS },
+                          { field: 'possuiEmpresaExterior', condition: form.possuiEmpresaExterior === true, tipoDoc: TIPO_DOC_EMPRESA_EXTERIOR },
+                          { field: 'enviouRemessaExterior', condition: form.enviouRemessaExterior === true, tipoDoc: TIPO_DOC_REMESSA_EXTERIOR },
+                          { field: 'possuiContaBancariaExterior', condition: form.possuiContaBancariaExterior === true, tipoDoc: TIPO_DOC_CONTA_EXTERIOR },
+                        ]
+                          .filter((u) => u.field === field && u.condition)
+                          .map((u) => {
+                            const cfg = UPLOAD_FISCAL_CONFIG[u.tipoDoc] || {};
+                            const count = documentos.filter((d) => d.tipo_documento === u.tipoDoc).length;
+                            return (
+                              <Box key={u.tipoDoc} sx={{ mt: 1.5, p: 2, borderRadius: 1.5, border: '1px solid', borderColor: 'divider', bgcolor: (t) => alpha(t.palette.primary.main, 0.04) }}>
+                                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
+                                  <Stack spacing={0.25} sx={{ flex: 1, minWidth: 0 }}>
+                                    <Typography variant="subtitle2">{cfg.titulo}</Typography>
+                                    {count > 0 ? (
+                                      <Stack direction="row" alignItems="center" spacing={0.5}>
+                                        <Iconify icon="eva:checkmark-circle-2-fill" width={16} sx={{ color: 'success.main' }} />
+                                        <Typography variant="caption" color="success.main" fontWeight={600}>
+                                          {count} arquivo(s) enviado(s)
+                                        </Typography>
+                                      </Stack>
+                                    ) : (
+                                      <Typography variant="caption" color="text.secondary">
+                                        Nenhum arquivo enviado
+                                      </Typography>
+                                    )}
+                                  </Stack>
+                                  <Button
+                                    variant={count > 0 ? 'outlined' : 'contained'}
+                                    size="small"
+                                    onClick={() => setModalUploadFiscal(u.tipoDoc)}
+                                    startIcon={<Iconify icon={count > 0 ? 'eva:edit-2-outline' : 'eva:cloud-upload-outline'} width={18} />}
+                                  >
+                                    {count > 0 ? 'Gerenciar' : 'Anexar'}
+                                  </Button>
+                                </Stack>
+                              </Box>
+                            );
+                          })}
                       </Box>
                     ))}
 
@@ -1623,62 +1558,130 @@ export default function IrColetaView({ token }) {
           </Dialog>
 
           {/* Modal: upload de comprovante ao selecionar despesa */}
-          <Dialog open={!!modalDespesa} onClose={() => setModalDespesa(null)} maxWidth="sm" fullWidth>
-            <DialogTitle>{modalDespesa ? DOCS_REQUERIDOS_POR_DESPESA[modalDespesa.value]?.label || modalDespesa.label : ''}</DialogTitle>
-            <DialogContent>
-              {modalDespesa && (
-                <Stack spacing={2} sx={{ pt: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Anexe o comprovante para: {OPCOES_DESPESAS.find((o) => o.value === modalDespesa.value)?.label || modalDespesa.value}
-                  </Typography>
-                  <Button
-                    component="label"
-                    variant="outlined"
-                    startIcon={<Iconify icon="eva:attach-outline" />}
-                    disabled={uploading}
-                    color={fileError ? 'error' : 'inherit'}
-                    fullWidth
-                    sx={{ justifyContent: 'flex-start', py: 1.5 }}
-                  >
-                    {arquivo ? arquivo.name : 'Selecionar arquivo (PDF, JPG, PNG)'}
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" hidden onChange={(e) => { handleFileChange(e); }} />
-                  </Button>
-                  {fileError && <Typography variant="caption" color="error">{fileError}</Typography>}
-                  {arquivo && !fileError && (
-                    <LoadingButton
-                      variant="contained"
-                      fullWidth
-                      loading={uploading}
-                      onClick={async () => {
-                        if (!arquivo || !modalDespesa) return;
-                        setUploading(true);
-                        try {
-                          const fd = new FormData();
-                          fd.append('file', arquivo);
-                          fd.append('tipo_documento', modalDespesa.tipo);
-                          const result = await uploadDocumentoPorToken(token, fd);
-                          toast.success('Documento enviado!');
-                          setArquivo(null);
-                          setFileError('');
-                          setModalDespesa(null);
-                          mutate((c) => ({ ...c, documents: result.documents ?? c.documents ?? [] }), !result.documents);
-                        } catch (err) {
-                          toast.error(err?.message || 'Erro ao enviar.');
-                        } finally {
-                          setUploading(false);
-                        }
+          <Dialog
+            open={!!modalDespesa}
+            onClose={() => setModalDespesa(null)}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{ sx: { borderRadius: 2, maxWidth: 520 } }}
+          >
+            {modalDespesa && (
+              <>
+                <DialogTitle sx={{ py: 3, px: 3 }}>
+                  <Stack direction="row" alignItems="center" spacing={2}>
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: (t) => alpha(t.palette.info.main, 0.12),
+                        color: 'info.main',
                       }}
-                      startIcon={<Iconify icon="eva:cloud-upload-outline" />}
                     >
-                      Enviar
-                    </LoadingButton>
-                  )}
-                </Stack>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => { setModalDespesa(null); setArquivo(null); setFileError(''); }}>Fechar</Button>
-            </DialogActions>
+                      <Iconify icon="eva:file-add-outline" width={26} />
+                    </Box>
+                    <Box>
+                      <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                        {DOCS_REQUERIDOS_POR_DESPESA[modalDespesa.value]?.label || modalDespesa.label}
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        Anexe o(s) comprovante(s) para esta despesa
+                      </Typography>
+                    </Box>
+                  </Stack>
+                </DialogTitle>
+
+                <DialogContent sx={{ px: 3, pb: 0 }}>
+                  <UploadMultiArquivo
+                    token={token}
+                    tipoDoc={modalDespesa.tipo}
+                    documentos={documentos}
+                    onSuccess={() => mutate()}
+                    uploadFn={uploadDocumentoPorToken}
+                  />
+                </DialogContent>
+
+                <DialogActions sx={{ p: 3, gap: 1.5 }}>
+                  <Button
+                    fullWidth
+                    variant="outlined"
+                    color="inherit"
+                    onClick={() => setModalDespesa(null)}
+                    sx={{ borderRadius: 1.25, fontWeight: 600 }}
+                  >
+                    Fechar
+                  </Button>
+                </DialogActions>
+              </>
+            )}
+          </Dialog>
+
+          {/* Modal: upload de documentos da situação fiscal */}
+          <Dialog
+            open={!!modalUploadFiscal}
+            onClose={() => setModalUploadFiscal(null)}
+            maxWidth="sm"
+            fullWidth
+            PaperProps={{ sx: { borderRadius: 2, maxWidth: 520 } }}
+          >
+            {modalUploadFiscal && (() => {
+              const cfg = UPLOAD_FISCAL_CONFIG[modalUploadFiscal] || {};
+              return (
+                <>
+                  <DialogTitle sx={{ py: 3, px: 3 }}>
+                    <Stack direction="row" alignItems="center" spacing={2}>
+                      <Box
+                        sx={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 1.5,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: (t) => alpha(t.palette.primary.main, 0.12),
+                          color: 'primary.main',
+                        }}
+                      >
+                        <Iconify icon="eva:cloud-upload-outline" width={26} />
+                      </Box>
+                      <Box>
+                        <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.2 }}>
+                          {cfg.titulo || 'Anexar documentos'}
+                        </Typography>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                          {cfg.descricao || 'Anexe os arquivos necessários.'}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </DialogTitle>
+
+                  <DialogContent sx={{ px: 3, pb: 0 }}>
+                    <UploadMultiArquivo
+                      token={token}
+                      tipoDoc={modalUploadFiscal}
+                      documentos={documentos}
+                      onSuccess={() => mutate()}
+                      uploadFn={uploadDocumentoPorToken}
+                    />
+                  </DialogContent>
+
+                  <DialogActions sx={{ p: 3, gap: 1.5 }}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      color="inherit"
+                      onClick={() => setModalUploadFiscal(null)}
+                      sx={{ borderRadius: 1.25, fontWeight: 600 }}
+                    >
+                      Fechar
+                    </Button>
+                  </DialogActions>
+                </>
+              );
+            })()}
           </Dialog>
         </Stack>
       </Container>

@@ -335,12 +335,19 @@ export async function salvarFormularioColeta(token, dados) {
  * Faz upload de documento via token de coleta (sem autenticação)
  * @param {string} token
  * @param {FormData} formData - campos: file, tipo_documento
+ * @param {object} [opts]
+ * @param {(progress: number) => void} [opts.onProgress] - 0–100
  */
-export async function uploadDocumentoPorToken(token, formData) {
+export async function uploadDocumentoPorToken(token, formData, opts = {}) {
   const res = await axios.post(endpoints.ir.coleta.upload(token), formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
       Authorization: '',
+    },
+    onUploadProgress: (e) => {
+      if (opts.onProgress && e.total) {
+        opts.onProgress(Math.round((e.loaded * 100) / e.total));
+      }
     },
   });
   return res.data;
@@ -448,9 +455,14 @@ export async function alterarStatusIrAdmin(id, status, nota) {
  * @param {string} id
  * @param {FormData} formData - campos: file, tipo_documento
  */
-export async function uploadDocumentoIrAdmin(id, formData) {
+export async function uploadDocumentoIrAdmin(id, formData, opts = {}) {
   const res = await axios.post(endpoints.ir.admin.documents(id), formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress: (e) => {
+      if (opts.onProgress && e.total) {
+        opts.onProgress(Math.round((e.loaded * 100) / e.total));
+      }
+    },
   });
   return res.data;
 }

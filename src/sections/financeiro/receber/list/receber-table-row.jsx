@@ -19,6 +19,8 @@ import { fCurrency } from 'src/utils/format-number'; // Formatação de moeda
 import { toast } from 'sonner';
 
 import { usePopover, CustomPopover } from 'src/components/custom-popover'; // Biblioteca de toast para feedback visual
+import { formatClienteCodigoRazao } from 'src/utils/formatter';
+
 import { cancelarBoleto, gerarBoletoPorId, enviarBoletoDigisac } from 'src/actions/financeiro';
 
 // ----------------------------------------------------------------------
@@ -102,7 +104,7 @@ export function ReceberTableRow({ row, selected, onSelectRow, fetchCobrancas }) 
               color="inherit"
               sx={{ cursor: 'pointer', fontWeight: 'bold' }}
             >
-              {row.contrato.cliente.razaoSocial}
+              {formatClienteCodigoRazao(row.contrato.cliente)}
             </Link>
             <Box component="span" sx={{ color: 'text.disabled', fontSize: '12px' }}>
               {row.observacoes || 'Sem observações'}

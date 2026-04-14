@@ -33,6 +33,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { fDate } from 'src/utils/format-time';
+import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
 import { getClientes } from 'src/actions/clientes';
 import {
@@ -525,10 +526,7 @@ export default function LicencasPage() {
           <Grid xs={12} md={4}>
             <Autocomplete
               options={clientes}
-              getOptionLabel={(option) => {
-                if (typeof option === 'string') return option;
-                return `${option.razaoSocial || option.nome || ''} - ${option.cnpj || ''}`;
-              }}
+              getOptionLabel={(option) => formatClienteCodigoRazao(option)}
               value={clienteSelecionado}
               onChange={(event, newValue) => {
                 setClienteSelecionado(newValue);
@@ -538,7 +536,7 @@ export default function LicencasPage() {
                 <TextField
                   {...params}
                   fullWidth
-                  label="Filtrar por cliente (nome/razão/CNPJ)"
+                  label="Filtrar por cliente (código/razão social)"
                   placeholder="Selecione um cliente"
                 />
               )}

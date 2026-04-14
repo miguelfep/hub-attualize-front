@@ -28,6 +28,7 @@ import {
 } from '@mui/material';
 
 import { fCurrency } from 'src/utils/format-number';
+import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
 import { getClientes } from 'src/actions/clientes';
 import { cancelarNotaFiscal, listarNotasFiscaisPorCliente } from 'src/actions/notafiscal';
@@ -224,7 +225,7 @@ export default function DashboardFiscalPage() {
               fullWidth
               options={clientes || []}
               loading={loadingClientes}
-              getOptionLabel={(option) => `${option?.razaoSocial || ''}${option?.cpfCnpj ? ` - ${option.cpfCnpj}` : ''}`.trim()}
+              getOptionLabel={(option) => formatClienteCodigoRazao(option)}
               isOptionEqualToValue={(opt, val) => (opt?._id || opt?.id) === (val?._id || val?.id)}
               value={(clientes || []).find((c) => c._id === selectedCliente) || null}
               onChange={(_, newValue) => { setSelectedCliente(newValue?._id || ''); }}

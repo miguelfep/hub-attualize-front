@@ -59,7 +59,7 @@ export function ClienteTableToolbar({ filters, onResetPage, tableData }) {
             fullWidth
             value={filters.state.search || ''}
             onChange={handleFilterSearch}
-            placeholder="Buscar por nome, razão social ou email..."
+            placeholder="Buscar por código, nome, razão social ou email..."
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
