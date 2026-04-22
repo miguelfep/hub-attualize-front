@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Table from '@mui/material/Table';
+import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
@@ -16,7 +16,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
-import AlertTitle from '@mui/material/AlertTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -32,18 +32,17 @@ import { IndicacaoShareCard } from './indicacao-share-card';
 // ----------------------------------------------------------------------
 
 const STATUS_OPTIONS = [
-  { value: '', label: 'Todos' },
+  { value: '', label: 'Todos os status' },
   { value: 'pendente', label: 'Pendente' },
   { value: 'contato_iniciado', label: 'Contato Iniciado' },
   { value: 'em_negociacao', label: 'Em Negociação' },
-  { value: 'fechado', label: 'Fechado - Aguardando Pagamento' },
+  { value: 'fechado', label: 'Fechado' },
   { value: 'aprovado', label: 'Aprovado' },
   { value: 'recusado', label: 'Recusado' },
 ];
 
-// ----------------------------------------------------------------------
-
 export function IndicacoesListView() {
+  const theme = useTheme();
   const { indicacoes, loading, buscarIndicacoes } = useIndicacoes();
   const [filtroStatus, setFiltroStatus] = useState('');
   const [error, setError] = useState(null);
@@ -54,11 +53,9 @@ export function IndicacoesListView() {
         setError(null);
         await buscarIndicacoes();
       } catch (err) {
-        console.error('Erro ao carregar indicações:', err);
-        setError('Não foi possível carregar as indicações. Verifique sua conexão e tente novamente.');
+        setError('Não foi possível carregar as indicações.');
       }
     };
-    
     fetchData();
   }, [buscarIndicacoes]);
 
@@ -67,18 +64,13 @@ export function IndicacoesListView() {
     return indicacoes.filter((ind) => ind.status === filtroStatus);
   }, [indicacoes, filtroStatus]);
 
-  const handleRefresh = () => {
-    buscarIndicacoes();
-  };
-
-  // Calcular estatísticas
   const stats = {
     total: indicacoes.length,
     pendentes: indicacoes.filter((ind) => ind.status === 'pendente').length,
     fechadas: indicacoes.filter((ind) => ind.status === 'fechado').length,
     aprovadas: indicacoes.filter((ind) => ind.status === 'aprovado').length,
     recusadas: indicacoes.filter((ind) => ind.status === 'recusado').length,
-    taxaConversao: indicacoes.length > 0 
+    taxaConversao: indicacoes.length > 0
       ? ((indicacoes.filter((ind) => ind.status === 'aprovado').length / indicacoes.length) * 100).toFixed(1)
       : 0,
     valorTotal: indicacoes
@@ -87,21 +79,20 @@ export function IndicacoesListView() {
   };
 
   return (
-    <Stack spacing={3}>
-{/* Banner Indique e Ganhe - Versão Compacta */}
-<Box
+    <Stack spacing={4} sx={{ p: { xs: 2, md: 3 } }}>
+
+      {/* BANNER INDIQUE E GANHE - VERSÃO COMPACTA */}
+      <Box
         sx={{
           position: 'relative',
           borderRadius: 2,
           overflow: 'hidden',
-          // Definimos uma altura pequena e fixa para o banner não ocupar a tela toda
-          height: { xs: 190, md: 300 }, 
+          height: { xs: 190, md: 300 },
           width: '100%',
           display: 'flex',
           alignItems: 'center',
           backgroundImage: 'url(/assets/background/indiqueeganhe.webp)',
-          // '100% 100%' faz a imagem esticar para preencher exatamente o Box
-          backgroundSize: '100% 100%', 
+          backgroundSize: '100% 100%', // Imagem estica para preencher o Box conforme solicitado
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           '&::before': {
@@ -111,38 +102,30 @@ export function IndicacoesListView() {
             left: 0,
             right: 0,
             bottom: 0,
-            // Escurecemos um pouco para o texto saltar, já que o banner é menor
-            backgroundColor: 'rgba(0, 0, 0, 0.4)', 
+            backgroundColor: 'rgba(0, 0, 0, 0.4)', // Escurecimento para leitura do texto
             zIndex: 0,
           },
         }}
       >
-        <Box 
-          sx={{ 
-            position: 'relative',
-            zIndex: 1,
-            px: { xs: 3, md: 5 },
-            width: '100%',
-          }}
-        >
-          <Typography 
-            variant="h3" 
-            sx={{ 
-              color: 'white', 
+        <Box sx={{ position: 'relative', zIndex: 1, px: { xs: 3, md: 5 }, width: '100%' }}>
+          <Typography
+            variant="h3"
+            sx={{
+              color: 'white',
               fontWeight: 800,
-              fontSize: { xs: '1.2rem', sm: '1.8rem', md: '2.2rem' }, // Fontes menores para o banner pequeno
+              fontSize: { xs: '1.2rem', sm: '1.8rem', md: '2.2rem' },
               textShadow: '2px 2px 4px rgba(0,0,0,0.6)',
               lineHeight: 1,
-              mb: 0.5
+              mb: 0.5,
             }}
           >
             INDIQUE & GANHE
           </Typography>
-          
+
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0, sm: 2 }}>
-            <Typography 
-              sx={{ 
-                color: 'white', 
+            <Typography
+              sx={{
+                color: 'white',
                 fontWeight: 'medium',
                 fontSize: { xs: '0.75rem', md: '1rem' },
                 textShadow: '1px 1px 2px rgba(0,0,0,0.5)',
@@ -150,8 +133,8 @@ export function IndicacoesListView() {
             >
               • Descontos na mensalidade
             </Typography>
-            <Typography 
-              sx={{ 
+            <Typography
+              sx={{
                 color: 'white',
                 fontWeight: 'medium',
                 fontSize: { xs: '0.75rem', md: '1rem' },
@@ -164,145 +147,74 @@ export function IndicacoesListView() {
         </Box>
       </Box>
 
-      {/* Header */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <Typography variant="h4">Minhas Indicações</Typography>
-        <Button
-          variant="outlined"
-          onClick={handleRefresh}
-          disabled={loading}
-        >
-          Atualizar
+      {/* HEADER DA PÁGINA */}
+      <Stack direction="row" alignItems="flex-end" justifyContent="space-between">
+        <Box>
+          <Typography variant="h4" sx={{ fontWeight: 800 }}>Dashboard de Indicações</Typography>
+          <Typography variant="body2" color="text.secondary">Gerencie seus convites e acompanhe seus lucros</Typography>
+        </Box>
+        <Button variant="soft" color="inherit" onClick={buscarIndicacoes} sx={{ fontWeight: 'bold' }}>
+          Atualizar Dados
         </Button>
       </Stack>
 
-      {/* Alerta de erro */}
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)}>
-          <AlertTitle>Erro ao carregar indicações</AlertTitle>
-          {error}
-        </Alert>
-      )}
+      {error && <Alert severity="error" variant="outlined" sx={{ borderRadius: 1.5 }}>{error}</Alert>}
 
-      {/* Cards de Estatísticas - Todos em uma linha */}
-      <Grid container spacing={2}>
-        <Grid xs={6} sm={4} md={2}>
-          <Card sx={{ p: 2, textAlign: 'center', height: '100%' }}>
-            <Typography variant="h4">{stats.total}</Typography>
-            <Typography variant="caption" color="text.secondary">
-              Total
-            </Typography>
-          </Card>
-        </Grid>
+      {/* CARDS DE ESTATÍSTICAS */}
+      <Box
+        display="grid"
+        gap={2}
+        gridTemplateColumns={{
+          xs: 'repeat(2, 1fr)',
+          sm: 'repeat(4, 1fr)',
+          md: 'repeat(7, 1fr)',
+        }}
+      >
+        <MiniStatCard label="Total" value={stats.total} />
+        <MiniStatCard label="Aprovadas" value={stats.aprovadas} color="success.main" />
+        <MiniStatCard label="Fechadas" value={stats.fechadas} color="warning.main" />
+        <MiniStatCard label="Taxa" value={`${stats.taxaConversao}%`} color="info.main" />
+        <MiniStatCard label="Pendentes" value={stats.pendentes} color="text.disabled" />
+        <MiniStatCard label="Recusadas" value={stats.recusadas} color="error.main" />
+        <MiniStatCard
+          label="Total Ganho"
+          value={fCurrency(stats.valorTotal)}
+          color="primary.main"
+          highlight
+        />
+      </Box>
 
-        <Grid xs={6} sm={4} md={2}>
-          <Card sx={{ p: 2, textAlign: 'center', height: '100%' }}>
-            <Typography variant="h4" color="success.main">
-              {stats.aprovadas}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Aprovadas
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid xs={6} sm={4} md={2}>
-          <Card sx={{ p: 2, textAlign: 'center', height: '100%' }}>
-            <Typography variant="h4" color="warning.main">
-              {stats.fechadas}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Fechadas
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid xs={6} sm={4} md={2}>
-          <Card sx={{ p: 2, textAlign: 'center', height: '100%' }}>
-            <Typography variant="h4" color="info.main">
-              {stats.taxaConversao}%
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Taxa
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid xs={6} sm={4} md={2}>
-          <Card sx={{ p: 2, textAlign: 'center', height: '100%' }}>
-            <Typography variant="h4" color="warning.main">
-              {stats.pendentes}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Pendentes
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid xs={6} sm={4} md={2}>
-          <Card sx={{ p: 2, textAlign: 'center', height: '100%' }}>
-            <Typography variant="h4" color="error.main">
-              {stats.recusadas}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Recusadas
-            </Typography>
-          </Card>
-        </Grid>
-
-        <Grid xs={6} sm={4} md={2}>
-          <Card sx={{ p: 2, textAlign: 'center', height: '100%' }}>
-            <Typography variant="h4" color="primary.main" sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
-              {fCurrency(stats.valorTotal)}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Valor Ganho
-            </Typography>
-          </Card>
-        </Grid>
-      </Grid>
-
-      {/* Card de Compartilhamento */}
       <IndicacaoShareCard />
 
-      <Card>
-        <Stack 
-          direction="row" 
-          alignItems="center" 
-          justifyContent="space-between" 
-          sx={{ p: 2 }}
-        >
-          <Typography variant="h6">Lista de Indicações</Typography>
-          
+      {/* TABELA DE RESULTADOS */}
+      <Card sx={{ borderRadius: 2, border: `1px solid ${theme.palette.divider}`, boxShadow: 'none' }}>
+        <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 3, borderBottom: `1px dashed ${theme.palette.divider}` }}>
+          <Typography variant="h6">Histórico de Indicações</Typography>
           <TextField
             select
             size="small"
             value={filtroStatus}
             onChange={(e) => setFiltroStatus(e.target.value)}
-            sx={{ minWidth: 200 }}
+            sx={{ width: 220 }}
           >
             {STATUS_OPTIONS.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
+              <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
             ))}
           </TextField>
         </Stack>
 
         {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-            <CircularProgress />
-          </Box>
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 10 }}><CircularProgress /></Box>
         ) : (
           <TableContainer>
-            <Table>
+            <Table sx={{ minWidth: 800 }}>
               <TableHead>
                 <TableRow>
-                  <TableCell>Indicado</TableCell>
-                  <TableCell>Telefone</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Recompensa</TableCell>
-                  <TableCell>Datas</TableCell>
+                  <TableCell sx={{ color: 'text.secondary' }}>Indicado</TableCell>
+                  <TableCell sx={{ color: 'text.secondary' }}>Telefone</TableCell>
+                  <TableCell sx={{ color: 'text.secondary' }}>Status</TableCell>
+                  <TableCell sx={{ color: 'text.secondary' }}>Recompensa</TableCell>
+                  <TableCell sx={{ color: 'text.secondary' }} align="right">Data</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -312,15 +224,11 @@ export function IndicacoesListView() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={5}>
-                      <EmptyContent 
+                    <TableCell colSpan={5} sx={{ py: 8 }}>
+                      <EmptyContent
                         filled
-                        title="Nenhuma indicação encontrada"
-                        description={
-                          filtroStatus 
-                            ? 'Não há indicações com este status'
-                            : 'Comece compartilhando seu código de indicação'
-                        }
+                        title="Nenhum dado encontrado"
+                        description="Você ainda não possui indicações para os critérios selecionados."
                       />
                     </TableCell>
                   </TableRow>
@@ -331,5 +239,29 @@ export function IndicacoesListView() {
         )}
       </Card>
     </Stack>
+  );
+}
+
+// Componente de Card de Estatística
+function MiniStatCard({ label, value, color = 'text.primary', highlight = false }) {
+  const theme = useTheme();
+  return (
+    <Paper
+      variant="outlined"
+      sx={{
+        p: 2,
+        textAlign: 'center',
+        borderRadius: 2,
+        bgcolor: highlight ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+        borderColor: highlight ? theme.palette.primary.main : theme.palette.divider,
+        transition: 'transform 0.2s',
+        '&:hover': { transform: 'translateY(-4px)' }
+      }}
+    >
+      <Typography variant="h5" sx={{ color, fontWeight: 800 }}>{value}</Typography>
+      <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600, textTransform: 'uppercase', fontSize: 10 }}>
+        {label}
+      </Typography>
+    </Paper>
   );
 }

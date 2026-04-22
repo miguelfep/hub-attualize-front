@@ -25,7 +25,7 @@ export function LicencaRowSkeleton() {
 
       <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ '& > *': { p: 2, mb: 2 } }}>
         {[...Array(4)].map((_, index) => (
           <Grid xs={6} sm={3} key={index}>
             <Skeleton variant="text" width="50%" sx={{ fontSize: '0.7rem' }} />

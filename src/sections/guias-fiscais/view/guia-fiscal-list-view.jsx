@@ -8,6 +8,8 @@ import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import TableRow from '@mui/material/TableRow';
+import TableCell from '@mui/material/TableCell';
 import TableBody from '@mui/material/TableBody';
 import Typography from '@mui/material/Typography';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -34,6 +36,7 @@ import {
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
+import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import {
@@ -46,8 +49,8 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
-import { findPastaNodeById } from '../utils';
 import { GuiaFiscalTableRow } from '../guia-fiscal-table-row';
+import { findPastaNodeById, getTopLevelPastaNome } from '../utils';
 import { GuiaFiscalTableToolbar } from '../guia-fiscal-table-toolbar';
 import { GuiaFiscalTableFiltersResult } from '../guia-fiscal-table-filters-result';
 import { GuiaFiscalMovePastaDialog } from '../components/guia-fiscal-move-pasta-dialog';
@@ -254,6 +257,22 @@ export function GuiaFiscalListView() {
     [data?.guias, table.order, table.orderBy, filters.state]
   );
 
+  const waitingForFolderSelection = !!filters.state.clienteId && !selectedFolderId;
+
+  const dataDisplayed = useMemo(() => {
+    if (waitingForFolderSelection) return [];
+    return dataFiltered;
+  }, [waitingForFolderSelection, dataFiltered]);
+
+  const resultFolderNames = useMemo(() => {
+    const rows = data?.guias || [];
+    const names = rows
+      .map((row) => getTopLevelPastaNome(folders, row?.folderId))
+      .filter(Boolean);
+
+    return [...new Set(names)].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [data?.guias, folders]);
+
   const canReset =
     !!filters.state.clienteId ||
     filters.state.tipoGuia !== 'all' ||
@@ -263,7 +282,11 @@ export function GuiaFiscalListView() {
     !!filters.state.dataFim ||
     !!selectedFolderId;
 
-  const notFound = (!dataFiltered.length && canReset) || (!dataFiltered.length && !isLoading);
+  const showSelectFolderHint = waitingForFolderSelection && !isLoading;
+
+  const notFound =
+    !showSelectFolderHint &&
+    ((!dataDisplayed.length && canReset) || (!dataDisplayed.length && !isLoading));
 
   const handleDeleteRow = useCallback(
     async (id) => {
@@ -359,6 +382,7 @@ export function GuiaFiscalListView() {
     (clienteId) => {
       setSelectedFolderId(null);
       filters.setState({ clienteId: clienteId || '' });
+      table.onSelectAllRows(false);
       table.onResetPage();
     },
     [filters, table]
@@ -367,6 +391,7 @@ export function GuiaFiscalListView() {
   const handleResetFilters = useCallback(() => {
     filters.setState(DEFAULT_FILTERS);
     setSelectedFolderId(null);
+    table.onSelectAllRows(false);
     table.onResetPage();
   }, [filters, table]);
 
@@ -702,7 +727,9 @@ export function GuiaFiscalListView() {
                 filters={filters.state}
                 onFilters={(newFilters) => filters.setState(newFilters)}
                 onResetFilters={handleResetFilters}
-                results={dataFiltered.length}
+                results={total}
+                folderCount={resultFolderNames.length}
+                folderNames={resultFolderNames}
                 tipoGuiaOptions={TIPO_GUIA_OPTIONS}
                 statusOptions={STATUS_OPTIONS}
                 categoriaOptions={CATEGORIA_OPTIONS}
@@ -740,10 +767,10 @@ export function GuiaFiscalListView() {
                     order={table.order}
                     orderBy={table.orderBy}
                     headLabel={TABLE_HEAD}
-                    rowCount={dataFiltered.length}
+                    rowCount={dataDisplayed.length}
                     numSelected={table.selected.length}
                     onSelectAllRows={(checked) => {
-                      const allIds = dataFiltered.map((row) => row._id);
+                      const allIds = dataDisplayed.map((row) => row._id);
                       table.onSelectAllRows(checked, allIds);
                     }}
                     onSort={table.onSort}
@@ -752,10 +779,21 @@ export function GuiaFiscalListView() {
                   <TableBody>
                     {isLoading ? (
                       <TableNoData notFound loading />
+                    ) : showSelectFolderHint ? (
+                      <TableRow>
+                        <TableCell colSpan={12}>
+                          <EmptyContent
+                            filled
+                            title="Selecione uma pasta"
+                            description="Escolha Fiscal, Departamento pessoal, Contábil ou outra pasta à esquerda para listar os arquivos deste cliente."
+                            sx={{ py: 10 }}
+                          />
+                        </TableCell>
+                      </TableRow>
                     ) : notFound ? (
                       <TableNoData notFound />
                     ) : (
-                      dataFiltered.map((row) => (
+                      dataDisplayed.map((row) => (
                         <GuiaFiscalTableRow
                           key={row._id}
                           row={row}
@@ -768,7 +806,7 @@ export function GuiaFiscalListView() {
                         />
                       ))
                     )}
-                    <TableEmptyRows height={40} emptyRows={emptyRows(table.page, table.rowsPerPage, dataFiltered?.length ?? 0)} />
+                    <TableEmptyRows height={40} emptyRows={emptyRows(table.page, table.rowsPerPage, dataDisplayed?.length ?? 0)} />
                   </TableBody>
                 </Table>
               </Scrollbar>
@@ -777,7 +815,7 @@ export function GuiaFiscalListView() {
             <Divider sx={{ borderStyle: 'dashed' }} />
 
             <TablePaginationCustom
-              count={total}
+              count={waitingForFolderSelection ? 0 : total}
               page={table.page}
               rowsPerPage={table.rowsPerPage}
               onPageChange={table.onChangePage}

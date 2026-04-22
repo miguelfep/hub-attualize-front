@@ -27,7 +27,7 @@ function buildTooltipTitle(guia) {
   const itens = getLeiturasPortalItensAdmin(guia);
   if (itens.length > 0) {
     return itens
-      .map((row) => (row.vistoEm ? `${row.label} — ${fDate(row.vistoEm)}` : `${row.label}`))
+      .map((row) => (row.vistoEm ? `${row.label} — ${fDate(row.vistoEm, 'DD/MM/YYYY [às] HH:mm')}` : `${row.label}`))
       .join('\n');
   }
 

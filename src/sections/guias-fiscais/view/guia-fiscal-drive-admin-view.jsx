@@ -48,6 +48,7 @@ import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
+import { isDocumentoNovoParaClientePortal } from '../guia-documento-visualizacao';
 import { GuiaFiscalPortalReadEye } from '../components/guia-fiscal-portal-read-eye';
 import { GuiaFiscalMovePastaDialog } from '../components/guia-fiscal-move-pasta-dialog';
 import { GuiaFiscalPastaUploadDialog } from '../components/guia-fiscal-pasta-upload-dialog';
@@ -66,6 +67,20 @@ function apiErrMsg(err) {
   if (typeof err === 'string') return err;
   return err.message || err.error || 'Erro na operação';
 }
+
+/** Botão “Mais ações”: sem círculo branco, ícone menor. */
+const DRIVE_MORE_ACTIONS_ICON_BTN_SX = {
+  position: 'absolute',
+  zIndex: 2,
+  p: 0.25,
+  minWidth: 26,
+  width: 26,
+  height: 26,
+  color: 'text.secondary',
+  bgcolor: 'transparent',
+  boxShadow: 'none',
+  '&:hover': { bgcolor: 'action.hover', boxShadow: 'none' },
+};
 
 function findFolderPath(nodes, id, trail = []) {
   const list = nodes || [];
@@ -187,7 +202,16 @@ export function GuiaFiscalDriveAdminView() {
     return findPastaNodeById(folders, currentFolderId)?.children || [];
   }, [folders, currentFolderId]);
 
-  const files = useMemo(() => (Array.isArray(data?.guias) ? data.guias : []), [data?.guias]);
+  const files = useMemo(() => {
+    if (!Array.isArray(data?.guias)) return [];
+    // Na raiz do drive, exibir apenas documentos novos que ainda não foram vistos no portal.
+    if (!currentFolderId) {
+      return data.guias.filter((guia) => isDocumentoNovoParaClientePortal(guia));
+    }
+    return data.guias;
+  }, [data?.guias, currentFolderId]);
+
+  const totalFilesFromApi = Array.isArray(data?.guias) ? data.guias.length : 0;
 
   const hasFolderOrFiles = visibleFolders.length > 0 || files.length > 0;
   const showFilesLoadingPlaceholder = Boolean(loadingFiles && !hasFolderOrFiles);
@@ -567,8 +591,9 @@ export function GuiaFiscalDriveAdminView() {
     if (folder) {
       const podeExcluir = podeExcluirPasta(folder);
       return (
-        <>
+        [
           <MenuItem
+            key="open"
             onClick={() => {
               setCurrentFolderId(folder._id);
               closeMenu();
@@ -578,21 +603,24 @@ export function GuiaFiscalDriveAdminView() {
               <Iconify icon="solar:folder-open-bold-duotone" width={20} />
             </ListItemIcon>
             <ListItemText primary="Abrir" secondary="Entrar nesta pasta" />
-          </MenuItem>
-          <MenuItem onClick={() => openCreateDialog(folder._id)}>
+          </MenuItem>,
+
+          <MenuItem key="create" onClick={() => openCreateDialog(folder._id)}>
             <ListItemIcon>
               <Iconify icon="solar:add-folder-bold" width={20} />
             </ListItemIcon>
             <ListItemText primary="Nova subpasta" />
-          </MenuItem>
-          <Divider sx={{ my: 0.5 }} />
-          <MenuItem disabled={!podeExcluir} onClick={() => podeExcluir && openDeleteDialog(folder)}>
+          </MenuItem>,
+
+          <Divider key="divider" sx={{ my: 0.5 }} />,
+
+          <MenuItem key="delete" disabled={!podeExcluir} onClick={() => podeExcluir && openDeleteDialog(folder)}>
             <ListItemIcon>
               <Iconify icon="solar:trash-bin-trash-bold" width={20} sx={{ color: 'error.main' }} />
             </ListItemIcon>
             <ListItemText primary="Excluir pasta" primaryTypographyProps={{ color: 'error' }} />
           </MenuItem>
-        </>
+        ]
       );
     }
 
@@ -708,7 +736,7 @@ export function GuiaFiscalDriveAdminView() {
                           <Iconify icon="solar:folder-with-files-bold-duotone" width={22} />
                           <Typography variant="subtitle1">Pastas e arquivos</Typography>
                           {visibleFolders.length > 0 ? <Chip size="small" label={`${visibleFolders.length} pasta(s)`} /> : null}
-                          <Chip size="small" label={`${files.length} arquivo(s)`} />
+                          <Chip size="small" label={`${totalFilesFromApi} arquivo(s)`} />
                           {loadingFiles ? <CircularProgress size={18} /> : null}
                         </Stack>
                         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
@@ -826,13 +854,9 @@ export function GuiaFiscalDriveAdminView() {
                                   <IconButton
                                     size="small"
                                     sx={{
-                                      position: 'absolute',
+                                      ...DRIVE_MORE_ACTIONS_ICON_BTN_SX,
                                       top: 4,
                                       right: 4,
-                                      zIndex: 2,
-                                      bgcolor: 'background.paper',
-                                      boxShadow: 1,
-                                      '&:hover': { bgcolor: 'background.paper' },
                                     }}
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -840,7 +864,7 @@ export function GuiaFiscalDriveAdminView() {
                                       setMenuState({ type: 'icon', anchorEl: e.currentTarget, folder });
                                     }}
                                   >
-                                    <Iconify icon="eva:more-vertical-fill" width={18} />
+                                    <Iconify icon="eva:more-vertical-fill" width={14} />
                                   </IconButton>
                                 </Tooltip>
                                 <CardActionArea onClick={() => setCurrentFolderId(folder._id)} sx={{ p: 1.5, pr: 5 }}>
@@ -897,13 +921,9 @@ export function GuiaFiscalDriveAdminView() {
                                   <IconButton
                                     size="small"
                                     sx={{
-                                      position: 'absolute',
+                                      ...DRIVE_MORE_ACTIONS_ICON_BTN_SX,
                                       top: 4,
                                       right: 4,
-                                      zIndex: 2,
-                                      bgcolor: 'background.paper',
-                                      boxShadow: 1,
-                                      '&:hover': { bgcolor: 'background.paper' },
                                     }}
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -911,7 +931,7 @@ export function GuiaFiscalDriveAdminView() {
                                       setFileMenuState({ type: 'icon', anchorEl: e.currentTarget, file });
                                     }}
                                   >
-                                    <Iconify icon="eva:more-vertical-fill" width={18} />
+                                    <Iconify icon="eva:more-vertical-fill" width={14} />
                                   </IconButton>
                                 </Tooltip>
                                 <Stack spacing={0.8} sx={{ pl: 3 }}>
@@ -936,13 +956,6 @@ export function GuiaFiscalDriveAdminView() {
                                     flexWrap="wrap"
                                   >
                                     <Stack direction="row" spacing={0.6}>
-                                      <Button
-                                        size="small"
-                                        sx={{ minWidth: 0, px: 1 }}
-                                        onClick={() => router.push(paths.dashboard.guiasFiscais.details(file._id))}
-                                      >
-                                        Ver
-                                      </Button>
                                       <Button
                                         size="small"
                                         variant="outlined"
@@ -972,13 +985,9 @@ export function GuiaFiscalDriveAdminView() {
                                   <IconButton
                                     size="small"
                                     sx={{
-                                      position: 'absolute',
+                                      ...DRIVE_MORE_ACTIONS_ICON_BTN_SX,
                                       top: 6,
                                       right: 6,
-                                      zIndex: 2,
-                                      bgcolor: 'background.paper',
-                                      boxShadow: 1,
-                                      '&:hover': { bgcolor: 'background.paper' },
                                     }}
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -986,7 +995,7 @@ export function GuiaFiscalDriveAdminView() {
                                       setMenuState({ type: 'icon', anchorEl: e.currentTarget, folder });
                                     }}
                                   >
-                                    <Iconify icon="eva:more-vertical-fill" width={18} />
+                                    <Iconify icon="eva:more-vertical-fill" width={14} />
                                   </IconButton>
                                 </Tooltip>
                                 <Stack direction="row" alignItems="center" spacing={1.2}>
@@ -1026,13 +1035,9 @@ export function GuiaFiscalDriveAdminView() {
                                   <IconButton
                                     size="small"
                                     sx={{
-                                      position: 'absolute',
+                                      ...DRIVE_MORE_ACTIONS_ICON_BTN_SX,
                                       top: 6,
                                       right: 6,
-                                      zIndex: 2,
-                                      bgcolor: 'background.paper',
-                                      boxShadow: 1,
-                                      '&:hover': { bgcolor: 'background.paper' },
                                     }}
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -1040,7 +1045,7 @@ export function GuiaFiscalDriveAdminView() {
                                       setFileMenuState({ type: 'icon', anchorEl: e.currentTarget, file });
                                     }}
                                   >
-                                    <Iconify icon="eva:more-vertical-fill" width={18} />
+                                    <Iconify icon="eva:more-vertical-fill" width={14} />
                                   </IconButton>
                                 </Tooltip>
                                 <Stack direction="row" alignItems="flex-start" spacing={1}>
@@ -1071,9 +1076,6 @@ export function GuiaFiscalDriveAdminView() {
                                     spacing={0.8}
                                     sx={{ flexShrink: 0, pt: 0.25 }}
                                   >
-                                    <Button size="small" onClick={() => router.push(paths.dashboard.guiasFiscais.details(file._id))}>
-                                      Ver
-                                    </Button>
                                     <Button size="small" variant="outlined" onClick={() => downloadGuiaFiscal(file._id, file.nomeArquivo)}>
                                       Baixar
                                     </Button>

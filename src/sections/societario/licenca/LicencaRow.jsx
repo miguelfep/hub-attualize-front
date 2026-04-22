@@ -28,7 +28,7 @@ const getStatusProps = (status) => {
 
 const formatDate = (dateString) => new Date(dateString).toLocaleDateString('pt-BR');
 
-const useValidityInfo = (startDate, endDate, status) => 
+const useValidityInfo = (startDate, endDate, status) =>
   useMemo(() => {
     if (status === 'dispensada') {
       return { countdownText: null, countdownColor: 'default' };
@@ -36,7 +36,7 @@ const useValidityInfo = (startDate, endDate, status) =>
 
     const end = new Date(endDate);
     const today = new Date();
-    today.setHours(0, 0, 0, 0); 
+    today.setHours(0, 0, 0, 0);
 
     const daysRemaining = Math.ceil((end.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
@@ -134,7 +134,7 @@ export function LicencaRow({ licenca, onDownload }) {
 
       <Divider sx={{ my: 2, borderStyle: 'dashed' }} />
 
-      <Grid container spacing={2} rowSpacing={1}>
+      <Grid container spacing={2} rowSpacing={1} sx={{ '& > *': { p: 2, mb: 2 } }}>
         <Grid xs={6} sm={3}>
           <Typography variant="caption" color="text.secondary">Início</Typography>
           <Typography variant="body2" sx={{ fontWeight: 500 }}>{formatDate(licenca.dataInicio)}</Typography>

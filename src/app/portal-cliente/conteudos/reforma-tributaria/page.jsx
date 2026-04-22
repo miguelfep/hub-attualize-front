@@ -77,7 +77,7 @@ const QUICK_START = [
     description: 'IBS + CBS substituem cinco tributos. Cliente vê imposto separado no preço final (“por fora”).',
   },
   {
-    icon: 'solar:credit-card-2-bold-duotone',
+    icon: 'solar:money-bag-bold-duotone',
     title: 'Fluxo de caixa muda',
     description: 'Split payment envia imposto direto ao governo no Pix/cartão. O caixa recebe menos na hora.',
   },
@@ -245,7 +245,7 @@ export default function ReformaTributariaPage() {
           </Stack>
         </Card>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
           <Grid xs={12} md={7}>
             <Card
               sx={{
@@ -325,7 +325,7 @@ export default function ReformaTributariaPage() {
           </Grid>
         </Grid>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
           <Grid xs={12} md={6}>
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
@@ -377,7 +377,7 @@ export default function ReformaTributariaPage() {
               <Typography variant="subtitle2" sx={{ color: 'primary.main', fontWeight: 800, textTransform: 'uppercase' }}>
                 3) A solução — unificação em dois tributos
               </Typography>
-              <Grid container spacing={3}>
+              <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
                 <Grid xs={12} md={6}>
                   <Card
                     sx={{
@@ -422,7 +422,7 @@ export default function ReformaTributariaPage() {
           </CardContent>
         </Card>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
           <Grid xs={12} md={6}>
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>
@@ -555,7 +555,7 @@ export default function ReformaTributariaPage() {
           </CardContent>
         </Card>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
           <Grid xs={12} md={7}>
             <Card sx={{ borderRadius: 3, height: '100%' }}>
               <CardContent>

@@ -27,7 +27,16 @@ export async function getNfsesByOrcamento(clienteId, orcamentoId) {
   return axios.get(`${baseUrl}nota-fiscal/${clienteId}/orcamento/${orcamentoId}`);
 }
 
-export async function listarNotasFiscaisPorCliente({ clienteId, page = 1, limit = 100, status, inicio, fim, numeroNota }) {
+export async function listarNotasFiscaisPorCliente({
+  clienteId,
+  page = 1,
+  limit = 100,
+  status,
+  inicio,
+  fim,
+  numeroNota,
+  cpfCnpj,
+}) {
   const params = {};
   if (page) params.page = page;
   if (limit) params.limit = limit;
@@ -35,6 +44,7 @@ export async function listarNotasFiscaisPorCliente({ clienteId, page = 1, limit 
   if (inicio) params.inicio = inicio;
   if (fim) params.fim = fim;
   if (numeroNota) params.numeroNota = numeroNota;
+  if (cpfCnpj) params.cpfCnpj = cpfCnpj;
   return axios.get(`${baseUrl}nota-fiscal/${clienteId}`, { params });
 }
 

@@ -85,10 +85,50 @@ export function findPastaNodeById(nodes, id) {
   const stack = [...nodes];
   while (stack.length) {
     const n = stack.shift();
-    if (n._id === id) return n;
+    if (String(n._id) === String(id)) return n;
     if (n.children?.length) {
       stack.push(...n.children);
     }
+  }
+  return null;
+}
+
+/**
+ * Caminho da raiz da árvore até a pasta com o id informado (inclusive), ou null.
+ */
+export function findPastaPathFromRoot(nodes, targetId, trail = []) {
+  if (!targetId || !nodes?.length) return null;
+  const list = nodes;
+  for (let i = 0; i < list.length; i += 1) {
+    const node = list[i];
+    const nextTrail = [...trail, node];
+    if (String(node._id) === String(targetId)) return nextTrail;
+    if (node.children?.length) {
+      const found = findPastaPathFromRoot(node.children, targetId, nextTrail);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+/**
+ * Nome da pasta de primeiro nível sob a raiz (ex.: Fiscal, Contábil), não a folha (ex.: Março).
+ * Usa a árvore carregada no admin; se não achar o nó, cai no nome do populate.
+ */
+export function getTopLevelPastaNome(foldersTree, folderRef) {
+  const id =
+    folderRef && typeof folderRef === 'object' ? folderRef._id || folderRef.id : folderRef;
+  if (!id) return null;
+
+  if (foldersTree?.length) {
+    const path = findPastaPathFromRoot(foldersTree, id);
+    if (path?.length) {
+      return path[0].nome || null;
+    }
+  }
+
+  if (folderRef && typeof folderRef === 'object' && folderRef.nome) {
+    return folderRef.nome;
   }
   return null;
 }

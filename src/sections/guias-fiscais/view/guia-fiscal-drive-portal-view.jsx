@@ -15,15 +15,12 @@ import CardActionArea from '@mui/material/CardActionArea';
 import CircularProgress from '@mui/material/CircularProgress';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
-import { useRouter } from 'src/routes/hooks';
-
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
 import {
   uploadParaPastaPortal,
   useGetPastasGuiasPortal,
   useGetGuiasFiscaisPortal,
-  navegarParaDetalheGuiaPortal,
 } from 'src/actions/cliente-portal-guias-api';
 
 import { toast } from 'src/components/snackbar';
@@ -65,8 +62,6 @@ function apiErr(err) {
 }
 
 export function GuiaFiscalDrivePortalView() {
-  const router = useRouter();
-
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -89,7 +84,15 @@ export function GuiaFiscalDrivePortalView() {
     return findFolderById(folders, currentFolderId)?.children || [];
   }, [folders, currentFolderId]);
 
-  const files = data?.guias || [];
+  const rawGuias = useMemo(() => Array.isArray(data?.guias) ? data.guias : [], [data?.guias]);
+
+  const files = useMemo(() => {
+    // Na raiz: só documentos novos ou ainda não lidos no portal; dentro da pasta: todos.
+    if (!currentFolderId) {
+      return rawGuias.filter((guia) => isDocumentoNovoParaClientePortal(guia));
+    }
+    return rawGuias;
+  }, [rawGuias, currentFolderId]);
 
   const openFolder = useCallback((id) => setCurrentFolderId(id), []);
 
@@ -100,17 +103,6 @@ export function GuiaFiscalDrivePortalView() {
       toast.error(apiErr(error));
     }
   }, []);
-
-  const handleVerDocumento = useCallback(
-    async (documentoId) => {
-      try {
-        await navegarParaDetalheGuiaPortal(router, documentoId);
-      } catch (e) {
-        toast.error(apiErr(e));
-      }
-    },
-    [router]
-  );
 
   const handleDragOver = useCallback((e) => {
     e.preventDefault();
@@ -205,10 +197,36 @@ export function GuiaFiscalDrivePortalView() {
           ) : (
             <Stack spacing={3}>
               <Box>
-                <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
-                  <Iconify icon="solar:folder-open-bold-duotone" />
-                  <Typography variant="subtitle1">Pastas</Typography>
-                  <Chip size="small" label={visibleFolders.length} />
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  spacing={1.5}
+                  flexWrap="wrap"
+                  useFlexGap
+                  sx={{ mb: 1.5 }}
+                >
+                  <Iconify icon="solar:folder-open-bold-duotone" width={22} sx={{ color: 'warning.main' }} />
+                  <Typography variant="subtitle1" component="span">
+                    Pastas
+                  </Typography>
+                  <Divider orientation="vertical" flexItem sx={{ height: 18, alignSelf: 'center', borderStyle: 'dashed' }} />
+                  <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                      <Box component="span" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.875rem' }}>
+                        {visibleFolders.length}
+                      </Box>
+                      {visibleFolders.length === 1 ? 'pasta' : 'pastas'}
+                    </Typography>
+                    <Typography variant="caption" color="text.disabled" aria-hidden>
+                      ·
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                      <Box component="span" sx={{ fontWeight: 700, color: 'text.primary', fontSize: '0.875rem' }}>
+                        {rawGuias.length}
+                      </Box>
+                      {rawGuias.length === 1 ? 'arquivo' : 'arquivos'}
+                    </Typography>
+                  </Stack>
                 </Stack>
                 {visibleFolders.length ? (
                   <Box
@@ -248,9 +266,8 @@ export function GuiaFiscalDrivePortalView() {
               <Box>
                 <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mb: 1.5 }}>
                   <Stack direction="row" alignItems="center" spacing={1}>
-                    <Iconify icon="solar:documents-bold-duotone" />
-                    <Typography variant="subtitle1">Arquivos</Typography>
-                    <Chip size="small" label={files.length} />
+                    <Iconify icon="solar:documents-bold-duotone" width={22} sx={{ color: 'primary.main' }} />
+                    <Typography variant="subtitle1">Últimos Arquivos</Typography>
                   </Stack>
                   <ToggleButtonGroup
                     size="small"
@@ -294,19 +311,14 @@ export function GuiaFiscalDrivePortalView() {
                             <Typography variant="body2" fontWeight={600} noWrap>
                               {file.nomeArquivo || 'Documento'}
                             </Typography>
-                            <Stack direction="row" spacing={0.6}>
-                              <Button size="small" sx={{ minWidth: 0, px: 1 }} onClick={() => handleVerDocumento(file._id)}>
-                                Ver
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                sx={{ minWidth: 0, px: 1 }}
-                                onClick={() => handleDownload(file._id, file.nomeArquivo)}
-                              >
-                                Baixar
-                              </Button>
-                            </Stack>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              sx={{ minWidth: 0, px: 1, alignSelf: 'flex-start' }}
+                              onClick={() => handleDownload(file._id, file.nomeArquivo)}
+                            >
+                              Baixar
+                            </Button>
                           </Stack>
                         </Card>
                       ))}
@@ -332,14 +344,9 @@ export function GuiaFiscalDrivePortalView() {
                                 {file.tipoGuia || 'Arquivo'}
                               </Typography>
                             </Box>
-                            <Stack direction="row" spacing={0.8}>
-                              <Button size="small" onClick={() => handleVerDocumento(file._id)}>
-                                Ver
-                              </Button>
-                              <Button size="small" variant="outlined" onClick={() => handleDownload(file._id, file.nomeArquivo)}>
-                                Baixar
-                              </Button>
-                            </Stack>
+                            <Button size="small" variant="outlined" onClick={() => handleDownload(file._id, file.nomeArquivo)}>
+                              Baixar
+                            </Button>
                           </Stack>
                         </Card>
                       ))}
@@ -347,7 +354,8 @@ export function GuiaFiscalDrivePortalView() {
                   )
                 ) : (
                   <Typography variant="body2" color="text.secondary">
-                    Nenhum arquivo neste nível.
+                    Você não possui arquivos novos. Acesse seus documentos e guias pelo menu superior ou aguarde um novo envio
+                    pela equipe.
                   </Typography>
                 )}
               </Box>
