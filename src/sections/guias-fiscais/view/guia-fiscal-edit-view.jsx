@@ -2,6 +2,7 @@
 
 import dayjs from 'dayjs';
 import { z as zod } from 'zod';
+import { useSWRConfig } from 'swr';
 import { useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,6 +16,8 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
+
+import { endpoints } from 'src/utils/axios';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { updateGuiaFiscal, useGetGuiaFiscalById } from 'src/actions/guias-fiscais';
@@ -67,6 +70,7 @@ const schema = zod.object({
 
 export function GuiaFiscalEditView({ id }) {
   const router = useRouter();
+  const { mutate: mutateGlobal } = useSWRConfig();
 
   const { data: guia, isLoading } = useGetGuiaFiscalById(id);
 
@@ -85,16 +89,16 @@ export function GuiaFiscalEditView({ id }) {
     },
     values: guia
       ? {
-          nomeArquivo: guia.nomeArquivo || '',
-          tipoGuia: guia.tipoGuia || '',
-          cnpj: guia.cnpj || '',
-          // Data de vencimento: sempre tentar carregar, mesmo que seja null
-          dataVencimento: guia.dataVencimento ? dayjs(guia.dataVencimento).format() : null,
-          // Competência: usar helper para obter do lugar certo (campo direto ou dadosExtraidos)
-          competencia: getCompetencia(guia) || '',
-          status: guia.status || guia.statusProcessamento || 'pendente',
-          observacoes: guia.observacoes || '',
-        }
+        nomeArquivo: guia.nomeArquivo || '',
+        tipoGuia: guia.tipoGuia || '',
+        cnpj: guia.cnpj || '',
+        // Data de vencimento: sempre tentar carregar, mesmo que seja null
+        dataVencimento: guia.dataVencimento ? dayjs(guia.dataVencimento).format() : null,
+        // Competência: usar helper para obter do lugar certo (campo direto ou dadosExtraidos)
+        competencia: getCompetencia(guia) || '',
+        status: guia.status || guia.statusProcessamento || 'pendente',
+        observacoes: guia.observacoes || '',
+      }
       : undefined,
   });
 
@@ -107,7 +111,7 @@ export function GuiaFiscalEditView({ id }) {
     async (data) => {
       try {
         // Converter dataVencimento de string (dayjs format) para Date se necessário
-        let {dataVencimento} = data;
+        let { dataVencimento } = data;
         if (dataVencimento) {
           if (typeof dataVencimento === 'string') {
             dataVencimento = new Date(dataVencimento);
@@ -124,6 +128,12 @@ export function GuiaFiscalEditView({ id }) {
           competencia, // Enviar competência (undefined se vazio)
         });
 
+        const listBase = endpoints.guiasFiscais.list;
+        await Promise.all([
+          mutateGlobal(endpoints.guiasFiscais.get(id)),
+          mutateGlobal((key) => typeof key === 'string' && (key === listBase || key.startsWith(`${listBase}?`))),
+        ]);
+
         toast.success('Guia atualizada com sucesso!');
         router.push(paths.dashboard.guiasFiscais.details(id));
       } catch (error) {
@@ -131,7 +141,7 @@ export function GuiaFiscalEditView({ id }) {
         toast.error(error?.message || 'Erro ao atualizar guia');
       }
     },
-    [id, router]
+    [id, mutateGlobal, router]
   );
 
   if (isLoading) {
@@ -179,8 +189,8 @@ export function GuiaFiscalEditView({ id }) {
               fullWidth
             />
 
-            <RHFDatePicker 
-              name="dataVencimento" 
+            <RHFDatePicker
+              name="dataVencimento"
               label="Data de Vencimento"
               slotProps={{
                 textField: {

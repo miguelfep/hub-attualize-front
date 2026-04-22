@@ -313,7 +313,7 @@ export default function GuiaIrpf2026Page() {
           </Stack>
         </Card>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
           <Grid xs={12} md={7}>
             <Card
               sx={{
@@ -324,7 +324,7 @@ export default function GuiaIrpf2026Page() {
               }}
             >
               <CardContent>
-                <Stack spacing={2}>
+                <Stack spacing={3}>
                   <Stack direction="row" spacing={1} alignItems="center">
                     <Chip
                       icon={<Iconify icon="solar:idea-bold-duotone" />}
@@ -336,7 +336,7 @@ export default function GuiaIrpf2026Page() {
                   <Typography variant="h5">O que você precisa saber agora</Typography>
                   <Stack spacing={1.5}>
                     {QUICK_SUMMARY.map((item) => (
-                      <Stack key={item.title} direction="row" spacing={1.5} alignItems="flex-start">
+                      <Stack key={item.title} direction="row" spacing={2} alignItems="flex-start">
                         <Box
                           sx={{
                             width: 36,
@@ -397,7 +397,7 @@ export default function GuiaIrpf2026Page() {
           </Grid>
         </Grid>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
           {HIGHLIGHTS.map((item) => (
             <Grid key={item.title} item xs={12} md={4}>
               <Card
@@ -432,13 +432,13 @@ export default function GuiaIrpf2026Page() {
           ))}
         </Grid>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
           <Grid xs={12} md={6}>
             <Card sx={{ height: '100%', borderRadius: 3 }}>
               <CardContent>
                 <Stack spacing={1.5}>
                   <Typography variant="subtitle2" sx={{ color: 'primary.main', textTransform: 'uppercase', fontWeight: 800 }}>
-                    ALIQUOTA    
+                    ALIQUOTA
                   </Typography>
                   <Typography variant="h5">IRPFM — como a alíquota mínima cresce</Typography>
                   <Typography variant="body2" color="text.secondary">
@@ -525,7 +525,7 @@ export default function GuiaIrpf2026Page() {
           </CardContent>
         </Card>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
           <Grid xs={12} md={7}>
             <Card sx={{ height: '100%', borderRadius: 3 }}>
               <CardContent>

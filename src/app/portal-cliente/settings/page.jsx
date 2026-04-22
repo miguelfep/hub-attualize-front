@@ -3,7 +3,7 @@
 import { toast } from 'sonner';
 import { z as zod } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, FormProvider } from 'react-hook-form'; 
+import { useForm, FormProvider } from 'react-hook-form';
 import { useState, useEffect, useCallback } from 'react';
 import { m, LazyMotion, domAnimation } from 'framer-motion';
 
@@ -58,12 +58,12 @@ const CertificateSchema = zod.object({
 
 
 const SectionHeader = ({ icon, title }) => (
-    <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3, minWidth: 0 }}>
-      <Box sx={{ flexShrink: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) }}>
-        <Iconify icon={icon} width={24} color="primary.main" />
-      </Box>
-      <Typography variant="h6" sx={{ fontWeight: 700, wordBreak: 'break-word' }}>{title}</Typography>
-    </Stack>
+  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3, minWidth: 0 }}>
+    <Box sx={{ flexShrink: 0, width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '50%', bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08) }}>
+      <Iconify icon={icon} width={24} color="primary.main" />
+    </Box>
+    <Typography variant="h6" sx={{ fontWeight: 700, wordBreak: 'break-word' }}>{title}</Typography>
+  </Stack>
 );
 
 const InfoItem = ({ label, children }) => (
@@ -77,17 +77,18 @@ const InfoItem = ({ label, children }) => (
   </Box>
 );
 
-const NotificationSwitch = ({ checked, onChange, title, subheader }) => (
-    <FormControlLabel
-      control={<Switch checked={checked} onChange={onChange} />}
-      label={
-        <Box>
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>{title}</Typography>
-          <Typography variant="caption" color="text.secondary">{subheader}</Typography>
-        </Box>
-      }
-      sx={{ m: 0, justifyContent: 'flex-start' }}
-    />
+const NotificationSwitch = ({ checked, onChange, title, subheader, disabled }) => (
+  <FormControlLabel
+    disabled={disabled}
+    control={<Switch checked={checked} onChange={onChange} />}
+    label={
+      <Box>
+        <Typography variant="body2" sx={{ fontWeight: 500 }}>{title}</Typography>
+        <Typography variant="caption" color="text.secondary">{subheader}</Typography>
+      </Box>
+    }
+    sx={{ m: 0, justifyContent: 'flex-start' }}
+  />
 );
 
 // O Modal agora é um sub-componente aqui para facilitar
@@ -126,7 +127,7 @@ export default function PortalClienteSettingsView() {
   const theme = useTheme();
 
   // TODA a sua lógica de estados e handlers que você já tinha
-  const [notifications, setNotifications] = useState({ email: true, whatsapp: true, push: false });
+  const [notifications, setNotifications] = useState({ email: true, whatsapp: true });
   const [certificados, setCertificados] = useState([]);
   const [certificadoAtivo, setCertificadoAtivo] = useState(null);
   const [loadingCertificados, setLoadingCertificados] = useState(true);
@@ -145,7 +146,7 @@ export default function PortalClienteSettingsView() {
     if (!empresa?.empresaAtiva) { setLoadingCertificados(false); return; }
     try {
       setLoadingCertificados(true);
-      const [certificadosResponse, ativoResponse] = await Promise.all([ getCertificadosCliente(empresa.empresaAtiva), getCertificadoAtivo(empresa.empresaAtiva) ]);
+      const [certificadosResponse, ativoResponse] = await Promise.all([getCertificadosCliente(empresa.empresaAtiva), getCertificadoAtivo(empresa.empresaAtiva)]);
       if (certificadosResponse.data.success) setCertificados(certificadosResponse.data.data || []);
       else setCertificados([]);
       if (ativoResponse.data.success && ativoResponse.data.data) setCertificadoAtivo(ativoResponse.data.data);
@@ -175,7 +176,7 @@ export default function PortalClienteSettingsView() {
       toast.success('Configurações de notificação atualizadas!');
     } catch (error) {
       console.error('Erro ao atualizar notificações:', error);
-      toast.error('Erro ao atualizar notificações');
+      toast.error('Ainda não é possível atualizar as notificações');
       setNotifications(prev => ({ ...prev, [type]: !value }));
     }
   };
@@ -289,7 +290,7 @@ export default function PortalClienteSettingsView() {
 
               {/* Conteúdo principal */}
               <Box sx={{ p: { xs: 2, md: 4 } }}>
-                <Grid container spacing={3}>
+                <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2, mb: 2 } }}>
                   {/* Card Minha Conta */}
                   <Grid xs={12} md={6} sx={{ minWidth: 0 }}>
                     <Paper
@@ -329,10 +330,9 @@ export default function PortalClienteSettingsView() {
                       }}
                     >
                       <SectionHeader icon="solar:bell-bing-bold-duotone" title="Notificações" />
-                      <Stack spacing={0} divider={<Divider />}>
-                        <NotificationSwitch checked={notifications.email} onChange={(e) => handleNotificationChange('email', e.target.checked)} title="Notificações por Email" subheader="Receba avisos sobre faturas e documentos." />
-                        <NotificationSwitch checked={notifications.whatsapp} onChange={(e) => handleNotificationChange('whatsapp', e.target.checked)} title="Notificações por Whatsapp" subheader="Receba alertas importantes no seu celular." />
-                        <NotificationSwitch checked={notifications.push} onChange={(e) => handleNotificationChange('push', e.target.checked)} title="Notificações Push" subheader="Receba notificações no navegador." />
+                      <Stack spacing={1} divider={<Divider sx={{ borderStyle: 'dashed' }} />}>
+                        <NotificationSwitch disabled checked={notifications.email} onChange={(e) => handleNotificationChange('email', e.target.checked)} title="Notificações por Email" subheader="Receba avisos sobre faturas e documentos." />
+                        <NotificationSwitch disabled checked={notifications.whatsapp} onChange={(e) => handleNotificationChange('whatsapp', e.target.checked)} title="Notificações por Whatsapp" subheader="Receba alertas importantes no seu celular." />
                       </Stack>
                     </Paper>
                   </Grid>

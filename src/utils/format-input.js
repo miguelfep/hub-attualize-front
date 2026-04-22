@@ -89,3 +89,17 @@ export const removeFormatting = (value) => {
   if (!value) return '';
   return value.replace(/\D/g, '');
 };
+
+/**
+ * Máscara dinâmica CPF (até 11 dígitos) ou CNPJ (12–14 dígitos)
+ * @param {string} value
+ * @returns {string}
+ */
+export const formatCpfCnpj = (value) => {
+  if (!value) return '';
+  const numbers = value.replace(/\D/g, '').slice(0, 14);
+  if (numbers.length <= 11) {
+    return formatCpf(numbers);
+  }
+  return formatCnpj(numbers);
+};

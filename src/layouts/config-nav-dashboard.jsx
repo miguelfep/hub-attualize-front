@@ -175,7 +175,7 @@ export const navData = [
         roles: ['admin', 'operacional'],
         children: [
           {
-            title: 'Documentos e guias',
+            title: 'Documentos e Guias',
             path: paths.dashboard.guiasEDocumentos.list,
             roles: ['admin', 'operacional'],
           },
