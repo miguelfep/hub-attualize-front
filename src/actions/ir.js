@@ -412,6 +412,103 @@ export function useGetPedidosIrAdmin(filtros = {}) {
 }
 
 /**
+ * Filtros da listagem admin usados no resumo (exclui paginação).
+ * @param {Record<string, unknown>} filtros
+ */
+function cleanFiltrosResumoIrAdmin(filtros = {}) {
+  const { page: _p, limit: _l, ...rest } = filtros;
+  return Object.fromEntries(
+    Object.entries(rest).filter(([, v]) => v !== undefined && v !== null && v !== '')
+  );
+}
+
+/**
+ * Soma em R$ dos pedidos IR no conjunto filtrado: `pendente_pagamento` vs demais.
+ * Reutiliza os mesmos filtros da tabela (status, year, responsavelId) e percorre todas as páginas.
+ * @param {boolean} [enabled=true]
+ * @param {Record<string, unknown>} [filtros={}] - ex.: o mesmo `filtrosAplicados` da listagem
+ */
+export function useGetIrAdminResumoFinanceiro(enabled = true, filtros = {}) {
+  // Só campos de filtro da API (ignora `page`/`limit` da tabela)
+  const filtrosBase = useMemo(
+    () =>
+      cleanFiltrosResumoIrAdmin({
+        status: filtros?.status,
+        year: filtros?.year,
+        responsavelId: filtros?.responsavelId,
+        userId: filtros?.userId,
+      }),
+    [filtros?.status, filtros?.year, filtros?.responsavelId, filtros?.userId]
+  );
+
+  const swrKey = useMemo(
+    () => (enabled ? ['ir-admin-resumo-financeiro', filtrosBase] : null),
+    [enabled, filtrosBase]
+  );
+
+  const { data, isLoading, error, mutate } = useSWR(
+    swrKey,
+    async () => {
+      const limit = 200;
+      let pendente = 0;
+      let demais = 0;
+
+      const somarPedidos = (orders) => {
+        orders.forEach((o) => {
+          const v = Number(o?.valor) || 0;
+          if (o?.status === 'pendente_pagamento') {
+            pendente += v;
+          } else {
+            demais += v;
+          }
+        });
+      };
+
+      const resFirst = await axios.get(endpoints.ir.admin.orders, {
+        params: { ...filtrosBase, page: 1, limit },
+      });
+      const payload1 = resFirst.data || {};
+      const orders1 = Array.isArray(payload1.orders) ? payload1.orders : [];
+      const totalPages =
+        Number.isFinite(payload1.totalPages) && payload1.totalPages > 0 ? payload1.totalPages : 1;
+      somarPedidos(orders1);
+
+      if (totalPages > 1) {
+        const resOutras = await Promise.all(
+          Array.from({ length: totalPages - 1 }, (_, i) =>
+            axios.get(endpoints.ir.admin.orders, {
+              params: { ...filtrosBase, page: i + 2, limit },
+            })
+          )
+        );
+        resOutras.forEach((res) => {
+          const ords = Array.isArray(res.data?.orders) ? res.data.orders : [];
+          somarPedidos(ords);
+        });
+      }
+
+      return { pendente, demais };
+    },
+    {
+      revalidateIfStale: false,
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 0,
+    }
+  );
+
+  return useMemo(
+    () => ({
+      data: data ?? null,
+      isLoading,
+      error,
+      mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+}
+
+/**
  * Hook SWR para obter pedido IR por ID (admin)
  * @param {string} id
  */

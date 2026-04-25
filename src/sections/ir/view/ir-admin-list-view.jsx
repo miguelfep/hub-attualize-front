@@ -7,7 +7,9 @@ import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
+import { alpha, useTheme } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
@@ -31,11 +33,18 @@ import { paths } from 'src/routes/paths';
 
 import { fCurrency } from 'src/utils/format-number';
 
-import { IR_STATUS_LABELS, useGetPedidosIrAdmin, exportarPedidosIrAdmin, useGetUsuariosInternosIr } from 'src/actions/ir';
+import {
+  IR_STATUS_LABELS,
+  useGetPedidosIrAdmin,
+  useGetIrAdminResumoFinanceiro,
+  exportarPedidosIrAdmin,
+  useGetUsuariosInternosIr,
+} from 'src/actions/ir';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import IrStatusBadge from 'src/components/ir/IrStatusBadge';
+import { IrResumoFinanceiroCards } from 'src/components/ir/IrResumoFinanceiroCards';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -57,8 +66,11 @@ function formatData(isoString) {
 
 // ----------------------------------------------------------------------
 
+const ROLES_RESUMO_FINANCEIRO_IR = ['admin', 'superadmin', 'financeiro'];
+
 export default function IrAdminListView() {
   const router = useRouter();
+  const theme = useTheme();
   const { user } = useAuthContext();
   const { data: usuariosInternos } = useGetUsuariosInternosIr();
 
@@ -67,6 +79,12 @@ export default function IrAdminListView() {
   const [exportando, setExportando] = useState(false);
 
   const { data, isLoading } = useGetPedidosIrAdmin(filtrosAplicados);
+
+  const showResumoFinanceiro = ROLES_RESUMO_FINANCEIRO_IR.includes(user?.role);
+  const { data: resumoFinanceiro, isLoading: loadingResumo, error: errorResumo } = useGetIrAdminResumoFinanceiro(
+    showResumoFinanceiro,
+    filtrosAplicados
+  );
 
   const showTipoPgtoValor = user?.role === 'admin' || user?.role === 'financeiro';
   const usuariosList = Array.isArray(usuariosInternos) ? usuariosInternos : [];
@@ -135,26 +153,63 @@ export default function IrAdminListView() {
   return (
     <Container maxWidth="xl" sx={{ py: 5 }}>
       <Stack spacing={3}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
-          <Box>
-            <Typography variant="h4">Pedidos — Imposto de Renda</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {filtrosAplicados.responsavelId
-                ? `${pedidos.length} pedido(s) nesta página (filtro por responsável)`
-                : total > 0
-                  ? `${total} pedido(s) encontrado(s)`
-                  : 'Gerenciamento de pedidos de IR'}
-            </Typography>
-          </Box>
-          <LoadingButton
-            variant="outlined"
-            startIcon={<Iconify icon="eva:download-outline" />}
-            loading={exportando}
-            onClick={handleExportar}
+        <Card sx={{ borderRadius: 3, overflow: 'hidden' }}>
+          <Box
+            sx={{
+              p: 3,
+              display: 'flex',
+              flexDirection: { xs: 'column', md: 'row' },
+              alignItems: { md: 'center' },
+              justifyContent: 'space-between',
+              gap: 2,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`,
+            }}
           >
-            Exportar CSV
-          </LoadingButton>
-        </Stack>
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                Imposto de Renda — Pedidos
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                {filtrosAplicados.responsavelId
+                  ? `${pedidos.length} pedido(s) nesta página (filtro por responsável)`
+                  : total > 0
+                    ? `${total} pedido(s) encontrado(s)`
+                    : 'Gerencie pedidos, status e acompanhamento da declaração.'}
+              </Typography>
+            </Box>
+            <LoadingButton
+              variant="outlined"
+              startIcon={<Iconify icon="eva:download-outline" />}
+              loading={exportando}
+              onClick={handleExportar}
+              sx={{ flexShrink: 0 }}
+            >
+              Exportar CSV
+            </LoadingButton>
+          </Box>
+          {showResumoFinanceiro && (
+            <CardContent
+              sx={{
+                pt: 0,
+                px: { xs: 2, sm: 3 },
+                pb: 3,
+                borderTop: '1px solid',
+                borderColor: 'divider',
+                bgcolor: (t) => alpha(t.palette.grey[500], 0.04),
+              }}
+            >
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, mt: 0.5 }}>
+                Valores somam todos os pedidos que correspondem aos filtros ativos (incluindo outras páginas da
+                tabela, após <strong>Buscar</strong>).
+              </Typography>
+              <IrResumoFinanceiroCards
+                loading={loadingResumo}
+                error={errorResumo}
+                data={resumoFinanceiro}
+              />
+            </CardContent>
+          )}
+        </Card>
 
         {/* Filtros */}
         <Card>

@@ -196,6 +196,8 @@ export function PostCommentItem({
                   }}
                 />
               )}
+              {/* Conteúdo de comentário renderizado como HTML (origem do backend) */}
+              {/* eslint-disable-next-line react/no-danger */}
               <span dangerouslySetInnerHTML={{ __html: message }} />
             </Typography>
           </Box>
