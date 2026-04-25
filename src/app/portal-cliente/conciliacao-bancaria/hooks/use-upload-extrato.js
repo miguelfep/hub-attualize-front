@@ -223,14 +223,16 @@ export function useUploadExtrato() {
       
       // Verificar se é nova estrutura (tem errors/warnings/code)
       if (errorDataFromBackend?.errors && Array.isArray(errorDataFromBackend.errors)) {
-        errors = errorDataFromBackend.errors;
-        warningsFromBackend = errorDataFromBackend.warnings || [];
-        code = errorDataFromBackend.code;
+        const { errors: errList, warnings: warnList, code: codeValue } = errorDataFromBackend;
+        errors = errList;
+        warningsFromBackend = warnList || [];
+        code = codeValue;
         console.log('✅ Nova estrutura detectada - errors:', errors, 'warnings:', warningsFromBackend, 'code:', code);
       } else if (errorDataFromBackend?.warnings && Array.isArray(errorDataFromBackend.warnings)) {
         // Pode ter apenas warnings
-        warningsFromBackend = errorDataFromBackend.warnings;
-        code = errorDataFromBackend.code;
+        const { warnings: warnList, code: codeValue } = errorDataFromBackend;
+        warningsFromBackend = warnList;
+        code = codeValue;
         console.log('✅ Nova estrutura detectada (apenas warnings)');
       }
       

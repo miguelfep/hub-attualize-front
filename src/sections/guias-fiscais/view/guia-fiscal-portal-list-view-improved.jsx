@@ -1,5 +1,6 @@
 'use client';
 
+import { useSWRConfig } from 'swr';
 import { m, LazyMotion, domAnimation } from 'framer-motion';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
@@ -17,9 +18,15 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { useRouter } from 'src/routes/hooks';
 
+import { endpoints } from 'src/utils/axios';
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
-import { useGetPastasGuiasPortal, useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
+import {
+  useGetPastasGuiasPortal,
+  useGetGuiasFiscaisPortal,
+  navegarParaDetalheGuiaPortal,
+  SESSION_STORAGE_GUIAS_CONTABIL_UPLOAD_TOAST,
+} from 'src/actions/cliente-portal-guias-api';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';

@@ -17,7 +17,10 @@ import { fCurrency } from 'src/utils/format-number';
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { useGetGuiaFiscalPortalById } from 'src/actions/cliente-portal-guias-api';
+import {
+  useGetGuiaFiscalPortalById,
+  revalidarCachesListagemGuiasPortal,
+} from 'src/actions/cliente-portal-guias-api';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';

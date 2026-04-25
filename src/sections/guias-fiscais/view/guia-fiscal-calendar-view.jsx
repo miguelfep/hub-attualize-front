@@ -23,7 +23,10 @@ import { fCurrency } from 'src/utils/format-number';
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
+import {
+  useGetGuiasFiscaisPortal,
+  navegarParaDetalheGuiaPortal,
+} from 'src/actions/cliente-portal-guias-api';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';

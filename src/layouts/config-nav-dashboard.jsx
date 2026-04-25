@@ -167,8 +167,6 @@ export const navData = [
         ],
       },
       {
-        title: 'Express',
-        path: paths.dashboard.guiasFiscais.list,
         title: 'Documentos',
         path: paths.dashboard.guiasEDocumentos.list,
         icon: ICONS.file,
