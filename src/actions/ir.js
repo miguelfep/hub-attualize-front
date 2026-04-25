@@ -440,8 +440,9 @@ export function useGetIrAdminResumoFinanceiro(enabled = true, filtros = {}) {
         year: filtros?.year,
         responsavelId: filtros?.responsavelId,
         userId: filtros?.userId,
+        nomeCpf: filtros?.nomeCpf,
       }),
-    [filtros?.status, filtros?.year, filtros?.responsavelId, filtros?.userId]
+    [filtros?.status, filtros?.year, filtros?.responsavelId, filtros?.userId, filtros?.nomeCpf]
   );
 
   const swrKey = useMemo(

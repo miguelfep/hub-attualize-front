@@ -3,7 +3,7 @@
 import { ptBR } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -23,6 +23,7 @@ import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
+import InputAdornment from '@mui/material/InputAdornment';
 import LoadingButton from '@mui/lab/LoadingButton';
 import FormControl from '@mui/material/FormControl';
 import TableContainer from '@mui/material/TableContainer';
@@ -74,7 +75,14 @@ export default function IrAdminListView() {
   const { user } = useAuthContext();
   const { data: usuariosInternos } = useGetUsuariosInternosIr();
 
-  const [filtros, setFiltros] = useState({ status: '', year: '', responsavelId: '', page: 1, limit: 20 });
+  const [filtros, setFiltros] = useState({
+    status: '',
+    year: '',
+    responsavelId: '',
+    nomeCpf: '',
+    page: 1,
+    limit: 20,
+  });
   const [filtrosAplicados, setFiltrosAplicados] = useState({ page: 1, limit: 20 });
   const [exportando, setExportando] = useState(false);
 
@@ -93,34 +101,55 @@ export default function IrAdminListView() {
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 0;
 
-  // Filtro client-side por responsável (garante resultado correto mesmo se o backend filtrar mal)
+  // Filtro client-side por responsável/nome-cpf (garante resultado mesmo se backend ignorar parâmetro)
   const pedidos = (() => {
     const rid = filtrosAplicados.responsavelId;
-    if (!rid) return pedidosBrutos;
-    if (rid === 'nenhum') {
-      return pedidosBrutos.filter((p) => {
-        const r = p.responsavelId;
-        return r == null || r === '' || (typeof r === 'object' && !r._id);
-      });
-    }
+    const termo = String(filtrosAplicados.nomeCpf || '').trim();
+    const termoLower = termo.toLowerCase();
+    const termoDigits = termo.replace(/\D/g, '');
+
     return pedidosBrutos.filter((p) => {
       const r = p.responsavelId;
-      if (r == null) return false;
-      const id = typeof r === 'object' ? r._id : r;
-      return id && String(id) === String(rid);
+      if (rid === 'nenhum') {
+        const semResponsavel = r == null || r === '' || (typeof r === 'object' && !r._id);
+        if (!semResponsavel) return false;
+      } else if (rid) {
+        if (r == null) return false;
+        const id = typeof r === 'object' ? r._id : r;
+        if (!(id && String(id) === String(rid))) return false;
+      }
+
+      if (!termo) return true;
+
+      const cliente = p.userId;
+      const dadosComprador = p.dadosComprador || {};
+      const nomeCliente = (
+        (typeof cliente === 'object' && (cliente?.name || `${cliente?.firstName ?? ''} ${cliente?.lastName ?? ''}`.trim())) ||
+        dadosComprador?.nome ||
+        ''
+      ).toLowerCase();
+      const cpfPedido = String(
+        dadosComprador?.cpfCnpj || (typeof cliente === 'object' ? cliente?.cpfCnpj : '') || ''
+      );
+      const cpfDigits = cpfPedido.replace(/\D/g, '');
+
+      const matchNome = nomeCliente.includes(termoLower);
+      const matchCpf = termoDigits ? cpfDigits.includes(termoDigits) : false;
+      return matchNome || matchCpf;
     });
   })();
 
-  const handleBuscar = useCallback(() => {
+  useEffect(() => {
     const novos = { page: 1, limit: filtros.limit };
     if (filtros.status) novos.status = filtros.status;
     if (filtros.year) novos.year = Number(filtros.year);
     if (filtros.responsavelId) novos.responsavelId = filtros.responsavelId === 'nenhum' ? 'nenhum' : filtros.responsavelId;
+    if (filtros.nomeCpf?.trim()) novos.nomeCpf = filtros.nomeCpf.trim();
     setFiltrosAplicados(novos);
   }, [filtros]);
 
   const handleLimpar = () => {
-    setFiltros({ status: '', year: '', responsavelId: '', page: 1, limit: 20 });
+    setFiltros({ status: '', year: '', responsavelId: '', nomeCpf: '', page: 1, limit: 20 });
     setFiltrosAplicados({ page: 1, limit: 20 });
   };
 
@@ -130,8 +159,8 @@ export default function IrAdminListView() {
   };
 
   const handleRowsPerPageChange = (e) => {
-    const updated = { ...filtrosAplicados, limit: Number(e.target.value), page: 1 };
-    setFiltrosAplicados(updated);
+    const novoLimit = Number(e.target.value);
+    setFiltros((prev) => ({ ...prev, limit: novoLimit }));
   };
 
   const handleExportar = async () => {
@@ -141,6 +170,7 @@ export default function IrAdminListView() {
       if (filtrosAplicados.status) filtrosExport.status = filtrosAplicados.status;
       if (filtrosAplicados.year) filtrosExport.year = filtrosAplicados.year;
       if (filtrosAplicados.responsavelId) filtrosExport.responsavelId = filtrosAplicados.responsavelId;
+      if (filtrosAplicados.nomeCpf) filtrosExport.nomeCpf = filtrosAplicados.nomeCpf;
       await exportarPedidosIrAdmin(filtrosExport);
       toast.success('CSV exportado com sucesso!');
     } catch (err) {
@@ -215,7 +245,30 @@ export default function IrAdminListView() {
         <Card>
           <Box p={2}>
             <Grid container spacing={2} alignItems="flex-end">
-              <Grid xs={12} sm={4} md={3}>
+              <Grid xs={12} sm={6} md={3}>
+                <TextField
+                  label="Nome ou CPF"
+                  placeholder="Ex: João ou 123.456.789-00"
+                  size="small"
+                  fullWidth
+                  value={filtros.nomeCpf}
+                  onChange={(e) => setFiltros((f) => ({ ...f, nomeCpf: e.target.value }))}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Iconify icon="eva:search-outline" width={18} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: (t) => alpha(t.palette.primary.main, 0.06),
+                    },
+                  }}
+                />
+              </Grid>
+
+              <Grid xs={12} sm={6} md={3}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Status</InputLabel>
                   <Select
@@ -233,7 +286,7 @@ export default function IrAdminListView() {
                 </FormControl>
               </Grid>
 
-              <Grid xs={12} sm={4} md={2}>
+              <Grid xs={12} sm={6} md={2}>
                 <TextField
                   label="Ano"
                   placeholder="2026"
@@ -245,7 +298,7 @@ export default function IrAdminListView() {
                 />
               </Grid>
 
-              <Grid xs={12} sm={4} md={3}>
+              <Grid xs={12} sm={6} md={3}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Responsável</InputLabel>
                   <Select
@@ -264,11 +317,8 @@ export default function IrAdminListView() {
                 </FormControl>
               </Grid>
 
-              <Grid xs={12} sm={4} md={2}>
+              <Grid xs={12} sm={12} md={2}>
                 <Stack direction="row" spacing={1}>
-                  <Button variant="contained" onClick={handleBuscar} fullWidth>
-                    Buscar
-                  </Button>
                   <Button variant="outlined" onClick={handleLimpar}>
                     Limpar
                   </Button>
