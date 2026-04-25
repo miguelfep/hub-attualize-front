@@ -14,6 +14,7 @@ export const IR_STATUS_LABELS = {
   coletando_documentos: 'Enviando Documentos',
   em_validacao: 'Em Validação',
   em_processo: 'Em Processo',
+  impedimento: 'Impedimento',
   finalizada: 'Finalizado',
 };
 
@@ -24,6 +25,7 @@ export const IR_STATUS_COLORS = {
   coletando_documentos: 'secondary',
   em_validacao: 'info',
   em_processo: 'primary',
+  impedimento: 'error',
   finalizada: 'success',
 };
 
@@ -34,6 +36,7 @@ export const IR_STATUS_ORDER = [
   'coletando_documentos',
   'em_validacao',
   'em_processo',
+  'impedimento',
   'finalizada',
 ];
 
@@ -544,6 +547,19 @@ export async function alterarStatusIrAdmin(id, status, nota) {
   const payload = { status };
   if (nota) payload.nota = nota;
   const res = await axios.patch(endpoints.ir.admin.status(id), payload);
+  return res.data;
+}
+
+/**
+ * Atualiza observações internas de um pedido IR (admin)
+ * PATCH /api/ir/admin/orders/:id/observacoes-internas
+ * @param {string} id
+ * @param {string} observacoesInternas
+ */
+export async function atualizarObservacoesInternasIrAdmin(id, observacoesInternas) {
+  const res = await axios.patch(endpoints.ir.admin.observacoesInternas(id), {
+    observacoesInternas: observacoesInternas ?? '',
+  });
   return res.data;
 }
 
