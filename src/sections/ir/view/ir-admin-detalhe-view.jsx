@@ -131,7 +131,10 @@ function getStatusDisponiveis(statusAtual) {
     ];
   }
   if (statusAtual === 'em_processo') {
-    return [{ value: 'finalizada', label: 'Finalizado' }];
+    return [
+      { value: 'em_validacao', label: 'Voltar para Em Validação' },
+      { value: 'coletando_documentos', label: 'Voltar para Enviando Documentos' },
+    ];
   }
   return [];
 }
@@ -513,6 +516,67 @@ export default function IrAdminDetalheView({ id }) {
   const emailCliente = cliente?.email || '-';
   const cpf = cliente?.cpfCnpj || '-';
   const telefone = cliente?.telefone || '-';
+  const tipoPessoa = cliente?.tipoPessoa || '-';
+  const compradorCep = cliente?.cep || '-';
+  const compradorEndereco = cliente?.endereco || '-';
+  const compradorNumero = cliente?.numero || '-';
+  const compradorBairro = cliente?.bairro || '-';
+  const compradorCidade = cliente?.cidade || '-';
+  const compradorUf = cliente?.uf || '-';
+  const enderecoFormulario = order.formulario?.endereco;
+  const enderecoComprador = cliente?.endereco || order.comprador?.endereco;
+  const enderecoRua =
+    order.formulario?.logradouro ||
+    order.formulario?.rua ||
+    order.formulario?.enderecoRua ||
+    order.formulario?.endereco ||
+    (typeof enderecoFormulario === 'string' ? enderecoFormulario : enderecoFormulario?.rua) ||
+    (typeof enderecoComprador === 'string'
+      ? enderecoComprador
+      : enderecoComprador?.rua || enderecoComprador?.logradouro);
+  const enderecoNumero =
+    order.formulario?.numero ||
+    order.formulario?.enderecoNumero ||
+    (typeof enderecoFormulario === 'object' ? enderecoFormulario?.numero : undefined) ||
+    (typeof enderecoComprador === 'object' ? enderecoComprador?.numero : undefined);
+  const enderecoComplemento =
+    order.formulario?.complemento ||
+    order.formulario?.enderecoComplemento ||
+    (typeof enderecoFormulario === 'object' ? enderecoFormulario?.complemento : undefined) ||
+    (typeof enderecoComprador === 'object' ? enderecoComprador?.complemento : undefined);
+  const enderecoBairro =
+    order.formulario?.bairro ||
+    order.formulario?.enderecoBairro ||
+    (typeof enderecoFormulario === 'object' ? enderecoFormulario?.bairro : undefined) ||
+    (typeof enderecoComprador === 'object' ? enderecoComprador?.bairro : undefined);
+  const enderecoCidade =
+    order.formulario?.cidade ||
+    order.formulario?.enderecoCidade ||
+    (typeof enderecoFormulario === 'object' ? enderecoFormulario?.cidade : undefined) ||
+    (typeof enderecoComprador === 'object' ? enderecoComprador?.cidade : undefined);
+  const enderecoUf =
+    order.formulario?.uf ||
+    order.formulario?.estado ||
+    order.formulario?.enderecoUf ||
+    (typeof enderecoFormulario === 'object' ? enderecoFormulario?.uf || enderecoFormulario?.estado : undefined) ||
+    (typeof enderecoComprador === 'object' ? enderecoComprador?.uf || enderecoComprador?.estado : undefined);
+  const enderecoCep =
+    order.formulario?.cep ||
+    order.formulario?.enderecoCep ||
+    (typeof enderecoFormulario === 'object' ? enderecoFormulario?.cep : undefined) ||
+    (typeof enderecoComprador === 'object' ? enderecoComprador?.cep : undefined);
+  const enderecoFormatado = [
+    [
+      enderecoRua,
+      enderecoNumero ? `, ${enderecoNumero}` : '',
+      enderecoComplemento ? ` (${enderecoComplemento})` : '',
+    ].join(''),
+    [enderecoBairro, enderecoCidade].filter(Boolean).join(' - '),
+    [enderecoUf, enderecoCep].filter(Boolean).join(' · '),
+  ]
+    .map((item) => (item || '').trim())
+    .filter(Boolean)
+    .join(' | ');
 
 
   // O admin pode alterar status de qualquer estado (exceto finalizada)
@@ -567,6 +631,37 @@ export default function IrAdminDetalheView({ id }) {
                   <Stack direction="row" spacing={1}>
                     <Typography variant="body2" color="text.secondary" minWidth={100}>E-mail:</Typography>
                     <Typography variant="body2">{emailCliente}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Typography variant="body2" color="text.secondary" minWidth={100}>CPF/CNPJ:</Typography>
+                    <Typography variant="body2">{cpf}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Typography variant="body2" color="text.secondary" minWidth={100}>Telefone:</Typography>
+                    <Typography variant="body2">{telefone}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Typography variant="body2" color="text.secondary" minWidth={100}>Tipo pessoa:</Typography>
+                    <Typography variant="body2">{tipoPessoa}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1} alignItems="flex-start">
+                    <Typography variant="body2" color="text.secondary" minWidth={100}>Endereço:</Typography>
+                    <Typography variant="body2">
+                      {compradorEndereco}
+                      {compradorNumero !== '-' ? `, ${compradorNumero}` : ''}
+                    </Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Typography variant="body2" color="text.secondary" minWidth={100}>Bairro:</Typography>
+                    <Typography variant="body2">{compradorBairro}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Typography variant="body2" color="text.secondary" minWidth={100}>Cidade/UF:</Typography>
+                    <Typography variant="body2">{`${compradorCidade} / ${compradorUf}`}</Typography>
+                  </Stack>
+                  <Stack direction="row" spacing={1}>
+                    <Typography variant="body2" color="text.secondary" minWidth={100}>CEP:</Typography>
+                    <Typography variant="body2">{compradorCep}</Typography>
                   </Stack>
                   <Stack direction="row" spacing={1}>
                     <Typography variant="body2" color="text.secondary" minWidth={100}>Ano:</Typography>
@@ -661,12 +756,16 @@ export default function IrAdminDetalheView({ id }) {
           </Card>
         )}
 
-        {/* Bloco 3b — Alterar status (fluxo normal: coletando → em_processo → finalizada). Oculto em em_processo para forçar uso do "Entregar declaração". */}
-        {canChangeStatus && !canDeliverDeclaracao && (
+        {/* Bloco 3b — Gerenciar status */}
+        {canChangeStatus && (
           <Card>
             <CardHeader
-              title="Avançar status do pedido"
-              subheader="Mova o pedido para a próxima etapa do fluxo de trabalho"
+              title={order.status === 'em_processo' ? 'Voltar status do pedido' : 'Avançar status do pedido'}
+              subheader={
+                order.status === 'em_processo'
+                  ? 'Use quando for necessário retornar o pedido para etapas anteriores'
+                  : 'Mova o pedido para a próxima etapa do fluxo de trabalho'
+              }
             />
             <CardContent>
               <Grid container spacing={2} alignItems="flex-start">
@@ -701,7 +800,7 @@ export default function IrAdminDetalheView({ id }) {
                     variant="contained"
                     fullWidth
                     loading={salvandoStatus}
-                    disabled={!statusSelecionado}
+                    disabled={!statusSelecionado || statusDisponiveis.length === 0}
                     onClick={handleAlterarStatus}
                   >
                     Salvar
@@ -731,7 +830,7 @@ export default function IrAdminDetalheView({ id }) {
             {order.formulario && (order.formulario.nome != null || order.formulario.email != null || order.formulario.declarouIrUltimoAno != null || (order.formulario.despesas && order.formulario.despesas.length > 0)) ? (
               <Grid container spacing={2}>
                 {/* Dados pessoais */}
-                {(order.formulario.nome || order.formulario.email || order.formulario.telefone || order.formulario.dataNascimento) && (
+                {(order.formulario.nome || order.formulario.email || order.formulario.telefone || order.formulario.dataNascimento || enderecoFormatado) && (
                   <Grid xs={12}>
                     <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                       Dados pessoais
@@ -765,6 +864,12 @@ export default function IrAdminDetalheView({ id }) {
                               } catch { return order.formulario.dataNascimento; }
                             })()}
                           </Typography>
+                        </Box>
+                      )}
+                      {enderecoFormatado && (
+                        <Box sx={{ minWidth: 280 }}>
+                          <Typography variant="caption" color="text.disabled" display="block">Endereço</Typography>
+                          <Typography variant="body2">{enderecoFormatado}</Typography>
                         </Box>
                       )}
                     </Stack>
