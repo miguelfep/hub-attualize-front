@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ptBR } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
@@ -49,6 +49,7 @@ import {
   notificarClienteIrAdmin,
   useGetUsuariosInternosIr,
   registrarPagamentoManualIr,
+  atualizarObservacoesInternasIrAdmin,
 } from 'src/actions/ir';
 
 import { toast } from 'src/components/snackbar';
@@ -132,9 +133,13 @@ function getStatusDisponiveis(statusAtual) {
   }
   if (statusAtual === 'em_processo') {
     return [
+      { value: 'impedimento', label: 'Marcar como Impedimento' },
       { value: 'em_validacao', label: 'Voltar para Em Validação' },
       { value: 'coletando_documentos', label: 'Voltar para Enviando Documentos' },
     ];
+  }
+  if (statusAtual === 'impedimento') {
+    return [{ value: 'em_processo', label: 'Voltar para Em Processo' }];
   }
   return [];
 }
@@ -294,6 +299,8 @@ export default function IrAdminDetalheView({ id }) {
   const [statusSelecionado, setStatusSelecionado] = useState('');
   const [nota, setNota] = useState('');
   const [salvandoStatus, setSalvandoStatus] = useState(false);
+  const [observacoesInternas, setObservacoesInternas] = useState('');
+  const [salvandoObservacoes, setSalvandoObservacoes] = useState(false);
 
   const [tipoDocAdmin, setTipoDocAdmin] = useState('');
   const [modalUploadAdmin, setModalUploadAdmin] = useState(false);
@@ -322,6 +329,10 @@ export default function IrAdminDetalheView({ id }) {
 
   const { data: usuariosInternos } = useGetUsuariosInternosIr();
 
+  useEffect(() => {
+    setObservacoesInternas(order?.observacoesInternas || '');
+  }, [order?.observacoesInternas]);
+
   // ─── Alterar status ──────────────────────────────────────────────────────────
 
   const handleAlterarStatus = async () => {
@@ -337,6 +348,19 @@ export default function IrAdminDetalheView({ id }) {
       toast.error(err?.message || 'Erro ao atualizar status.');
     } finally {
       setSalvandoStatus(false);
+    }
+  };
+
+  const handleSalvarObservacoesInternas = async () => {
+    setSalvandoObservacoes(true);
+    try {
+      const result = await atualizarObservacoesInternasIrAdmin(id, observacoesInternas);
+      toast.success(result?.message || 'Observações internas atualizadas!');
+      mutate();
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao salvar observações internas.');
+    } finally {
+      setSalvandoObservacoes(false);
     }
   };
 
@@ -581,7 +605,7 @@ export default function IrAdminDetalheView({ id }) {
 
   // O admin pode alterar status de qualquer estado (exceto finalizada)
   // Alterar status normal (só em_processo e finalizada via API /status)
-  const canChangeStatus = ['coletando_documentos', 'em_validacao', 'em_processo'].includes(order.status);
+  const canChangeStatus = ['coletando_documentos', 'em_validacao', 'em_processo', 'impedimento'].includes(order.status);
   const statusDisponiveis = getStatusDisponiveis(order.status);
 
   // Pagamento manual disponível para pedidos ainda não pagos
@@ -760,10 +784,12 @@ export default function IrAdminDetalheView({ id }) {
         {canChangeStatus && (
           <Card>
             <CardHeader
-              title={order.status === 'em_processo' ? 'Voltar status do pedido' : 'Avançar status do pedido'}
+              title={order.status === 'em_processo' || order.status === 'impedimento' ? 'Gerenciar status do pedido' : 'Avançar status do pedido'}
               subheader={
                 order.status === 'em_processo'
-                  ? 'Use quando for necessário retornar o pedido para etapas anteriores'
+                  ? 'Use para marcar impedimento ou retornar o pedido para etapas anteriores'
+                  : order.status === 'impedimento'
+                    ? 'Pedido em impedimento. Quando regularizar, volte para Em Processo'
                   : 'Mova o pedido para a próxima etapa do fluxo de trabalho'
               }
             />
@@ -1174,6 +1200,36 @@ export default function IrAdminDetalheView({ id }) {
                 Clique em &quot;Gerar análise por IA&quot; para obter um resumo do perfil do contribuinte, pontos de atenção e sugestões para a elaboração da declaração.
               </Typography>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Observações internas"
+            subheader="Anotações de uso interno do time de IR (não visível para o cliente)"
+            avatar={<Iconify icon="eva:edit-2-outline" width={24} color="warning.main" />}
+          />
+          <CardContent>
+            <Stack spacing={2}>
+              <TextField
+                label="Observações internas"
+                placeholder="Ex: Cliente sem comprovante X, aguardando retorno..."
+                value={observacoesInternas}
+                onChange={(e) => setObservacoesInternas(e.target.value)}
+                fullWidth
+                multiline
+                rows={4}
+              />
+              <LoadingButton
+                variant="contained"
+                color="warning"
+                loading={salvandoObservacoes}
+                onClick={handleSalvarObservacoesInternas}
+                startIcon={<Iconify icon="eva:save-fill" />}
+              >
+                Salvar observações
+              </LoadingButton>
+            </Stack>
           </CardContent>
         </Card>
 

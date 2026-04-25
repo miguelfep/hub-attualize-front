@@ -364,6 +364,7 @@ export const endpoints = {
       export: `${baseUrl}ir/admin/orders/export`,
       order: (id) => `${baseUrl}ir/admin/orders/${id}`,
       status: (id) => `${baseUrl}ir/admin/orders/${id}/status`,
+      observacoesInternas: (id) => `${baseUrl}ir/admin/orders/${id}/observacoes-internas`,
       responsavel: (id) => `${baseUrl}ir/admin/orders/${id}/responsavel`,
       pagamentoManual: (id) => `${baseUrl}ir/admin/orders/${id}/pagamento-manual`,
       documents: (id) => `${baseUrl}ir/admin/orders/${id}/documents`,
