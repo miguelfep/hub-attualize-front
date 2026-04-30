@@ -192,6 +192,7 @@ export const endpoints = {
     base: `${baseUrl}settings`,
     byClienteId: (clienteId) => `${baseUrl}settings/${clienteId}`,
     check: (clienteId, funcionalidade) => `${baseUrl}settings/${clienteId}/check/${funcionalidade}`,
+    interCertificates: (clienteId) => `${baseUrl}settings/${clienteId}/inter/certificates`,
   },
   // Portal do Cliente
   portal: {
@@ -221,6 +222,28 @@ export const endpoints = {
       updateStatus: (id) => `${baseUrl}portal/orcamentos/${id}/status`,
       delete: (id) => `${baseUrl}portal/orcamentos/${id}`,
       pdf: (id) => `${baseUrl}portal/orcamentos/${id}/pdf`,
+    },
+    cobrancas: {
+      byClienteDoCliente: (clienteProprietarioId, clienteDoClienteId) =>
+        `${baseUrl}portal/clientes/${clienteProprietarioId}/${clienteDoClienteId}/cobrancas`,
+      get: (clienteProprietarioId, paymentId) =>
+        `${baseUrl}portal/cobrancas/${clienteProprietarioId}/${paymentId}`,
+      pdf: (clienteProprietarioId, paymentId) =>
+        `${baseUrl}portal/cobrancas/${clienteProprietarioId}/${paymentId}/pdf`,
+      emitirBoletoClienteDoCliente: (clienteProprietarioId, clienteDoClienteId) =>
+        `${baseUrl}portal/cobrancas/${clienteProprietarioId}/clientes/${clienteDoClienteId}/boleto`,
+    },
+    vendas: {
+      emitirBoletoOrcamento: (clienteProprietarioId, orcamentoId) =>
+        `${baseUrl}portal/vendas/${clienteProprietarioId}/${orcamentoId}/boleto`,
+      boletosOrcamento: (clienteProprietarioId, orcamentoId) =>
+        `${baseUrl}portal/vendas/${clienteProprietarioId}/${orcamentoId}/boletos`,
+      cancelarBoletoOrcamento: (clienteProprietarioId, orcamentoId) =>
+        `${baseUrl}portal/vendas/${clienteProprietarioId}/${orcamentoId}/boleto/cancelar`,
+      atualizarBoletoOrcamento: (clienteProprietarioId, orcamentoId) =>
+        `${baseUrl}portal/vendas/${clienteProprietarioId}/${orcamentoId}/boleto`,
+      emitirBoletosRecorrencia: (clienteProprietarioId, grupoId) =>
+        `${baseUrl}portal/vendas/${clienteProprietarioId}/recorrencias/${grupoId}/boletos`,
     },
   },
   avaliacoes: {
@@ -371,6 +394,7 @@ export const endpoints = {
       notify: (id) => `${baseUrl}ir/admin/orders/${id}/notify`,
       analiseIa: (id) => `${baseUrl}ir/admin/orders/${id}/analise-ia`,
       downloadDoc: (id, tipo, filename) => `${baseUrl}ir/admin/orders/${id}/documents/${tipo}/${filename}`,
+      deleteDoc: (id, documentId) => `${baseUrl}ir/admin/orders/${id}/documents/${documentId}`,
       usuariosInternos: `${baseUrl}ir/admin/usuarios-internos`,
       planos: `${baseUrl}ir/admin/planos`,
       plano: (id) => `${baseUrl}ir/admin/planos/${id}`,

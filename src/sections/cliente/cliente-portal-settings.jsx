@@ -64,6 +64,7 @@ export function ClientePortalSettings({ clienteId }) {
       cadastroClientes: Boolean(settings?.funcionalidades?.cadastroClientes),
       cadastroServicos: Boolean(settings?.funcionalidades?.cadastroServicos),
       vendas: Boolean(settings?.funcionalidades?.vendas),
+      cobrancaInterPortal: Boolean(settings?.funcionalidades?.cobrancaInterPortal),
       agendamentos: Boolean(settings?.funcionalidades?.agendamentos),
     }),
     [settings]
@@ -212,6 +213,7 @@ export function ClientePortalSettings({ clienteId }) {
             cadastroClientes: Boolean(updated?.funcionalidades?.cadastroClientes),
             cadastroServicos: Boolean(updated?.funcionalidades?.cadastroServicos),
             vendas: Boolean(updated?.funcionalidades?.vendas),
+            cobrancaInterPortal: Boolean(updated?.funcionalidades?.cobrancaInterPortal),
             agendamentos: Boolean(updated?.funcionalidades?.agendamentos),
           },
           configuracoes: {
@@ -474,6 +476,10 @@ export function ClientePortalSettings({ clienteId }) {
           <FormControlLabel
             control={<Switch checked={localState.funcionalidades.vendas} onChange={handleToggle('vendas')} />}
             label="Vendas / Orçamentos"
+          />
+          <FormControlLabel
+            control={<Switch checked={localState.funcionalidades.cobrancaInterPortal} onChange={handleToggle('cobrancaInterPortal')} />}
+            label="Cobrança Inter no Portal"
           />
           <FormControlLabel
             control={<Switch checked={localState.funcionalidades.agendamentos} onChange={handleToggle('agendamentos')} />}

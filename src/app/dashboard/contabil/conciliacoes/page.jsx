@@ -670,7 +670,9 @@ export default function ConciliaçõesPage() {
                                 size="small"
                                 color="primary"
                                 onClick={() => {
-                                  router.push(paths.dashboard.contabil.conciliacoes.details(linha.conciliacaoId));
+                                  router.push(
+                                    `${paths.dashboard.contabil.conciliacoes.details(linha.conciliacaoId)}?clienteId=${linha.clienteId}`
+                                  );
                                 }}
                               >
                                 <Iconify icon="eva:edit-fill" />

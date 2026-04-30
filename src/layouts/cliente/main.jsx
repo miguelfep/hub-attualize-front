@@ -9,7 +9,9 @@ import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Toolbar from '@mui/material/Toolbar';
 import Divider from '@mui/material/Divider';
+import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
+import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
@@ -273,6 +275,50 @@ export function ClienteLayout({ children }) {
             Sair
           </MenuItem>
         </Menu>
+
+        <Box
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+            bgcolor: 'primary.main',
+            color: 'primary.contrastText',
+          }}
+        >
+          <Container
+            maxWidth={false}
+            sx={{
+              px: { xs: 2, sm: 3 },
+              py: 1.25,
+            }}
+          >
+            <Stack
+              direction={{ xs: 'column', md: 'row' }}
+              spacing={1.25}
+              alignItems={{ xs: 'flex-start', md: 'center' }}
+              justifyContent="space-between"
+            >
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                Nova aula disponivel: Aulão Hub do Cliente. Assista agora aos novos materiais.
+              </Typography>
+              <Button
+                component={RouterLink}
+                href={paths.cliente.conteudos.aulaoHubCliente}
+                variant="contained"
+                color="inherit"
+                size="small"
+                startIcon={<Iconify icon="solar:play-circle-bold-duotone" />}
+                sx={{
+                  color: 'primary.main',
+                  bgcolor: 'common.white',
+                  fontWeight: 700,
+                  '&:hover': { bgcolor: 'grey.100' },
+                }}
+              >
+                Assistir agora
+              </Button>
+            </Stack>
+          </Container>
+        </Box>
 
         <Box
           component="main"

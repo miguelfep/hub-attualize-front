@@ -54,6 +54,11 @@ export function usePortalNavData() {
       icon: <Iconify icon="solar:play-circle-bold-duotone" />,
     },
     {
+      title: 'Aulão Hub do Cliente',
+      path: paths.cliente.conteudos.aulaoHubCliente,
+      icon: <Iconify icon="solar:video-library-bold-duotone" />,
+    },
+    {
       title: 'Guia IRPF 2026',
       path: paths.cliente.conteudos.guiaIRPF2026,
       icon: <Iconify icon="solar:pie-chart-2-bold-duotone" />,

@@ -6,7 +6,7 @@ import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
 import Grid from '@mui/material/Unstable_Grid2';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
-import { Box, Card, Stack, Button, Dialog, Tooltip, Divider, MenuItem, Checkbox, TextField, Typography, IconButton, CardContent, DialogTitle, Autocomplete, DialogContent, DialogActions, CircularProgress, FormControlLabel } from '@mui/material';
+import { Box, Card, Stack, Button, Dialog, Tooltip, Divider, MenuItem, Checkbox, TextField, Typography, IconButton, CardContent, DialogTitle, Autocomplete, DialogContent, DialogActions, CircularProgress, FormControlLabel, Alert, ToggleButtonGroup, ToggleButton } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -54,6 +54,9 @@ export default function NovoOrcamentoPage() {
   const [itens, setItens] = React.useState([]);
   const [notaRetroativa, setNotaRetroativa] = React.useState(false);
   const [dataCompetenciaNota, setDataCompetenciaNota] = React.useState(new Date().toISOString().split('T')[0]);
+  const [tipoVenda, setTipoVenda] = React.useState('avulsa');
+  const [quantidadeParcelasRecorrencia, setQuantidadeParcelasRecorrencia] = React.useState(12);
+  const [periodicidadeRecorrencia, setPeriodicidadeRecorrencia] = React.useState('mensal');
   const [openNovoCliente, setOpenNovoCliente] = React.useState(false);
   const [openNovoServico, setOpenNovoServico] = React.useState(false);
   const onlyDigits = (v) => (v || '').replace(/\D/g, '');
@@ -201,12 +204,26 @@ export default function NovoOrcamentoPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!naoTemTomador && !form.clienteDoClienteId) { toast.error('É obritatório selecionar um cliente'); return; }
-    if (!form.dataValidade) { toast.error('É obrigatório selecionar uma data de validade'); return; }
+    if (!form.dataValidade) { toast.error('É obrigatório selecionar a data da venda'); return; }
     if (!itens.length) { toast.error('Adicione pelo menos um item de serviço ao orçamento.'); return; }
     if (!validateItens()) return;
+    if (tipoVenda === 'recorrente') {
+      const q =
+        quantidadeParcelasRecorrencia === '' || quantidadeParcelasRecorrencia == null
+          ? NaN
+          : Number(quantidadeParcelasRecorrencia);
+      if (!Number.isFinite(q) || !Number.isInteger(q) || q < 2) {
+        toast.error('Venda recorrente: informe um número inteiro de parcelas (mínimo 2).');
+        return;
+      }
+      if (q > 120) {
+        toast.error('Venda recorrente: no máximo 120 parcelas.');
+        return;
+      }
+    }
     try {
       setSaving(true);
-      const created = await portalCreateOrcamento({
+      const payload = {
         clienteProprietarioId,
         clienteDoClienteId: form.clienteDoClienteId,
         dataValidade: form.dataValidade,
@@ -214,7 +231,21 @@ export default function NovoOrcamentoPage() {
         itens,
         observacoes: form.observacoes,
         condicoesPagamento: form.condicoesPagamento,
-      });
+      };
+      if (tipoVenda === 'recorrente') {
+        const intervaloMap = {
+          mensal: 1,
+          trimestral: 3,
+          semestral: 6,
+          anual: 12,
+        };
+        payload.recorrencia = {
+          ativo: true,
+          quantidade: Number(quantidadeParcelasRecorrencia),
+          intervaloMeses: intervaloMap[periodicidadeRecorrencia] || 1,
+        };
+      }
+      const created = await portalCreateOrcamento(payload);
       toast.success('Orçamento criado com sucesso!');
       const newId = created?._id || created?.data?._id;
       if (newId) {
@@ -318,6 +349,7 @@ export default function NovoOrcamentoPage() {
                               setNaoTemTomador(e.target.checked);
                               if (e.target.checked) {
                                 setForm((f) => ({ ...f, clienteDoClienteId: '' }));
+                                setTipoVenda('avulsa');
                               }
                             }}
                             size="small"
@@ -344,8 +376,8 @@ export default function NovoOrcamentoPage() {
                         type="date"
                         label={
                           <span style={{ display: 'flex', alignItems: 'center' }}>
-                            Validade
-                            <Tooltip title="Data de validade do orçamento para controle de suas vendas. Não é usada durante a emissão da NFSe.">
+                            Data da venda
+                            <Tooltip title="Data da venda para controle das suas operações. Não é usada durante a emissão da NFSe.">
                               <IconButton size="small" sx={{ ml: 1, p: 0.5 }}>
                                 <Iconify width={16} icon="solar:info-circle-linear" />
                               </IconButton>
@@ -396,6 +428,80 @@ export default function NovoOrcamentoPage() {
                           value={dataCompetenciaNota}
                           onChange={(e) => setDataCompetenciaNota(e.target.value)}
                           InputLabelProps={{ shrink: true }}
+                        />
+                      </Grid>
+                    )}
+                    <Grid xs={12}>
+                      <Alert severity="info" variant="outlined" sx={{ py: 0.75 }}>
+                        Venda recorrente gera uma série de vendas vinculadas (mesmo serviço e valores). A
+                        data de <strong>validade</strong> corresponde à <strong>primeira</strong> parcela; as
+                        demais seguem o calendário definido no sistema.
+                      </Alert>
+                    </Grid>
+                    <Grid xs={12} md={6}>
+                      <Stack spacing={1}>
+                        <Typography variant="subtitle2">Tipo de venda</Typography>
+                        <Tooltip
+                          title={
+                            naoTemTomador
+                              ? 'Com "Não possui Tomador" só é permitido venda avulsa.'
+                              : 'Venda avulsa cria 1 venda. Recorrente cria uma série de vendas.'
+                          }
+                        >
+                          <Box component="span">
+                            <ToggleButtonGroup
+                              exclusive
+                              fullWidth
+                              size="small"
+                              value={tipoVenda}
+                              onChange={(_, value) => {
+                                if (!value) return;
+                                setTipoVenda(value);
+                              }}
+                            >
+                              <ToggleButton value="avulsa">Avulsa</ToggleButton>
+                              <ToggleButton value="recorrente" disabled={naoTemTomador}>
+                                Recorrente
+                              </ToggleButton>
+                            </ToggleButtonGroup>
+                          </Box>
+                        </Tooltip>
+                      </Stack>
+                    </Grid>
+                    {tipoVenda === 'recorrente' && !naoTemTomador && (
+                      <Grid xs={12} md={3}>
+                        <TextField
+                          fullWidth
+                          select
+                          label="Periodicidade"
+                          value={periodicidadeRecorrencia}
+                          onChange={(e) => setPeriodicidadeRecorrencia(e.target.value)}
+                        >
+                          <MenuItem value="mensal">Mensal (a cada 1 mês)</MenuItem>
+                          <MenuItem value="trimestral">Trimestral (a cada 3 meses)</MenuItem>
+                          <MenuItem value="semestral">Semestral (a cada 6 meses)</MenuItem>
+                          <MenuItem value="anual">Anual (a cada 12 meses)</MenuItem>
+                        </TextField>
+                      </Grid>
+                    )}
+                    {tipoVenda === 'recorrente' && !naoTemTomador && (
+                      <Grid xs={12} md={3}>
+                        <TextField
+                          fullWidth
+                          type="number"
+                          label="Quantidade de parcelas"
+                          value={quantidadeParcelasRecorrencia}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === '') {
+                              setQuantidadeParcelasRecorrencia('');
+                              return;
+                            }
+                            const n = parseInt(raw, 10);
+                            if (!Number.isNaN(n)) setQuantidadeParcelasRecorrencia(n);
+                          }}
+                          inputProps={{ min: 2, max: 120, step: 1 }}
+                          helperText="Entre 2 e 120 parcelas."
                         />
                       </Grid>
                     )}

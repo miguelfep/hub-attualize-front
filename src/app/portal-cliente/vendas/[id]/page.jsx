@@ -39,10 +39,17 @@ import {
   cancelarNFSeInvoice,
 } from 'src/actions/notafiscal';
 import {
-  usePortalServicos,
+  extractPaymentIdFromBoletoResponse,
+  portalCancelarBoletoOrcamento,
+  portalBaixarPdfBoleto,
+  portalEmitirBoletoClienteDoCliente,
+  portalEmitirBoletoOrcamento,
+  portalGetCobranca,
   portalGetOrcamento,
+  portalListarBoletosOrcamento,
   portalUpdateOrcamento,
   portalUpdateOrcamentoStatus,
+  usePortalServicos,
 } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
@@ -51,6 +58,55 @@ import { OrcamentoEditPageSkeleton } from 'src/components/skeleton/VendaEditPage
 
 import { useAuthContext } from 'src/auth/hooks';
 
+function toDateInputValue(v) {
+  if (!v) return '';
+  const d = v instanceof Date ? v : new Date(v);
+  if (Number.isNaN(d.getTime())) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function dataValidadeApiPayload(valor) {
+  if (valor == null || valor === '') return null;
+  if (typeof valor === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(valor)) {
+    return new Date(`${valor}T12:00:00`).toISOString();
+  }
+  if (typeof valor === 'string') {
+    return new Date(valor).toISOString();
+  }
+  return new Date(valor).toISOString();
+}
+
+function extractBoletosPayload(response) {
+  return response?.data?.data ?? response?.data ?? response ?? {};
+}
+
+function getDownloadFileName(headers, fallbackName) {
+  const contentDisposition = headers?.['content-disposition'] || headers?.['Content-Disposition'];
+  const match = contentDisposition?.match(/filename\*?=(?:UTF-8''|")?([^";\n]+)/i);
+  if (match?.[1]) {
+    const raw = match[1].trim().replace(/"/g, '');
+    try {
+      return decodeURIComponent(raw);
+    } catch (error) {
+      return raw;
+    }
+  }
+  return fallbackName;
+}
+
+function decodeBase64ToPdfBlob(base64) {
+  const binary = window.atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: 'application/pdf' });
+}
+
 export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
   const params = React.use(paramsPromise);
   const { id } = params;
@@ -58,7 +114,12 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
   const userId = user?.id || user?._id || user?.userId;
   const { empresaAtiva, loadingEmpresas } = useEmpresa(userId);
   const clienteProprietarioId = empresaAtiva;
-  const { podeCriarOrcamentos, podeEmitirNFSe, settings } = useSettings();
+  const {
+    podeCriarOrcamentos,
+    podeEmitirNFSe,
+    interProntoParaBoleto,
+    settings,
+  } = useSettings();
   const theme = useTheme();
 
   const [loading, setLoading] = React.useState(true);
@@ -66,6 +127,22 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
   const [orcamento, setOrcamento] = React.useState(null);
   const [status, setStatus] = React.useState('');
   const [generatingNf, setGeneratingNf] = React.useState(false);
+  const [emitindoBoleto, setEmitindoBoleto] = React.useState(false);
+  const [openEmitirBoletoDialog, setOpenEmitirBoletoDialog] = React.useState(false);
+  const [emitirBoletoForm, setEmitirBoletoForm] = React.useState({
+    dueDate: '',
+    amount: '',
+  });
+  const [emitindoBoletoAvulso, setEmitindoBoletoAvulso] = React.useState(false);
+  const [openBoletoAvulsoDialog, setOpenBoletoAvulsoDialog] = React.useState(false);
+  const [cobrancasCliente, setCobrancasCliente] = React.useState([]);
+  const [loadingCobrancasCliente, setLoadingCobrancasCliente] = React.useState(false);
+  const [cancelandoBoletoVenda, setCancelandoBoletoVenda] = React.useState(false);
+  const [boletoAvulsoForm, setBoletoAvulsoForm] = React.useState({
+    amount: '',
+    dueDate: '',
+    observacao: '',
+  });
   const [nfseList, setNfseList] = React.useState([]);
   const [itemEdit, setItemEdit] = React.useState({
     quantidade: 1,
@@ -88,6 +165,44 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
   
   const emiteNotaRetroativa = settings?.eNotasConfig?.emiteNotaRetroativa === true;
   const pollingIntervalsRef = React.useRef({});
+
+  const getHttpErrorMessage = React.useCallback((error, fallback) => {
+    const statusCode = error?.status || error?.response?.status;
+    const apiMessage = error?.message || error?.response?.data?.message;
+
+    if (apiMessage?.includes('Cadastro do ClienteDoCliente incompleto')) {
+      const fieldLabelMap = {
+        'endereco.rua': 'Rua',
+        'endereco.numero': 'Numero',
+        'endereco.bairro': 'Bairro',
+        'endereco.cidade': 'Cidade',
+        'endereco.estado': 'Estado',
+        'endereco.cep': 'CEP',
+      };
+
+      const missingFieldsChunk = apiMessage.split('Complete os campos:')[1] || '';
+      const missingFields = missingFieldsChunk
+        .split(',')
+        .map((field) => field.trim())
+        .filter(Boolean);
+
+      const readableFields = missingFields.map((field) => fieldLabelMap[field] || field);
+
+      if (readableFields.length > 0) {
+        return `Para emitir o boleto, complete o cadastro do cliente: ${readableFields.join(', ')}.`;
+      }
+
+      return 'Para emitir o boleto, complete o cadastro do cliente (endereço).';
+    }
+
+    if (apiMessage) return apiMessage;
+    if (statusCode === 400) return 'Dados inválidos para esta operação.';
+    if (statusCode === 401) return 'Sessão expirada. Faça login novamente.';
+    if (statusCode === 403) return 'Você não tem permissão para esta ação.';
+    if (statusCode === 404) return 'Recurso não encontrado.';
+    if (statusCode >= 500) return 'Falha interna ao processar a solicitação.';
+    return fallback;
+  }, []);
   
   // Função para buscar e atualizar notas fiscais
   const fetchNfses = React.useCallback(async () => {
@@ -162,6 +277,25 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
         } catch (e) {
           // silencioso
         }
+
+        // Carregar boletos vinculados ao orçamento
+        try {
+          setLoadingCobrancasCliente(true);
+          const boletosResponse = await portalListarBoletosOrcamento(clienteProprietarioId, id);
+          const payload = extractBoletosPayload(boletosResponse);
+          const lista = Array.isArray(payload?.boletos)
+            ? payload.boletos
+            : payload?.boletoAtual
+              ? [payload.boletoAtual]
+              : Array.isArray(boletosResponse?.boletos)
+                ? boletosResponse.boletos
+              : [];
+          setCobrancasCliente(lista);
+        } catch (e) {
+          setCobrancasCliente([]);
+        } finally {
+          setLoadingCobrancasCliente(false);
+        }
         setLoading(false);
       } catch (e) {
         if (e?.response?.status === 404 && attempt < 2) {
@@ -169,7 +303,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
             if (!cancelled) loadWithRetry(attempt + 1);
           }, 600);
         } else if (!cancelled) {
-          toast.error('Erro ao carregar orçamento');
+      toast.error(getHttpErrorMessage(e, 'Erro ao carregar orçamento.'));
           setLoading(false);
         }
       }
@@ -183,7 +317,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
     return () => {
       cancelled = true;
     };
-  }, [clienteProprietarioId, id]);
+  }, [clienteProprietarioId, id, getHttpErrorMessage]);
 
   // Função auxiliar para verificar se uma nota fiscal está em processamento
   const isNotaProcessandoFn = React.useCallback((nota) => {
@@ -355,6 +489,41 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
     0
   );
   const total = subtotal - Number(orcamento.descontoGeral || 0);
+  const podeEmitirBoletoVenda = Boolean(interProntoParaBoleto);
+  const cobrancasDoOrcamento = Array.isArray(cobrancasCliente) ? cobrancasCliente : [];
+  const cobrancaDaVenda = cobrancasDoOrcamento[0] || null;
+  const boletoStatus = String(cobrancaDaVenda?.status || '').toLowerCase();
+  const boletoStatusInter = String(cobrancaDaVenda?.statusInter || '').toUpperCase();
+  const boletoCancelado = boletoStatus === 'cancelled';
+  const boletoPago = boletoStatus === 'paid';
+  const boletoPendente = boletoStatus === 'pending';
+  const boletoVencidoOuExpirado =
+    boletoStatus === 'expired' ||
+    boletoStatusInter.includes('VENCIDO') ||
+    boletoStatusInter.includes('ATRASADO');
+  const boletoFalhou = boletoStatus === 'failed';
+  const podeCancelarBoletoVenda = Boolean(cobrancaDaVenda && (boletoPendente || boletoVencidoOuExpirado));
+  const podeEmitirNovoBoleto =
+    !boletoPago &&
+    (boletoCancelado || boletoVencidoOuExpirado || boletoFalhou);
+
+  const recarregarCobrancasCliente = async () => {
+    setLoadingCobrancasCliente(true);
+    try {
+      const boletosResponse = await portalListarBoletosOrcamento(clienteProprietarioId, id);
+      const payload = extractBoletosPayload(boletosResponse);
+      const lista = Array.isArray(payload?.boletos)
+        ? payload.boletos
+        : payload?.boletoAtual
+          ? [payload.boletoAtual]
+          : Array.isArray(boletosResponse?.boletos)
+            ? boletosResponse.boletos
+          : [];
+      setCobrancasCliente(lista);
+    } finally {
+      setLoadingCobrancasCliente(false);
+    }
+  };
 
   const handleSalvar = async () => {
     try {
@@ -364,11 +533,12 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
         observacoes: orcamento.observacoes,
         condicoesPagamento: orcamento.condicoesPagamento,
         dataCompetenciaNota: notaRetroativa ? orcamento.dataCompetenciaNota : null,
+        dataValidade: dataValidadeApiPayload(orcamento.dataValidade),
       });
       toast.success('Orçamento atualizado');
       setEditingPedido(false);
     } catch (e) {
-      toast.error('Erro ao salvar');
+      toast.error(getHttpErrorMessage(e, 'Erro ao salvar.'));
     } finally {
       setSaving(false);
     }
@@ -401,7 +571,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
       toast.success('Itens atualizados');
       setEditingServico(false);
     } catch (e) {
-      toast.error('Erro ao salvar itens');
+      toast.error(getHttpErrorMessage(e, 'Erro ao salvar itens.'));
     } finally {
       setSaving(false);
     }
@@ -415,7 +585,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
       setOrcamento((o) => ({ ...o, status: newStatus }));
       toast.success('Status atualizado');
     } catch (e) {
-      toast.error('Erro ao atualizar status');
+      toast.error(getHttpErrorMessage(e, 'Erro ao atualizar status.'));
     } finally {
       setSaving(false);
     }
@@ -441,9 +611,211 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
         toast.error('Falha ao iniciar emissão da NFSe');
       }
     } catch (e) {
-      toast.error('Falha ao emitir NFSe');
+      toast.error(getHttpErrorMessage(e, 'Falha ao emitir NFSe.'));
     } finally {
       setGeneratingNf(false);
+    }
+  };
+
+  const abrirDialogEmitirBoleto = () => {
+    setEmitirBoletoForm({
+      dueDate: toDateInputValue(orcamento?.dataValidade),
+      amount: String(cobrancaDaVenda?.amount || total || ''),
+    });
+    setOpenEmitirBoletoDialog(true);
+  };
+
+  const handleEmitirBoleto = async () => {
+    if (!podeEmitirBoletoVenda) return;
+
+    const requestBody = {};
+    if (emitirBoletoForm.dueDate) {
+      const dueDateIso = new Date(emitirBoletoForm.dueDate).toISOString();
+      requestBody.dataVencimentoBoleto = dueDateIso;
+      requestBody.dueDate = dueDateIso;
+    }
+    if (podeEmitirNovoBoleto && boletoVencidoOuExpirado) {
+      const amount = Number(emitirBoletoForm.amount);
+      if (!amount || amount <= 0) {
+        toast.error('Informe um novo valor válido para emitir o boleto expirado.');
+        return;
+      }
+      requestBody.amount = amount;
+    }
+
+    try {
+      setEmitindoBoleto(true);
+      const { status: httpStatus, data: body } = await portalEmitirBoletoOrcamento(
+        clienteProprietarioId,
+        id,
+        requestBody
+      );
+      const msg = body?.message;
+      if (httpStatus === 200) {
+        toast.info(msg || 'Esta venda já possui boleto emitido.');
+      } else if (httpStatus === 201) {
+        const low = (msg || '').toLowerCase();
+        if (low.includes('reemit')) {
+          toast.success(msg || 'Boleto reemitido com sucesso.');
+        } else {
+          toast.success(msg || 'Boleto da venda emitido com sucesso.');
+        }
+      } else {
+        toast.success(msg || 'Boleto processado.');
+      }
+
+      const pay = body?.data != null && typeof body.data === 'object' ? body.data : body;
+      const paymentId = extractPaymentIdFromBoletoResponse(body);
+      const temLinhaOuPix = Boolean(
+        (pay?.linhaDigitavel && String(pay.linhaDigitavel).trim()) ||
+          (pay?.pixCopiaECola && String(pay.pixCopiaECola).trim())
+      );
+
+      await recarregarCobrancasCliente();
+
+      if (httpStatus === 201 && paymentId && !temLinhaOuPix) {
+        toast.info(
+          'Registrando boleto no banco. Linha/PIX podem aparecer em instantes; atualizando…',
+          { duration: 5000 }
+        );
+        const pollCobranca = async (tentativa = 0) => {
+          if (tentativa >= 24) {
+            await recarregarCobrancasCliente();
+            return;
+          }
+
+          await new Promise((r) => setTimeout(r, 2500));
+
+          try {
+            const raw = await portalGetCobranca(clienteProprietarioId, paymentId);
+            const c = raw?.data?.data ?? raw?.data ?? raw;
+            const statusAtual = String(c?.status || '').toLowerCase();
+            if (c?.linhaDigitavel || c?.pixCopiaECola || (statusAtual && statusAtual !== 'pending')) {
+              await recarregarCobrancasCliente();
+              return;
+            }
+          } catch {
+            /* tenta de novo */
+          }
+
+          await pollCobranca(tentativa + 1);
+        };
+
+        pollCobranca().catch(() => {
+          // erro já tratado dentro do fluxo de polling
+        });
+      }
+      setOpenEmitirBoletoDialog(false);
+      setEmitirBoletoForm({ dueDate: '', amount: '' });
+    } catch (error) {
+      toast.error(getHttpErrorMessage(error, 'Erro ao emitir boleto da venda.'));
+    } finally {
+      setEmitindoBoleto(false);
+    }
+  };
+
+  const handleEmitirBoletoAvulso = async () => {
+    if (!podeEmitirBoletoVenda) return;
+    const clienteDoClienteId = orcamento?.clienteDoClienteId?._id || orcamento?.clienteDoClienteId;
+    if (!clienteDoClienteId) {
+      toast.error('Cliente desta venda não encontrado.');
+      return;
+    }
+
+    const amount = Number(boletoAvulsoForm.amount);
+    if (!amount || amount <= 0) {
+      toast.error('Informe um valor válido para a cobrança avulsa.');
+      return;
+    }
+    if (!boletoAvulsoForm.dueDate) {
+      toast.error('Informe a data de vencimento.');
+      return;
+    }
+
+    try {
+      setEmitindoBoletoAvulso(true);
+      const { data: boletoBody } = await portalEmitirBoletoClienteDoCliente(
+        clienteProprietarioId,
+        clienteDoClienteId,
+        {
+          amount,
+          dueDate: new Date(boletoAvulsoForm.dueDate).toISOString(),
+          observacao: boletoAvulsoForm.observacao || undefined,
+        }
+      );
+      const msg = boletoBody?.message;
+      toast.success(msg || 'Boleto avulso emitido com sucesso.');
+      setOpenBoletoAvulsoDialog(false);
+      setBoletoAvulsoForm({ amount: '', dueDate: '', observacao: '' });
+      await recarregarCobrancasCliente();
+    } catch (error) {
+      toast.error(getHttpErrorMessage(error, 'Erro ao emitir boleto avulso.'));
+    } finally {
+      setEmitindoBoletoAvulso(false);
+    }
+  };
+
+  const handleCancelarBoletoVenda = async () => {
+    if (!podeEmitirBoletoVenda) return;
+    try {
+      setCancelandoBoletoVenda(true);
+      await portalCancelarBoletoOrcamento(clienteProprietarioId, id);
+      toast.success('Boleto da venda cancelado com sucesso.');
+      await recarregarCobrancasCliente();
+    } catch (error) {
+      toast.error(getHttpErrorMessage(error, 'Erro ao cancelar boleto da venda.'));
+    } finally {
+      setCancelandoBoletoVenda(false);
+    }
+  };
+
+  const handleBaixarBoleto = async (boleto) => {
+    const paymentId = boleto?.paymentId || boleto?._id || boleto?.id;
+    if (!paymentId) {
+      toast.error('Link de download do boleto não disponível.');
+      return;
+    }
+
+    try {
+      const response = await portalBaixarPdfBoleto(clienteProprietarioId, paymentId);
+      let pdfBlob = null;
+
+      if (response?.data instanceof Blob) {
+        if ((response.data.type || '').includes('application/pdf')) {
+          pdfBlob = response.data;
+        } else {
+          const rawText = await response.data.text();
+          try {
+            const parsed = JSON.parse(rawText);
+            const base64Pdf = parsed?.data?.pdf || parsed?.pdf;
+            if (base64Pdf) pdfBlob = decodeBase64ToPdfBlob(base64Pdf);
+          } catch (e) {
+            // segue para erro amigável abaixo
+          }
+        }
+      } else {
+        const base64Pdf = response?.data?.data?.pdf || response?.data?.pdf;
+        if (base64Pdf) pdfBlob = decodeBase64ToPdfBlob(base64Pdf);
+      }
+
+      if (!pdfBlob) {
+        toast.error('Resposta de PDF inválida.');
+        return;
+      }
+
+      const blobUrl = window.URL.createObjectURL(pdfBlob);
+      const responsePaymentId = response?.data?.data?.paymentId || response?.data?.paymentId || paymentId;
+      const fileName = getDownloadFileName(response.headers, `boleto-${responsePaymentId}.pdf`);
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      toast.error(getHttpErrorMessage(error, 'Não foi possível baixar o boleto.'));
     }
   };
 
@@ -453,6 +825,31 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
     if (s === 'aprovado') return 'info';
     if (s === 'recusado') return 'error';
     if (s === 'pendente') return 'warning';
+    return 'default';
+  };
+
+  const getCobrancaDerivedState = (cobranca) => {
+    const cobrancaStatus = String(cobranca?.status || '').toLowerCase();
+    const externalId = String(cobranca?.externalId || '').trim();
+    const temExternalId = Boolean(externalId);
+    const temLinhaDigitavel = Boolean(String(cobranca?.linhaDigitavel || '').trim());
+    const temPixCopiaECola = Boolean(String(cobranca?.pixCopiaECola || '').trim());
+    const boletoDisponivel = temExternalId && (temLinhaDigitavel || temPixCopiaECola);
+
+    if (cobrancaStatus === 'paid') return { label: 'Pago', color: 'success' };
+    if (cobrancaStatus === 'cancelled') return { label: 'Cancelado', color: 'default' };
+    if (cobrancaStatus === 'failed') return { label: 'Falhou', color: 'error' };
+    if (!temExternalId) return { label: 'Gerando boleto', color: 'warning' };
+    if (boletoDisponivel) return { label: 'Boleto disponível', color: 'success' };
+    return { label: 'Boleto gerado (processando retorno)', color: 'info' };
+  };
+
+  const getStatusInterChipColor = (statusInter) => {
+    const interStatus = String(statusInter || '').toUpperCase();
+    if (interStatus.includes('EM_ABERTO') || interStatus.includes('A_RECEBER')) return 'info';
+    if (interStatus.includes('ATRASADO') || interStatus.includes('VENCIDO')) return 'warning';
+    if (interStatus.includes('CANCEL')) return 'default';
+    if (interStatus.includes('PAGO') || interStatus.includes('RECEB')) return 'success';
     return 'default';
   };
 
@@ -538,6 +935,29 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
                   )}
                 </>
               )}
+              {podeEmitirBoletoVenda && (
+                <>
+                  <LoadingButton
+                    onClick={abrirDialogEmitirBoleto}
+                    variant="outlined"
+                    startIcon={<Iconify icon="solar:bill-list-bold" />}
+                    loading={emitindoBoleto}
+                    disabled={Boolean(cobrancaDaVenda && !podeEmitirNovoBoleto)}
+                  >
+                    {podeEmitirNovoBoleto ? 'Emitir novo boleto' : 'Emitir boleto da venda'}
+                  </LoadingButton>
+                  <LoadingButton
+                    onClick={handleCancelarBoletoVenda}
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Iconify icon="solar:close-circle-bold" />}
+                    loading={cancelandoBoletoVenda}
+                    disabled={!podeCancelarBoletoVenda}
+                  >
+                    Cancelar boleto
+                  </LoadingButton>
+                </>
+              )}
             </Stack>
           </Box>
           <CardContent sx={{ p: { xs: 2, md: 3 } }}>
@@ -580,38 +1000,131 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
                   </Grid>
                   <Grid xs={12} md={4}>
                     <Stack
-                      spacing={1}
+                      spacing={2}
                       sx={{
-                        width: { xs: '100%', sm: '220' },
+                        width: { xs: '100%', sm: '100%', md: 260 },
+                        maxWidth: 1,
                         ml: { sm: 'auto' },
                       }}
                     >
-                      <Typography
-                        variant="subtitle2"
-                        sx={{ alignSelf: { xs: 'flex-start', sm: 'flex-start' } }}
-                      >
-                        Status
-                      </Typography>
-                      <TextField
-                        size="small"
-                        select
-                        value={status}
-                        onChange={(e) => handleStatus(e.target.value)}
-                        disabled={!canEditStatusSelect}
-                        fullWidth
-                      >
-                        <MenuItem value="pendente">Pendente</MenuItem>
-                        <MenuItem value="aprovado">Aprovado</MenuItem>
-                        <MenuItem value="recusado">Recusado</MenuItem>
-                        <MenuItem value="expirado">Expirado</MenuItem>
-                        <MenuItem value="pago">Pago</MenuItem>
-                      </TextField>
+                      <Box>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ mb: 0.5, alignSelf: { xs: 'flex-start', sm: 'flex-start' } }}
+                        >
+                          Status
+                        </Typography>
+                        <TextField
+                          size="small"
+                          select
+                          value={status}
+                          onChange={(e) => handleStatus(e.target.value)}
+                          disabled={!canEditStatusSelect}
+                          fullWidth
+                        >
+                          <MenuItem value="pendente">Pendente</MenuItem>
+                          <MenuItem value="aprovado">Aprovado</MenuItem>
+                          <MenuItem value="recusado">Recusado</MenuItem>
+                          <MenuItem value="expirado">Expirado</MenuItem>
+                          <MenuItem value="pago">Pago</MenuItem>
+                        </TextField>
+                      </Box>
+                      <Box>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                          Data venda
+                        </Typography>
+                        <TextField
+                          size="small"
+                          type="date"
+                          fullWidth
+                          value={toDateInputValue(orcamento.dataValidade)}
+                          onChange={(e) =>
+                            setOrcamento((o) => ({
+                              ...o,
+                              dataValidade: e.target.value || null,
+                            }))
+                          }
+                          disabled={!editingPedido || !canEditPedido}
+                          InputLabelProps={{ shrink: true }}
+                          inputProps={{ max: '2099-12-31' }}
+                          helperText={
+                            canEditPedido && !editingPedido
+                              ? 'Ative a edição em Observações e totais (ícone) para alterar; depois, Salvar.'
+                              : ' '
+                          }
+                        />
+                      </Box>
                     </Stack>
                   </Grid>
                 </Grid>
               </Box>
 
               <Divider />
+
+              <Box>
+                <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+                  <Typography variant="h6">Cobranças do Cliente</Typography>
+                  {loadingCobrancasCliente && <CircularProgress size={18} />}
+                </Stack>
+                {!loadingCobrancasCliente && cobrancasDoOrcamento.length === 0 && (
+                  <Alert severity="info">Nenhum boleto encontrado para esta venda.</Alert>
+                )}
+                {!loadingCobrancasCliente && cobrancasDoOrcamento.length > 0 && (
+                  <Stack spacing={1}>
+                    {cobrancasDoOrcamento.map((c) => {
+                      const state = getCobrancaDerivedState(c);
+                      const statusInter = c?.statusInter || c?.metadata?.lastWebhookProviderStatus || '-';
+                      const paymentId = c?.paymentId || c?._id || c?.id;
+
+                      return (
+                      <Card key={c._id || c.id} variant="outlined" sx={{ p: 2 }}>
+                        <Stack
+                          direction={{ xs: 'column', md: 'row' }}
+                          spacing={2}
+                          alignItems={{ xs: 'flex-start', md: 'center' }}
+                          justifyContent="space-between"
+                        >
+                          <Stack spacing={1} sx={{ width: '100%' }}>
+                            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                              {String(c?.provider || '').toLowerCase() === 'inter' && (
+                                <Iconify icon="simple-icons:bancointer" width={16} sx={{ color: 'warning.main' }} />
+                              )}
+                              <Chip size="small" variant="soft" color={state.color} label={state.label} />
+                              <Chip
+                                size="small"
+                                variant="soft"
+                                color={getStatusInterChipColor(statusInter)}
+                                label={`Inter: ${statusInter}`}
+                              />
+                            </Stack>
+                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0.5, sm: 2 }} useFlexGap>
+                              <Typography variant="body2">
+                                <strong>Valor:</strong> {fCurrency(c?.amount || 0)}
+                              </Typography>
+                              <Typography variant="body2">
+                                <strong>Vencimento:</strong>{' '}
+                                {c?.dueDate ? new Date(c.dueDate).toLocaleDateString('pt-BR') : '-'}
+                              </Typography>
+                            </Stack>
+                          </Stack>
+
+                          <Stack direction="row" spacing={1} alignItems="center" sx={{ alignSelf: { xs: 'flex-start', md: 'center' } }}>
+                            <Button
+                              size="small"
+                              variant="contained"
+                              startIcon={<Iconify icon="solar:download-minimalistic-bold" />}
+                              onClick={() => handleBaixarBoleto(c)}
+                              disabled={!paymentId}
+                            >
+                              Baixar
+                            </Button>
+                          </Stack>
+                        </Stack>
+                      </Card>
+                    )})}
+                  </Stack>
+                )}
+              </Box>
 
               <Box>
                 <Typography variant="h6" sx={{ mb: 2 }}>
@@ -1158,6 +1671,105 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
             </Stack>
           </CardContent>
         </Dialog>
+
+        <Dialog
+          open={podeEmitirBoletoVenda && openEmitirBoletoDialog}
+          onClose={() => !emitindoBoleto && setOpenEmitirBoletoDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogActions sx={{ px: 2, pt: 2 }}>
+            <Typography variant="h6" sx={{ flexGrow: 1, pl: 1 }}>
+              Emitir Boleto da Venda
+            </Typography>
+            <Button onClick={() => setOpenEmitirBoletoDialog(false)} disabled={emitindoBoleto}>
+              Fechar
+            </Button>
+          </DialogActions>
+          <CardContent>
+            <Stack spacing={2}>
+              {podeEmitirNovoBoleto && boletoVencidoOuExpirado && (
+                <TextField
+                  type="number"
+                  label="Novo valor (R$)"
+                  value={emitirBoletoForm.amount}
+                  onChange={(e) =>
+                    setEmitirBoletoForm((prev) => ({ ...prev, amount: e.target.value }))
+                  }
+                  inputProps={{ min: 0.01, step: 0.01 }}
+                />
+              )}
+              <TextField
+                type="date"
+                label="Data de vencimento (opcional)"
+                value={emitirBoletoForm.dueDate}
+                onChange={(e) =>
+                  setEmitirBoletoForm((prev) => ({ ...prev, dueDate: e.target.value }))
+                }
+                InputLabelProps={{ shrink: true }}
+                helperText="Se não informar, a API aplicará a regra padrão."
+              />
+              <LoadingButton variant="contained" loading={emitindoBoleto} onClick={handleEmitirBoleto}>
+                Emitir boleto
+              </LoadingButton>
+            </Stack>
+          </CardContent>
+        </Dialog>
+
+        <Dialog
+          open={podeEmitirBoletoVenda && openBoletoAvulsoDialog}
+          onClose={() => !emitindoBoletoAvulso && setOpenBoletoAvulsoDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogActions sx={{ px: 2, pt: 2 }}>
+            <Typography variant="h6" sx={{ flexGrow: 1, pl: 1 }}>
+              Emitir Boleto Avulso
+            </Typography>
+            <Button onClick={() => setOpenBoletoAvulsoDialog(false)} disabled={emitindoBoletoAvulso}>
+              Fechar
+            </Button>
+          </DialogActions>
+          <CardContent>
+            <Stack spacing={2}>
+              <TextField
+                type="number"
+                label="Valor (R$)"
+                value={boletoAvulsoForm.amount}
+                onChange={(e) =>
+                  setBoletoAvulsoForm((prev) => ({ ...prev, amount: e.target.value }))
+                }
+                inputProps={{ min: 0.01, step: 0.01 }}
+              />
+              <TextField
+                type="date"
+                label="Vencimento"
+                value={boletoAvulsoForm.dueDate}
+                onChange={(e) =>
+                  setBoletoAvulsoForm((prev) => ({ ...prev, dueDate: e.target.value }))
+                }
+                InputLabelProps={{ shrink: true }}
+              />
+              <TextField
+                label="Observação"
+                value={boletoAvulsoForm.observacao}
+                onChange={(e) =>
+                  setBoletoAvulsoForm((prev) => ({ ...prev, observacao: e.target.value }))
+                }
+                multiline
+                minRows={2}
+              />
+              <LoadingButton
+                variant="contained"
+                loading={emitindoBoletoAvulso}
+                onClick={handleEmitirBoletoAvulso}
+              >
+                Emitir boleto avulso
+              </LoadingButton>
+            </Stack>
+          </CardContent>
+        </Dialog>
+
       </motion.div>
     </LazyMotion>
   );

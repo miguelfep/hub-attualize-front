@@ -50,6 +50,7 @@ import {
   useGetUsuariosInternosIr,
   registrarPagamentoManualIr,
   atualizarObservacoesInternasIrAdmin,
+  removerDocumentoIrAdmin,
 } from 'src/actions/ir';
 
 import { toast } from 'src/components/snackbar';
@@ -326,6 +327,9 @@ export default function IrAdminDetalheView({ id }) {
   const [pagManualValor, setPagManualValor] = useState('');
   const [pagManualNota, setPagManualNota] = useState('');
   const [salvandoPagManual, setSalvandoPagManual] = useState(false);
+  const [docParaExcluir, setDocParaExcluir] = useState(null);
+  const [excluindoDoc, setExcluindoDoc] = useState(false);
+  const [notaExclusaoDoc, setNotaExclusaoDoc] = useState('');
 
   const { data: usuariosInternos } = useGetUsuariosInternosIr();
 
@@ -515,6 +519,22 @@ export default function IrAdminDetalheView({ id }) {
     }
   };
 
+  const handleExcluirDoc = async () => {
+    if (!docParaExcluir) return;
+    setExcluindoDoc(true);
+    try {
+      await removerDocumentoIrAdmin(id, docParaExcluir._id, notaExclusaoDoc);
+      toast.success('Documento removido com sucesso.');
+      setDocParaExcluir(null);
+      setNotaExclusaoDoc('');
+      mutate();
+    } catch (err) {
+      toast.error(err?.message || 'Erro ao remover documento.');
+    } finally {
+      setExcluindoDoc(false);
+    }
+  };
+
   // ─── Render ──────────────────────────────────────────────────────────────────
 
   if (isLoading) {
@@ -611,7 +631,8 @@ export default function IrAdminDetalheView({ id }) {
   // Pagamento manual disponível para pedidos ainda não pagos
   const canPagamentoManual = STATUS_PERMITE_PAGAMENTO_MANUAL.includes(order.status);
 
-  const canDeliverDeclaracao = order.status === 'em_processo';
+  const canDeliverDeclaracao = ['em_processo', 'finalizada'].includes(order.status);
+  const isRetificacao = order.status === 'finalizada';
 
   return (
     <Container maxWidth="lg" sx={{ py: 5 }}>
@@ -1243,20 +1264,68 @@ export default function IrAdminDetalheView({ id }) {
             />
             <CardContent>
               <Stack direction="row" flexWrap="wrap" gap={2}>
-                {(order.documents || [])
-                  .filter((d) => d.tipo_documento === 'declaracao' || d.tipo_documento === 'recibo')
-                  .map((doc) => (
-                    <Button
-                      key={doc._id}
-                      variant="contained"
-                      color="success"
-                      startIcon={<Iconify icon="eva:file-text-outline" width={20} />}
-                      onClick={() => handleDownloadDoc(doc)}
-                      sx={{ textTransform: 'none' }}
-                    >
-                      {doc.tipo_documento === 'declaracao' ? 'Declaração' : 'Recibo'} — {doc.fileName}
-                    </Button>
-                  ))}
+                {(() => {
+                  const docsEntrega = (order.documents || [])
+                    .filter((d) => d.tipo_documento === 'declaracao' || d.tipo_documento === 'recibo')
+                    .slice()
+                    .sort((a, b) => {
+                      const da = new Date(a?.createdAt || a?.updatedAt || 0).getTime();
+                      const db = new Date(b?.createdAt || b?.updatedAt || 0).getTime();
+                      return db - da;
+                    });
+
+                  const maisRecentePorTipo = docsEntrega.reduce((acc, doc) => {
+                    if (!acc[doc.tipo_documento]) acc[doc.tipo_documento] = doc._id;
+                    return acc;
+                  }, {});
+
+                  return docsEntrega.map((doc) => {
+                    const isMaisRecente = maisRecentePorTipo[doc.tipo_documento] === doc._id;
+                    const isRetificacaoDoc = isMaisRecente && docsEntrega.some(
+                      (d) => d.tipo_documento === doc.tipo_documento && d._id !== doc._id
+                    );
+
+                    const dataEnvio = doc.data_upload || doc.createdAt || doc.updatedAt;
+                    return (
+                      <Stack key={doc._id} spacing={0.75}>
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <Button
+                            variant="contained"
+                            color="success"
+                            startIcon={<Iconify icon="eva:file-text-outline" width={20} />}
+                            onClick={() => handleDownloadDoc(doc)}
+                            sx={{ textTransform: 'none' }}
+                          >
+                            {doc.tipo_documento === 'declaracao' ? 'Declaração' : 'Recibo'} — {doc.fileName}
+                          </Button>
+                          <Tooltip title="Excluir arquivo">
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => setDocParaExcluir(doc)}
+                              sx={{ border: '1px solid', borderColor: 'divider' }}
+                            >
+                              <Iconify icon="eva:close-fill" width={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                        <Typography variant="caption" color="text.secondary">
+                          Enviado em: {formatData(dataEnvio)}
+                        </Typography>
+                        {isRetificacaoDoc && (
+                          <Chip
+                            size="small"
+                            color="warning"
+                            variant="soft"
+                            label="Retificação (versão mais recente)"
+                            icon={<Iconify icon="eva:refresh-outline" width={14} />}
+                            sx={{ alignSelf: 'flex-start' }}
+                          />
+                        )}
+                      </Stack>
+                    );
+                  });
+                })()}
               </Stack>
             </CardContent>
           </Card>
@@ -1297,12 +1366,16 @@ export default function IrAdminDetalheView({ id }) {
           </CardContent>
         </Card>
 
-        {/* Bloco 6 — Entregar declaração (em_processo) */}
+        {/* Bloco 6 — Entregar declaração / Retificação */}
         {canDeliverDeclaracao && (
           <Card sx={{ border: '2px solid', borderColor: 'warning.main' }}>
             <CardHeader
-              title="Entregar declaração ao cliente"
-              subheader="Anexe a declaração e o recibo (opcional). Ao enviar a declaração, o pedido é finalizado e o cliente recebe notificação via WhatsApp."
+              title={isRetificacao ? 'Retificar e reenviar declaração ao cliente' : 'Entregar declaração ao cliente'}
+              subheader={
+                isRetificacao
+                  ? 'Anexe a nova versão da declaração e, se necessário, um novo recibo. O cliente será notificado novamente via WhatsApp.'
+                  : 'Anexe a declaração e o recibo (opcional). Ao enviar a declaração, o pedido é finalizado e o cliente recebe notificação via WhatsApp.'
+              }
               avatar={
                 <Iconify icon="eva:award-fill" width={28} sx={{ color: 'warning.main' }} />
               }
@@ -1375,7 +1448,7 @@ export default function IrAdminDetalheView({ id }) {
                   disabled={!arquivoDeclaracao || !!fileErrorDeclaracao || !!fileErrorRecibo}
                   onClick={() => setConfirmDeclaracaoOpen(true)}
                 >
-                  Entregar declaração e finalizar pedido
+                  {isRetificacao ? 'Reenviar declaração retificada' : 'Entregar declaração e finalizar pedido'}
                 </LoadingButton>
               </Stack>
             </CardContent>
@@ -1514,12 +1587,23 @@ export default function IrAdminDetalheView({ id }) {
 
       {/* Dialog de confirmação de entrega */}
       <Dialog open={confirmDeclaracaoOpen} onClose={() => setConfirmDeclaracaoOpen(false)}>
-        <DialogTitle>Confirmar entrega da declaração?</DialogTitle>
+        <DialogTitle>
+          {isRetificacao ? 'Confirmar reenvio da declaração retificada?' : 'Confirmar entrega da declaração?'}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Ao confirmar, a declaração será enviada ao cliente e o pedido será marcado como{' '}
-            <strong>Finalizado</strong>. O cliente receberá uma notificação via WhatsApp
-            automaticamente. Esta ação não pode ser desfeita.
+            {isRetificacao ? (
+              <>
+                Ao confirmar, a nova declaração será enviada ao cliente e ele receberá uma nova notificação via
+                WhatsApp. Esta ação será registrada no histórico do pedido.
+              </>
+            ) : (
+              <>
+                Ao confirmar, a declaração será enviada ao cliente e o pedido será marcado como{' '}
+                <strong>Finalizado</strong>. O cliente receberá uma notificação via WhatsApp
+                automaticamente. Esta ação não pode ser desfeita.
+              </>
+            )}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -1609,6 +1693,58 @@ export default function IrAdminDetalheView({ id }) {
           >
             Fechar
           </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Dialog de confirmação para excluir documento */}
+      <Dialog
+        open={!!docParaExcluir}
+        onClose={() => {
+          if (!excluindoDoc) {
+            setDocParaExcluir(null);
+            setNotaExclusaoDoc('');
+          }
+        }}
+      >
+        <DialogTitle>Excluir arquivo?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {docParaExcluir
+              ? `Tem certeza que deseja excluir "${docParaExcluir.fileName}"? Esta ação não pode ser desfeita.`
+              : ''}
+          </DialogContentText>
+          <TextField
+            label="Nota da exclusão (opcional)"
+            placeholder="Ex: Removido duplicado da retificadora"
+            value={notaExclusaoDoc}
+            onChange={(e) => setNotaExclusaoDoc(e.target.value)}
+            fullWidth
+            size="small"
+            multiline
+            rows={2}
+            sx={{ mt: 2 }}
+            disabled={excluindoDoc}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setDocParaExcluir(null);
+              setNotaExclusaoDoc('');
+            }}
+            disabled={excluindoDoc}
+          >
+            Cancelar
+          </Button>
+          <LoadingButton
+            color="error"
+            variant="contained"
+            loading={excluindoDoc}
+            onClick={handleExcluirDoc}
+            startIcon={<Iconify icon="eva:trash-2-outline" />}
+          >
+            Excluir
+          </LoadingButton>
         </DialogActions>
       </Dialog>
     </Container>

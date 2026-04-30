@@ -695,3 +695,16 @@ export async function downloadDocumentoAdmin(id, tipo, filename) {
 
   return res.data;
 }
+
+/**
+ * Remove um documento do pedido IR (admin)
+ * DELETE /api/ir/admin/orders/:id/documents/:documentId
+ * @param {string} id
+ * @param {string} documentId
+ * @param {string} [nota]
+ */
+export async function removerDocumentoIrAdmin(id, documentId, nota) {
+  const payload = nota?.trim() ? { nota: nota.trim() } : undefined;
+  const res = await axios.delete(endpoints.ir.admin.deleteDoc(id, documentId), payload ? { data: payload } : undefined);
+  return res.data;
+}

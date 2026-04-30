@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import { useMemo } from 'react';
 
-import axios, { fetcher, endpoints } from 'src/utils/axios';
+import axios, { fetcher, endpoints, baseUrl } from 'src/utils/axios';
 
 const swrOptions = {
   revalidateIfStale: false,
@@ -128,6 +128,128 @@ export async function portalDeleteOrcamento(id) {
 
 export async function portalDownloadOrcamentoPDF(id) {
   const url = endpoints.portal.orcamentos.pdf(id);
+  const res = await axios.get(url, { responseType: 'blob' });
+  return res;
+}
+
+// Cobranças/Boleto (Portal) — `baseUrl` e fallbacks evitam `undefined` no bundle (Turbopack).
+
+/**
+ * ID do `Payment` no retorno de emissão de boleto (201) ou resposta 200 (documento do pagamento).
+ * @param {*} body  Corpo resolvido `res.data` da API
+ * @returns {string|null}
+ */
+export function extractPaymentIdFromBoletoResponse(body) {
+  if (body == null) return null;
+  const pay = body?.data != null && typeof body.data === 'object' && !Array.isArray(body.data) ? body.data : body;
+  const id = pay?.paymentId ?? pay?._id;
+  if (id == null || id === '') return null;
+  return String(id);
+}
+
+// Cobranças/Boleto (Portal)
+export async function portalEmitirBoletoClienteDoCliente(
+  clienteProprietarioId,
+  clienteDoClienteId,
+  payload
+) {
+  const ep = endpoints?.portal?.cobrancas?.emitirBoletoClienteDoCliente;
+  const url =
+    typeof ep === 'function'
+      ? ep(clienteProprietarioId, clienteDoClienteId)
+      : `${baseUrl}portal/cobrancas/${clienteProprietarioId}/clientes/${clienteDoClienteId}/boleto`;
+  const res = await axios.post(url, payload);
+  return { status: res.status, data: res.data };
+}
+
+/**
+ * Boleto da venda. Body opcional: `{ dueDate? }` (ou `dataVencimento`, conforme API).
+ * Retorno: `{ status, data }` — **201** novo/reemitido, **200** já existe boleto (corpo = Payment).
+ */
+export async function portalEmitirBoletoOrcamento(clienteProprietarioId, orcamentoId, requestBody) {
+  const emitirBoletoOrcamentoEndpoint = endpoints?.portal?.vendas?.emitirBoletoOrcamento;
+  const url =
+    typeof emitirBoletoOrcamentoEndpoint === 'function'
+      ? emitirBoletoOrcamentoEndpoint(clienteProprietarioId, orcamentoId)
+      : `${baseUrl}portal/vendas/${clienteProprietarioId}/${orcamentoId}/boleto`;
+  const res = await axios.post(
+    url,
+    requestBody && Object.keys(requestBody).length ? requestBody : undefined
+  );
+  return { status: res.status, data: res.data };
+}
+
+export async function portalListarBoletosOrcamento(clienteProprietarioId, orcamentoId) {
+  const boletosOrcamentoEndpoint = endpoints?.portal?.vendas?.boletosOrcamento;
+  const url =
+    typeof boletosOrcamentoEndpoint === 'function'
+      ? boletosOrcamentoEndpoint(clienteProprietarioId, orcamentoId)
+      : `${baseUrl}portal/vendas/${clienteProprietarioId}/${orcamentoId}/boletos`;
+  const res = await axios.get(url);
+  return res.data;
+}
+
+export async function portalCancelarBoletoOrcamento(clienteProprietarioId, orcamentoId) {
+  const cancelarBoletoOrcamentoEndpoint = endpoints?.portal?.vendas?.cancelarBoletoOrcamento;
+  const url =
+    typeof cancelarBoletoOrcamentoEndpoint === 'function'
+      ? cancelarBoletoOrcamentoEndpoint(clienteProprietarioId, orcamentoId)
+      : `${baseUrl}portal/vendas/${clienteProprietarioId}/${orcamentoId}/boleto/cancelar`;
+  const res = await axios.post(
+    url
+  );
+  return res.data;
+}
+
+export async function portalAtualizarBoletoOrcamento(clienteProprietarioId, orcamentoId, payload) {
+  const atualizarBoletoOrcamentoEndpoint = endpoints?.portal?.vendas?.atualizarBoletoOrcamento;
+  const url =
+    typeof atualizarBoletoOrcamentoEndpoint === 'function'
+      ? atualizarBoletoOrcamentoEndpoint(clienteProprietarioId, orcamentoId)
+      : `${baseUrl}portal/vendas/${clienteProprietarioId}/${orcamentoId}/boleto`;
+  const res = await axios.patch(
+    url,
+    payload
+  );
+  return res.data;
+}
+
+export async function portalEmitirBoletosRecorrencia(clienteProprietarioId, grupoId) {
+  const ep = endpoints?.portal?.vendas?.emitirBoletosRecorrencia;
+  const url =
+    typeof ep === 'function'
+      ? ep(clienteProprietarioId, grupoId)
+      : `${baseUrl}portal/vendas/${clienteProprietarioId}/recorrencias/${grupoId}/boletos`;
+  const res = await axios.post(url);
+  return { status: res.status, data: res.data };
+}
+
+export async function portalListarCobrancasClienteDoCliente(clienteProprietarioId, clienteDoClienteId) {
+  const ep = endpoints?.portal?.cobrancas?.byClienteDoCliente;
+  const url =
+    typeof ep === 'function'
+      ? ep(clienteProprietarioId, clienteDoClienteId)
+      : `${baseUrl}portal/clientes/${clienteProprietarioId}/${clienteDoClienteId}/cobrancas`;
+  const res = await axios.get(url);
+  return res.data;
+}
+
+export async function portalGetCobranca(clienteProprietarioId, paymentId) {
+  const g = endpoints?.portal?.cobrancas?.get;
+  const url =
+    typeof g === 'function'
+      ? g(clienteProprietarioId, paymentId)
+      : `${baseUrl}portal/cobrancas/${clienteProprietarioId}/${paymentId}`;
+  const res = await axios.get(url);
+  return res.data;
+}
+
+export async function portalBaixarPdfBoleto(clienteProprietarioId, paymentId) {
+  const g = endpoints?.portal?.cobrancas?.pdf;
+  const url =
+    typeof g === 'function'
+      ? g(clienteProprietarioId, paymentId)
+      : `${baseUrl}portal/cobrancas/${clienteProprietarioId}/${paymentId}/pdf`;
   const res = await axios.get(url, { responseType: 'blob' });
   return res;
 }
