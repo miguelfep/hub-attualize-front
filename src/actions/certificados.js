@@ -29,6 +29,29 @@ export async function uploadCertificado(certificate, password, clienteId, observ
 }
 
 /**
+ * Upload de certificado digital no portal (configurações).
+ * API: POST /api/portal/configuracoes/:clienteProprietarioId/certificados-digitais/upload
+ */
+export async function uploadPortalCertificado(
+  clienteProprietarioId,
+  certificate,
+  password,
+  observacoes = ''
+) {
+  const formData = new FormData();
+  formData.append('certificate', certificate);
+  formData.append('password', String(password).trim());
+  if (observacoes && String(observacoes).trim()) {
+    formData.append('observacoes', String(observacoes).trim());
+  }
+
+  return axios.post(
+    `${baseUrl}portal/configuracoes/${clienteProprietarioId}/certificados-digitais/upload`,
+    formData
+  );
+}
+
+/**
  * Listar certificados de um cliente
  * @param {string} clienteId - ID do cliente
  * @returns {Promise} Lista de certificados
@@ -38,12 +61,32 @@ export async function getCertificadosCliente(clienteId) {
 }
 
 /**
+ * Listar certificados do cliente no portal (configurações).
+ * API: GET /api/portal/configuracoes/:clienteProprietarioId/certificados-digitais
+ */
+export async function getPortalCertificadosCliente(clienteProprietarioId) {
+  return axios.get(
+    `${baseUrl}portal/configuracoes/${clienteProprietarioId}/certificados-digitais`
+  );
+}
+
+/**
  * Obter certificado ativo de um cliente
  * @param {string} clienteId - ID do cliente
  * @returns {Promise} Certificado ativo
  */
 export async function getCertificadoAtivo(clienteId) {
   return axios.get(`${baseUrl}certificados/cliente/${clienteId}/ativo`);
+}
+
+/**
+ * Obter certificado ativo no portal (configurações).
+ * API: GET /api/portal/configuracoes/:clienteProprietarioId/certificados-digitais/ativo
+ */
+export async function getPortalCertificadoAtivo(clienteProprietarioId) {
+  return axios.get(
+    `${baseUrl}portal/configuracoes/${clienteProprietarioId}/certificados-digitais/ativo`
+  );
 }
 
 /**

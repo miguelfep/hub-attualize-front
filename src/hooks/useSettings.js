@@ -24,11 +24,31 @@ export function useSettings() {
     isClientePortalFlagAtiva(clienteData?.possuiFuncionario) ||
     isClientePortalFlagAtiva(settingsSafe?.possuiFuncionario);
 
+  const interConfig = settingsSafe?.interConfig ?? {};
+  const interEnvironment = interConfig?.environment || 'homologacao';
+  const interEnvironmentConfig = interConfig?.environments?.[interEnvironment] || {};
+  const interHasCredentials = Boolean(
+    interEnvironmentConfig?.clientId &&
+      interEnvironmentConfig?.clientSecret &&
+      interEnvironmentConfig?.contaCorrente
+  );
+  const interHasCertificates = Boolean(
+    interEnvironmentConfig?.certCrtPath && interEnvironmentConfig?.certKeyPath
+  );
+  const interAmbienteAtivo = Boolean(interEnvironmentConfig?.enabled);
+  const interConfigCompleta = interHasCredentials && interHasCertificates;
+  const interProntoParaBoleto = interAmbienteAtivo && interConfigCompleta;
+
   return {
     podeEmitirNFSe: isFuncionalidadeAtiva('emissaoNFSe'),
     podeGerenciarClientes: isFuncionalidadeAtiva('cadastroClientes'),
     podeGerenciarServicos: isFuncionalidadeAtiva('cadastroServicos'),
     podeCriarOrcamentos: isFuncionalidadeAtiva('vendas'),
+    podeUsarCobrancaInterPortal: isFuncionalidadeAtiva('cobrancaInterPortal'),
+    interAmbiente: interEnvironment,
+    interAmbienteAtivo,
+    interConfigCompleta,
+    interProntoParaBoleto,
     podeUsarAgendamentos: isFuncionalidadeAtiva('agendamentos'),
     possuiFuncionario,
     possuiExtrato: settingsSafe?.possuiExtrato, // Novo campo

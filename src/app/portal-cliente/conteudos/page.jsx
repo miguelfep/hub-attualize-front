@@ -24,6 +24,16 @@ import { Iconify } from 'src/components/iconify';
 
 const CONTENT_ITEMS = [
   {
+    title: 'Aulão Hub do Cliente',
+    description:
+      'Confira o Aulão Hub do Cliente com orientações exclusivas para aproveitar melhor os recursos da Attualize.',
+    href: paths.cliente.conteudos.aulaoHubCliente,
+    icon: 'solar:video-library-bold-duotone',
+    chip: 'Novo',
+    cta: 'Assistir agora',
+    gradient: ['#06b6d4', '#3b82f6'],
+  },
+  {
     title: 'Aulão Reforma',
     description:
       'Assista ao evento exclusivo para clientes Attualize sobre os impactos da Reforma Tributária e envie seu feedback.',
@@ -119,12 +129,12 @@ export default function ConteudosPage() {
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
               <Button
                 component={NextLink}
-                href={paths.cliente.conteudos.guiaIRPF2026}
+                href={paths.cliente.conteudos.aulaoHubCliente}
                 variant="contained"
                 size="large"
                 startIcon={<Iconify icon="solar:compass-bold-duotone" />}
               >
-                Começar pelo Guia IRPF 2026
+                Começar pelo Aulão Hub do Cliente
               </Button>
               <Button
                 component={NextLink}

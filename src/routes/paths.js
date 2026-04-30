@@ -374,10 +374,12 @@ export const paths = {
     conteudos: {
       root: `${ROOTS.CLIENTE}/conteudos`,
       aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
+      aulaoHubCliente: `${ROOTS.CLIENTE}/conteudos/aulao-hub-cliente`,
       guiaIRPF2026: `${ROOTS.CLIENTE}/conteudos/guia-irpf-2026`,
       reformaTributaria: `${ROOTS.CLIENTE}/conteudos/reforma-tributaria`,
     },
     aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,
+    aulaoHubCliente: `${ROOTS.CLIENTE}/conteudos/aulao-hub-cliente`,
     guiasFiscais: {
       root: `${ROOTS.CLIENTE}/guias-e-documentos`,
       list: `${ROOTS.CLIENTE}/guias-e-documentos`,
