@@ -28,6 +28,8 @@ export const paths = {
   about: '/sobre',
   contact: '/fale-conosco',
   faqs: '/faqs',
+  /** Página pública — termos do app móvel Hub Attualize (lojas / WebView). */
+  termosDeUsoApp: '/termos-de-uso-app',
   page403: '/error/403',
   page404: '/error/404',
   page500: '/error/500',

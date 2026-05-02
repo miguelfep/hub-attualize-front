@@ -95,6 +95,12 @@ export async function GET() {
         priority: 0.6,
       },
       {
+        loc: `${SITE_URL}/termos-de-uso-app`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'yearly',
+        priority: 0.4,
+      },
+      {
         loc: `${SITE_URL}/contabilidade-para-psicologos`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
