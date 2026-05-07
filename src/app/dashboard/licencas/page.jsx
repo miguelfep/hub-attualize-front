@@ -527,6 +527,7 @@ export default function LicencasPage() {
             <Autocomplete
               options={clientes}
               getOptionLabel={(option) => formatClienteCodigoRazao(option)}
+              getOptionKey={(option) => String(option._id)}
               value={clienteSelecionado}
               onChange={(event, newValue) => {
                 setClienteSelecionado(newValue);
@@ -540,7 +541,7 @@ export default function LicencasPage() {
                   placeholder="Selecione um cliente"
                 />
               )}
-              isOptionEqualToValue={(option, value) => option._id === value?._id}
+              isOptionEqualToValue={(option, value) => String(option._id) === String(value?._id)}
               noOptionsText="Nenhum cliente encontrado"
             />
           </Grid>
@@ -793,7 +794,14 @@ export default function LicencasPage() {
 
             <Autocomplete
               options={clientes}
-              getOptionLabel={(option) => option.razaoSocial || ''}
+              getOptionLabel={(option) => formatClienteCodigoRazao(option)}
+              getOptionKey={(option) => String(option._id)}
+              isOptionEqualToValue={(option, value) =>
+                String(option._id) === String(value?._id)
+              }
+              value={
+                clientes.find((c) => String(c._id) === String(newLicense.clienteId)) ?? null
+              }
               onChange={handleClientChange}
               renderInput={(params) => (
                 <TextField
@@ -804,6 +812,7 @@ export default function LicencasPage() {
                   helperText={errors.clienteId}
                 />
               )}
+              noOptionsText="Nenhum cliente encontrado"
             />
 
             <TextField
