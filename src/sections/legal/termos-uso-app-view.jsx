@@ -406,9 +406,9 @@ export function TermosUsoAppView() {
                 <>
                   O tratamento de <strong>dados pessoais</strong> (do Usuário, de sócios, de funcionários ou de
                   terceiros inseridos no portal) deve observar a <strong>Lei nº 13.709/2018 (LGPD)</strong> e a{' '}
-                  <strong>Política de Privacidade</strong> divulgada pelo Licenciante em{' '}
-                  <Link component={NextLink} href="/" underline="hover">
-                    attualize.com.br
+                  <strong>Política de Privacidade</strong> do aplicativo em{' '}
+                  <Link component={NextLink} href={paths.politicaPrivacidadeApp} underline="hover">
+                    Política de Privacidade do Hub Attualize
                   </Link>
                   , ou mediante solicitação ao e-mail{' '}
                   <Link href={`mailto:${EMPRESA_EMAIL}`} underline="hover">

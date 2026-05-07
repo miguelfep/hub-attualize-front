@@ -30,6 +30,8 @@ export const paths = {
   faqs: '/faqs',
   /** Página pública — termos do app móvel Hub Attualize (lojas / WebView). */
   termosDeUsoApp: '/termos-de-uso-app',
+  /** Página pública — política de privacidade do app Hub Attualize (Play Store / App Store). */
+  politicaPrivacidadeApp: '/politica-de-privacidade-app',
   page403: '/error/403',
   page404: '/error/404',
   page500: '/error/500',
