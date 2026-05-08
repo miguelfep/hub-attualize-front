@@ -41,7 +41,7 @@ export function DashboardRouterView() {
     return <DashboardComercialView />;
   }
 
-  if (user.role === 'operacional') {
+  if (user.role === 'operacional' || user.role === 'gerencial') {
     return <DashboardOperacional />;
   }
 

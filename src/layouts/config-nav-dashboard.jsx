@@ -55,10 +55,10 @@ export const navData = [
         title: 'Clientes',
         path: paths.dashboard.cliente.root,
         icon: ICONS.user,
-        roles: ['admin', 'operacional', 'comercial', 'financeiro'],
+        roles: ['admin', 'operacional', 'comercial', 'financeiro', 'gerencial'],
         children: [
           { title: 'Clientes', path: paths.dashboard.cliente.root, icon: ICONS.user },
-          { title: 'Serviços dos Clientes', path: paths.dashboard.servicos, icon: ICONS.product, roles: ['admin', 'operacional'] },
+          { title: 'Serviços dos Clientes', path: paths.dashboard.servicos, icon: ICONS.product, roles: ['admin', 'operacional', 'gerencial'] },
           { title: 'Avaliações', path: paths.dashboard.avaliacoes.root, icon: ICONS.analytics, roles: ['admin'] },
         ],
       },
@@ -69,26 +69,26 @@ export const navData = [
         title: 'Comercial',
         path: paths.dashboard.invoice.root,
         icon: ICONS.invoice,
-        roles: ['financeiro', 'admin', 'comercial'],
+        roles: ['financeiro', 'admin', 'comercial', 'operacional', 'gerencial'],
         children: [
           {
             title: 'Leads',
-            roles: ['admin', 'financeiro', 'comercial'],
+            roles: ['admin', 'financeiro', 'comercial', 'operacional', 'gerencial'],
             path: paths.dashboard.comercial.leads,
           },
           {
             title: 'Funil',
-            roles: ['admin', 'financeiro', 'comercial'],
+            roles: ['admin', 'financeiro', 'comercial', 'operacional', 'gerencial'],
             path: paths.dashboard.comercial.funil,
           },
           {
             title: 'Vendas',
-            roles: ['admin', 'financeiro', 'comercial'],
+            roles: ['admin', 'financeiro', 'comercial', 'operacional', 'gerencial'],
             path: paths.dashboard.invoice.root,
           },
           {
             title: 'Itens de Serviço',
-            roles: ['admin', 'financeiro', 'comercial'],
+            roles: ['admin', 'financeiro', 'comercial', 'operacional', 'gerencial'],
             path: paths.dashboard.comercial.itensServico,
           },
         ],
@@ -140,7 +140,7 @@ export const navData = [
         title: 'Fiscal',
         path: paths.dashboard.fiscal.root,
         icon: ICONS.tax,
-        roles: ['admin', 'financeiro', 'operacional'],
+        roles: ['admin', 'financeiro', 'operacional', 'gerencial'],
         children: [
           {
             title: 'Notas Fiscais por Cliente',
@@ -152,17 +152,17 @@ export const navData = [
         title: 'Departamento Pessoal',
         path: paths.dashboard.cliente.departamentoPessoalHub,
         icon: ICONS.job,
-        roles: ['admin', 'operacional', 'financeiro'],
+        roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
         children: [
           {
             title: 'Lista de funcionários',
             path: paths.dashboard.cliente.departamentoPessoalHub,
-            roles: ['admin', 'operacional', 'financeiro'],
+            roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
           },
           {
             title: 'Apontamentos',
             path: paths.dashboard.cliente.departamentoPessoalApontamentos,
-            roles: ['admin', 'operacional', 'financeiro'],
+            roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
           },
         ],
       },
@@ -170,22 +170,22 @@ export const navData = [
         title: 'Documentos',
         path: paths.dashboard.guiasEDocumentos.list,
         icon: ICONS.file,
-        roles: ['admin', 'operacional'],
+        roles: ['admin', 'operacional', 'gerencial'],
         children: [
           {
             title: 'Documentos e Guias',
             path: paths.dashboard.guiasEDocumentos.list,
-            roles: ['admin', 'operacional'],
+            roles: ['admin', 'operacional', 'gerencial'],
           },
           {
             title: 'Gerenciador de Arquivos',
             path: paths.dashboard.guiasFiscais.list,
-            roles: ['admin', 'operacional'],
+            roles: ['admin', 'operacional', 'gerencial'],
           },
           {
             title: 'Express',
             path: paths.dashboard.guiasFiscais.upload,
-            roles: ['admin', 'operacional'],
+            roles: ['admin', 'operacional', 'gerencial'],
           },
         ],
       },
@@ -211,7 +211,7 @@ export const navData = [
         title: 'Contábil',
         path: paths.dashboard.contabil.root,
         icon: ICONS.banking,
-        roles: ['admin', 'financeiro', 'operacional'],
+        roles: ['admin', 'financeiro', 'operacional', 'gerencial'],
         children: [
           {
             title: 'Conciliações Bancárias',
@@ -223,26 +223,26 @@ export const navData = [
         title: 'Societario',
         path: paths.dashboard.aberturas.root,
         icon: ICONS.tour,
-        roles: ['operacional', 'admin', 'comercial'],
+        roles: ['operacional', 'admin', 'comercial', 'gerencial'],
         children: [
           {
             title: 'Abertura',
-            roles: ['admin', 'operacional', 'comercial'],
+            roles: ['admin', 'operacional', 'comercial', 'gerencial'],
             path: paths.dashboard.aberturas.root,
           },
           {
             title: 'Alteração',
-            roles: ['admin', 'operacional', 'comercial'],
+            roles: ['admin', 'operacional', 'comercial', 'gerencial'],
             path: paths.dashboard.alteracao.root,
           },
           {
             title: 'Licenças',
-            roles: ['admin', 'operacional', 'comercial'],
+            roles: ['admin', 'operacional', 'comercial', 'gerencial'],
             path: paths.dashboard.aberturas.licenca,
           },
           {
             title: 'Certificados',
-            roles: ['admin', 'operacional', 'comercial'],
+            roles: ['admin', 'operacional', 'comercial', 'gerencial'],
             path: paths.dashboard.certificados.root,
           },
         ],
@@ -251,13 +251,13 @@ export const navData = [
         title: 'Usuários',
         path: paths.dashboard.usuarios.root,
         icon: ICONS.user,
-        roles: ['admin'],
+        roles: ['admin', 'gerencial'],
         children: [
           {
             title: 'Usuários Clientes',
             path: paths.dashboard.usuarios.root,
             icon: ICONS.user,
-            roles: ['admin'],
+            roles: ['admin', 'gerencial'],
           },
         ],
       },
