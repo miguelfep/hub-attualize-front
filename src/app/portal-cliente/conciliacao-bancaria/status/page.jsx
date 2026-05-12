@@ -199,17 +199,12 @@ export default function StatusConciliacaoPage() {
       return undefined;
     }
 
-    // Buscar todas as conciliações em processamento da lista de meses
-    // Incluir: processando, enviada, e pendente (pois pode estar processando ainda)
+    // Lista reconciliation: só fazemos polling quando o mês está explicitamente "processando".
+    // Evita loop infinito em "pendente" com zero transações (caso legítimo).
     const conciliacoesProcessandoDaLista = Object.values(mesesPorBanco)
       .flat()
-      .filter(m => {
-        if (!m.conciliacaoId) return false;
-        // Incluir se status é processando, enviada, ou pendente (pode estar processando)
-        return m.status === 'processando' || m.status === 'enviada' || 
-               (m.status === 'pendente' && (!m.totalTransacoes || m.totalTransacoes === 0));
-      })
-      .map(m => m.conciliacaoId)
+      .filter((m) => m.conciliacaoId && m.status === 'processando')
+      .map((m) => m.conciliacaoId)
       .filter(Boolean);
 
     // Também incluir processamentos que já estão no estado (para casos de transição)
@@ -241,6 +236,52 @@ export default function StatusConciliacaoPage() {
         conciliacoesProcessando.map(async (conciliacaoId) => {
           try {
             const statusResponse = await obterStatusConciliacao(conciliacaoId);
+
+            if (statusResponse.status === 404) {
+              const mes404 = Object.values(mesesPorBanco)
+                .flat()
+                .find((m) => m.conciliacaoId === conciliacaoId);
+              const proc404 = novosProcessamentos[conciliacaoId];
+              const bancoId404 = mes404?.bancoId || proc404?.bancoId;
+              delete novosProcessamentos[conciliacaoId];
+              atualizou = true;
+              toast.info(
+                'Extrato processado em outro(s) mês(es). Atualizando a lista de períodos deste banco.'
+              );
+              if (bancoId404 && clienteId) {
+                try {
+                  const response = await axios.get(
+                    `${process.env.NEXT_PUBLIC_API_URL}reconciliation/meses-conciliados/${clienteId}?bancoId=${bancoId404}`
+                  );
+                  if (response.data?.success) {
+                    setMesesPorBanco((prev) => ({
+                      ...prev,
+                      [bancoId404]: response.data.data || [],
+                    }));
+                  }
+                } catch (e) {
+                  console.error(e);
+                }
+              } else {
+                bancos.forEach(async (banco) => {
+                  try {
+                    const response = await axios.get(
+                      `${process.env.NEXT_PUBLIC_API_URL}reconciliation/meses-conciliados/${clienteId}?bancoId=${banco._id}`
+                    );
+                    if (response.data?.success) {
+                      setMesesPorBanco((prev) => ({
+                        ...prev,
+                        [banco._id]: response.data.data || [],
+                      }));
+                    }
+                  } catch (err) {
+                    console.error(err);
+                  }
+                });
+              }
+              return;
+            }
+
             const statusData = statusResponse.data?.data;
 
             if (statusData) {
@@ -252,8 +293,8 @@ export default function StatusConciliacaoPage() {
               // Se encontrou na lista ou já está no estado de processamentos
               const processamentoExistente = novosProcessamentos[conciliacaoId];
               
-              // Se está processando, sempre adicionar/atualizar
-              if (statusData.status === 'processando') {
+              // Enquanto o job não termina (fila / worker)
+              if (statusData.status === 'processando' || statusData.status === 'aguardando_extrato') {
                 const bancoId = mesEncontrado?.bancoId || processamentoExistente?.bancoId;
                 const mesAno = mesEncontrado?.mesAno || processamentoExistente?.mesAno || statusData.mesAno;
 
@@ -375,11 +416,9 @@ export default function StatusConciliacaoPage() {
       }
     };
 
-    // Verificar imediatamente
+    // Polling ~2,5 s (faixa recomendada 2–5 s). O efeito reexecuta quando `mesesPorBanco` muda e renova o intervalo.
     verificarProcessamentos();
-
-    // Polling a cada 3 segundos
-    const intervalId = setInterval(verificarProcessamentos, 3000);
+    const intervalId = setInterval(verificarProcessamentos, 2500);
 
     return () => {
       clearInterval(intervalId);

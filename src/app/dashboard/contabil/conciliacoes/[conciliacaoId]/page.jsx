@@ -2,7 +2,7 @@
 
 import { toast } from 'sonner';
 import { NumericFormat } from 'react-number-format';
-import { useMemo, useRef, useState, useEffect } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 
 import Box from '@mui/material/Box';
@@ -14,7 +14,6 @@ import Alert from '@mui/material/Alert';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Autocomplete from '@mui/material/Autocomplete';
 import Select from '@mui/material/Select';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
@@ -29,9 +28,11 @@ import InputLabel from '@mui/material/InputLabel';
 import IconButton from '@mui/material/IconButton';
 import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import TableContainer from '@mui/material/TableContainer';
+import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
@@ -39,7 +40,13 @@ import { paths } from 'src/routes/paths';
 import axios from 'src/utils/axios';
 import { fDate, fDateUTC } from 'src/utils/format-time';
 
-import { obterConciliacao, buscarTransacoesConciliacao, confirmarTransacoesEmLote } from 'src/actions/conciliacao';
+import {
+  obterConciliacao,
+  obterStatusConciliacao,
+  confirmarTransacoesEmLote,
+  buscarTransacoesConciliacao,
+  removerTransacoesConciliacao,
+} from 'src/actions/conciliacao';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -58,6 +65,7 @@ export default function DetalhesConciliacaoPage() {
   const [dialogEditar, setDialogEditar] = useState({ open: false, transacao: null });
   const [salvando, setSalvando] = useState(false);
   const [finalizando, setFinalizando] = useState(false); // ✅ Estado para finalização
+  const [resetandoExtrato, setResetandoExtrato] = useState(false);
   const [resumoTransacoes, setResumoTransacoes] = useState(null); // 🔥 Resumo da nova rota
   const [contasContabeis, setContasContabeis] = useState([]);
   const [loadingContasContabeis, setLoadingContasContabeis] = useState(false);
@@ -69,6 +77,87 @@ export default function DetalhesConciliacaoPage() {
     valor: '',
     contaContabilId: null,
   });
+
+  const [jobStatus, setJobStatus] = useState(null);
+
+  const statusConciliacao = conciliacao?.status;
+
+  // Upload assíncrono (fila): acompanhar GET .../status até pendente, concluida ou erro
+  useEffect(() => {
+    if (!conciliacaoId || !statusConciliacao) return undefined;
+
+    const emFila = (s) => s === 'processando' || s === 'aguardando_extrato';
+    if (!emFila(statusConciliacao)) return undefined;
+
+    let cancelled = false;
+    const tick = async () => {
+      if (cancelled) return;
+      try {
+        const res = await obterStatusConciliacao(conciliacaoId);
+        if (res.status === 404) {
+          if (!cancelled) {
+            toast.info(
+              'Esta conciliação (placeholder) não existe mais — típico em processamento multi-mês. Abrindo a lista geral.'
+            );
+            router.push(paths.dashboard.contabil.conciliacoes.root);
+          }
+          return;
+        }
+        const d = res.data?.data;
+        if (!d || cancelled) return;
+        setJobStatus({
+          status: d.status,
+          progresso: d.progresso ?? 0,
+          erros: d.erros || [],
+        });
+        if (emFila(d.status)) return;
+
+        const [detalhesResponse, transacoesResponse] = await Promise.allSettled([
+          obterConciliacao(conciliacaoId),
+          buscarTransacoesConciliacao(conciliacaoId),
+        ]);
+        if (detalhesResponse.status === 'fulfilled' && detalhesResponse.value.data?.success) {
+          setConciliacao(detalhesResponse.value.data.data);
+        }
+        if (transacoesResponse.status === 'fulfilled' && transacoesResponse.value.data?.success) {
+          const transacoesData = transacoesResponse.value.data.data;
+          const byId = new Map();
+          const mergeLista = (arr, status) => {
+            (arr || []).forEach((t) => {
+              const id = t._id || t.transacaoImportadaId;
+              if (!id) return;
+              byId.set(String(id), { ...t, status });
+            });
+          };
+          mergeLista(transacoesData.confirmadas, 'confirmada');
+          mergeLista(transacoesData.pendentes, 'pendente');
+          const merged =
+            byId.size > 0
+              ? Array.from(byId.values())
+              : (transacoesData.todas || []).map((t) => ({
+                  ...t,
+                  status:
+                    t.status ||
+                    (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
+                }));
+          setTransacoes(merged);
+          setResumoTransacoes(transacoesData.resumo || null);
+        }
+        if (d.status === 'erro') {
+          toast.error(d.erros?.[0] || 'Falha ao processar o extrato');
+        }
+      } catch (e) {
+        console.warn('Polling status conciliação:', e);
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [conciliacaoId, statusConciliacao, router]);
 
   // Buscar detalhes da conciliação
   useEffect(() => {
@@ -87,6 +176,15 @@ export default function DetalhesConciliacaoPage() {
         let conciliacaoData = null;
         let todasTransacoes = [];
         let resumoTransacoesLocal = null;
+
+        const detVal = detalhesResponse.status === 'fulfilled' ? detalhesResponse.value : null;
+        if (detVal?.status === 404 || detVal?.data?.placeholderDescartado) {
+          toast.info(
+            'Conciliação não encontrada (possível placeholder removido no multi-mês). Redirecionando para a lista.'
+          );
+          router.push(paths.dashboard.contabil.conciliacoes.root);
+          return;
+        }
 
         if (detalhesResponse.status === 'fulfilled' && detalhesResponse.value.data?.success) {
           conciliacaoData = detalhesResponse.value.data.data;
@@ -149,7 +247,7 @@ export default function DetalhesConciliacaoPage() {
     };
 
     fetchConciliacao();
-  }, [conciliacaoId]);
+  }, [conciliacaoId, router]);
 
   // Abrir dialog de edição
   const handleAbrirEdicao = async (transacao) => {
@@ -452,7 +550,10 @@ export default function DetalhesConciliacaoPage() {
       handleFecharEdicao();
     } catch (err) {
       console.error('Erro ao salvar edição:', err);
-      toast.error(err.response?.data?.erro?.mensagem || 'Erro ao salvar alterações');
+      const msg =
+        (typeof err === 'object' && err && (err.response?.data?.erro?.mensagem || err.erro?.mensagem || err.message)) ||
+        (typeof err === 'string' ? err : 'Erro ao salvar alterações');
+      toast.error(msg || 'Erro ao salvar alterações');
     } finally {
       setSalvando(false);
     }
@@ -554,6 +655,38 @@ export default function DetalhesConciliacaoPage() {
     }
   };
 
+  const handleResetarTransacoes = async () => {
+    if (conciliacao?.status === 'conciliado' || conciliacao?.status === 'concluida') {
+      toast.error('Não é possível resetar uma conciliação já concluída.');
+      return;
+    }
+    if (
+      !window.confirm(
+        'Remover todas as transações desta conciliação e voltar a permitir novo extrato? (DELETE conciliacao/.../transacoes)'
+      )
+    ) {
+      return;
+    }
+    try {
+      setResetandoExtrato(true);
+      await removerTransacoesConciliacao(conciliacaoId);
+      toast.success('Transações removidas. Recarregando…');
+      await recarregarDadosConciliacao();
+    } catch (err) {
+      const errorMessage =
+        err?.response?.data?.erro?.mensagem ||
+        err?.response?.data?.error ||
+        err?.response?.data?.message ||
+        err?.erro?.mensagem ||
+        err?.error ||
+        err?.message ||
+        'Erro ao resetar transações';
+      toast.error(errorMessage);
+    } finally {
+      setResetandoExtrato(false);
+    }
+  };
+
   // Calcular resumo financeiro
   const resumoFinanceiro = useMemo(() => {
     const totalCreditos = transacoes
@@ -621,6 +754,9 @@ export default function DetalhesConciliacaoPage() {
     [transacoesPendentes]
   );
 
+  const conciliacaoEmProcessamento =
+    conciliacao?.status === 'processando' || conciliacao?.status === 'aguardando_extrato';
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '80vh' }}>
@@ -662,15 +798,28 @@ export default function DetalhesConciliacaoPage() {
             Visualize e edite as transações desta conciliação
           </Typography>
         </div>
-        <Stack direction="row" spacing={2}>
-          {/* ✅ Botão de Finalizar Conciliação */}
+        <Stack direction="row" spacing={2} flexWrap="wrap">
+          {conciliacao?.status !== 'conciliado' && conciliacao?.status !== 'concluida' && (
+            <Button
+              variant="outlined"
+              color="warning"
+              size="large"
+              onClick={handleResetarTransacoes}
+              disabled={conciliacaoEmProcessamento || resetandoExtrato}
+              startIcon={
+                resetandoExtrato ? <CircularProgress size={16} /> : <Iconify icon="eva:refresh-outline" />
+              }
+            >
+              {resetandoExtrato ? 'Resetando…' : 'Resetar extrato'}
+            </Button>
+          )}
           {conciliacao?.status !== 'conciliado' && (
             <Button
               variant="contained"
               color="success"
               size="large"
               onClick={handleFinalizarConciliacao}
-              disabled={resumoTransacoes?.pendentes > 0 || finalizando}
+              disabled={conciliacaoEmProcessamento || resumoTransacoes?.pendentes > 0 || finalizando}
               startIcon={finalizando ? <CircularProgress size={16} /> : <Iconify icon="solar:check-circle-bold-duotone" />}
             >
               {finalizando
@@ -689,6 +838,24 @@ export default function DetalhesConciliacaoPage() {
           </Button>
         </Stack>
       </Stack>
+
+      {(conciliacao.status === 'processando' || conciliacao.status === 'aguardando_extrato') && (
+        <Alert severity="info" sx={{ mb: 3 }}>
+          <Typography variant="body2" sx={{ mb: 1 }}>
+            O extrato está sendo processado no servidor (fila). Progresso:{' '}
+            {jobStatus?.progresso ?? conciliacao?.progresso ?? 0}%
+          </Typography>
+          <LinearProgress
+            variant="determinate"
+            value={Math.min(100, Number(jobStatus?.progresso ?? conciliacao?.progresso ?? 0) || 0)}
+          />
+          {jobStatus?.erros?.length > 0 && (
+            <Typography variant="caption" color="error" sx={{ mt: 1, display: 'block' }}>
+              {jobStatus.erros.join(' · ')}
+            </Typography>
+          )}
+        </Alert>
+      )}
 
       {/* Informações da Conciliação */}
       <Grid container spacing={3} mb={3}>
@@ -728,8 +895,26 @@ export default function DetalhesConciliacaoPage() {
                   Status:
                 </Typography>
                 <Chip
-                  label={conciliacao.status === 'conciliado' ? 'Conciliado' : conciliacao.status === 'pendente' ? 'Pendente' : conciliacao.status}
-                  color={conciliacao.status === 'conciliado' ? 'success' : conciliacao.status === 'pendente' ? 'warning' : 'default'}
+                  label={
+                    conciliacao.status === 'conciliado'
+                      ? 'Conciliado'
+                      : conciliacao.status === 'pendente'
+                        ? 'Pendente'
+                        : conciliacao.status === 'processando'
+                          ? 'Processando'
+                          : conciliacao.status === 'aguardando_extrato'
+                            ? 'Aguardando extrato'
+                            : conciliacao.status
+                  }
+                  color={
+                    conciliacao.status === 'conciliado'
+                      ? 'success'
+                      : conciliacao.status === 'pendente'
+                        ? 'warning'
+                        : conciliacao.status === 'processando' || conciliacao.status === 'aguardando_extrato'
+                          ? 'info'
+                          : 'default'
+                  }
                   size="small"
                 />
               </Stack>
@@ -824,6 +1009,7 @@ export default function DetalhesConciliacaoPage() {
                 size="small"
                 onClick={handleConfirmarTodasComConta}
                 disabled={
+                  conciliacaoEmProcessamento ||
                   transacoesPendentes.length === 0 ||
                   transacoesPendentes.length === transacoesPendentesSemConta.length
                 }
@@ -1028,9 +1214,9 @@ export default function DetalhesConciliacaoPage() {
                 }
                 isOptionEqualToValue={(option, value) => option._id === value._id}
                 noOptionsText="Nenhuma conta analítica ativa encontrada"
-                renderInput={(params) => (
+                renderInput={(renderParams) => (
                   <TextField
-                    {...params}
+                    {...renderParams}
                     label="Conta Contábil"
                     placeholder="Digite para filtrar contas..."
                   />

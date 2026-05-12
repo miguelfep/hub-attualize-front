@@ -1,14 +1,33 @@
 import { toast } from 'sonner';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import axios from 'src/utils/axios';
 
-// 🔥 Cache global para evitar múltiplas chamadas
+// Cache + deduplicação entre várias instâncias do hook (ex.: muitos Select na mesma página)
 const cache = {
   contasAnaliticas: new Map(), // clienteId -> { data, timestamp }
-  estatisticas: new Map(),     // clienteId -> { data, timestamp }
-  TIMEOUT: 5 * 60 * 1000,      // 5 minutos
+  estatisticas: new Map(), // clienteId -> { data, timestamp }
+  TIMEOUT: 5 * 60 * 1000, // 5 minutos
 };
+
+const inFlightAnaliticas = new Map(); // clienteId -> Promise<data[]|undefined>
+const inFlightEstatisticas = new Map(); // clienteId -> Promise<object|null|undefined>
+const generationAnaliticas = new Map(); // clienteId -> number (invalida respostas antigas)
+const generationEstatisticas = new Map();
+
+function invalidateAnaliticas(clienteId) {
+  if (!clienteId) return;
+  generationAnaliticas.set(clienteId, (generationAnaliticas.get(clienteId) || 0) + 1);
+  cache.contasAnaliticas.delete(clienteId);
+  inFlightAnaliticas.delete(clienteId);
+}
+
+function invalidateEstatisticas(clienteId) {
+  if (!clienteId) return;
+  generationEstatisticas.set(clienteId, (generationEstatisticas.get(clienteId) || 0) + 1);
+  cache.estatisticas.delete(clienteId);
+  inFlightEstatisticas.delete(clienteId);
+}
 
 /**
  * Hook para gerenciar Plano de Contas
@@ -20,7 +39,6 @@ export const usePlanoContas = (clienteId) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [estatisticas, setEstatisticas] = useState(null);
-  const carregandoRef = useRef(false); // 🔥 Prevenir múltiplas chamadas simultâneas
 
   const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:9443/api/';
 
@@ -53,55 +71,70 @@ export const usePlanoContas = (clienteId) => {
     }
   }, [clienteId, baseUrl]);
 
-  // Carregar apenas contas analíticas (para selects) com cache
+  // Carregar apenas contas analíticas (para selects) com cache + uma requisição em voo por cliente
   const carregarContasAnaliticas = useCallback(async (forceRefresh = false) => {
     if (!clienteId) {
       setContasAnaliticas([]);
       return;
     }
 
-    // 🔥 Verificar cache
-    const cached = cache.contasAnaliticas.get(clienteId);
     const now = Date.now();
-    
-    if (!forceRefresh && cached && (now - cached.timestamp < cache.TIMEOUT)) {
-      console.log(`✅ Usando cache de contas analíticas para cliente ${clienteId}`);
-      setContasAnaliticas(cached.data);
-      return;
+
+    if (forceRefresh) {
+      invalidateAnaliticas(clienteId);
+    } else {
+      const cached = cache.contasAnaliticas.get(clienteId);
+      if (cached && now - cached.timestamp < cache.TIMEOUT) {
+        setContasAnaliticas(cached.data);
+        return;
+      }
     }
 
-    // 🔥 Prevenir múltiplas chamadas simultâneas
-    if (carregandoRef.current) {
-      console.log(`⏳ Já carregando contas analíticas para cliente ${clienteId}`);
-      return;
+    let p = inFlightAnaliticas.get(clienteId);
+    if (!p) {
+      const genAtStart = generationAnaliticas.get(clienteId) || 0;
+      const url = `${baseUrl}plano-contas/${clienteId}/analiticas`;
+      p = axios
+        .get(url)
+        .then((response) => {
+          const genNow = generationAnaliticas.get(clienteId) || 0;
+          if (genNow !== genAtStart) {
+            return undefined;
+          }
+          const data = response.data.data || [];
+          cache.contasAnaliticas.set(clienteId, {
+            data,
+            timestamp: Date.now(),
+          });
+          return data;
+        })
+        .finally(() => {
+          if (inFlightAnaliticas.get(clienteId) === p) {
+            inFlightAnaliticas.delete(clienteId);
+          }
+        });
+      inFlightAnaliticas.set(clienteId, p);
     }
 
-    carregandoRef.current = true;
     setLoading(true);
     setError(null);
 
     try {
-      const url = `${baseUrl}plano-contas/${clienteId}/analiticas`;
-      console.log(`🔍 Buscando contas analíticas: ${url}`);
-      const response = await axios.get(url);
-      
-      const data = response.data.data || [];
-      
-      // 🔥 Atualizar cache
-      cache.contasAnaliticas.set(clienteId, {
-        data,
-        timestamp: now
-      });
-      
-      setContasAnaliticas(data);
-      console.log(`✅ ${data.length} contas analíticas carregadas e cacheadas`);
+      const data = await p;
+      if (data !== undefined) {
+        setContasAnaliticas(data);
+      } else {
+        const cached = cache.contasAnaliticas.get(clienteId);
+        if (cached) {
+          setContasAnaliticas(cached.data);
+        }
+      }
     } catch (err) {
       console.error('Erro ao carregar contas analíticas:', err);
       setError(err.message);
       toast.error('Erro ao carregar contas analíticas.');
     } finally {
       setLoading(false);
-      carregandoRef.current = false;
     }
   }, [clienteId, baseUrl]);
 
@@ -161,35 +194,58 @@ export const usePlanoContas = (clienteId) => {
     }
   }, [clienteId, baseUrl]);
 
-  // Carregar estatísticas com cache
+  // Carregar estatísticas com cache + uma requisição em voo por cliente
   const carregarEstatisticas = useCallback(async (forceRefresh = false) => {
     if (!clienteId) return;
 
-    // 🔥 Verificar cache
-    const cached = cache.estatisticas.get(clienteId);
     const now = Date.now();
-    
-    if (!forceRefresh && cached && (now - cached.timestamp < cache.TIMEOUT)) {
-      console.log(`✅ Usando cache de estatísticas para cliente ${clienteId}`);
-      setEstatisticas(cached.data);
-      return;
+
+    if (forceRefresh) {
+      invalidateEstatisticas(clienteId);
+    } else {
+      const cached = cache.estatisticas.get(clienteId);
+      if (cached && now - cached.timestamp < cache.TIMEOUT) {
+        setEstatisticas(cached.data);
+        return;
+      }
+    }
+
+    let p = inFlightEstatisticas.get(clienteId);
+    if (!p) {
+      const genAtStart = generationEstatisticas.get(clienteId) || 0;
+      const url = `${baseUrl}plano-contas/${clienteId}/estatisticas`;
+      p = axios
+        .get(url)
+        .then((response) => {
+          const genNow = generationEstatisticas.get(clienteId) || 0;
+          if (genNow !== genAtStart) {
+            return undefined;
+          }
+          const data = response.data.data || null;
+          cache.estatisticas.set(clienteId, {
+            data,
+            timestamp: Date.now(),
+          });
+          return data;
+        })
+        .finally(() => {
+          if (inFlightEstatisticas.get(clienteId) === p) {
+            inFlightEstatisticas.delete(clienteId);
+          }
+        });
+      inFlightEstatisticas.set(clienteId, p);
     }
 
     try {
-      const url = `${baseUrl}plano-contas/${clienteId}/estatisticas`;
-      console.log(`🔍 Buscando estatísticas: ${url}`);
-      const response = await axios.get(url);
-      
-      const data = response.data.data || null;
-      
-      // 🔥 Atualizar cache
-      cache.estatisticas.set(clienteId, {
-        data,
-        timestamp: now
-      });
-      
-      setEstatisticas(data);
-      console.log(`✅ Estatísticas carregadas e cacheadas`);
+      const data = await p;
+      if (data !== undefined) {
+        setEstatisticas(data);
+      } else {
+        const cached = cache.estatisticas.get(clienteId);
+        if (cached) {
+          setEstatisticas(cached.data);
+        }
+      }
     } catch (err) {
       console.error('Erro ao carregar estatísticas:', err);
     }
@@ -262,13 +318,8 @@ export const usePlanoContas = (clienteId) => {
           { duration: 5000 }
         );
         
-        // 🔥 Invalidar cache antes de recarregar
-        if (cache.contasAnaliticas.has(clienteId)) {
-          cache.contasAnaliticas.delete(clienteId);
-        }
-        if (cache.estatisticas.has(clienteId)) {
-          cache.estatisticas.delete(clienteId);
-        }
+        invalidateAnaliticas(clienteId);
+        invalidateEstatisticas(clienteId);
         
         // Recarregar contas e estatísticas (forçar refresh)
         await carregarContas();
@@ -359,14 +410,13 @@ export const usePlanoContas = (clienteId) => {
     }
   }, [clienteId, baseUrl, carregarContas]);
 
-  // Carregar dados inicialmente (apenas uma vez por clienteId)
   useEffect(() => {
-    if (clienteId && !carregandoRef.current) {
+    if (clienteId) {
       carregarContasAnaliticas();
       carregarEstatisticas();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [clienteId]); // 🔥 Removido dependências para evitar múltiplas chamadas
+  }, [clienteId]);
 
   return {
     contas,

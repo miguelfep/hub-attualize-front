@@ -9,7 +9,35 @@ const axiosInstance = axios.create({ baseURL: CONFIG.site.serverUrl });
 
 axiosInstance.interceptors.response.use(
   (response) => response,
-  (error) => Promise.reject((error.response && error.response.data) || 'Something went wrong!')
+  (error) => {
+    const { response } = error;
+    const data = response?.data;
+
+    if (data !== undefined && data !== null) {
+      if (typeof data === 'string') {
+        return Promise.reject(data || error.message || 'Something went wrong!');
+      }
+      if (typeof data === 'object' && !Array.isArray(data)) {
+        const hasReadableMessage =
+          (typeof data.message === 'string' && data.message.trim()) ||
+          (typeof data.error === 'string' && data.error.trim()) ||
+          (data.error &&
+            typeof data.error === 'object' &&
+            typeof data.error.message === 'string' &&
+            data.error.message.trim());
+
+        if (!hasReadableMessage && response?.status) {
+          return Promise.reject({
+            ...data,
+            message: `Erro HTTP ${response.status}${response.statusText ? ` (${response.statusText})` : ''}`,
+          });
+        }
+      }
+      return Promise.reject(data);
+    }
+
+    return Promise.reject(error.message || 'Something went wrong!');
+  }
 );
 
 export default axiosInstance;

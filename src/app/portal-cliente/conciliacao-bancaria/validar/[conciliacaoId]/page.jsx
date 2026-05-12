@@ -32,6 +32,7 @@ import {
   confirmarTransacoesEmLote,
   mapearContextoConciliacao,
   buscarTransacoesConciliacao,
+  removerTransacoesConciliacao,
 } from 'src/actions/conciliacao';
 
 import { Iconify } from 'src/components/iconify';
@@ -102,7 +103,9 @@ export default function ValidacaoConciliacaoPage() {
   const [resumoInicialFixo, setResumoInicialFixo] = useState(null); // 🔥 Resumo fixo do OFX
   const [bancoInfo, setBancoInfo] = useState(null); // ✅ Informações do banco (saldo, etc)
   const pollTimeoutRef = useRef(null);
-  
+  /** Multi-mês / placeholder: último bancoId visto no GET status (para redirect se status → 404). */
+  const bancoIdStatusRef = useRef(null);
+
   // 🔥 NOVO: Estados para processamento assíncrono
   const [statusProcessamento, setStatusProcessamento] = useState(null); // 'processando' | 'pendente' | 'concluida' | 'erro' | null
   const [progressoProcessamento, setProgressoProcessamento] = useState(0);
@@ -116,7 +119,8 @@ export default function ValidacaoConciliacaoPage() {
   const [abaAtiva, setAbaAtiva] = useState(0); // 0 = Pendentes, 1 = Conciliadas
   const [alterandoContaId, setAlterandoContaId] = useState(null);
   const [buscaPendentes, setBuscaPendentes] = useState('');
-  
+  const [resetandoExtrato, setResetandoExtrato] = useState(false);
+
   // 🔥 NOVO: Rastrear contas selecionadas para cada transação
   const [contasSelecionadas, setContasSelecionadas] = useState({}); // { transacaoId: contaContabilId }
 
@@ -177,9 +181,17 @@ export default function ValidacaoConciliacaoPage() {
     fetchEmpresaData();
   }, [user?.userId]);
 
+  const extrairIdBanco = useCallback((v) => {
+    if (!v) return null;
+    if (typeof v === 'string') return v;
+    return v._id || v.id || null;
+  }, []);
+
   const aplicarPayloadStatus = useCallback(
     (statusData) => {
       if (!statusData) return;
+      const bid = extrairIdBanco(statusData.bancoId);
+      if (bid) bancoIdStatusRef.current = bid;
       setStatusProcessamento(statusData.status);
       setProgressoProcessamento(statusData.progresso || 0);
       setProcessando(statusData.status === 'processando');
@@ -192,7 +204,7 @@ export default function ValidacaoConciliacaoPage() {
       }
       setConciliacao(mapearContextoConciliacao(statusData, conciliacaoId));
     },
-    [conciliacaoId]
+    [conciliacaoId, extrairIdBanco]
   );
 
   const atualizarResumoLocalPendentes = useCallback((transacoesPendentes) => {
@@ -243,6 +255,22 @@ export default function ValidacaoConciliacaoPage() {
       if (cancelled) return;
       try {
         const statusResponse = await obterStatusConciliacao(conciliacaoId);
+
+        if (statusResponse.status === 404) {
+          limparPoll();
+          const bancoId404 = bancoIdStatusRef.current || null;
+          if (!cancelled) {
+            setLoading(false);
+            setProcessando(false);
+            toast.info(
+              'Este período foi ajustado pelo processamento multi-mês (placeholder removido ou conciliações criadas noutros meses). Confira os meses na página de status.'
+            );
+            const q = bancoId404 ? `?banco=${encodeURIComponent(bancoId404)}` : '';
+            router.push(`${paths.cliente.conciliacaoBancaria}/status${q}`);
+          }
+          return;
+        }
+
         const statusData = statusResponse.data?.data;
         if (cancelled || !statusData) return;
 
@@ -283,7 +311,7 @@ export default function ValidacaoConciliacaoPage() {
       cancelled = true;
       limparPoll();
     };
-  }, [conciliacaoId, aplicarPayloadStatus, carregarPendentesOrdenados]);
+  }, [conciliacaoId, aplicarPayloadStatus, carregarPendentesOrdenados, extrairIdBanco, router]);
 
    
   const clienteId = empresaData?._id || empresaData?.id;
@@ -297,6 +325,7 @@ export default function ValidacaoConciliacaoPage() {
     if (!conciliacaoId) return;
     try {
       const r = await obterStatusConciliacao(conciliacaoId);
+      if (r.status === 404) return;
       const d = r.data?.data;
       if (d) aplicarPayloadStatus(d);
     } catch {
@@ -339,7 +368,10 @@ export default function ValidacaoConciliacaoPage() {
           { params: { clienteId } }
         );
         const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bancoIdAtual);
-        if (bancoEncontrado) setBancoInfo(bancoEncontrado);
+        if (bancoEncontrado) {
+          setBancoInfo(bancoEncontrado);
+          bancoIdStatusRef.current = bancoEncontrado._id;
+        }
       } catch {
         // mantém fallback do status
       }
@@ -470,6 +502,36 @@ export default function ValidacaoConciliacaoPage() {
       const errorMessage = err?.response?.data?.error || err.message || 'Erro ao finalizar conciliação';
       toast.error(errorMessage);
       console.error(err);
+    }
+  };
+
+  const handleResetarExtrato = async () => {
+    if (!conciliacaoId) return;
+    if (conciliacao?.status === 'concluida' || statusProcessamento === 'concluida') {
+      toast.error('Não é possível resetar uma conciliação já finalizada.');
+      return;
+    }
+    if (
+      !window.confirm(
+        'Remover todas as transações deste extrato e permitir novo envio? A conciliação volta ao estado de aguardar extrato (conforme API).'
+      )
+    ) {
+      return;
+    }
+    try {
+      setResetandoExtrato(true);
+      await removerTransacoesConciliacao(conciliacaoId);
+      toast.success('Transações removidas. Envie um novo extrato quando quiser.');
+      const bid = bancoIdStatusRef.current;
+      const q = bid ? `?banco=${encodeURIComponent(bid)}` : '';
+      router.push(`${paths.cliente.conciliacaoBancaria}/status${q}`);
+    } catch (err) {
+      const msg =
+        (typeof err === 'object' && err && (err.message || err.error || err?.erro?.mensagem)) ||
+        'Erro ao resetar extrato';
+      toast.error(typeof msg === 'string' ? msg : 'Erro ao resetar extrato');
+    } finally {
+      setResetandoExtrato(false);
     }
   };
 
@@ -1535,7 +1597,7 @@ export default function ValidacaoConciliacaoPage() {
       </Card>
 
       {/* Botões de Ação */}
-      <Stack direction="row" spacing={2} justifyContent="space-between">
+      <Stack direction="row" spacing={2} justifyContent="space-between" flexWrap="wrap">
         <Button
           variant="outlined"
           onClick={() => router.push(`${paths.cliente.conciliacaoBancaria}/status`)}
@@ -1543,21 +1605,36 @@ export default function ValidacaoConciliacaoPage() {
           ← Voltar
         </Button>
 
-        {/* ✅ Ocultar botão se status for "concluida" */}
-        {(conciliacao?.status !== 'concluida' && statusProcessamento !== 'concluida') && (
-          <Button
-            variant="contained"
-            size="large"
-            color="success"
-            onClick={handleFinalizarConciliacao}
-            disabled={transacoesPendentes.length > 0}
-            startIcon={<Iconify icon="solar:check-circle-bold-duotone" />}
-          >
-            {transacoesPendentes.length === 0
-              ? '✅ Finalizar Conciliação'
-              : `⚠️ ${transacoesPendentes.length} Transações Pendentes`}
-          </Button>
-        )}
+        <Stack direction="row" spacing={1.5} flexWrap="wrap">
+          {(conciliacao?.status !== 'concluida' && statusProcessamento !== 'concluida') && (
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={handleResetarExtrato}
+              disabled={resetandoExtrato || processando}
+              startIcon={
+                resetandoExtrato ? <CircularProgress size={18} color="inherit" /> : <Iconify icon="eva:refresh-outline" />
+              }
+            >
+              Resetar extrato
+            </Button>
+          )}
+
+          {(conciliacao?.status !== 'concluida' && statusProcessamento !== 'concluida') && (
+            <Button
+              variant="contained"
+              size="large"
+              color="success"
+              onClick={handleFinalizarConciliacao}
+              disabled={transacoesPendentes.length > 0}
+              startIcon={<Iconify icon="solar:check-circle-bold-duotone" />}
+            >
+              {transacoesPendentes.length === 0
+                ? '✅ Finalizar Conciliação'
+                : `⚠️ ${transacoesPendentes.length} Transações Pendentes`}
+            </Button>
+          )}
+        </Stack>
       </Stack>
 
       {/* 🔥 NOVO: Botão fixo na parte inferior para confirmar todas selecionadas */}
