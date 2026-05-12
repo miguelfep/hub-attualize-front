@@ -131,6 +131,10 @@ export const paths = {
     },
     contabil: {
       root: `${ROOTS.DASHBOARD}/contabil/conciliacoes`,
+      /** Cadastro/edição/desativação de contas bancárias por cliente (admin). */
+      bancos: `${ROOTS.DASHBOARD}/contabil/bancos`,
+      /** Cadastro de bancos (instituições) usados no autocomplete de contas. */
+      instituicoesBancarias: `${ROOTS.DASHBOARD}/contabil/instituicoes-bancarias`,
       conciliacoes: {
         root: `${ROOTS.DASHBOARD}/contabil/conciliacoes`,
         details: (id) => `${ROOTS.DASHBOARD}/contabil/conciliacoes/${id}`,

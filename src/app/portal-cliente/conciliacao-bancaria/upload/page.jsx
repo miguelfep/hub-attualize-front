@@ -29,6 +29,8 @@ import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
 
+import { verificarMesesFaltantesConciliacao } from 'src/actions/conciliacao';
+
 import { Iconify } from 'src/components/iconify';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -215,9 +217,7 @@ export default function UploadExtratoPage() {
     if (!bancoIdParam || !mesAnoParam) return null;
 
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}conciliacao/verificar-meses-faltantes/${bancoIdParam}?mesAno=${mesAnoParam}`
-      );
+      const response = await verificarMesesFaltantesConciliacao(bancoIdParam, mesAnoParam);
       return response.data?.data || null;
     } catch (error) {
       console.error('Erro ao verificar meses faltantes:', error);
