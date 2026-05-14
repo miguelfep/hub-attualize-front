@@ -3,11 +3,14 @@
 import { toast } from 'sonner';
 import { useState, useEffect } from 'react';
 
-import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import InputAdornment from '@mui/material/InputAdornment';
+import {
+  Grid,
+  Stack,
+  Button,
+  TextField,
+  Typography,
+  InputAdornment,
+} from '@mui/material';
 
 import {
   getUsersInternos,
@@ -132,100 +135,115 @@ export default function DashboardUsuariosInternosView() {
 
   return (
     <SimplePaper>
-      <Stack spacing={4}>
-        {/* Header */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center">
-          <Stack spacing={2}>
-            <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
-              Gerenciamento de Usuários Internos
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Gerencie os usuários internos com acesso ao portal administrativo do sistema
-            </Typography>
-          </Stack>
+      <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2 } }}>
+        {/* Cabeçalho */}
+        <Grid item xs={12}>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'stretch', sm: 'flex-start' }}
+            spacing={2}
+          >
+            <Stack spacing={1}>
+              <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                Gerenciamento de Usuários Internos
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Gerencie os usuários internos com acesso ao portal administrativo do sistema
+              </Typography>
+            </Stack>
 
-          <Stack direction="row" spacing={2}>
             <Button
               variant="contained"
               startIcon={<Iconify icon="eva:person-add-fill" />}
               onClick={handleCreateUsuario}
               sx={{
+                alignSelf: { xs: 'stretch', sm: 'center' },
                 borderRadius: 2,
                 px: 3,
                 py: 1.5,
                 fontWeight: 'bold',
+                flexShrink: 0,
               }}
             >
               Novo Usuário Interno
             </Button>
           </Stack>
-        </Stack>
+        </Grid>
 
         {/* Estatísticas */}
-        <UsuariosInternosStats usuarios={filteredUsuarios} />
+        <Grid item xs={12}>
+          <UsuariosInternosStats usuarios={filteredUsuarios} />
+        </Grid>
 
-        {/* Campo de Pesquisa */}
-        <Stack spacing={2}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <TextField
-              fullWidth
-              placeholder="Pesquisar por nome, email, perfil ou empresa..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Iconify icon="eva:search-fill" />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                },
-              }}
-            />
-            {searchTerm && (
-              <Button
-                variant="outlined"
-                onClick={() => setSearchTerm('')}
-                startIcon={<Iconify icon="eva:close-fill" />}
-                sx={{ borderRadius: 2, px: 2 }}
-              >
-                Limpar
-              </Button>
-            )}
-          </Stack>
+        {/* Pesquisa */}
+        <Grid item xs={12}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid item xs={12} sm={searchTerm ? 9 : 12} md={searchTerm ? 10 : 12}>
+              <TextField
+                fullWidth
+                placeholder="Pesquisar por nome, email, perfil ou empresa..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Iconify icon="eva:search-fill" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  },
+                }}
+              />
+            </Grid>
+            {searchTerm ? (
+              <Grid item xs={12} sm={3} md={2}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => setSearchTerm('')}
+                  startIcon={<Iconify icon="eva:close-fill" />}
+                  sx={{ borderRadius: 2, px: 2 }}
+                >
+                  Limpar
+                </Button>
+              </Grid>
+            ) : null}
+          </Grid>
 
-          {searchTerm && (
-            <Stack direction="row" alignItems="center" spacing={1}>
+          {searchTerm ? (
+            <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 2 }}>
               <Iconify icon="eva:info-fill" width={16} color="primary.main" />
               <Typography variant="body2" color="text.secondary">
                 {filteredUsuarios.length === 0
                   ? 'Nenhum usuário encontrado'
                   : `${filteredUsuarios.length} usuário${filteredUsuarios.length !== 1 ? 's' : ''} encontrado${filteredUsuarios.length !== 1 ? 's' : ''}`}
-                {searchTerm && ` para "${searchTerm}"`}
+                {` para "${searchTerm}"`}
               </Typography>
             </Stack>
-          )}
-        </Stack>
+          ) : null}
+        </Grid>
 
-        {/* Tabela de Usuários */}
-        <UsuariosInternosTable
-          usuarios={filteredUsuarios}
-          loading={loading}
-          onEdit={handleEditUsuario}
-          onDelete={handleDeleteUsuario}
-        />
+        {/* Tabela */}
+        <Grid item xs={12}>
+          <UsuariosInternosTable
+            usuarios={filteredUsuarios}
+            loading={loading}
+            onEdit={handleEditUsuario}
+            onDelete={handleDeleteUsuario}
+          />
+        </Grid>
+      </Grid>
 
-        {/* Modal de Usuário */}
-        <UsuarioInternoModal
-          open={modalOpen}
-          onClose={handleModalClose}
-          onSave={handleModalSave}
-          usuario={usuarioEditando}
-        />
-      </Stack>
+      <UsuarioInternoModal
+        open={modalOpen}
+        onClose={handleModalClose}
+        onSave={handleModalSave}
+        usuario={usuarioEditando}
+      />
     </SimplePaper>
   );
 }

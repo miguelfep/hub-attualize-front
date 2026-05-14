@@ -46,7 +46,7 @@ const usuarioInternoSchema = zod
         message: 'Senha deve ter pelo menos 6 caracteres',
       }),
     confirmPassword: zod.string().optional(),
-    role: zod.array(zod.string()).min(1, 'Selecione pelo menos um perfil'),
+    role: zod.string().min(1, 'Selecione um perfil'),
     status: zod.string().min(1, 'Status é obrigatório'),
     empresasId: zod.array(zod.string()).optional(),
     empresaAtiva: zod.string().optional(),
@@ -76,7 +76,7 @@ const defaultValues = {
   email: '',
   password: '',
   confirmPassword: '',
-  role: ['operacional'],
+  role: 'operacional',
   status: 'ativo',
   empresasId: [],
   empresaAtiva: '',
@@ -140,7 +140,9 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
           email: usuario.email || '',
           password: '',
           confirmPassword: '',
-          role: Array.isArray(usuario.role) ? usuario.role : [usuario.role].filter(Boolean),
+          role: Array.isArray(usuario.role)
+            ? usuario.role[0] || 'operacional'
+            : usuario.role || 'operacional',
           status: usuario.status === true ? 'ativo' : 'inativo',
           empresasId: empresasIdArray,
           empresaAtiva: empresaAtivaId,
@@ -182,7 +184,7 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
       const dataToSave = {
         name: data.name,
         email: data.email,
-        role: data.role,
+        role: [data.role],
         status: data.status === 'ativo',
         empresasId: data.empresasId || [],
         empresaAtiva: data.empresaAtiva || undefined,

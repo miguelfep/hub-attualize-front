@@ -48,7 +48,7 @@ export function UsuariosInternosStats({ usuarios = [] }) {
   ];
 
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2 } }}>
       {statItems.map((item) => (
         <Grid key={item.title} xs={12} sm={6} md={3}>
           <Card sx={{ p: 3 }}>
