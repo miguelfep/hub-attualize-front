@@ -23,30 +23,36 @@ export function useUploadExtrato() {
   const [conciliacaoId, setConciliacaoId] = useState(null);
 
   /**
-   * 🔥 NOVO: Função de polling do status do processamento
+   * Polling GET .../status até pendente, concluida ou erro (recomendado: 2–5 s com backoff máx. ~60 s).
+   * Mantido para reuso (ex.: fluxos que queiram aguardar antes de navegar).
    */
   const aguardarProcessamento = async (id, maxTentativas = 120) => {
-    const intervalo = 1000; // 1 segundo
-    
-    const tentarVerificarStatus = async (tentativa) => {
+    let delayMs = 2500;
+    const delayMax = 60000;
+
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    const tentarVerificarStatus = async () => {
       try {
         const statusResponse = await obterStatusConciliacao(id);
+        if (statusResponse.status === 404) {
+          throw new Error(
+            'Este ID de conciliação não existe mais (upload multi-mês: placeholder removido). Abra a página de status do banco para ver os meses atualizados.'
+          );
+        }
         const statusData = statusResponse.data?.data;
-        
+
         if (!statusData) {
           throw new Error('Resposta inválida do servidor');
         }
-        
-        // Atualizar estados de progresso
+
         setProcessandoStatus(statusData.status);
         setProgressoProcessamento(statusData.progresso || 0);
-        
-        // Se processamento concluído (pendente ou concluida), buscar transações
+
         if (statusData.status === 'pendente' || statusData.status === 'concluida') {
-          // Buscar transações
           const transacoesResponse = await buscarTransacoesConciliacao(id);
           const transacoesData = transacoesResponse.data?.data;
-          
+
           return {
             conciliacaoId: id,
             status: statusData.status,
@@ -56,45 +62,38 @@ export function useUploadExtrato() {
             ...statusData,
           };
         }
-        
-        // Se erro no processamento
+
         if (statusData.status === 'erro') {
-          const erroMsg = statusData.erros?.[0] || 'Erro ao processar arquivo';
-          throw new Error(erroMsg);
+          const erroMsg = (statusData.erros && statusData.erros.join?.('; ')) || statusData.erros?.[0] || 'Erro ao processar arquivo';
+          throw new Error(typeof erroMsg === 'string' ? erroMsg : 'Erro ao processar arquivo');
         }
-        
-        return null; // Continuar tentando
+
+        // processando, aguardando_extrato, etc. — continuar
+        return null;
       } catch (err) {
-        // Se for erro de status do processamento (status = "erro"), propagar imediatamente
-        if (err.message && !err.message.toLowerCase().includes('network') && !err.message.toLowerCase().includes('timeout') && !err.message.toLowerCase().includes('resposta inválida')) {
-          throw err;
-        }
-        // Erro de rede ou resposta inválida: continuar tentando até timeout
-        // Mas atualizar progresso para indicar que houve problema
-        console.warn('Erro durante polling, tentando novamente...', err.message);
-        return null; // Continuar tentando
+        const msg = err?.message || '';
+        const isRede =
+          msg.toLowerCase().includes('network') ||
+          msg.toLowerCase().includes('timeout') ||
+          msg.toLowerCase().includes('resposta inválida');
+        if (!isRede) throw err;
+        console.warn('Erro durante polling, tentando novamente...', msg);
+        return null;
       }
     };
-    
-    // Usar recursão ao invés de loop com await
-    const executarTentativas = async (tentativaAtual) => {
-      if (tentativaAtual >= maxTentativas) {
+
+    const executar = async (tentativa) => {
+      if (tentativa >= maxTentativas) {
         throw new Error('Timeout ao processar arquivo. O processamento pode estar demorando mais que o esperado.');
       }
-      
-      const statusResultado = await tentarVerificarStatus(tentativaAtual);
-      
-      if (statusResultado) {
-        return statusResultado;
-      }
-      
-      // Aguardar antes da próxima tentativa
-      await new Promise(resolve => setTimeout(resolve, intervalo));
-      
-      return executarTentativas(tentativaAtual + 1);
+      const statusResultado = await tentarVerificarStatus();
+      if (statusResultado) return statusResultado;
+      await sleep(delayMs);
+      delayMs = Math.min(Math.floor(delayMs * 1.2), delayMax);
+      return executar(tentativa + 1);
     };
-    
-    return executarTentativas(0);
+
+    return executar(0);
   };
 
   const upload = async (clienteId, bancoId, mesAno, arquivo) => {
@@ -125,30 +124,37 @@ export function useUploadExtrato() {
         }
       );
 
-      // ✅ NOVO: API sempre retorna imediatamente com status "processando"
-      // Não retorna transações na resposta - processamento acontece em background
-      if (response.data?.success) {
+      // HTTP 202 + fila assíncrona (documentação API conciliação)
+      const httpStatus = response.status;
+      const uploadPayloadOk = response.data?.success && (httpStatus === 202 || httpStatus === 200);
+
+      if (uploadPayloadOk) {
         const uploadData = response.data?.data;
         const id = uploadData?.conciliacaoId;
         const status = uploadData?.status;
-        
-        // ✅ Verificar se é processamento assíncrono (status = "processando")
-        if (status === 'processando') {
+
+        const fluxoAssincrono =
+          httpStatus === 202 ||
+          status === 'processando' ||
+          status === 'aguardando_extrato';
+
+        if (fluxoAssincrono) {
           if (!id) {
             throw new Error('ID de conciliação não retornado pelo servidor');
           }
-          
-          // ✅ Processamento assíncrono: retornar apenas conciliacaoId e status
-          // O processamento continuará em background
-          // A página de status fará o polling para verificar quando finalizar
+
           setConciliacaoId(id);
-          setProcessandoStatus('processando');
-          
+          setProcessandoStatus(status || 'processando');
+          setLoading(false);
+
           return {
             conciliacaoId: id,
-            status: 'processando',
+            status: status || 'processando',
             processamentoAssincrono: true,
-            mensagem: uploadData?.mensagem || 'Arquivo recebido e será processado em breve. Use o endpoint de status para verificar o progresso.',
+            mensagem:
+              uploadData?.mensagem ||
+              response.data?.message ||
+              'Arquivo recebido e será processado em breve. Acompanhe o status na tela de conciliação.',
           };
         }
         
@@ -274,6 +280,13 @@ export function useUploadExtrato() {
         // Erro de OFX inválido
         errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Arquivo OFX inválido ou corrompido');
         console.log('✅ Detectado OFX_INVALIDO');
+      } else if (errorObj?.tipo === 'FECHADO_SEM_MOVIMENTO' || errorObj?.code === 'FECHADO_SEM_MOVIMENTO') {
+        errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Período fechado sem movimento. Solicite liberação ao suporte.');
+        console.log('✅ Detectado FECHADO_SEM_MOVIMENTO');
+      } else if (errorObj?.tipo === 'BANCO_SEM_PARSER_PDF' || errorObj?.code === 'BANCO_SEM_PARSER_PDF') {
+        errorMessage =
+          errors.length > 0 ? errors[0] : (errorObj.solucao || errorObj.mensagem || 'Tente enviar o extrato em OFX.');
+        console.log('✅ Detectado BANCO_SEM_PARSER_PDF');
       } else if (errorObj?.code === 'LIMIT_FILE_SIZE') {
         // Erro de arquivo muito grande (nova estrutura)
         errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Arquivo muito grande');

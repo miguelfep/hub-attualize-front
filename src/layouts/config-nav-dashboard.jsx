@@ -217,6 +217,14 @@ export const navData = [
             title: 'Conciliações Bancárias',
             path: paths.dashboard.contabil.root,
           },
+          {
+            title: 'Bancos (Clientes)',
+            path: paths.dashboard.contabil.bancos,
+          },
+          {
+            title: 'Instituições Bancárias',
+            path: paths.dashboard.contabil.instituicoesBancarias,
+          },
         ],
       },
       {
@@ -258,6 +266,12 @@ export const navData = [
             path: paths.dashboard.usuarios.root,
             icon: ICONS.user,
             roles: ['admin', 'gerencial'],
+          },
+          {
+            title: 'Usuários Internos',
+            path: paths.dashboard.usuarios.internos,
+            icon: ICONS.user,
+            roles: ['admin'],
           },
         ],
       },

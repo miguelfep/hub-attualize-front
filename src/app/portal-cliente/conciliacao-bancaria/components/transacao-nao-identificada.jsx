@@ -106,8 +106,8 @@ export default function TransacaoNaoIdentificada({
       sx={{
         p: 1,
         mb: 0.75,
-        borderLeft: 3,
-        borderColor: 'error.main',
+        borderLeft: '3px solid',
+        borderLeftColor: contaContabilId ? 'success.main' : 'error.main',
         bgcolor: 'background.paper',
         '&:hover': {
           boxShadow: 1,
@@ -123,8 +123,17 @@ export default function TransacaoNaoIdentificada({
           sx={{ width: '100%' }}
         >
           <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 140 }}>
-            <Iconify icon="eva:question-mark-circle-fill" color="error.main" width={20} />
-            <Chip label="Não Identificada" color="error" size="small" sx={{ height: 24 }} />
+            <Iconify
+              icon={contaContabilId ? 'eva:checkmark-circle-2-fill' : 'eva:question-mark-circle-fill'}
+              color={contaContabilId ? 'success.main' : 'error.main'}
+              width={20}
+            />
+            <Chip
+              label={contaContabilId ? 'Conta selecionada' : 'Não Identificada'}
+              color={contaContabilId ? 'success' : 'error'}
+              size="small"
+              sx={{ height: 24 }}
+            />
           </Stack>
 
           <Typography

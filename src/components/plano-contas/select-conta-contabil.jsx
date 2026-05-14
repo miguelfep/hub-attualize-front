@@ -39,7 +39,7 @@ export default function SelectContaContabil({
   required = false,
   size = 'medium',
 }) {
-  const { contas, contasAnaliticas, loading, buscarContas, carregarContas } = usePlanoContas(clienteId);
+  const { contasAnaliticas, loading, buscarContas } = usePlanoContas(clienteId);
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
@@ -47,32 +47,15 @@ export default function SelectContaContabil({
   const [selectedConta, setSelectedConta] = useState(null);
   const [contasAnaliticasConciliacao, setContasAnaliticasConciliacao] = useState([]);
 
-  // 🔥 Carregar contas ANALÍTICAS para conciliação bancária
-  // Saídas (débito) → Grupo 3 (Despesas)
-  // Recebidos (crédito) → Grupo 4 (Receitas)
-  // ✅ NOVO: Para bancos (filterGroup11) → Grupo 1.1 (Disponibilidades)
+  // Conciliação: reutiliza GET /analiticas (já carregado pelo hook) — evita N× GET ?tipo=A&apenasAtivas=true
   useEffect(() => {
-    const carregarContasAnaliticasConciliacao = async () => {
-      if (!clienteId || (!transacaoTipo && !filterGroup11)) {
-        setContasAnaliticasConciliacao([]);
-        return;
-      }
+    if (!transacaoTipo && !filterGroup11) {
+      setContasAnaliticasConciliacao([]);
+      return;
+    }
 
-      try {
-        // Buscar contas analíticas (tipo 'A')
-        await carregarContas({ tipo: 'A', apenasAtivas: true });
-      } catch (err) {
-        console.error('Erro ao carregar contas analíticas:', err);
-        setContasAnaliticasConciliacao([]);
-      }
-    };
-
-    carregarContasAnaliticasConciliacao();
-  }, [clienteId, transacaoTipo, filterGroup11, carregarContas]);
-
-  // Filtrar contas analíticas por grupo quando as contas carregarem
-  useEffect(() => {
-    if ((!transacaoTipo && !filterGroup11) || !contas || contas.length === 0) {
+    if (!clienteId || !contasAnaliticas?.length) {
+      setContasAnaliticasConciliacao([]);
       return;
     }
 
@@ -82,9 +65,7 @@ export default function SelectContaContabil({
       return classificacao.split('.')[0];
     };
 
-    // Filtrar por grupo baseado no tipo de transação ou filterGroup11
-    const contasFiltradas = contas.filter((conta) => {
-      // Apenas contas analíticas
+    const contasFiltradas = contasAnaliticas.filter((conta) => {
       if (conta.tipo !== 'A') return false;
       
       // ✅ NOVO: Filtrar por Grupo 1.1 (Disponibilidades) para bancos
@@ -115,7 +96,7 @@ export default function SelectContaContabil({
     });
 
     setContasAnaliticasConciliacao(contasFiltradas);
-  }, [contas, transacaoTipo, filterGroup11]);
+  }, [clienteId, contasAnaliticas, transacaoTipo, filterGroup11]);
 
   // 🔥 FILTRO PARA CONCILIAÇÃO BANCÁRIA: Apenas contas ANALÍTICAS
   // Saídas (débito) → Grupo 3 (Despesas)

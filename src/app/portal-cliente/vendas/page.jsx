@@ -3,9 +3,9 @@
 import React from 'react';
 import { toast } from 'sonner';
 import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
-import LoadingButton from '@mui/lab/LoadingButton';
 
 import Grid from '@mui/material/Unstable_Grid2';
+import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import {
@@ -36,16 +36,18 @@ import { applySortFilter } from 'src/utils/constants/table-utils';
 
 import {
   usePortalOrcamentos,
-  usePortalOrcamentosStats,
-  portalUpdateOrcamentoStatus,
-  portalEmitirBoletoOrcamento,
   portalBaixarPdfBoleto,
+  portalDeleteOrcamento,
+  usePortalOrcamentosStats,
+  portalEmitirBoletoOrcamento,
+  portalUpdateOrcamentoStatus,
   extractPaymentIdFromBoletoResponse,
 } from 'src/actions/portal';
 
+import { useTable } from 'src/components/table';
 import { Iconify } from 'src/components/iconify';
 import { formatToCurrency } from 'src/components/animate';
-import { useTable } from 'src/components/table';
+import { ConfirmDialog } from 'src/components/custom-dialog';
 import { VendasPageSkeleton } from 'src/components/skeleton/PortalVendasPageSkeleton';
 import { VendaTableRowSkeleton } from 'src/components/skeleton/VendasTableRowSkeleton';
 
@@ -139,6 +141,9 @@ function ServiceOrderMobileCard({
   podeBaixarBoleto,
   onEmitirBoleto,
   onBaixarBoleto,
+  podeRemover,
+  onRemover,
+  removendo,
 }) {
   return (
     <Card variant="outlined" sx={{ '&:hover': { boxShadow: (theme) => theme.customShadows.z16 } }}>
@@ -232,6 +237,22 @@ function ServiceOrderMobileCard({
               Emitir boleto
             </LoadingButton>
           )}
+          {podeRemover && (
+            <Tooltip title="Remover venda">
+              <span>
+                <LoadingButton
+                  size="small"
+                  variant="outlined"
+                  color="error"
+                  loading={removendo}
+                  onClick={() => onRemover(serviceOrder)}
+                  sx={{ minWidth: 'auto', px: 1 }}
+                >
+                  <Iconify icon="solar:trash-bin-trash-bold" />
+                </LoadingButton>
+              </span>
+            </Tooltip>
+          )}
         </Stack>
       </CardContent>
     </Card>
@@ -244,6 +265,26 @@ function hasBoletoDisponivelParaDownload(venda) {
   const statusBoleto = String(venda?.boletoAtual?.status || '').toLowerCase();
   const statusInvalido = ['cancelled', 'canceled', 'cancelado', 'failed', 'falhou'].includes(statusBoleto);
   return Boolean(paymentId) && (temBoletoValido || !statusInvalido);
+}
+
+function temBoletoGerado(venda) {
+  return Boolean(venda?.boletoAtual?.paymentId);
+}
+
+function notaFiscalBloqueiaExclusao(venda) {
+  if (!venda?.notaFiscalId) return false;
+  const nf = venda.notaFiscalId;
+  if (typeof nf !== 'object') return true;
+  const status = String(nf?.status || '').toLowerCase();
+  if (status === 'emitindo' || status === 'processando' || status === 'emitida') return true;
+  const link = nf?.linkNota;
+  if (link === 'Processando...') return true;
+  if (link && String(link).trim() && link !== 'Processando...') return true;
+  return false;
+}
+
+function podeRemoverVendaNoPortal(venda) {
+  return !temBoletoGerado(venda) && !notaFiscalBloqueiaExclusao(venda);
 }
 
 function StatCard({ title, value }) {
@@ -332,6 +373,8 @@ export default function PortalOrcamentosPage() {
   const [savingMap, setSavingMap] = React.useState({});
   const [emitindoBoletoMap, setEmitindoBoletoMap] = React.useState({});
   const [baixandoBoletoMap, setBaixandoBoletoMap] = React.useState({});
+  const [deleteTarget, setDeleteTarget] = React.useState(null);
+  const [deletingId, setDeletingId] = React.useState(null);
   const pollingIntervalsRef = React.useRef({});
   const podeEmitirBoletoVenda = Boolean(interProntoParaBoleto);
 
@@ -481,6 +524,21 @@ export default function PortalOrcamentosPage() {
       toast.error(getHttpErrorMessage(error, 'Erro ao baixar boleto.'));
     } finally {
       setBaixandoBoletoMap((prev) => ({ ...prev, [orcamento._id]: false }));
+    }
+  };
+
+  const handleConfirmDeleteVenda = async () => {
+    if (!deleteTarget?._id) return;
+    try {
+      setDeletingId(deleteTarget._id);
+      await portalDeleteOrcamento(deleteTarget._id);
+      toast.success('Venda excluída com sucesso.');
+      setDeleteTarget(null);
+      await mutateOrcamentos();
+    } catch (error) {
+      toast.error(getHttpErrorMessage(error, 'Erro ao excluir venda.'));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -725,6 +783,9 @@ export default function PortalOrcamentosPage() {
                         podeBaixarBoleto={podeBaixarBoleto}
                         onEmitirBoleto={handleEmitirBoletoVenda}
                         onBaixarBoleto={handleBaixarBoletoVenda}
+                        podeRemover={podeRemoverVendaNoPortal(order)}
+                        onRemover={setDeleteTarget}
+                        removendo={deletingId === order._id}
                       />
                     </motion.div>
                   );
@@ -801,6 +862,20 @@ export default function PortalOrcamentosPage() {
                                       <Iconify icon="solar:eye-bold" />
                                     </IconButton>
                                   </Tooltip>
+                                  {podeRemoverVendaNoPortal(o) && (
+                                    <Tooltip title="Remover venda">
+                                      <span>
+                                        <IconButton
+                                          size="small"
+                                          color="error"
+                                          disabled={Boolean(deletingId)}
+                                          onClick={() => setDeleteTarget(o)}
+                                        >
+                                          <Iconify icon="solar:trash-bin-trash-bold" />
+                                        </IconButton>
+                                      </span>
+                                    </Tooltip>
+                                  )}
                                   {o?.notaFiscalId?.linkNota && 
                                    o.notaFiscalId.linkNota !== 'Processando...' && (
                                     <Tooltip title="Ver NFSe (PDF)">
@@ -874,6 +949,29 @@ export default function PortalOrcamentosPage() {
             onRowsPerPageChange={table.onChangeRowsPerPage}
           />
         </Card>
+
+        <ConfirmDialog
+          open={Boolean(deleteTarget)}
+          onClose={() => {
+            if (!deletingId) setDeleteTarget(null);
+          }}
+          title="Remover venda"
+          content={
+            deleteTarget
+              ? `Tem certeza que deseja excluir a venda ${deleteTarget.numero}? Esta ação não pode ser desfeita.`
+              : null
+          }
+          action={
+            <LoadingButton
+              variant="contained"
+              color="error"
+              loading={Boolean(deletingId)}
+              onClick={handleConfirmDeleteVenda}
+            >
+              Excluir
+            </LoadingButton>
+          }
+        />
       </motion.div>
     </LazyMotion>
   );

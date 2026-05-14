@@ -28,6 +28,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
+import { toTitleCase } from 'src/utils/helper';
+
+import { verificarMesesFaltantesConciliacao } from 'src/actions/conciliacao';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -38,18 +41,18 @@ import { useUploadExtrato, useBancosCliente } from '../hooks';
 // ✅ Helper para formatar data ISO sem problemas de timezone
 const formatarDataISO = (dataISO) => {
   if (!dataISO) return '';
-  
+
   // Se for string ISO, extrair apenas a parte da data (YYYY-MM-DD)
   if (typeof dataISO === 'string' && dataISO.includes('T')) {
     const [ano, mes, dia] = dataISO.split('T')[0].split('-');
     return `${dia}/${mes}/${ano}`;
   }
-  
+
   // Se for Date object, usar toLocaleDateString
   if (dataISO instanceof Date) {
     return dataISO.toLocaleDateString('pt-BR');
   }
-  
+
   // Fallback: tentar criar Date
   try {
     const data = new Date(dataISO);
@@ -84,7 +87,7 @@ export default function UploadExtratoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuthContext();
-  
+
   const [loadingEmpresa, setLoadingEmpresa] = useState(true);
   const [empresaData, setEmpresaData] = useState(null);
   const [bancoId, setBancoId] = useState(searchParams.get('banco') || searchParams.get('bancoId') || '');
@@ -100,27 +103,27 @@ export default function UploadExtratoPage() {
   const [mensagemErro, setMensagemErro] = useState('');
   const [statusMes, setStatusMes] = useState(null);
   const [verificandoStatus, setVerificandoStatus] = useState(false);
-  
+
   // 🔥 Estados para transações ignoradas (novo comportamento do backend)
   const [transacoesIgnoradas, setTransacoesIgnoradas] = useState([]);
   const [modalIgnoradasAberto, setModalIgnoradasAberto] = useState(false);
-  
+
   // ✅ Estados para validação de dataInicio e meses faltantes
   const [mesesFaltantes, setMesesFaltantes] = useState([]);
   const [mostrarAvisoMesesFaltantes, setMostrarAvisoMesesFaltantes] = useState(false);
 
-  const { 
-    upload, 
-    loading, 
-    uploadProgress, 
-    resultado, 
-    error: uploadError, 
+  const {
+    upload,
+    loading,
+    uploadProgress,
+    resultado,
+    error: uploadError,
     errorData,
     warnings, // 🔥 NOVO: avisos do backend
     processandoStatus,
     progressoProcessamento,
     conciliacaoId,
-    reset 
+    reset
   } = useUploadExtrato();
 
   // 🔥 Detectar quando há erro e abrir modal apropriado
@@ -128,14 +131,14 @@ export default function UploadExtratoPage() {
     console.log('🔍 useEffect - uploadError:', uploadError);
     console.log('🔍 useEffect - errorData:', errorData);
     console.log('🔍 useEffect - warnings:', warnings);
-    
+
     // 🔥 NOVA ESTRUTURA: Exibir warnings (não bloqueiam)
     if (warnings && warnings.length > 0) {
       warnings.forEach((warning) => {
         toast.warning(warning, { duration: 5000 });
       });
     }
-    
+
     if (uploadError && errorData?.tipo) {
       console.log('🔥 Erro detectado! Tipo:', errorData.tipo);
       console.log('🔥 Abrindo modal...');
@@ -183,6 +186,19 @@ export default function UploadExtratoPage() {
   const uploadBloqueadoBancoInativo =
     Boolean(bancoId && bancoSelecionadoUpload) && !isBancoAtivoPortal(bancoSelecionadoUpload);
 
+  const bancoPdfBloqueado =
+    Boolean(bancoId && bancoSelecionadoUpload) &&
+    bancoSelecionadoUpload?.instituicaoBancariaId?.aceitaPdf === false;
+
+  // Remove PDF selecionado ao trocar para banco que não aceita PDF
+  useEffect(() => {
+    setArquivo((prev) => {
+      if (!prev || !bancoPdfBloqueado) return prev;
+      if (prev.name.toLowerCase().endsWith('.pdf')) return null;
+      return prev;
+    });
+  }, [bancoPdfBloqueado, bancoId]);
+
   // Dropzone
   const onDrop = useCallback((acceptedFiles) => {
     if (acceptedFiles.length > 0) {
@@ -196,7 +212,7 @@ export default function UploadExtratoPage() {
       'application/vnd.ms-excel': ['.xls'],
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
       'text/csv': ['.csv'],
-      'application/pdf': ['.pdf'],
+      ...(!bancoPdfBloqueado ? { 'application/pdf': ['.pdf'] } : {}),
       'application/x-ofx': ['.ofx'],
     },
     multiple: false,
@@ -204,8 +220,9 @@ export default function UploadExtratoPage() {
   });
 
   // Validar arquivo
-  const validarArquivo = (file) => {
+  const validarArquivo = (file, pdfBloqueado) => {
     const extensao = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (extensao === '.pdf' && pdfBloqueado) return false;
     const extensoesAceitas = ['.ofx', '.pdf', '.xlsx', '.xls', '.csv'];
     return extensoesAceitas.includes(extensao);
   };
@@ -215,9 +232,7 @@ export default function UploadExtratoPage() {
     if (!bancoIdParam || !mesAnoParam) return null;
 
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}conciliacao/verificar-meses-faltantes/${bancoIdParam}?mesAno=${mesAnoParam}`
-      );
+      const response = await verificarMesesFaltantesConciliacao(bancoIdParam, mesAnoParam);
       return response.data?.data || null;
     } catch (error) {
       console.error('Erro ao verificar meses faltantes:', error);
@@ -250,7 +265,7 @@ export default function UploadExtratoPage() {
     }
 
     const dataInicio = new Date(bancoSelecionado.dataInicio);
-    
+
     return mesesFaltantesArray.filter((mesAnoItem) => {
       const [ano, mes] = mesAnoItem.split('-').map(Number);
       const dataMes = new Date(ano, mes - 1, 1); // Primeiro dia do mês
@@ -323,6 +338,14 @@ export default function UploadExtratoPage() {
       return;
     }
 
+    if (
+      bancoPdfBloqueado &&
+      arquivo?.name?.toLowerCase().endsWith('.pdf')
+    ) {
+      toast.error('Este banco não suporta importação via PDF. Use um arquivo OFX.');
+      return;
+    }
+
     // 🔥 VALIDAÇÃO: Verificar se status é "fechado_sem_movimento"
     if (statusMes === 'fechado_sem_movimento') {
       toast.error('⚠️ Este mês está fechado sem movimento. Entre em contato com o suporte para liberar o upload.');
@@ -354,7 +377,7 @@ export default function UploadExtratoPage() {
         mesesInfo.mesesFaltantes || [],
         bancoSelecionado
       );
-      
+
       // Só mostrar aviso se houver meses faltantes após o filtro
       if (mesesFaltantesFiltrados.length > 0) {
         setMesesFaltantes(mesesFaltantesFiltrados);
@@ -367,7 +390,7 @@ export default function UploadExtratoPage() {
       // Não bloquear, apenas avisar - o usuário pode continuar
     }
 
-    if (!validarArquivo(arquivo)) {
+    if (!validarArquivo(arquivo, bancoPdfBloqueado)) {
       toast.error('Tipo de arquivo não suportado');
       return;
     }
@@ -379,7 +402,7 @@ export default function UploadExtratoPage() {
         `O saldo será recalculado automaticamente após processar este extrato.\n\n` +
         `Deseja continuar mesmo assim?`
       );
-      
+
       if (!confirmar) {
         setMostrarAvisoMesesFaltantes(false);
         setMesesFaltantes([]);
@@ -398,11 +421,11 @@ export default function UploadExtratoPage() {
       // 6. Atualiza status para "pendente" quando concluído
       // ⚡ Resposta é INSTANTÂNEA - processamento acontece em background
       const result = await upload(clienteId, bancoId, mesAno, arquivo);
-      
+
       // Limpar avisos após upload bem-sucedido
       setMostrarAvisoMesesFaltantes(false);
       setMesesFaltantes([]);
-      
+
       if (result) {
         // 🔥 NOVO: Processamento assíncrono (PDF) - redirecionar imediatamente para status
         if (result.processamentoAssincrono) {
@@ -413,13 +436,13 @@ export default function UploadExtratoPage() {
           }, 1500);
           return;
         }
-        
+
         // 🔥 FLUXO ANTIGO: Processamento síncrono (OFX) - verificar transações ignoradas
         if (result.transacoesIgnoradas && result.transacoesIgnoradas.length > 0) {
           console.log('⚠️ Transações ignoradas encontradas:', result.transacoesIgnoradas.length);
           setTransacoesIgnoradas(result.transacoesIgnoradas);
           setModalIgnoradasAberto(true);
-          
+
           // 🔥 Redirecionar após fechar o modal de aviso (não bloquear)
           // O usuário pode fechar o modal e continuar normalmente
         } else {
@@ -525,7 +548,7 @@ export default function UploadExtratoPage() {
 
       {/* 📋 Formulário de Upload */}
       <Card sx={{ p: 3, mb: 3 }}>
-        <Grid container spacing={3}>
+        <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2 } }}>
           {/* Coluna 1: Seletor de Banco */}
           <Grid xs={12} md={6}>
             <Stack spacing={2}>
@@ -543,7 +566,7 @@ export default function UploadExtratoPage() {
                 </Button>
               </Stack>
 
-              <FormControl fullWidth required>
+              {/* <FormControl fullWidth required>
                 <InputLabel>Selecione o banco</InputLabel>
                 <Select
                   value={bancoId}
@@ -566,12 +589,50 @@ export default function UploadExtratoPage() {
                     );
                   })}
                 </Select>
+              </FormControl> */}
+
+              <FormControl fullWidth required disabled={loading || loadingBancos}>
+                <InputLabel id="select-banco-label">Selecione o banco</InputLabel>
+                <Select
+                  labelId="select-banco-label"
+                  value={bancos.some((b) => b._id === bancoId) ? bancoId : ''}
+                  onChange={(e) => setBancoId(e.target.value)}
+                  label="Selecione o banco"
+                >
+                  <MenuItem value="">
+                    <em>{loadingBancos ? 'Carregando bancos...' : 'Selecione o banco'}</em>
+                  </MenuItem>
+
+                  {!loadingBancos && bancos.map((banco) => {
+                    const ativo = isBancoAtivoPortal(banco);
+                    return (
+                      <MenuItem key={banco._id} value={banco._id}>
+                        🏦 {banco.instituicaoBancariaId?.nome || banco.nome || 'Banco'} (
+                        {banco.instituicaoBancariaId?.codigo || banco.codigo || 'N/A'}) -
+                        Ag: {banco.agencia || 'N/A'} Conta: {banco.conta}
+                        {!ativo ? ' (Inativo)' : ''}
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
               </FormControl>
 
               {bancos.length === 0 && !loadingBancos && (
                 <Alert severity="warning" variant="outlined">
                   <Typography variant="caption">
                     Cadastre um banco primeiro
+                  </Typography>
+                </Alert>
+              )}
+
+              {bancoPdfBloqueado && (
+                <Alert severity="warning" icon={<Iconify icon="eva:file-remove-outline" />}>
+                  <Typography variant="body2" fontWeight="bold">
+                    Importação via PDF não disponível
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Este banco não suporta importação de extratos em PDF.
+                    Utilize o formato <strong>OFX</strong> (ou XLSX/CSV quando aplicável) para esta instituição.
                   </Typography>
                 </Alert>
               )}
@@ -584,7 +645,7 @@ export default function UploadExtratoPage() {
               <Typography variant="subtitle1" fontWeight="bold">
                 📅 Período do Extrato *
               </Typography>
-              
+
               {uploadBloqueadoBancoInativo && (
                 <Alert severity="warning" icon={<Iconify icon="eva:info-outline" />} sx={{ mb: 2 }}>
                   <Typography variant="body2" fontWeight="bold">
@@ -631,7 +692,7 @@ export default function UploadExtratoPage() {
                         'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
                       ];
                       const mesIndex = parseInt(mes, 10) - 1; // Converter para índice (0-11)
-                      return `${meses[mesIndex]} de ${ano}`;
+                      return `${toTitleCase(meses[mesIndex])} de ${ano}`;
                     })()}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -675,13 +736,13 @@ export default function UploadExtratoPage() {
             '&:hover': uploadBloqueadoBancoInativo
               ? {}
               : {
-                  borderColor: 'primary.main',
-                  bgcolor: 'primary.lighter',
-                },
+                borderColor: 'primary.main',
+                bgcolor: 'primary.lighter',
+              },
           }}
         >
           <input {...getInputProps()} />
-          
+
           {arquivo ? (
             <Stack spacing={2} alignItems="center">
               <Iconify icon="eva:file-text-fill" width={48} color="success.main" />
@@ -706,16 +767,17 @@ export default function UploadExtratoPage() {
             </Stack>
           ) : (
             <Stack spacing={2} alignItems="center">
-              <Iconify 
-                icon={isDragActive ? "eva:cloud-download-fill" : "eva:cloud-upload-fill"} 
-                width={64} 
-                color="primary.main" 
+              <Iconify
+                icon={isDragActive ? "eva:cloud-download-fill" : "eva:cloud-upload-fill"}
+                width={64}
+                color="primary.main"
               />
               <Typography variant="h6">
                 {isDragActive ? '📥 Solte o arquivo aqui' : '📤 Arraste o arquivo ou clique para selecionar'}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Formatos aceitos: <strong>OFX, PDF, XLSX, CSV</strong>
+                Formatos aceitos:{' '}
+                <strong>{bancoPdfBloqueado ? 'OFX, XLSX, CSV' : 'OFX, PDF, XLSX, CSV'}</strong>
               </Typography>
               <Typography variant="caption" color="text.disabled">
                 Tamanho máximo: 20 MB
@@ -734,7 +796,7 @@ export default function UploadExtratoPage() {
           onClick={handleUpload}
           disabled={!arquivo || !bancoId || !mesAno || uploadBloqueadoBancoInativo}
           startIcon={<Iconify icon="eva:upload-fill" />}
-          sx={{ 
+          sx={{
             mb: 3,
             py: 1.5,
             fontSize: '1.1rem',
@@ -766,33 +828,33 @@ export default function UploadExtratoPage() {
                 <Stack spacing={1} alignItems="center">
                   <Typography variant="h6" fontWeight="bold">
                     {processandoStatus ? (
-                      processandoStatus === 'processando' 
-                        ? 'Processando arquivo...' 
-                        : processandoStatus === 'pendente' 
-                        ? 'Processamento concluído!' 
-                        : processandoStatus === 'concluida'
-                        ? 'Conciliação finalizada!'
-                        : 'Processando extrato bancário...'
+                      processandoStatus === 'processando'
+                        ? 'Processando arquivo...'
+                        : processandoStatus === 'pendente'
+                          ? 'Processamento concluído!'
+                          : processandoStatus === 'concluida'
+                            ? 'Conciliação finalizada!'
+                            : 'Processando extrato bancário...'
                     ) : 'Enviando arquivo...'}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {processandoStatus 
+                    {processandoStatus
                       ? processandoStatus === 'processando'
                         ? 'Aguarde enquanto processamos as transações'
                         : 'Finalizando processamento...'
                       : 'Aguarde enquanto enviamos o arquivo'}
                   </Typography>
                 </Stack>
-                
+
                 {/* 🔥 Barra de progresso do upload */}
                 {uploadProgress > 0 && uploadProgress < 100 && (
                   <Box sx={{ width: '100%' }}>
                     <Typography variant="caption" color="text.secondary" gutterBottom>
                       Upload do arquivo
                     </Typography>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={uploadProgress} 
+                    <LinearProgress
+                      variant="determinate"
+                      value={uploadProgress}
                       sx={{ height: 8, borderRadius: 1 }}
                     />
                     <Typography variant="body2" textAlign="center" mt={1} fontWeight="bold">
@@ -800,7 +862,7 @@ export default function UploadExtratoPage() {
                     </Typography>
                   </Box>
                 )}
-                
+
                 {/* 🔥 Barra de progresso do processamento (assíncrono) */}
                 {processandoStatus && progressoProcessamento >= 0 && (
                   <Box sx={{ width: '100%', mt: uploadProgress > 0 && uploadProgress < 100 ? 2 : 0 }}>
@@ -808,20 +870,20 @@ export default function UploadExtratoPage() {
                       <Typography variant="caption" color="text.secondary">
                         Processamento
                       </Typography>
-                      <Chip 
-                        label={processandoStatus === 'processando' ? 'Processando...' : 
-                               processandoStatus === 'pendente' ? 'Pendente' : 
-                               processandoStatus === 'concluida' ? 'Concluída' : 
-                               processandoStatus}
+                      <Chip
+                        label={processandoStatus === 'processando' ? 'Processando...' :
+                          processandoStatus === 'pendente' ? 'Pendente' :
+                            processandoStatus === 'concluida' ? 'Concluída' :
+                              processandoStatus}
                         size="small"
-                        color={processandoStatus === 'processando' ? 'info' : 
-                               processandoStatus === 'pendente' ? 'warning' : 
-                               processandoStatus === 'concluida' ? 'success' : 'default'}
+                        color={processandoStatus === 'processando' ? 'info' :
+                          processandoStatus === 'pendente' ? 'warning' :
+                            processandoStatus === 'concluida' ? 'success' : 'default'}
                       />
                     </Stack>
-                    <LinearProgress 
-                      variant="determinate" 
-                      value={progressoProcessamento} 
+                    <LinearProgress
+                      variant="determinate"
+                      value={progressoProcessamento}
                       sx={{ height: 8, borderRadius: 1 }}
                       color={processandoStatus === 'concluida' ? 'success' : 'primary'}
                     />
@@ -891,7 +953,7 @@ export default function UploadExtratoPage() {
                 <Typography variant="caption" color="text.secondary" display="block" mb={2}>
                   {errorData.transacoesInvalidas.total} transação(ões) de período diferente
                 </Typography>
-                
+
                 <Stack spacing={1.5}>
                   {errorData.transacoesInvalidas.exemplos?.slice(0, 5).map((transacao, index) => (
                     <Card
@@ -1218,7 +1280,7 @@ export default function UploadExtratoPage() {
                 O arquivo foi processado com sucesso!
               </Typography>
               <Typography variant="body2">
-                No entanto, <strong>{transacoesIgnoradas.length} transação(ões)</strong> foram ignoradas porque 
+                No entanto, <strong>{transacoesIgnoradas.length} transação(ões)</strong> foram ignoradas porque
                 não pertencem ao período selecionado (<strong>{(() => {
                   if (!mesAno) return mesAno;
                   const [ano, mes] = mesAno.split('-');
@@ -1258,7 +1320,7 @@ export default function UploadExtratoPage() {
               <Typography variant="caption" color="text.secondary" display="block" mb={2}>
                 Essas transações não foram incluídas na conciliação
               </Typography>
-              
+
               <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
                 <Stack spacing={1.5}>
                   {transacoesIgnoradas.slice(0, 10).map((transacao, index) => (
@@ -1287,8 +1349,8 @@ export default function UploadExtratoPage() {
                           <Typography variant="caption" color="text.secondary">
                             Data: {new Date(transacao.data).toLocaleDateString('pt-BR')}
                           </Typography>
-                          <Typography 
-                            variant="caption" 
+                          <Typography
+                            variant="caption"
                             fontWeight="bold"
                             color={transacao.tipo === 'credito' ? 'success.main' : 'error.main'}
                           >
@@ -1315,7 +1377,7 @@ export default function UploadExtratoPage() {
             {/* Dica */}
             <Alert severity="info" icon={<Iconify icon="eva:bulb-outline" />}>
               <Typography variant="body2">
-                💡 As transações válidas já foram processadas e estão prontas para conciliação. 
+                💡 As transações válidas já foram processadas e estão prontas para conciliação.
                 Você pode continuar normalmente.
               </Typography>
             </Alert>

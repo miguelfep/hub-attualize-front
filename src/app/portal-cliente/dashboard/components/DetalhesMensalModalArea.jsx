@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import { alpha, useTheme } from '@mui/material/styles';
@@ -17,12 +18,28 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { fetcher } from 'src/utils/axios';
 import { getMonthName } from 'src/utils/helper';
 
+import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { Chart, useChart } from 'src/components/chart';
 import { formatToCurrency } from 'src/components/animate';
 
 dayjs.extend(utc);
+
+/** Formata data ISO para dd/mm/aaaa sem deslocamento de timezone */
+function formatDateOnly(value) {
+    if (!value) return null;
+    const str = typeof value === 'string' ? value : String(value);
+    if (str.includes('T')) {
+        const [ano, mes, dia] = str.split('T')[0].split('-');
+        if (ano && mes && dia) return `${dia}/${mes}/${ano}`;
+    }
+    if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        const [ano, mes, dia] = str.split('-');
+        return `${dia}/${mes}/${ano}`;
+    }
+    return dayjs(value).format('DD/MM/YYYY');
+}
 
 
 export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId }) {
@@ -36,32 +53,37 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
 
     const { data, isLoading } = useSWR(url, fetcher);
 
-    // Processar e ordenar notas corretamente
     const allNotas = useMemo(() => {
         if (!data?.data) return [];
 
         return data.data
             .map(n => {
-                // Extrair dia usando UTC para evitar problemas de timezone
                 const dataEmissao = dayjs(n.dataEmissao);
+                // O dia para agrupamento no gráfico sempre vem da dataEmissao
                 const dia = dataEmissao.utc().date();
 
-                // Obter nome do cliente (tomador)
                 const clienteNome = n.tomador?.nome || n.tomador?.razaoSocial || 'Cliente não identificado';
+
+                const statusStr = String(n.status || '').toLowerCase();
+                const isCancelada = statusStr === 'cancelada' || statusStr === 'cancelado';
+
+                // Formata competência para exibição (dd/mm/aaaa), ou null se ausente
+                const competenciaFmt = n.competencia ? formatDateOnly(n.competencia) : null;
+                const emissaoFmt = dataEmissao.isValid() ? dataEmissao.utc().format('DD/MM/YYYY HH:mm') : null;
 
                 return {
                     ...n,
                     dia,
                     clienteNome,
                     numeroNota: n.numeroNota || n.numero || 'N/A',
-                    dataEmissaoOriginal: dataEmissao
+                    dataEmissaoOriginal: dataEmissao,
+                    isCancelada,
+                    competenciaFmt,
+                    emissaoFmt,
                 };
             })
             .sort((a, b) => {
-                // Ordenar por dia (crescente) e depois por dataEmissao (decrescente)
-                if (a.dia !== b.dia) {
-                    return a.dia - b.dia;
-                }
+                if (a.dia !== b.dia) return a.dia - b.dia;
                 return b.dataEmissaoOriginal.valueOf() - a.dataEmissaoOriginal.valueOf();
             });
     }, [data]);
@@ -73,8 +95,17 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
         return allNotas;
     }, [allNotas, selectedDay]);
 
+    // Notas canceladas NÃO entram no total faturado
     const totalFaturado = useMemo(() =>
-        filteredNotas.reduce((sum, n) => sum + (Number(n.valorTotal) || 0), 0)
+        filteredNotas
+            .filter(n => !n.isCancelada)
+            .reduce((sum, n) => sum + (Number(n.valorTotal) || 0), 0)
+        , [filteredNotas]);
+
+    const totalCancelado = useMemo(() =>
+        filteredNotas
+            .filter(n => n.isCancelada)
+            .reduce((sum, n) => sum + (Number(n.valorTotal) || 0), 0)
         , [filteredNotas]);
 
     // Dados para o gráfico de distribuição diária
@@ -83,7 +114,8 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
             return { seriesData: [] };
         }
 
-        const dailyData = allNotas.reduce((acc, nota) => {
+        // Notas canceladas não entram no gráfico de faturamento
+        const dailyData = allNotas.filter(n => !n.isCancelada).reduce((acc, nota) => {
             const day = nota.dia;
             if (!day || Number.isNaN(day)) return acc;
 
@@ -221,7 +253,12 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
                         Detalhes de {mesNome.charAt(0).toUpperCase() + mesNome.slice(1)}
                     </Typography>
                     <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
-                        {monthData?.ano} • {allNotas.length} notas emitidas
+                        {monthData?.ano} • {allNotas.filter(n => !n.isCancelada).length} notas ativas
+                        {allNotas.some(n => n.isCancelada) && (
+                            <Box component="span" sx={{ color: 'error.main', ml: 0.5 }}>
+                                • {allNotas.filter(n => n.isCancelada).length} cancelada(s)
+                            </Box>
+                        )}
                     </Typography>
                 </Box>
 
@@ -250,6 +287,12 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
                         <Typography variant="h3" fontWeight={800}>
                             {formatToCurrency(totalFaturado)}
                         </Typography>
+                        {totalCancelado > 0 && (
+                            <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 600, display: 'block', mt: 0.5 }}>
+                                <Iconify icon="solar:close-circle-bold" width={13} sx={{ mr: 0.4, verticalAlign: 'middle' }} />
+                                {formatToCurrency(totalCancelado)} em notas canceladas (não computado)
+                            </Typography>
+                        )}
                     </Box>
 
                     <Box sx={{ flex: 1, minHeight: 0 }}>
@@ -276,33 +319,90 @@ export default function DetalhesMensalModal({ isOpen, onClose, monthData, userId
 
                     <Scrollbar sx={{ p: 2, flex: 1 }}>
                         <Stack spacing={1.5}>
-                            {filteredNotas.map((nota) => (
-                                <Box
-                                    key={nota._id}
-                                    sx={{
-                                        p: 1.5,
-                                        borderRadius: 1.5,
-                                        bgcolor: 'background.paper',
-                                        border: `1px solid ${theme.palette.divider}`,
-                                        transition: 'transform 0.2s',
-                                        '&:hover': { transform: 'scale(1.02)', borderColor: 'primary.main' }
-                                    }}
-                                >
-                                    <Stack direction="row" justifyContent="space-between" alignItems="center">
-                                        <Box sx={{ minWidth: 0 }}>
-                                            <Typography variant="subtitle2" sx={{ noWrap: true, textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                                                {nota.clienteNome}
+                            {filteredNotas.map((nota) => {
+                                const statusStr = String(nota.status || '').toLowerCase();
+                                const statusColor = nota.isCancelada ? 'error'
+                                    : statusStr === 'emitida' || statusStr === 'autorizada' ? 'success'
+                                    : statusStr === 'negada' ? 'error'
+                                    : 'warning';
+
+                                return (
+                                    <Box
+                                        key={nota._id}
+                                        sx={{
+                                            p: 1.5,
+                                            borderRadius: 1.5,
+                                            bgcolor: nota.isCancelada
+                                                ? alpha(theme.palette.error.main, 0.04)
+                                                : 'background.paper',
+                                            border: `1px solid ${nota.isCancelada ? alpha(theme.palette.error.main, 0.2) : theme.palette.divider}`,
+                                            opacity: nota.isCancelada ? 0.7 : 1,
+                                            transition: 'transform 0.2s',
+                                            '&:hover': {
+                                                transform: nota.isCancelada ? 'none' : 'scale(1.02)',
+                                                borderColor: nota.isCancelada ? alpha(theme.palette.error.main, 0.4) : 'primary.main',
+                                            }
+                                        }}
+                                    >
+                                        <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }} flexWrap="wrap">
+                                                    <Label
+                                                        variant="soft"
+                                                        color={statusColor}
+                                                        sx={{ fontSize: 10, height: 20, px: 0.75 }}
+                                                    >
+                                                        {nota.status || 'Sem status'}
+                                                    </Label>
+                                                    <Typography variant="caption" sx={{ color: 'text.disabled', fontWeight: 600 }}>
+                                                        NF: {nota.numeroNota}
+                                                    </Typography>
+                                                </Stack>
+
+                                                <Typography
+                                                    variant="subtitle2"
+                                                    sx={{
+                                                        textOverflow: 'ellipsis',
+                                                        overflow: 'hidden',
+                                                        whiteSpace: 'nowrap',
+                                                        textDecoration: nota.isCancelada ? 'line-through' : 'none',
+                                                        color: nota.isCancelada ? 'text.disabled' : 'text.primary',
+                                                    }}
+                                                >
+                                                    {nota.clienteNome}
+                                                </Typography>
+
+                                                <Stack direction="row" spacing={1} sx={{ mt: 0.25 }}>
+                                                    {nota.competenciaFmt ? (
+                                                        <Tooltip title={`Emissão: ${nota.emissaoFmt || '—'}`} placement="top">
+                                                            <Typography variant="caption" color="text.secondary">
+                                                                Competência <b>{nota.competenciaFmt}</b> • Dia {nota.dia}
+                                                            </Typography>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        <Typography variant="caption" color="text.secondary">
+                                                            Emissão: <b>{nota.emissaoFmt || '—'}</b> • Dia {nota.dia}
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                            </Box>
+
+                                            <Typography
+                                                variant="subtitle2"
+                                                fontWeight={800}
+                                                sx={{
+                                                    color: nota.isCancelada ? 'text.disabled' : 'primary.main',
+                                                    pl: 1,
+                                                    flexShrink: 0,
+                                                    textDecoration: nota.isCancelada ? 'line-through' : 'none',
+                                                }}
+                                            >
+                                                {formatToCurrency(nota.valorTotal)}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                NF: {nota.numeroNota} • Dia {nota.dia}
-                                            </Typography>
-                                        </Box>
-                                        <Typography variant="subtitle2" fontWeight={800} sx={{ color: 'primary.main', pl: 1 }}>
-                                            {formatToCurrency(nota.valorTotal)}
-                                        </Typography>
-                                    </Stack>
-                                </Box>
-                            ))}
+                                        </Stack>
+                                    </Box>
+                                );
+                            })}
                         </Stack>
                     </Scrollbar>
                 </Box>

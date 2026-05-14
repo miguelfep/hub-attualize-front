@@ -22,11 +22,13 @@ export function mapearContextoConciliacao(statusData, conciliacaoIdFallback) {
   return {
     _id: d.conciliacaoId || d._id || conciliacaoIdFallback,
     status: d.status || 'pendente',
+    progresso: d.progresso,
     mes,
     ano,
     mesAno: mesAno || (mes && ano ? `${ano}-${String(mes).padStart(2, '0')}` : undefined),
     bancoId: bancoRaw,
     clienteId: clienteRaw,
+    nomeBanco: d.nomeBanco || d.bancoNome || null,
     dataProcessamento: d.dataProcessamento || d.updatedAt || d.processadoEm || null,
     resumo: d.resumo || null,
   };
@@ -47,11 +49,24 @@ export async function uploadArquivoConciliacao(clienteId, bancoId, mesAno, file,
   formData.append('bancoId', bancoId);
   formData.append('mesAno', mesAno); // 🔥 OBRIGATÓRIO - formato YYYY-MM
 
+  // API pode responder 202 Accepted (fila assíncrona) — tratar como sucesso axios
   return axios.post(`${baseUrl}conciliacao/upload`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
     onUploadProgress,
+    validateStatus: (status) => status >= 200 && status < 300,
+  });
+}
+
+/**
+ * Bloquear envio se faltar mês anterior (GET documentado)
+ * @param {string} bancoId
+ * @param {string} mesAno YYYY-MM
+ */
+export async function verificarMesesFaltantesConciliacao(bancoId, mesAno) {
+  return axios.get(`${baseUrl}conciliacao/verificar-meses-faltantes/${bancoId}`, {
+    params: { mesAno },
   });
 }
 
@@ -66,12 +81,39 @@ export async function listarConciliacoes(clienteId, params = {}) {
 }
 
 /**
+ * Lista conciliações de um banco (multi-mês / placeholder removido).
+ * GET `/api/conciliacao/cliente/:clienteId/banco/:bancoId`
+ */
+export async function listarConciliacoesPorBanco(clienteId, bancoId) {
+  return axios.get(`${baseUrl}conciliacao/cliente/${clienteId}/banco/${bancoId}`);
+}
+
+/**
+ * Remove transações e reseta conciliação para reenvio de extrato (requer auth no backend).
+ * DELETE `/api/conciliacao/:id/transacoes` — 409 se já concluída.
+ */
+export async function removerTransacoesConciliacao(conciliacaoId) {
+  return axios.delete(`${baseUrl}conciliacao/${conciliacaoId}/transacoes`);
+}
+
+/**
  * Obter detalhes/resumo de uma conciliação (via rota única de status)
  * @param {string} conciliacaoId - ID da conciliação
  * @returns {Promise} Mesmo formato axios; `data.data` é o contexto mapeado para telas
  */
 export async function obterConciliacao(conciliacaoId) {
   const res = await obterStatusConciliacao(conciliacaoId);
+  if (res.status === 404) {
+    return {
+      ...res,
+      data: {
+        success: false,
+        placeholderDescartado: true,
+        message: 'Conciliação não encontrada (placeholder multi-mês removido).',
+        data: null,
+      },
+    };
+  }
   const statusData = res.data?.data;
   const mapped = mapearContextoConciliacao(statusData, conciliacaoId);
   return {
@@ -128,7 +170,10 @@ export async function buscarTransacoesPendentes(conciliacaoId) {
  * @returns {Promise} Retorna status, progresso e informações do processamento
  */
 export async function obterStatusConciliacao(conciliacaoId) {
-  return axios.get(`${baseUrl}conciliacao/${conciliacaoId}/status`);
+  return axios.get(`${baseUrl}conciliacao/${conciliacaoId}/status`, {
+    // Multi-mês: placeholder removido → 404; o caller deve listar conciliações do banco.
+    validateStatus: (status) => (status >= 200 && status < 300) || status === 404,
+  });
 }
 
 /**

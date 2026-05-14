@@ -20,6 +20,32 @@ export async function deletarUserCliente({ id }) {
   return axios.delete(`${baseUrl}users/cliente/${id}`);
 }
 
+// ---------------- Usuários Internos ----------------
+
+export async function getUsersInternos() {
+  return axios.get(`${baseUrl}users/internos`);
+}
+
+export async function criarUserInterno({ name, email, password, role, status, empresasId, empresaAtiva }) {
+  return axios.post(`${baseUrl}users/internos`, {
+    name,
+    email,
+    password,
+    role,
+    status,
+    empresasId,
+    empresaAtiva,
+  });
+}
+
+export async function editarUserInterno(usuarioData) {
+  return axios.put(`${baseUrl}users/internos/${usuarioData.userId}`, { ...usuarioData });
+}
+
+export async function deletarUserInterno({ id }) {
+  return axios.delete(`${baseUrl}users/internos/${id}`);
+}
+
 export async function updatePassword({ userId, password, token }) {
   return axios.post(`${baseUrl}users/reset-password`, { password, token });
 }

@@ -18,14 +18,14 @@ export function useTranslate(ns) {
   const { t, i18n } = useTranslation(ns);
 
   // Foco no idioma pt-BR
-  const currentLang = allLangs.find((lang) => lang.value === 'pt') || allLangs[0];
+  const currentLang = allLangs.find((lang) => lang.value === 'pt-BR') || allLangs[0];
 
   const onChangeLang = useCallback(async () => {
     try {
       // Trocar idioma para pt-BR
-      const langChangePromise = i18n.changeLanguage('pt');
+      const langChangePromise = i18n.changeLanguage('pt-BR');
 
-      const currentMessages = messages.pt || messages.en;
+      const currentMessages = messages['pt-BR'];
 
       toast.promise(langChangePromise, {
         loading: currentMessages.loading,
