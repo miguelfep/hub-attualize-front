@@ -41,18 +41,18 @@ import { useBancosCliente, useInstituicoesBancarias } from '../hooks';
 // ✅ Helper para formatar data ISO sem problemas de timezone
 const formatarDataISO = (dataISO) => {
   if (!dataISO) return '';
-  
+
   // Se for string ISO, extrair apenas a parte da data (YYYY-MM-DD)
   if (typeof dataISO === 'string' && dataISO.includes('T')) {
     const [ano, mes, dia] = dataISO.split('T')[0].split('-');
     return `${dia}/${mes}/${ano}`;
   }
-  
+
   // Se for Date object, usar toLocaleDateString
   if (dataISO instanceof Date) {
     return dataISO.toLocaleDateString('pt-BR');
   }
-  
+
   // Fallback: tentar criar Date
   try {
     const data = new Date(dataISO);
@@ -357,7 +357,7 @@ export default function GestaoBancosPage() {
         <Button
           variant="contained"
           startIcon={<Iconify icon="eva:plus-fill" />}
-          onClick={() => setMostrarForm(!mostrarForm)}
+          onClick={() => { setMostrarForm(!mostrarForm); handleFecharEdicao(); }}
         >
           {mostrarForm ? 'Cancelar' : 'Adicionar Banco'}
         </Button>
@@ -375,7 +375,7 @@ export default function GestaoBancosPage() {
           <Divider sx={{ mb: 3 }} />
 
           <form onSubmit={handleSubmit}>
-            <Grid container spacing={3}>
+            <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2 } }}>
               <Grid xs={12} md={12}>
                 <Autocomplete
                   options={instituicoes}
@@ -393,7 +393,7 @@ export default function GestaoBancosPage() {
                   renderInput={(params) => (
                     <TextField
                       {...params}
-                      label="Banco *"
+                      label="Banco"
                       required
                       placeholder="Digite o código ou nome do banco..."
                       InputProps={{
@@ -411,16 +411,16 @@ export default function GestaoBancosPage() {
                   filterOptions={(options, { inputValue }) => {
                     const searchTerm = inputValue.toLowerCase().trim();
                     if (!searchTerm) return options;
-                    
+
                     return options.filter((option) => {
                       const codigo = (option.codigo || '').toLowerCase();
                       const nome = (option.nome || '').toLowerCase();
                       const nomeCompleto = (option.nomeCompleto || '').toLowerCase();
-                      
+
                       // Buscar por código OU nome
-                      return codigo.includes(searchTerm) || 
-                             nome.includes(searchTerm) || 
-                             nomeCompleto.includes(searchTerm);
+                      return codigo.includes(searchTerm) ||
+                        nome.includes(searchTerm) ||
+                        nomeCompleto.includes(searchTerm);
                     });
                   }}
                   renderOption={(props, option) => (
@@ -466,7 +466,7 @@ export default function GestaoBancosPage() {
                 <TextField
                   fullWidth
                   required
-                  label="Conta *"
+                  label="Conta"
                   value={formData.conta}
                   onChange={(e) => handleChange('conta', e.target.value)}
                   placeholder="Ex: 12345-6"
@@ -526,7 +526,7 @@ export default function GestaoBancosPage() {
                   customInput={TextField}
                   fullWidth
                   required
-                  label="Saldo Inicial (R$) *"
+                  label="Saldo Inicial (R$)"
                   value={formData.saldoInicial}
                   onValueChange={(values) => {
                     handleChange('saldoInicial', values.value);
@@ -576,7 +576,7 @@ export default function GestaoBancosPage() {
             </Grid>
 
             <Stack direction="row" spacing={2} justifyContent="flex-end" mt={3}>
-              <Button variant="outlined" onClick={() => setMostrarForm(false)}>
+              <Button variant="outlined" onClick={() => { setMostrarForm(false); handleFecharEdicao(); }}>
                 Cancelar
               </Button>
               <Button type="submit" variant="contained">
@@ -621,162 +621,162 @@ export default function GestaoBancosPage() {
                     <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
                       Bancos Ativos
                     </Typography>
-                    <Grid container spacing={3}>
+                    <Grid container spacing={3} sx={{ mb: 3, '& > *': { p: 2 } }}>
                       {bancosAtivos.map((banco) => (
-                <Grid xs={12} md={6} lg={4} key={banco._id}>
-                  <Card sx={{ p: 3, height: '100%' }}>
-                    <Stack spacing={2}>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between">
-                        <Stack direction="row" alignItems="center" spacing={1}>
-                          <Iconify icon="eva:credit-card-fill" width={24} color="primary.main" />
-                          <Typography variant="h6">
-                            {banco.instituicaoBancariaId?.nome || banco.nome || 'Banco'}
-                          </Typography>
-                        </Stack>
-                        <Typography variant="caption" color="text.secondary">
-                          {banco.instituicaoBancariaId?.codigo || banco.codigo || 'N/A'}
-                        </Typography>
-                      </Stack>
-
-                      <Divider />
-
-                      <Stack spacing={1}>
-                        <Stack direction="row" justifyContent="space-between">
-                          <Typography variant="body2" color="text.secondary">
-                            Agência:
-                          </Typography>
-                          <Typography variant="body2" fontWeight="medium">
-                            {banco.agencia || 'N/A'}
-                          </Typography>
-                        </Stack>
-
-                        <Stack direction="row" justifyContent="space-between">
-                          <Typography variant="body2" color="text.secondary">
-                            Conta:
-                          </Typography>
-                          <Typography variant="body2" fontWeight="medium">
-                            {banco.conta}
-                          </Typography>
-                        </Stack>
-
-                        <Stack direction="row" justifyContent="space-between">
-                          <Typography variant="body2" color="text.secondary">
-                            Tipo:
-                          </Typography>
-                          <Typography variant="body2" fontWeight="medium" sx={{ textTransform: 'capitalize' }}>
-                            {banco.tipoConta || 'N/A'}
-                          </Typography>
-                        </Stack>
-
-                        {/* ✅ Saldo Atual */}
-                        {banco.saldo !== undefined && banco.saldo !== null && (
-                          <Stack direction="row" justifyContent="space-between">
-                            <Typography variant="body2" color="text.secondary">
-                              Saldo Atual:
-                            </Typography>
-                            <Typography variant="body2" fontWeight="bold" color="primary.main">
-                              {fCurrency(banco.saldo)}
-                            </Typography>
-                          </Stack>
-                        )}
-
-                        {/* ✅ Saldo Inicial e Data de Início */}
-                        {banco.saldoInicial !== undefined && banco.saldoInicial !== null && (
-                          <Stack direction="row" justifyContent="space-between">
-                            <Typography variant="body2" color="text.secondary">
-                              Saldo Inicial:
-                            </Typography>
-                            <Typography variant="body2" fontWeight="medium">
-                              {fCurrency(banco.saldoInicial)}
-                              {banco.dataInicio && (
-                                <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
-                                  (em {formatarDataISO(banco.dataInicio)})
-                                </Typography>
-                              )}
-                            </Typography>
-                          </Stack>
-                        )}
-
-                        {/* ✅ Variação do Saldo */}
-                        {banco.saldo !== undefined && banco.saldoInicial !== undefined && (
-                          <Stack direction="row" justifyContent="space-between">
-                            <Typography variant="body2" color="text.secondary">
-                              Variação:
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              fontWeight="bold"
-                              color={
-                                (banco.saldo || 0) >= (banco.saldoInicial || 0) ? 'success.main' : 'error.main'
-                              }
-                            >
-                              {(banco.saldo || 0) >= (banco.saldoInicial || 0) ? '+' : ''}
-                              {fCurrency((banco.saldo || 0) - (banco.saldoInicial || 0))}
-                            </Typography>
-                          </Stack>
-                        )}
-
-                        {/* ✅ Conta Contábil Vinculada */}
-                        {(() => {
-                          // Verificar se tem conta contábil (pode ser ID string ou objeto populado)
-                          const contaContabil = banco.contaContabilId || banco.contaContabil;
-                          if (!contaContabil) return null;
-                          
-                          // Se for objeto populado, exibir dados
-                          if (typeof contaContabil === 'object' && contaContabil !== null) {
-                            return (
-                              <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                                <Typography variant="body2" color="text.secondary">
-                                  Conta Contábil:
-                                </Typography>
-                                <Typography variant="body2" fontWeight="medium" color="success.main">
-                                  {contaContabil.codigoSequencial || contaContabil.codigo || 'N/A'} - {contaContabil.nome || 'N/A'}
+                        <Grid xs={12} md={6} lg={4} key={banco._id}>
+                          <Card sx={{ p: 3, height: '100%' }}>
+                            <Stack spacing={2}>
+                              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                                <Stack direction="row" alignItems="center" spacing={1}>
+                                  <Iconify icon="eva:credit-card-fill" width={24} color="primary.main" />
+                                  <Typography variant="h6">
+                                    {banco.instituicaoBancariaId?.nome || banco.nome || 'Banco'}
+                                  </Typography>
+                                </Stack>
+                                <Typography variant="caption" color="text.secondary">
+                                  {banco.instituicaoBancariaId?.codigo || banco.codigo || 'N/A'}
                                 </Typography>
                               </Stack>
-                            );
-                          }
-                          
-                          // Se for apenas ID, mostrar que está vinculada
-                          if (typeof contaContabil === 'string') {
-                            return (
-                              <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                                <Typography variant="body2" color="text.secondary">
-                                  Conta Contábil:
-                                </Typography>
-                                <Typography variant="body2" fontWeight="medium" color="success.main">
-                                  ✓ Vinculada
-                                </Typography>
-                              </Stack>
-                            );
-                          }
-                          
-                          return null;
-                        })()}
-                      </Stack>
 
-                      <Stack direction="row" spacing={1}>
-                        <Button
-                          variant="outlined"
-                          color="primary"
-                          size="small"
-                          startIcon={<Iconify icon="eva:edit-fill" />}
-                          onClick={() => handleEditar(banco)}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="outlined"
-                          color="error"
-                          size="small"
-                          startIcon={<Iconify icon="eva:trash-2-outline" />}
-                          onClick={() => handleDesativar(banco._id, banco.nome)}
-                        >
-                          Desativar
-                        </Button>
-                      </Stack>
-                    </Stack>
-                  </Card>
-                </Grid>
+                              <Divider />
+
+                              <Stack spacing={1}>
+                                <Stack direction="row" justifyContent="space-between">
+                                  <Typography variant="body2" color="text.secondary">
+                                    Agência:
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {banco.agencia || 'N/A'}
+                                  </Typography>
+                                </Stack>
+
+                                <Stack direction="row" justifyContent="space-between">
+                                  <Typography variant="body2" color="text.secondary">
+                                    Conta:
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight="medium">
+                                    {banco.conta}
+                                  </Typography>
+                                </Stack>
+
+                                <Stack direction="row" justifyContent="space-between">
+                                  <Typography variant="body2" color="text.secondary">
+                                    Tipo:
+                                  </Typography>
+                                  <Typography variant="body2" fontWeight="medium" sx={{ textTransform: 'capitalize' }}>
+                                    {banco.tipoConta || 'N/A'}
+                                  </Typography>
+                                </Stack>
+
+                                {/* ✅ Saldo Atual */}
+                                {banco.saldo !== undefined && banco.saldo !== null && (
+                                  <Stack direction="row" justifyContent="space-between">
+                                    <Typography variant="body2" color="text.secondary">
+                                      Saldo Atual:
+                                    </Typography>
+                                    <Typography variant="body2" fontWeight="bold" color="primary.main">
+                                      {fCurrency(banco.saldo)}
+                                    </Typography>
+                                  </Stack>
+                                )}
+
+                                {/* ✅ Saldo Inicial e Data de Início */}
+                                {banco.saldoInicial !== undefined && banco.saldoInicial !== null && (
+                                  <Stack direction="row" justifyContent="space-between">
+                                    <Typography variant="body2" color="text.secondary">
+                                      Saldo Inicial:
+                                    </Typography>
+                                    <Typography variant="body2" fontWeight="medium">
+                                      {fCurrency(banco.saldoInicial)}
+                                      {banco.dataInicio && (
+                                        <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                                          (em {formatarDataISO(banco.dataInicio)})
+                                        </Typography>
+                                      )}
+                                    </Typography>
+                                  </Stack>
+                                )}
+
+                                {/* ✅ Variação do Saldo */}
+                                {banco.saldo !== undefined && banco.saldoInicial !== undefined && (
+                                  <Stack direction="row" justifyContent="space-between">
+                                    <Typography variant="body2" color="text.secondary">
+                                      Variação:
+                                    </Typography>
+                                    <Typography
+                                      variant="body2"
+                                      fontWeight="bold"
+                                      color={
+                                        (banco.saldo || 0) >= (banco.saldoInicial || 0) ? 'success.main' : 'error.main'
+                                      }
+                                    >
+                                      {(banco.saldo || 0) >= (banco.saldoInicial || 0) ? '+' : ''}
+                                      {fCurrency((banco.saldo || 0) - (banco.saldoInicial || 0))}
+                                    </Typography>
+                                  </Stack>
+                                )}
+
+                                {/* ✅ Conta Contábil Vinculada */}
+                                {(() => {
+                                  // Verificar se tem conta contábil (pode ser ID string ou objeto populado)
+                                  const contaContabil = banco.contaContabilId || banco.contaContabil;
+                                  if (!contaContabil) return null;
+
+                                  // Se for objeto populado, exibir dados
+                                  if (typeof contaContabil === 'object' && contaContabil !== null) {
+                                    return (
+                                      <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                          Conta Contábil:
+                                        </Typography>
+                                        <Typography variant="body2" fontWeight="medium" color="success.main">
+                                          {contaContabil.codigoSequencial || contaContabil.codigo || 'N/A'} - {contaContabil.nome || 'N/A'}
+                                        </Typography>
+                                      </Stack>
+                                    );
+                                  }
+
+                                  // Se for apenas ID, mostrar que está vinculada
+                                  if (typeof contaContabil === 'string') {
+                                    return (
+                                      <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                          Conta Contábil:
+                                        </Typography>
+                                        <Typography variant="body2" fontWeight="medium" color="success.main">
+                                          ✓ Vinculada
+                                        </Typography>
+                                      </Stack>
+                                    );
+                                  }
+
+                                  return null;
+                                })()}
+                              </Stack>
+
+                              <Stack direction="row" spacing={1}>
+                                <Button
+                                  variant="outlined"
+                                  color="primary"
+                                  size="small"
+                                  startIcon={<Iconify icon="eva:edit-fill" />}
+                                  onClick={() => handleEditar(banco)}
+                                >
+                                  Editar
+                                </Button>
+                                <Button
+                                  variant="outlined"
+                                  color="error"
+                                  size="small"
+                                  startIcon={<Iconify icon="eva:trash-2-outline" />}
+                                  onClick={() => handleDesativar(banco._id, banco.nome)}
+                                >
+                                  Desativar
+                                </Button>
+                              </Stack>
+                            </Stack>
+                          </Card>
+                        </Grid>
                       ))}
                     </Grid>
                   </Box>
@@ -896,8 +896,8 @@ export default function GestaoBancosPage() {
                           {saldoInicialAlterado && dataInicioAlterada
                             ? 'Saldo inicial e data de início alterados. O saldo atual será recalculado automaticamente com base em todas as transações conciliadas.'
                             : saldoInicialAlterado
-                            ? 'Saldo inicial alterado. O saldo atual será recalculado automaticamente com base em todas as transações conciliadas.'
-                            : 'Data de início alterada. O saldo atual será recalculado automaticamente.'}
+                              ? 'Saldo inicial alterado. O saldo atual será recalculado automaticamente com base em todas as transações conciliadas.'
+                              : 'Data de início alterada. O saldo atual será recalculado automaticamente.'}
                         </Typography>
                       </Alert>
                     );
@@ -937,7 +937,7 @@ export default function GestaoBancosPage() {
                 />
               )}
 
-              <Grid container spacing={2}>
+              <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2 } }}>
                 <Grid xs={12} md={4}>
                   <TextField
                     fullWidth

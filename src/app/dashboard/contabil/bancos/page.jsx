@@ -48,7 +48,7 @@ export default function AdminContabilBancosPage() {
   return (
     <Box sx={{ p: 3 }}>
       <Stack spacing={1} sx={{ mb: 3 }}>
-        <Typography variant="h4">Bancos — portal do cliente</Typography>
+        <Typography variant="h4">Bancos — Portal do Cliente</Typography>
         <Typography variant="body2" color="text.secondary">
           Cadastro, edição, desativação e reativação das contas bancárias usadas na conciliação. Selecione o
           cliente abaixo (mesmas rotas do cadastro de cliente: financeiro e contas).

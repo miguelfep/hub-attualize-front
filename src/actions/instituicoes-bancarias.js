@@ -98,12 +98,11 @@ export function extrairPaginaInstituicoesGerenciar(response) {
 export async function listarTodasInstituicoesGerenciar(options = {}, maxPages = 50) {
   const { incluirInativos = true } = options;
   const all = [];
-  let page = 1;
 
-  for (;;) {
+  async function fetchPage(page) {
     if (page > maxPages) {
       console.warn('[instituicoes] listarTodasInstituicoesGerenciar: atingiu maxPages', maxPages);
-      break;
+      return;
     }
     const res = await listarInstituicoesGerenciar({
       page,
@@ -112,10 +111,12 @@ export async function listarTodasInstituicoesGerenciar(options = {}, maxPages = 
     });
     const { dados, totalPaginas } = extrairPaginaInstituicoesGerenciar(res);
     all.push(...dados);
-    if (page >= totalPaginas || dados.length === 0) break;
-    page += 1;
+    if (page < totalPaginas && dados.length > 0) {
+      await fetchPage(page + 1);
+    }
   }
 
+  await fetchPage(1);
   return all;
 }
 

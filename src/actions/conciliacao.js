@@ -28,6 +28,7 @@ export function mapearContextoConciliacao(statusData, conciliacaoIdFallback) {
     mesAno: mesAno || (mes && ano ? `${ano}-${String(mes).padStart(2, '0')}` : undefined),
     bancoId: bancoRaw,
     clienteId: clienteRaw,
+    nomeBanco: d.nomeBanco || d.bancoNome || null,
     dataProcessamento: d.dataProcessamento || d.updatedAt || d.processadoEm || null,
     resumo: d.resumo || null,
   };

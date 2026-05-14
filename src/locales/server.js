@@ -1,27 +1,18 @@
 import { cache } from 'react';
-import { cookies } from 'next/headers';
 import { createInstance } from 'i18next';
 import resourcesToBackend from 'i18next-resources-to-backend';
 import { initReactI18next } from 'react-i18next/initReactI18next';
 
-import { defaultNS, cookieName, i18nOptions, fallbackLng } from './config-locales';
+import { defaultNS, fallbackLng, i18nOptions } from './config-locales';
 
 // ----------------------------------------------------------------------
 
 /**
- * [1] with url:
- * https://nextjs.org/docs/pages/building-your-application/routing/internationalization
- *
- * Use i18next with app folder and without locale in url:
- * https://github.com/i18next/next-app-dir-i18next-example/issues/12#issuecomment-1500917570
+ * App travado em pt-BR. Mantemos a assinatura `async` por compatibilidade
+ * com chamadas existentes que usam `await detectLanguage()`.
  */
-
 export async function detectLanguage() {
-  const cookieStore = await cookies();
-
-  const language = cookieStore.get(cookieName)?.value ?? fallbackLng;
-
-  return language;
+  return fallbackLng;
 }
 
 // ----------------------------------------------------------------------

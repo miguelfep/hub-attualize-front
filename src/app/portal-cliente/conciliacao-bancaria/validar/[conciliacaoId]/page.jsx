@@ -87,6 +87,16 @@ function ordenarPendentes(list) {
   return arr;
 }
 
+/** Lista de bancos pode vir como array em `data` ou em `data.data` (axios). */
+function encontrarBancoNaResposta(bancoResponse, bancoId) {
+  if (!bancoResponse?.data || !bancoId) return null;
+  const lista = Array.isArray(bancoResponse.data)
+    ? bancoResponse.data
+    : bancoResponse.data?.data;
+  if (!Array.isArray(lista)) return null;
+  return lista.find((b) => String(b._id) === String(bancoId)) || null;
+}
+
 export default function ValidacaoConciliacaoPage() {
   const router = useRouter();
   const params = useParams();
@@ -335,6 +345,7 @@ export default function ValidacaoConciliacaoPage() {
 
   // Helper para obter nome do banco de várias formas possíveis
   const getNomeBanco = () => {
+    if (conciliacao?.nomeBanco) return conciliacao.nomeBanco;
     if (bancoInfo) {
       return (
         bancoInfo.instituicaoBancariaId?.nome ||
@@ -344,11 +355,10 @@ export default function ValidacaoConciliacaoPage() {
         'N/A'
       );
     }
-    if (!conciliacao?.bancoId) return 'N/A';
-    const banco = conciliacao.bancoId;
+    const banco = conciliacao?.bancoId;
+    if (!banco) return 'N/A';
     if (typeof banco === 'string') return 'Banco selecionado';
-    
-    // Tentar diferentes caminhos onde o nome pode estar
+
     return (
       banco.instituicaoBancariaId?.nome ||
       banco.instituicaoBancaria?.nome ||
@@ -367,7 +377,7 @@ export default function ValidacaoConciliacaoPage() {
           `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
           { params: { clienteId } }
         );
-        const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bancoIdAtual);
+        const bancoEncontrado = encontrarBancoNaResposta(bancoResponse, bancoIdAtual);
         if (bancoEncontrado) {
           setBancoInfo(bancoEncontrado);
           bancoIdStatusRef.current = bancoEncontrado._id;
@@ -419,7 +429,7 @@ export default function ValidacaoConciliacaoPage() {
                 `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
                 { params: { clienteId: clienteIdAtual } }
               );
-              const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bancoIdAtual);
+              const bancoEncontrado = encontrarBancoNaResposta(bancoResponse, bancoIdAtual);
               if (bancoEncontrado) {
                 setBancoInfo(bancoEncontrado);
               }
@@ -803,7 +813,7 @@ export default function ValidacaoConciliacaoPage() {
                 `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
                 { params: { clienteId: clienteIdAtual } }
               );
-              const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bid);
+              const bancoEncontrado = encontrarBancoNaResposta(bancoResponse, bid);
               if (bancoEncontrado) {
                 setBancoInfo(bancoEncontrado);
               }
@@ -923,7 +933,7 @@ export default function ValidacaoConciliacaoPage() {
                 `${process.env.NEXT_PUBLIC_API_URL}financeiro/bancos`,
                 { params: { clienteId: clienteIdAtual } }
               );
-              const bancoEncontrado = bancoResponse.data?.find((b) => b._id === bid);
+              const bancoEncontrado = encontrarBancoNaResposta(bancoResponse, bid);
               if (bancoEncontrado) {
                 setBancoInfo(bancoEncontrado);
               }
@@ -1160,7 +1170,7 @@ export default function ValidacaoConciliacaoPage() {
       </Box>
 
       {/* Resumo Header */}
-      <Grid container spacing={2} mb={2}>
+      <Grid container spacing={2} mb={2} sx={{ mb: 3, '& > *': { p: 2 } }}>
         {/* Informações Gerais */}
         <Grid xs={12} md={6}>
           <Card sx={{ p: 2, height: '100%' }}>
@@ -1508,36 +1518,16 @@ export default function ValidacaoConciliacaoPage() {
                   <Stack spacing={1}>
                     {transacoesPendentesFiltradas.map((transacao, idx) => {
                       const transacaoId = transacao._id || transacao.transacaoImportadaId;
-                      const temContaSelecionada = contasSelecionadas[transacaoId] || transacao.contaSugerida?._id;
-                      
+
                       return (
-                        <Box
+                        <TransacaoNaoIdentificada
                           key={transacaoId || idx}
-                          sx={{
-                            position: 'relative',
-                            ...(temContaSelecionada && {
-                              '&::before': {
-                                content: '""',
-                                position: 'absolute',
-                                left: 0,
-                                top: 0,
-                                bottom: 0,
-                                width: 4,
-                                bgcolor: 'success.main',
-                                borderRadius: '4px 0 0 4px',
-                                zIndex: 1,
-                              },
-                            }),
-                          }}
-                        >
-                          <TransacaoNaoIdentificada
-                            transacao={transacao}
-                            clienteId={clienteId}
-                            onConfirmar={handleConfirmarTransacao}
-                            onContaChange={handleContaChange}
-                            onAplicarSemelhantes={handleAplicarContaSemelhantes}
-                          />
-                        </Box>
+                          transacao={transacao}
+                          clienteId={clienteId}
+                          onConfirmar={handleConfirmarTransacao}
+                          onContaChange={handleContaChange}
+                          onAplicarSemelhantes={handleAplicarContaSemelhantes}
+                        />
                       );
                     })}
                   </Stack>

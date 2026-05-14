@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -28,15 +29,21 @@ import TableContainer from '@mui/material/TableContainer';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
+import { toTitleCase } from 'src/utils/helper';
+
 import {
-  atualizarInstituicaoBancaria,
   criarInstituicaoBancaria,
   excluirInstituicaoBancaria,
-  listarCatalogoInstituicoesCompleto,
   TIPOS_INSTITUICAO_BANCARIA,
+  atualizarInstituicaoBancaria,
+  listarCatalogoInstituicoesCompleto,
 } from 'src/actions/instituicoes-bancarias';
 
 import { Iconify } from 'src/components/iconify';
+import { ConfirmDialog } from 'src/components/custom-dialog';
+import { CustomDivider } from 'src/components/divider/CustomDivider';
 
 // ----------------------------------------------------------------------
 
@@ -59,6 +66,7 @@ const emptyForm = {
   tipo: 'comercial',
   logoUrl: '',
   ativo: true,
+  aceitaPdf: true,
 };
 
 export default function InstituicoesBancariasPage() {
@@ -69,11 +77,15 @@ export default function InstituicoesBancariasPage() {
   const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(emptyForm);
 
+  const confirmDesativar = useBoolean();
+  const [rowParaDesativar, setRowParaDesativar] = useState(null);
+  const [desativando, setDesativando] = useState(false);
+
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
       const rowsRaw = await listarCatalogoInstituicoesCompleto();
-      let rows = [...rowsRaw].sort((a, b) => {
+      const rows = [...rowsRaw].sort((a, b) => {
         const ca = parseInt(String(a.codigo || '999'), 10);
         const cb = parseInt(String(b.codigo || '999'), 10);
         return ca - cb;
@@ -108,6 +120,7 @@ export default function InstituicoesBancariasPage() {
       tipo: row.tipo && TIPOS_INSTITUICAO_BANCARIA.some((t) => t.value === row.tipo) ? row.tipo : 'comercial',
       logoUrl: row.logoUrl ?? '',
       ativo: row.ativo !== false,
+      aceitaPdf: row.aceitaPdf !== false,
     });
     setDialogOpen(true);
   };
@@ -123,11 +136,11 @@ export default function InstituicoesBancariasPage() {
     const codigo = String(form.codigo || '').trim();
     const nome = String(form.nome || '').trim();
     const nomeCompleto = String(form.nomeCompleto || '').trim();
-    const {tipo} = form;
+    const { tipo } = form;
     const logoUrl = String(form.logoUrl || '').trim();
 
     if (!codigo || !nome || !nomeCompleto) {
-      toast.error('Código, nome curto e nome completo são obrigatórios.');
+      toast.error('Código, nome curto e nome completo são obrigatórios.', { id: 'validador-instituicoes-bancarias' });
       return;
     }
 
@@ -144,6 +157,7 @@ export default function InstituicoesBancariasPage() {
         nomeCompleto,
         tipo,
         ativo: Boolean(form.ativo),
+        aceitaPdf: Boolean(form.aceitaPdf),
       };
       if (logoUrl) payload.logoUrl = logoUrl;
 
@@ -171,45 +185,46 @@ export default function InstituicoesBancariasPage() {
     }
   };
 
-  const handleDesativar = async (row) => {
-    const id = row._id || row.id;
-    const nome = row.nome || row.codigo;
-    if (
-      !id ||
-      !window.confirm(
-        `Desativar a instituição "${nome}"? (soft delete — ativo = false). Contas já vinculadas permanecem.`
-      )
-    ) {
-      return;
-    }
+  const abrirConfirmacaoDesativar = (row) => {
+    const id = row?._id || row?.id;
+    if (!id) return;
+    setRowParaDesativar(row);
+    confirmDesativar.onTrue();
+  };
+
+  const fecharConfirmacaoDesativar = () => {
+    if (desativando) return;
+    confirmDesativar.onFalse();
+    setRowParaDesativar(null);
+  };
+
+  const handleConfirmarDesativar = async () => {
+    const id = rowParaDesativar?._id || rowParaDesativar?.id;
+    if (!id) return;
+    setDesativando(true);
     try {
       await excluirInstituicaoBancaria(id);
       toast.success('Instituição desativada.');
+      confirmDesativar.onFalse();
+      setRowParaDesativar(null);
       await carregar();
     } catch (e) {
       toast.error(getApiErrorMessage(e));
+    } finally {
+      setDesativando(false);
     }
   };
 
   return (
     <Box sx={{ p: 3 }}>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 3 }} flexWrap="wrap" gap={2}>
-        <div>
-          <Typography variant="h4" gutterBottom>
-            Instituições bancárias
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Cadastro global (COMPE). Listagem:{' '}
-            <code>GET bancos/instituicoes?incluirInativos=true</code> (catálogo completo). Criação:{' '}
-            <code>POST bancos/instituicoes</code> (admin + JWT). Editar/desativar:{' '}
-            <code>.../gerenciar/:id</code>.
-          </Typography>
-        </div>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ my: 2 }} gap={2}>
+        <Typography variant="h4" gutterBottom>
+          🏦 Instituições bancárias
+        </Typography>
         <Button variant="contained" startIcon={<Iconify icon="eva:plus-fill" />} onClick={abrirNovo}>
           Nova instituição
         </Button>
       </Stack>
-
       <Card>
         <TableContainer>
           <Table size="small">
@@ -219,6 +234,7 @@ export default function InstituicoesBancariasPage() {
                 <TableCell>Nome</TableCell>
                 <TableCell>Nome completo</TableCell>
                 <TableCell>Tipo</TableCell>
+                <TableCell>PDF</TableCell>
                 <TableCell>Ativo</TableCell>
                 <TableCell align="right">Ações</TableCell>
               </TableRow>
@@ -226,16 +242,15 @@ export default function InstituicoesBancariasPage() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 6 }}>
                     <CircularProgress size={28} />
                   </TableCell>
                 </TableRow>
               ) : lista.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                     <Typography variant="body2" color="text.secondary">
-                      Nenhuma instituição retornada. Verifique o GET{' '}
-                      <code>bancos/instituicoes?incluirInativos=true</code> e permissões de rede.
+                      Nenhuma instituição retornada
                     </Typography>
                   </TableCell>
                 </TableRow>
@@ -244,13 +259,28 @@ export default function InstituicoesBancariasPage() {
                   const id = row._id || row.id;
                   return (
                     <TableRow key={id || `${row.codigo}-${row.nome}`} hover>
-                      <TableCell>{row.codigo}</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}><code>{row.codigo}</code></TableCell>
                       <TableCell>{row.nome}</TableCell>
-                      <TableCell sx={{ maxWidth: 280 }} noWrap title={row.nomeCompleto}>
+                      <TableCell sx={{ maxWidth: 280, whiteSpace: 'nowrap' }} title={row.nomeCompleto}>
                         {row.nomeCompleto || '—'}
                       </TableCell>
-                      <TableCell>{row.tipo || '—'}</TableCell>
-                      <TableCell>{row.ativo === false ? 'Não' : 'Sim'}</TableCell>
+                      <TableCell>{toTitleCase(row.tipo) || '—'}</TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.aceitaPdf !== false ? 'Sim' : 'Não'}
+                          color={row.aceitaPdf !== false ? 'success' : 'error'}
+                          size="small"
+                          sx={{ borderRadius: 2 }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={row.ativo ? "Sim" : "Não"}
+                          color={row.ativo ? "success" : "error"}
+                          size="small"
+                          sx={{ borderRadius: 2 }}
+                        />
+                      </TableCell>
                       <TableCell align="right">
                         <IconButton size="small" color="primary" onClick={() => abrirEditar(row)} aria-label="Editar">
                           <Iconify icon="eva:edit-fill" />
@@ -259,7 +289,7 @@ export default function InstituicoesBancariasPage() {
                           <IconButton
                             size="small"
                             color="warning"
-                            onClick={() => handleDesativar(row)}
+                            onClick={() => abrirConfirmacaoDesativar(row)}
                             aria-label="Desativar"
                           >
                             <Iconify icon="eva:slash-outline" />
@@ -280,7 +310,7 @@ export default function InstituicoesBancariasPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <TextField
-              label="Código COMPE (3 dígitos) *"
+              label="Código COMPE (3 dígitos)"
               value={form.codigo}
               onChange={(e) => setForm((f) => ({ ...f, codigo: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
               placeholder="001"
@@ -289,7 +319,7 @@ export default function InstituicoesBancariasPage() {
               helperText={editando ? 'Código não pode ser alterado após a criação.' : 'Ex.: 077, 237, 341.'}
             />
             <TextField
-              label="Nome curto *"
+              label="Nome curto"
               value={form.nome}
               onChange={(e) => setForm((f) => ({ ...f, nome: e.target.value }))}
               placeholder="Banco Inter"
@@ -297,7 +327,7 @@ export default function InstituicoesBancariasPage() {
               fullWidth
             />
             <TextField
-              label="Nome completo (razão social) *"
+              label="Nome completo (razão social)"
               value={form.nomeCompleto}
               onChange={(e) => setForm((f) => ({ ...f, nomeCompleto: e.target.value }))}
               placeholder="Banco Inter S.A."
@@ -325,15 +355,26 @@ export default function InstituicoesBancariasPage() {
               placeholder="https://..."
               fullWidth
             />
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={Boolean(form.ativo)}
-                  onChange={(e) => setForm((f) => ({ ...f, ativo: e.target.checked }))}
-                />
-              }
-              label="Instituição ativa"
-            />
+            <Stack spacing={2} divider={<CustomDivider />} direction="row" alignItems="center" justifyContent="space-between">
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={Boolean(form.ativo)}
+                    onChange={(e) => setForm((f) => ({ ...f, ativo: e.target.checked }))}
+                  />
+                }
+                label="Instituição ativa"
+              />
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={Boolean(form.aceitaPdf)}
+                    onChange={(e) => setForm((f) => ({ ...f, aceitaPdf: e.target.checked }))}
+                  />
+                }
+                label="Aceita importação via PDF"
+              />
+            </Stack>
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -345,6 +386,27 @@ export default function InstituicoesBancariasPage() {
           </Button>
         </DialogActions>
       </Dialog>
-    </Box>
+
+      <ConfirmDialog
+        open={confirmDesativar.value}
+        onClose={fecharConfirmacaoDesativar}
+        title="Desativar instituição"
+        content={
+          rowParaDesativar
+            ? `Desativar a instituição ${rowParaDesativar.codigo} - ${rowParaDesativar.nome}? Contas já vinculadas permanecerão.`
+            : ''
+        }
+        action={
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleConfirmarDesativar}
+            disabled={desativando}
+          >
+            {desativando ? 'Desativando…' : 'Desativar'}
+          </Button>
+        }
+      />
+    </Box >
   );
 }

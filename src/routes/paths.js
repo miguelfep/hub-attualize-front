@@ -196,6 +196,7 @@ export const paths = {
       root: `${ROOTS.DASHBOARD}/usuarios`,
       new: `${ROOTS.DASHBOARD}/usuarios/new`,
       edit: (id) => `${ROOTS.DASHBOARD}/usuarios/${id}/edit`,
+      internos: `${ROOTS.DASHBOARD}/usuarios/internos`,
     },
     contratos: {
       root: `${ROOTS.DASHBOARD}/financeiro/contratos`,

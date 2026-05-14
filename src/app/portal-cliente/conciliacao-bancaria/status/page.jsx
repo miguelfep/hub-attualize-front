@@ -2,30 +2,40 @@
 
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
-import { useRef, useMemo, useState, useEffect } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Grid from '@mui/material/Grid';
 import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
+import Grid from '@mui/material/Grid';
+import List from '@mui/material/List';
 import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import Select from '@mui/material/Select';
+import Popover from '@mui/material/Popover';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import Accordion from '@mui/material/Accordion';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
+import DialogTitle from '@mui/material/DialogTitle';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
 import LinearProgress from '@mui/material/LinearProgress';
-import CircularProgress from '@mui/material/CircularProgress';
-import AccordionSummary from '@mui/material/AccordionSummary';
+import ListItemButton from '@mui/material/ListItemButton';
 import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
 
-import { exportarCSVMes, obterStatusConciliacao } from 'src/actions/conciliacao';
+import { exportarCSVMes, obterStatusConciliacao, removerTransacoesConciliacao } from 'src/actions/conciliacao';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -37,18 +47,18 @@ import { UploadDocumentosContabeisDialog } from '../components';
 // ✅ Helper para formatar data ISO sem problemas de timezone
 const formatarDataISO = (dataISO) => {
   if (!dataISO) return '';
-  
+
   // Se for string ISO, extrair apenas a parte da data (YYYY-MM-DD)
   if (typeof dataISO === 'string' && dataISO.includes('T')) {
     const [ano, mes, dia] = dataISO.split('T')[0].split('-');
     return `${dia}/${mes}/${ano}`;
   }
-  
+
   // Se for Date object, usar toLocaleDateString
   if (dataISO instanceof Date) {
     return dataISO.toLocaleDateString('pt-BR');
   }
-  
+
   // Fallback: tentar criar Date
   try {
     const data = new Date(dataISO);
@@ -71,19 +81,63 @@ function isBancoAtivoConciliacao(banco) {
   return banco.status !== false && banco.ativo !== false;
 }
 
+const STATUS_CONCILIACAO_STORAGE_KEY = 'portal/conciliacao-bancaria/status';
+
+function readStatusConciliacaoUiFromStorage() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(STATUS_CONCILIACAO_STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== 'object') return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
 export default function StatusConciliacaoPage() {
   const router = useRouter();
   const { user } = useAuthContext();
   const [loadingEmpresa, setLoadingEmpresa] = useState(true);
   const [empresaData, setEmpresaData] = useState(null);
   const [mesesPorBanco, setMesesPorBanco] = useState({});
-  const [anoSelecionado, setAnoSelecionado] = useState(new Date().getFullYear()); // 🔥 Ano atual por padrão
+  const [anoSelecionado, setAnoSelecionado] = useState(() => {
+    const stored = readStatusConciliacaoUiFromStorage();
+    const y = stored?.anoSelecionado;
+    return typeof y === 'number' && Number.isFinite(y) ? y : new Date().getFullYear();
+  });
+  /** Mapa bancoId -> expandido (persistido em sessionStorage ao voltar do upload). */
+  const [bancosExpandidos, setBancosExpandidos] = useState(() => {
+    const stored = readStatusConciliacaoUiFromStorage();
+    const map = stored?.bancosExpandidos;
+    if (map && typeof map === 'object' && !Array.isArray(map)) {
+      return map;
+    }
+    return {};
+  });
   const [uploadContabilOpen, setUploadContabilOpen] = useState(false);
-  
+  const [popoverReenviar, setPopoverReenviar] = useState({
+    anchorEl: null,
+    bancoId: null,
+    mesAno: null,
+    conciliacaoId: null,
+  });
+  const [dialogConfirmReenviar, setDialogConfirmReenviar] = useState({
+    open: false,
+    bancoId: null,
+    mesAno: null,
+    conciliacaoId: null,
+  });
+  const [reenviandoExtrato, setReenviandoExtrato] = useState(false);
+
+  const accordionRefs = useRef(new Map());
+  const hasScrolledToExpandedOnMountRef = useRef(false);
+
   // 🔥 NOVO: Estados para processamento assíncrono
   const [processamentosEmAndamento, setProcessamentosEmAndamento] = useState({}); // { conciliacaoId: { status, progresso, mesAno, bancoId } }
   const processamentosEmAndamentoRef = useRef({}); // Ref para manter estado atualizado
-  
+
   // ✅ Sincronizar ref com estado
   useEffect(() => {
     processamentosEmAndamentoRef.current = processamentosEmAndamento;
@@ -127,71 +181,115 @@ export default function StatusConciliacaoPage() {
     [bancos]
   );
 
-  // Carregar meses para cada banco
+  // Persistir ano e acordeões (restaura ao voltar da página de upload, etc.)
   useEffect(() => {
-    const carregarMesesPorBanco = async () => {
-      if (!clienteId || bancos.length === 0) return;
-
-      const mesesMap = {};
-      const processamentosEncontrados = {};
-      
-      await Promise.all(
-        bancos.map(async (banco) => {
-          try {
-            // 🔥 Usando API antiga (reconciliation) para listar meses conciliados
-            const response = await axios.get(
-              `${process.env.NEXT_PUBLIC_API_URL}reconciliation/meses-conciliados/${clienteId}?bancoId=${banco._id}`
-            );
-            
-            if (response.data?.success) {
-              const meses = response.data.data || [];
-              mesesMap[banco._id] = meses;
-              
-              // Só consulta status na carga inicial quando o mês já veio como processando (evita N requisições)
-              await Promise.all(
-                meses
-                  .filter((m) => m.conciliacaoId && m.status === 'processando')
-                  .map(async (mes) => {
-                    try {
-                      const statusResponse = await obterStatusConciliacao(mes.conciliacaoId);
-                      const statusData = statusResponse.data?.data;
-
-                      if (statusData?.status === 'processando') {
-                        processamentosEncontrados[mes.conciliacaoId] = {
-                          status: statusData.status,
-                          progresso: statusData.progresso || 0,
-                          mesAno: mes.mesAno,
-                          bancoId: banco._id,
-                        };
-                      }
-                    } catch (err) {
-                      /* ignorar */
-                    }
-                  })
-              );
-            }
-          } catch (err) {
-            console.error(`Erro ao carregar meses do banco ${banco._id}:`, err);
-            mesesMap[banco._id] = [];
-          }
-        })
+    if (typeof window === 'undefined') return;
+    try {
+      sessionStorage.setItem(
+        STATUS_CONCILIACAO_STORAGE_KEY,
+        JSON.stringify({ anoSelecionado, bancosExpandidos })
       );
-      
-      setMesesPorBanco(mesesMap);
-      
-      // Atualizar processamentos encontrados
-      if (Object.keys(processamentosEncontrados).length > 0) {
-        const novos = {
-          ...processamentosEmAndamentoRef.current,
-          ...processamentosEncontrados,
-        };
-        processamentosEmAndamentoRef.current = novos;
-        setProcessamentosEmAndamento(novos);
-      }
-    };
+    } catch {
+      /* ignore quota / private mode */
+    }
+  }, [anoSelecionado, bancosExpandidos]);
 
-    carregarMesesPorBanco();
+  // Um banco só: expandir por padrão se não houver nenhuma preferência salva
+  useEffect(() => {
+    if (loadingBancos || bancosOrdenados.length !== 1) return;
+    setBancosExpandidos((prev) => {
+      if (Object.keys(prev).length > 0) return prev;
+      return { [bancosOrdenados[0]._id]: true };
+    });
+  }, [loadingBancos, bancosOrdenados]);
+
+  // Ao voltar com acordeão aberto, rolar até o banco (após refs e expansão default)
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    if (loadingBancos || bancosOrdenados.length === 0) return undefined;
+    if (hasScrolledToExpandedOnMountRef.current) return undefined;
+
+    const expandedId = bancosOrdenados.find((b) => bancosExpandidos[b._id])?._id;
+    if (!expandedId) return undefined;
+
+    let raf2;
+    const raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        const el = accordionRefs.current.get(expandedId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        hasScrolledToExpandedOnMountRef.current = true;
+      });
+    });
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+    };
+  }, [loadingBancos, bancosOrdenados, bancosExpandidos]);
+
+  const refetchMesesPorBanco = useCallback(async () => {
+    if (!clienteId || bancos.length === 0) return;
+
+    const mesesMap = {};
+    const processamentosEncontrados = {};
+
+    await Promise.all(
+      bancos.map(async (banco) => {
+        try {
+          const response = await axios.get(
+            `${process.env.NEXT_PUBLIC_API_URL}reconciliation/meses-conciliados/${clienteId}?bancoId=${banco._id}`
+          );
+
+          if (response.data?.success) {
+            const meses = response.data.data || [];
+            mesesMap[banco._id] = meses;
+
+            await Promise.all(
+              meses
+                .filter((m) => m.conciliacaoId && m.status === 'processando')
+                .map(async (mes) => {
+                  try {
+                    const statusResponse = await obterStatusConciliacao(mes.conciliacaoId);
+                    const statusData = statusResponse.data?.data;
+
+                    if (statusData?.status === 'processando') {
+                      processamentosEncontrados[mes.conciliacaoId] = {
+                        status: statusData.status,
+                        progresso: statusData.progresso || 0,
+                        mesAno: mes.mesAno,
+                        bancoId: banco._id,
+                      };
+                    }
+                  } catch (err) {
+                    /* ignorar */
+                  }
+                })
+            );
+          }
+        } catch (err) {
+          console.error(`Erro ao carregar meses do banco ${banco._id}:`, err);
+          mesesMap[banco._id] = [];
+        }
+      })
+    );
+
+    setMesesPorBanco(mesesMap);
+
+    if (Object.keys(processamentosEncontrados).length > 0) {
+      const novos = {
+        ...processamentosEmAndamentoRef.current,
+        ...processamentosEncontrados,
+      };
+      processamentosEmAndamentoRef.current = novos;
+      setProcessamentosEmAndamento(novos);
+    }
   }, [clienteId, bancos]);
+
+  useEffect(() => {
+    refetchMesesPorBanco();
+  }, [refetchMesesPorBanco]);
 
   // 🔥 NOVO: Polling de conciliações em processamento
   useEffect(() => {
@@ -209,10 +307,10 @@ export default function StatusConciliacaoPage() {
 
     // Também incluir processamentos que já estão no estado (para casos de transição)
     const conciliacoesProcessandoDoEstado = Object.keys(processamentosEmAndamentoRef.current);
-    
+
     // Combinar ambas as listas (sem duplicatas)
     const conciliacoesProcessando = [...new Set([...conciliacoesProcessandoDaLista, ...conciliacoesProcessandoDoEstado])];
-    
+
     console.log('🔍 Processamentos detectados:', {
       daLista: conciliacoesProcessandoDaLista.length,
       doEstado: conciliacoesProcessandoDoEstado.length,
@@ -292,7 +390,7 @@ export default function StatusConciliacaoPage() {
 
               // Se encontrou na lista ou já está no estado de processamentos
               const processamentoExistente = novosProcessamentos[conciliacaoId];
-              
+
               // Enquanto o job não termina (fila / worker)
               if (statusData.status === 'processando' || statusData.status === 'aguardando_extrato') {
                 const bancoId = mesEncontrado?.bancoId || processamentoExistente?.bancoId;
@@ -302,7 +400,7 @@ export default function StatusConciliacaoPage() {
                 // Se não tem bancoId/mesAno mas tem mesAno no status, tentar encontrar banco pela conciliacaoId
                 let bancoIdFinal = bancoId;
                 let mesAnoFinal = mesAno;
-                
+
                 if (!bancoIdFinal && statusData.mesAno) {
                   // Tentar encontrar banco que tenha este conciliacaoId
                   const bancoEncontrado = Object.entries(mesesPorBanco).find(([bancoIdKey, meses]) => {
@@ -316,7 +414,7 @@ export default function StatusConciliacaoPage() {
                   });
                   // bancoEncontrado já atualizou bancoIdFinal e mesAnoFinal se encontrou
                 }
-                
+
                 // Se ainda não tem bancoId, mas tem mesAno, adicionar mesmo assim (será atualizado depois)
                 if (statusData.mesAno) {
                   novosProcessamentos[conciliacaoId] = {
@@ -334,11 +432,11 @@ export default function StatusConciliacaoPage() {
                     updatedAt: statusData.updatedAt || null,
                   };
                   atualizou = true;
-                  console.log('✅ Processamento detectado:', { 
-                    conciliacaoId, 
-                    bancoId: bancoIdFinal, 
-                    mesAno: mesAnoFinal || statusData.mesAno, 
-                    progresso: statusData.progresso, 
+                  console.log('✅ Processamento detectado:', {
+                    conciliacaoId,
+                    bancoId: bancoIdFinal,
+                    mesAno: mesAnoFinal || statusData.mesAno,
+                    progresso: statusData.progresso,
                     totalTransacoes: statusData.totalTransacoes,
                     temBancoId: !!bancoIdFinal,
                     temMesAno: !!(mesAnoFinal || statusData.mesAno)
@@ -430,15 +528,15 @@ export default function StatusConciliacaoPage() {
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
     const mesAtual = hoje.getMonth(); // 0-11
-    
+
     const anos = new Set();
-    
+
     // Gerar últimos 24 meses
     for (let i = 0; i < 24; i += 1) {
       const data = new Date(anoAtual, mesAtual - i, 1);
       anos.add(data.getFullYear());
     }
-    
+
     // Retornar em ordem decrescente
     return Array.from(anos).sort((a, b) => b - a);
   };
@@ -448,19 +546,19 @@ export default function StatusConciliacaoPage() {
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
     const mesAtual = hoje.getMonth(); // 0-11
-    
+
     const mesesDoAno = [];
-    
+
     // ✅ Obter data de início do banco (se houver)
     let dataInicioBanco = null;
     if (banco?.dataInicio) {
       dataInicioBanco = new Date(banco.dataInicio);
     }
-    
+
     // Gerar meses do ano selecionado
     for (let mes = 1; mes <= 12; mes += 1) {
       const data = new Date(ano, mes - 1, 1);
-      
+
       // ✅ Filtrar: só incluir meses >= dataInicio do banco
       if (dataInicioBanco && data < dataInicioBanco) {
         // Pular meses anteriores à data de início
@@ -470,7 +568,7 @@ export default function StatusConciliacaoPage() {
         if (diferencaMeses >= 0 && diferencaMeses < 24) {
           const mesAno = `${ano}-${String(mes).padStart(2, '0')}`;
           const mesNome = data.toLocaleDateString('pt-BR', { month: 'long' });
-          
+
           mesesDoAno.push({
             mes,
             mesAno,
@@ -479,7 +577,7 @@ export default function StatusConciliacaoPage() {
         }
       }
     }
-    
+
     // Retornar meses em ordem decrescente (Dezembro -> Janeiro)
     return mesesDoAno.reverse();
   };
@@ -488,7 +586,7 @@ export default function StatusConciliacaoPage() {
   const obterStatusMes = (bancoId, mesAno) => {
     const mesesDoBanco = mesesPorBanco[bancoId] || [];
     const conciliacao = mesesDoBanco.find(m => m.mesAno === mesAno);
-    
+
     // 🔥 NOVO: Verificar se há processamento em andamento para este mês
     const processamento = Object.values(processamentosEmAndamento).find(
       p => p.bancoId === bancoId && p.mesAno === mesAno
@@ -505,7 +603,7 @@ export default function StatusConciliacaoPage() {
         progresso: processamento.progresso,
       };
     }
-    
+
     // 🔥 NOVO: Se tem conciliação mas status é "pendente" e não tem transações, pode estar processando
     // Verificar se está no estado de processamentos (mesmo que não tenha sido encontrado acima)
     if (conciliacao?.conciliacaoId) {
@@ -519,7 +617,7 @@ export default function StatusConciliacaoPage() {
         };
       }
     }
-    
+
     if (!conciliacao) {
       // Mês não tem conciliação iniciada
       return {
@@ -528,7 +626,7 @@ export default function StatusConciliacaoPage() {
         totalTransacoes: 0,
       };
     }
-    
+
     // Retornar dados da API - suporta 6 status diferentes
     // Status possíveis: nao_enviado, fechado_sem_movimento, enviada, processando, pendente, conciliado
     return {
@@ -558,32 +656,39 @@ export default function StatusConciliacaoPage() {
     }
   };
 
-  const anosDisponiveis = obterAnosDisponiveis();
-  
+  const anosDisponiveis = useMemo(() => obterAnosDisponiveis(), []);
+
+  useEffect(() => {
+    if (!anosDisponiveis.length) return;
+    if (!anosDisponiveis.includes(anoSelecionado)) {
+      setAnoSelecionado(anosDisponiveis[0]);
+    }
+  }, [anosDisponiveis, anoSelecionado]);
+
   // ✅ Função para obter anos disponíveis considerando dataInicio do banco
   const obterAnosDisponiveisPorBanco = (banco) => {
     const hoje = new Date();
     const anoAtual = hoje.getFullYear();
     const mesAtual = hoje.getMonth();
-    
+
     // ✅ Obter data de início do banco
     let dataInicioBanco = null;
     if (banco?.dataInicio) {
       dataInicioBanco = new Date(banco.dataInicio);
     }
-    
+
     const anos = new Set();
-    
+
     // Gerar últimos 24 meses, mas só a partir da data de início
     for (let i = 0; i < 24; i += 1) {
       const data = new Date(anoAtual, mesAtual - i, 1);
-      
+
       // ✅ Se banco tem dataInicio, só incluir meses >= dataInicio
       if (!dataInicioBanco || data >= dataInicioBanco) {
         anos.add(data.getFullYear());
       }
     }
-    
+
     return Array.from(anos).sort((a, b) => b - a);
   };
 
@@ -591,7 +696,7 @@ export default function StatusConciliacaoPage() {
     try {
       toast.loading('Gerando CSV...');
       const downloadUrl = await exportarCSVMes(clienteId, bancoId, mesAno);
-      
+
       if (downloadUrl) {
         window.open(downloadUrl, '_blank');
         toast.dismiss();
@@ -624,13 +729,16 @@ export default function StatusConciliacaoPage() {
         toast.error('🔒 Este período está fechado sem movimento. Entre em contato com o suporte para liberar.');
         return;
       }
-      
+
       // Se está processando, não fazer nada
       if (statusMes.status === 'processando') {
-          return;
-        } 
+        return;
+      }
     }
-    
+
+    // Garantir que o banco fique expandido ao voltar do upload
+    setBancosExpandidos((prev) => ({ ...prev, [bancoId]: true }));
+
     // Ir para upload
     let url = `${paths.cliente.conciliacaoBancaria}/upload?bancoId=${bancoId}`;
     if (mesAno) {
@@ -642,6 +750,37 @@ export default function StatusConciliacaoPage() {
   const handleVerDetalhes = (conciliacaoId) => {
     router.push(`${paths.cliente.conciliacaoBancaria}/validar/${conciliacaoId}`);
   };
+
+  const handleConfirmReenviarExtrato = useCallback(async () => {
+    const { conciliacaoId } = dialogConfirmReenviar;
+    if (!conciliacaoId) return;
+
+    try {
+      setReenviandoExtrato(true);
+      await removerTransacoesConciliacao(conciliacaoId);
+      toast.success('Extrato removido. Você pode enviar um novo arquivo.');
+      setDialogConfirmReenviar({ open: false, bancoId: null, mesAno: null, conciliacaoId: null });
+      setPopoverReenviar({ anchorEl: null, bancoId: null, mesAno: null, conciliacaoId: null });
+      setProcessamentosEmAndamento((prev) => {
+        const next = { ...prev };
+        delete next[conciliacaoId];
+        return next;
+      });
+      const refProc = { ...processamentosEmAndamentoRef.current };
+      delete refProc[conciliacaoId];
+      processamentosEmAndamentoRef.current = refProc;
+      await refetchMesesPorBanco();
+    } catch (error) {
+      const msg =
+        error?.response?.data?.erro ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Erro ao remover transações';
+      toast.error(msg);
+    } finally {
+      setReenviandoExtrato(false);
+    }
+  }, [dialogConfirmReenviar, refetchMesesPorBanco]);
 
 
   // Loading empresa
@@ -710,234 +849,234 @@ export default function StatusConciliacaoPage() {
         }
         return count > 0;
       })() && (
-        <Card 
-          sx={{ 
-            mb: 4, 
-            p: 3,
-            bgcolor: 'info.lighter',
-            border: 2,
-            borderColor: 'info.main',
-            borderRadius: 2,
-            boxShadow: 4,
-            position: 'relative',
-            zIndex: 1,
-          }}
-        >
-          <Stack spacing={2}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between">
-              <Stack direction="row" alignItems="center" spacing={2}>
-                <CircularProgress size={28} thickness={4} color="info" />
-                <Box>
-                  <Typography variant="h6" fontWeight="bold" color="info.dark">
-                    ⚡ Processamentos em Andamento
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {Object.keys(processamentosEmAndamento).length} arquivo{Object.keys(processamentosEmAndamento).length !== 1 ? 's' : ''} sendo processado{Object.keys(processamentosEmAndamento).length !== 1 ? 's' : ''}
-                  </Typography>
-                </Box>
+          <Card
+            sx={{
+              mb: 4,
+              p: 3,
+              bgcolor: 'info.lighter',
+              border: 2,
+              borderColor: 'info.main',
+              borderRadius: 2,
+              boxShadow: 4,
+              position: 'relative',
+              zIndex: 1,
+            }}
+          >
+            <Stack spacing={2}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  <CircularProgress size={28} thickness={4} color="info" />
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold" color="info.dark">
+                      ⚡ Processamentos em Andamento
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {Object.keys(processamentosEmAndamento).length} arquivo{Object.keys(processamentosEmAndamento).length !== 1 ? 's' : ''} sendo processado{Object.keys(processamentosEmAndamento).length !== 1 ? 's' : ''}
+                    </Typography>
+                  </Box>
+                </Stack>
+                <Chip
+                  label={`${Object.keys(processamentosEmAndamento).length} ativo${Object.keys(processamentosEmAndamento).length !== 1 ? 's' : ''}`}
+                  color="info"
+                  size="medium"
+                  sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}
+                />
               </Stack>
-              <Chip
-                label={`${Object.keys(processamentosEmAndamento).length} ativo${Object.keys(processamentosEmAndamento).length !== 1 ? 's' : ''}`}
-                color="info"
-                size="medium"
-                sx={{ fontWeight: 'bold', fontSize: '0.875rem' }}
-              />
-            </Stack>
-            
-            <Alert severity="info" icon={<Iconify icon="eva:info-fill" />} sx={{ bgcolor: 'info.lighter', border: '1px solid', borderColor: 'info.main' }}>
-              <Typography variant="body2">
-                Os arquivos abaixo estão sendo processados em segundo plano. Você pode continuar navegando enquanto isso.
-              </Typography>
-            </Alert>
 
-            {/* Lista de Processamentos */}
-            <Grid container spacing={2} sx={{ mt: 1 }}>
-              {Object.entries(processamentosEmAndamento).map(([conciliacaoId, processamento]) => {
-                // Encontrar banco e mês correspondente
-                // ✅ CORREÇÃO: Se não tem bancoId, tentar encontrar pela conciliacaoId na lista de meses
-                let banco = null;
-                let mesAnoFinal = processamento.mesAno;
-                
-                if (processamento.bancoId) {
-                  banco = bancos.find(b => b._id === processamento.bancoId);
-                } else {
-                  // Tentar encontrar banco pela conciliacaoId
-                  const bancoEncontrado = Object.entries(mesesPorBanco).find(([bancoIdKey, meses]) => {
-                    const mesComConciliacao = meses.find(m => m.conciliacaoId === conciliacaoId);
-                    if (mesComConciliacao) {
-                      banco = bancos.find(b => b._id === bancoIdKey);
-                      mesAnoFinal = mesComConciliacao.mesAno || mesAnoFinal;
-                      // Atualizar processamento com bancoId encontrado
-                      if (!processamento.bancoId) {
-                        processamento.bancoId = bancoIdKey;
-                        processamento.mesAno = mesAnoFinal;
+              <Alert severity="info" icon={<Iconify icon="eva:info-fill" />} sx={{ bgcolor: 'info.lighter', border: '1px solid', borderColor: 'info.main' }}>
+                <Typography variant="body2">
+                  Os arquivos abaixo estão sendo processados em segundo plano. Você pode continuar navegando enquanto isso.
+                </Typography>
+              </Alert>
+
+              {/* Lista de Processamentos */}
+              <Grid container spacing={2} sx={{ mt: 1 }}>
+                {Object.entries(processamentosEmAndamento).map(([conciliacaoId, processamento]) => {
+                  // Encontrar banco e mês correspondente
+                  // ✅ CORREÇÃO: Se não tem bancoId, tentar encontrar pela conciliacaoId na lista de meses
+                  let banco = null;
+                  let mesAnoFinal = processamento.mesAno;
+
+                  if (processamento.bancoId) {
+                    banco = bancos.find(b => b._id === processamento.bancoId);
+                  } else {
+                    // Tentar encontrar banco pela conciliacaoId
+                    const bancoEncontrado = Object.entries(mesesPorBanco).find(([bancoIdKey, meses]) => {
+                      const mesComConciliacao = meses.find(m => m.conciliacaoId === conciliacaoId);
+                      if (mesComConciliacao) {
+                        banco = bancos.find(b => b._id === bancoIdKey);
+                        mesAnoFinal = mesComConciliacao.mesAno || mesAnoFinal;
+                        // Atualizar processamento com bancoId encontrado
+                        if (!processamento.bancoId) {
+                          processamento.bancoId = bancoIdKey;
+                          processamento.mesAno = mesAnoFinal;
+                        }
+                        return true;
                       }
-                      return true;
-                    }
-                    return false;
-                  });
-                  // bancoEncontrado já atualizou banco e mesAnoFinal se encontrou
-                }
-                
-                const [ano, mes] = mesAnoFinal?.split('-') || [];
-                const meses = [
-                  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-                  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-                ];
-                const nomeMes = meses[parseInt(mes, 10) - 1] || mes;
+                      return false;
+                    });
+                    // bancoEncontrado já atualizou banco e mesAnoFinal se encontrou
+                  }
 
-                // ✅ Calcular tempo decorrido se tiver dataProcessamento
-                const tempoDecorrido = processamento.dataProcessamento 
-                  ? Math.floor((new Date() - new Date(processamento.dataProcessamento)) / 1000)
-                  : null;
-                const minutos = tempoDecorrido ? Math.floor(tempoDecorrido / 60) : null;
-                const segundos = tempoDecorrido ? tempoDecorrido % 60 : null;
+                  const [ano, mes] = mesAnoFinal?.split('-') || [];
+                  const meses = [
+                    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+                  ];
+                  const nomeMes = meses[parseInt(mes, 10) - 1] || mes;
 
-                return (
-                  <Grid xs={12} sm={6} md={4} key={conciliacaoId}>
-                    <Card 
-                      sx={{ 
-                        p: 2.5,
-                        bgcolor: 'background.paper',
-                        border: 1.5,
-                        borderColor: 'info.main',
-                        boxShadow: 2,
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          boxShadow: 4,
-                          transform: 'translateY(-2px)',
-                        },
-                      }}
-                    >
-                      <Stack spacing={2}>
-                        {/* Header: Banco e Período */}
-                        <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
-                          <Box sx={{ flex: 1 }}>
-                            <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
-                              <Iconify icon="eva:file-text-fill" color="info.main" width={20} />
-                              <Typography variant="subtitle2" fontWeight="bold" noWrap>
-                                {banco?.instituicaoBancariaId?.nome || banco?.nome || 'Banco'}
+                  // ✅ Calcular tempo decorrido se tiver dataProcessamento
+                  const tempoDecorrido = processamento.dataProcessamento
+                    ? Math.floor((new Date() - new Date(processamento.dataProcessamento)) / 1000)
+                    : null;
+                  const minutos = tempoDecorrido ? Math.floor(tempoDecorrido / 60) : null;
+                  const segundos = tempoDecorrido ? tempoDecorrido % 60 : null;
+
+                  return (
+                    <Grid xs={12} sm={6} md={4} key={conciliacaoId}>
+                      <Card
+                        sx={{
+                          p: 2.5,
+                          bgcolor: 'background.paper',
+                          border: 1.5,
+                          borderColor: 'info.main',
+                          boxShadow: 2,
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            boxShadow: 4,
+                            transform: 'translateY(-2px)',
+                          },
+                        }}
+                      >
+                        <Stack spacing={2}>
+                          {/* Header: Banco e Período */}
+                          <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={1}>
+                            <Box sx={{ flex: 1 }}>
+                              <Stack direction="row" alignItems="center" spacing={1} mb={0.5}>
+                                <Iconify icon="eva:file-text-fill" color="info.main" width={20} />
+                                <Typography variant="subtitle2" fontWeight="bold" noWrap>
+                                  {banco?.instituicaoBancariaId?.nome || banco?.nome || 'Banco'}
+                                </Typography>
+                              </Stack>
+                              <Typography variant="caption" color="text.secondary">
+                                {nomeMes} de {ano}
                               </Typography>
-                            </Stack>
-                            <Typography variant="caption" color="text.secondary">
-                              {nomeMes} de {ano}
-                            </Typography>
-                            {processamento.arquivoOrigem && (
-                              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
-                                📄 {processamento.arquivoOrigem}
-                              </Typography>
-                            )}
-                          </Box>
-                          <Chip
-                            icon={<CircularProgress size={14} thickness={4} />}
-                            label="Processando"
-                            size="small"
-                            color="info"
-                            sx={{ fontWeight: 'bold' }}
-                          />
-                        </Stack>
-                        
-                        {/* Barra de Progresso - Apenas se progresso > 0 */}
-                        {processamento.progresso > 0 && (
-                          <Box>
-                            <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
-                              <Typography variant="caption" color="text.secondary" fontWeight="medium">
-                                Progresso do Processamento
-                              </Typography>
-                              <Typography variant="caption" fontWeight="bold" color="info.main">
-                                {processamento.progresso}%
-                              </Typography>
-                            </Stack>
-                            <LinearProgress 
-                              variant="determinate" 
-                              value={processamento.progresso} 
-                              sx={{ 
-                                height: 8, 
-                                borderRadius: 1,
-                                bgcolor: 'info.lighter',
-                              }}
+                              {processamento.arquivoOrigem && (
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                                  📄 {processamento.arquivoOrigem}
+                                </Typography>
+                              )}
+                            </Box>
+                            <Chip
+                              icon={<CircularProgress size={14} thickness={4} />}
+                              label="Processando"
+                              size="small"
                               color="info"
+                              sx={{ fontWeight: 'bold' }}
                             />
-                          </Box>
-                        )}
+                          </Stack>
 
-                        {/* Informações Adicionais */}
-                        <Stack spacing={0.5}>
-                          {processamento.totalTransacoes > 0 ? (
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              <Iconify icon="eva:list-fill" color="success.main" width={16} />
-                              <Typography variant="caption" color="text.secondary">
-                                <strong>{processamento.totalTransacoes}</strong> transação{processamento.totalTransacoes !== 1 ? 'ões' : ''} encontrada{processamento.totalTransacoes !== 1 ? 's' : ''}
-                              </Typography>
-                            </Stack>
-                          ) : (
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              <Iconify icon="eva:search-fill" color="info.main" width={16} />
-                              <Typography variant="caption" color="text.secondary">
-                                Analisando arquivo e extraindo transações...
-                              </Typography>
-                            </Stack>
+                          {/* Barra de Progresso - Apenas se progresso > 0 */}
+                          {processamento.progresso > 0 && (
+                            <Box>
+                              <Stack direction="row" justifyContent="space-between" alignItems="center" mb={0.5}>
+                                <Typography variant="caption" color="text.secondary" fontWeight="medium">
+                                  Progresso do Processamento
+                                </Typography>
+                                <Typography variant="caption" fontWeight="bold" color="info.main">
+                                  {processamento.progresso}%
+                                </Typography>
+                              </Stack>
+                              <LinearProgress
+                                variant="determinate"
+                                value={processamento.progresso}
+                                sx={{
+                                  height: 8,
+                                  borderRadius: 1,
+                                  bgcolor: 'info.lighter',
+                                }}
+                                color="info"
+                              />
+                            </Box>
                           )}
-                          {tempoDecorrido && (
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              <Iconify icon="eva:clock-fill" color="text.secondary" width={16} />
-                              <Typography variant="caption" color="text.secondary">
-                                Processando há {minutos > 0 ? `${minutos} min e ` : ''}{segundos} seg
-                              </Typography>
-                            </Stack>
-                          )}
-                          {processamento.dataProcessamento && (
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              <Iconify icon="eva:calendar-fill" color="text.secondary" width={16} />
-                              <Typography variant="caption" color="text.secondary">
-                                Iniciado em {new Date(processamento.dataProcessamento).toLocaleString('pt-BR', { 
-                                  day: '2-digit', 
-                                  month: '2-digit', 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}
-                              </Typography>
-                            </Stack>
-                          )}
-                          {processamento.resumo && (processamento.resumo.totalCreditos > 0 || processamento.resumo.totalDebitos > 0) && (
-                            <Stack direction="row" alignItems="center" spacing={1}>
-                              <Iconify icon="eva:trending-up-fill" color="success.main" width={16} />
-                              <Typography variant="caption" color="text.secondary">
-                                Créditos: R$ {processamento.resumo.totalCreditos?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'} • 
-                                Débitos: R$ {processamento.resumo.totalDebitos?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
-                              </Typography>
-                            </Stack>
-                          )}
-                          {processamento.erros && processamento.erros.length > 0 && (
-                            <Alert severity="warning" sx={{ py: 0.5, fontSize: '0.7rem', mt: 0.5 }}>
-                              <Typography variant="caption">
-                                ⚠️ {processamento.erros.length} aviso{processamento.erros.length !== 1 ? 's' : ''} durante processamento
-                              </Typography>
-                            </Alert>
-                          )}
+
+                          {/* Informações Adicionais */}
+                          <Stack spacing={0.5}>
+                            {processamento.totalTransacoes > 0 ? (
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <Iconify icon="eva:list-fill" color="success.main" width={16} />
+                                <Typography variant="caption" color="text.secondary">
+                                  <strong>{processamento.totalTransacoes}</strong> transação{processamento.totalTransacoes !== 1 ? 'ões' : ''} encontrada{processamento.totalTransacoes !== 1 ? 's' : ''}
+                                </Typography>
+                              </Stack>
+                            ) : (
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <Iconify icon="eva:search-fill" color="info.main" width={16} />
+                                <Typography variant="caption" color="text.secondary">
+                                  Analisando arquivo e extraindo transações...
+                                </Typography>
+                              </Stack>
+                            )}
+                            {tempoDecorrido && (
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <Iconify icon="eva:clock-fill" color="text.secondary" width={16} />
+                                <Typography variant="caption" color="text.secondary">
+                                  Processando há {minutos > 0 ? `${minutos} min e ` : ''}{segundos} seg
+                                </Typography>
+                              </Stack>
+                            )}
+                            {processamento.dataProcessamento && (
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <Iconify icon="eva:calendar-fill" color="text.secondary" width={16} />
+                                <Typography variant="caption" color="text.secondary">
+                                  Iniciado em {new Date(processamento.dataProcessamento).toLocaleString('pt-BR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </Typography>
+                              </Stack>
+                            )}
+                            {processamento.resumo && (processamento.resumo.totalCreditos > 0 || processamento.resumo.totalDebitos > 0) && (
+                              <Stack direction="row" alignItems="center" spacing={1}>
+                                <Iconify icon="eva:trending-up-fill" color="success.main" width={16} />
+                                <Typography variant="caption" color="text.secondary">
+                                  Créditos: R$ {processamento.resumo.totalCreditos?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'} •
+                                  Débitos: R$ {processamento.resumo.totalDebitos?.toLocaleString('pt-BR', { minimumFractionDigits: 2 }) || '0,00'}
+                                </Typography>
+                              </Stack>
+                            )}
+                            {processamento.erros && processamento.erros.length > 0 && (
+                              <Alert severity="warning" sx={{ py: 0.5, fontSize: '0.7rem', mt: 0.5 }}>
+                                <Typography variant="caption">
+                                  ⚠️ {processamento.erros.length} aviso{processamento.erros.length !== 1 ? 's' : ''} durante processamento
+                                </Typography>
+                              </Alert>
+                            )}
+                          </Stack>
+
+                          {/* Botão Ver Detalhes */}
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="info"
+                            startIcon={<Iconify icon="eva:eye-fill" />}
+                            onClick={() => router.push(`${paths.cliente.conciliacaoBancaria}/validar/${conciliacaoId}`)}
+                            fullWidth
+                            sx={{ mt: 1 }}
+                          >
+                            Ver Detalhes
+                          </Button>
                         </Stack>
-
-                        {/* Botão Ver Detalhes */}
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="info"
-                          startIcon={<Iconify icon="eva:eye-fill" />}
-                          onClick={() => router.push(`${paths.cliente.conciliacaoBancaria}/validar/${conciliacaoId}`)}
-                          fullWidth
-                          sx={{ mt: 1 }}
-                        >
-                          Ver Detalhes
-                        </Button>
-                      </Stack>
-                    </Card>
-                  </Grid>
-                );
-              })}
-            </Grid>
-          </Stack>
-        </Card>
-      )}
+                      </Card>
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            </Stack>
+          </Card>
+        )}
 
       {/* Guia Rápido - Ajuda Visual */}
       {!loadingBancos && bancos.length > 0 && (
@@ -976,7 +1115,7 @@ export default function StatusConciliacaoPage() {
             </Typography>
             <Select
               value={anoSelecionado}
-              onChange={(e) => setAnoSelecionado(e.target.value)}
+              onChange={(e) => setAnoSelecionado(Number(e.target.value))}
               size="small"
               sx={{ minWidth: 120, bgcolor: 'background.paper' }}
             >
@@ -1025,7 +1164,7 @@ export default function StatusConciliacaoPage() {
             const bancoAtivo = isBancoAtivoConciliacao(banco);
             // ✅ Gerar meses do ano selecionado FILTRADOS pela dataInicio do banco
             const mesesDoAnoFiltrados = gerarMesesDoAno(anoSelecionado, banco);
-            
+
             // Contar meses conciliados do ano selecionado
             const mesesConciliados = mesesDoAnoFiltrados.filter(mes => {
               const status = obterStatusMes(banco._id, mes.mesAno);
@@ -1036,19 +1175,57 @@ export default function StatusConciliacaoPage() {
               return status.status === 'pendente';
             }).length;
             const totalMeses = mesesDoAnoFiltrados.length;
-            
+
             return (
               <Accordion
                 key={banco._id}
-                defaultExpanded={bancosOrdenados.length === 1}
-                sx={!bancoAtivo ? { opacity: 0.92 } : undefined}
+                ref={(node) => {
+                  if (node) {
+                    accordionRefs.current.set(banco._id, node);
+                  } else {
+                    accordionRefs.current.delete(banco._id);
+                  }
+                }}
+                expanded={Boolean(bancosExpandidos[banco._id])}
+                onChange={(_, expanded) => {
+                  setBancosExpandidos((prev) => ({ ...prev, [banco._id]: expanded }));
+                }}
+                sx={{
+                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                  borderRadius: 1,
+                  boxShadow: 'none',
+                  overflow: 'hidden',
+                  transition: 'box-shadow 0.3s ease-in-out',
+
+                  '&:before': {
+                    display: 'none',
+                  },
+
+                  '&.Mui-expanded': {
+                    margin: 0,
+                    boxShadow: (theme) => theme.customShadows?.z8 || '0px 4px 20px rgba(0, 0, 0, 0.05)',
+                  },
+
+                  ...(!bancoAtivo ? { opacity: 0.92 } : {}),
+                }}
               >
                 <AccordionSummary
                   expandIcon={<Iconify icon="eva:arrow-down-fill" />}
                   sx={{
                     bgcolor: 'background.neutral',
+                    minHeight: 64,
                     '&:hover': {
                       bgcolor: 'action.hover',
+                    },
+                    '&.Mui-expanded': {
+                      minHeight: 64,
+                      borderBottom: (theme) => `1px solid ${theme.palette.divider}`,
+                    },
+                    '& .MuiAccordionSummary-content': {
+                      my: 1,
+                    },
+                    '& .MuiAccordionSummary-content.Mui-expanded': {
+                      my: 1,
                     },
                   }}
                 >
@@ -1065,13 +1242,13 @@ export default function StatusConciliacaoPage() {
                           )}
                         </Stack>
                         <Typography variant="caption" color="text.secondary">
-                          Código: {banco.instituicaoBancariaId?.codigo || banco.codigo || 'N/A'} | 
-                          Ag: {banco.agencia || 'N/A'} | 
+                          Código: {banco.instituicaoBancariaId?.codigo || banco.codigo || 'N/A'} |
+                          Ag: {banco.agencia || 'N/A'} |
                           Conta: {banco.conta}
                         </Typography>
                       </div>
                     </Stack>
-                    
+
                     <Stack direction="row" spacing={1} flexWrap="wrap">
                       <Tooltip title="Meses conciliados">
                         <Chip
@@ -1083,11 +1260,11 @@ export default function StatusConciliacaoPage() {
                       </Tooltip>
                       {mesesPendentes > 0 && (
                         <Tooltip title="Meses aguardando conciliação">
-                        <Chip
+                          <Chip
                             label={`${mesesPendentes} pendente${mesesPendentes > 1 ? 's' : ''}`}
-                          color="warning"
-                          size="small"
-                        />
+                            color="warning"
+                            size="small"
+                          />
                         </Tooltip>
                       )}
                       {/* Contar meses em processamento */}
@@ -1095,24 +1272,23 @@ export default function StatusConciliacaoPage() {
                         const status = obterStatusMes(banco._id, mes.mesAno);
                         return status.status === 'processando';
                       }).length > 0 && (
-                        <Tooltip title="Meses em processamento">
-                        <Chip
-                            label={`${
-                            mesesDoAnoFiltrados.filter((mes) => {
-                              const status = obterStatusMes(banco._id, mes.mesAno);
+                          <Tooltip title="Meses em processamento">
+                            <Chip
+                              label={`${mesesDoAnoFiltrados.filter((mes) => {
+                                const status = obterStatusMes(banco._id, mes.mesAno);
                                 return status.status === 'processando';
-                            }).length
-                            } processando`}
-                          color="info"
-                          size="small"
-                            icon={<CircularProgress size={14} />}
-                        />
-                        </Tooltip>
-                      )}
+                              }).length
+                                } processando`}
+                              color="info"
+                              size="small"
+                              icon={<CircularProgress size={14} />}
+                            />
+                          </Tooltip>
+                        )}
                     </Stack>
                   </Stack>
                 </AccordionSummary>
-                
+
                 <AccordionDetails>
                   {!bancoAtivo && (
                     <Alert severity="info" sx={{ mb: 2 }} icon={<Iconify icon="eva:info-outline" />}>
@@ -1133,11 +1309,11 @@ export default function StatusConciliacaoPage() {
                       </Typography>
                     </Alert>
                   )}
-                  
-                  <Grid container spacing={2} sx={{ mt: 0.5 }}>
+
+                  <Grid container spacing={2} sx={{ mb: 0, pb: 2, '& > *': { p: 2 } }}>
                     {mesesDoAnoFiltrados.map((mes) => {
                       const status = obterStatusMes(banco._id, mes.mesAno);
-                      
+
                       return (
                         <Grid xs={12} sm={6} md={4} lg={3} key={mes.mesAno}>
                           <Card
@@ -1162,31 +1338,31 @@ export default function StatusConciliacaoPage() {
                               transition: 'all 0.2s ease',
                               cursor:
                                 status.status === 'fechado_sem_movimento' ||
-                                status.status === 'processando' ||
-                                (!bancoAtivo &&
-                                  (status.status === 'nao_enviado' ||
-                                    (status.status === 'pendente' && !status.totalTransacoes)))
+                                  status.status === 'processando' ||
+                                  (!bancoAtivo &&
+                                    (status.status === 'nao_enviado' ||
+                                      (status.status === 'pendente' && !status.totalTransacoes)))
                                   ? 'default'
                                   : 'pointer',
                               '&:hover': {
                                 boxShadow:
                                   status.status === 'fechado_sem_movimento' ||
-                                  status.status === 'processando' ||
-                                  (!bancoAtivo &&
-                                    (status.status === 'nao_enviado' ||
-                                      (status.status === 'pendente' && !status.totalTransacoes)))
+                                    status.status === 'processando' ||
+                                    (!bancoAtivo &&
+                                      (status.status === 'nao_enviado' ||
+                                        (status.status === 'pendente' && !status.totalTransacoes)))
                                     ? 2
                                     : 4,
                                 transform:
                                   status.status === 'fechado_sem_movimento' ||
-                                  status.status === 'processando' ||
-                                  (!bancoAtivo &&
-                                    (status.status === 'nao_enviado' ||
-                                      (status.status === 'pendente' && !status.totalTransacoes)))
+                                    status.status === 'processando' ||
+                                    (!bancoAtivo &&
+                                      (status.status === 'nao_enviado' ||
+                                        (status.status === 'pendente' && !status.totalTransacoes)))
                                     ? 'none'
                                     : 'translateY(-2px)',
                                 borderColor: (() => {
-                                const statusInfo = obterCorStatus(status.status);
+                                  const statusInfo = obterCorStatus(status.status);
                                   if (
                                     status.status === 'fechado_sem_movimento' ||
                                     status.status === 'processando' ||
@@ -1196,14 +1372,14 @@ export default function StatusConciliacaoPage() {
                                   ) {
                                     return 'inherit';
                                   }
-                                switch (statusInfo.color) {
+                                  switch (statusInfo.color) {
                                     case 'success': return 'success.dark';
                                     case 'warning': return 'warning.dark';
                                     case 'error': return 'error.dark';
                                     case 'info': return 'info.dark';
                                     default: return 'primary.main';
-                                }
-                              })(),
+                                  }
+                                })(),
                               },
                             }}
                           >
@@ -1211,26 +1387,47 @@ export default function StatusConciliacaoPage() {
                               {/* Nome do Mês */}
                               <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1}>
                                 <Typography variant="h6" sx={{ textTransform: 'capitalize', flex: 1 }}>
-                                {mes.mesNome}
-                              </Typography>
-                                {/* Badge de status de processamento */}
-                                {status.status === 'processando' && (
-                                  <Tooltip title="Arquivo sendo processado">
-                                    <Chip
-                                      icon={<CircularProgress size={12} thickness={4} color="inherit" />}
-                                      label={status.progresso > 0 ? `${status.progresso}%` : 'Processando'}
-                                      size="small"
-                                      color="info"
-                                      sx={{
-                                        animation: 'pulse 2s ease-in-out infinite',
-                                        '@keyframes pulse': {
-                                          '0%, 100%': { opacity: 1 },
-                                          '50%': { opacity: 0.7 },
-                                        },
-                                      }}
-                                    />
-                                  </Tooltip>
-                                )}
+                                  {mes.mesNome}
+                                </Typography>
+                                <Stack direction="row" alignItems="center" spacing={0.5} flexShrink={0}>
+                                  {status.status === 'processando' && (
+                                    <Tooltip title="Arquivo sendo processado">
+                                      <Chip
+                                        icon={<CircularProgress size={12} thickness={4} color="inherit" />}
+                                        label={status.progresso > 0 ? `${status.progresso}%` : 'Processando'}
+                                        size="small"
+                                        color="info"
+                                        sx={{
+                                          animation: 'pulse 2s ease-in-out infinite',
+                                          '@keyframes pulse': {
+                                            '0%, 100%': { opacity: 1 },
+                                            '50%': { opacity: 0.7 },
+                                          },
+                                        }}
+                                      />
+                                    </Tooltip>
+                                  )}
+                                  {status.conciliacaoId &&
+                                    ['pendente', 'processando', 'conciliado'].includes(status.status) && (
+                                      <Tooltip title="Mais opções">
+                                        <IconButton
+                                          size="small"
+                                          aria-label="Mais opções do mês"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setPopoverReenviar({
+                                              anchorEl: e.currentTarget,
+                                              bancoId: banco._id,
+                                              mesAno: mes.mesAno,
+                                              conciliacaoId: status.conciliacaoId,
+                                            });
+                                          }}
+                                        >
+                                          <Iconify icon="eva:more-vertical-fill" />
+                                        </IconButton>
+                                      </Tooltip>
+                                    )}
+                                </Stack>
                               </Stack>
 
                               {/* Status - Simplificado */}
@@ -1250,17 +1447,17 @@ export default function StatusConciliacaoPage() {
                                           {statusInfo.label}
                                         </Typography>
                                       </Stack>
-                                      
+
                                       {/* Informações Adicionais */}
                                       {status.status === 'processando' ? (
                                         <Box>
                                           {status.progresso > 0 && (
                                             <>
-                                              <LinearProgress 
-                                                variant="determinate" 
-                                                value={status.progresso} 
-                                                sx={{ 
-                                                  height: 8, 
+                                              <LinearProgress
+                                                variant="determinate"
+                                                value={status.progresso}
+                                                sx={{
+                                                  height: 8,
                                                   borderRadius: 1,
                                                   mb: 0.5,
                                                 }}
@@ -1268,7 +1465,7 @@ export default function StatusConciliacaoPage() {
                                               />
                                               <Typography variant="caption" color="info.main" fontWeight="medium" textAlign="center" display="block">
                                                 {status.progresso}% concluído
-                                        </Typography>
+                                              </Typography>
                                             </>
                                           )}
                                           <Typography variant="caption" color="text.secondary" display="block" textAlign="center" mt={0.5}>
@@ -1311,30 +1508,30 @@ export default function StatusConciliacaoPage() {
                               {/* Ações - Simplificado: Uma ação principal por status */}
                               <Box sx={{ mt: 'auto', pt: 1 }}>
                                 {status.status === 'processando' ? (
-                                    <Button
+                                  <Button
                                     variant="outlined"
-                                      size="small"
-                                      fullWidth
+                                    size="small"
+                                    fullWidth
                                     disabled
                                     startIcon={<CircularProgress size={14} />}
                                     sx={{ cursor: 'not-allowed' }}
                                   >
                                     Processando...
-                                    </Button>
+                                  </Button>
                                 ) : status.status === 'conciliado' ? (
-                                    <Button
+                                  <Button
                                     variant="contained"
-                                      size="small"
+                                    size="small"
                                     color="success"
-                                      fullWidth
+                                    fullWidth
                                     startIcon={<Iconify icon="eva:checkmark-circle-2-fill" />}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleVerDetalhes(status.conciliacaoId);
-                                      }}
-                                    >
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleVerDetalhes(status.conciliacaoId);
+                                    }}
+                                  >
                                     Ver Conciliação
-                                    </Button>
+                                  </Button>
                                 ) : status.status === 'fechado_sem_movimento' ? (
                                   <Alert severity="error" sx={{ py: 0.5, fontSize: '0.7rem' }}>
                                     <Typography variant="caption">
@@ -1344,17 +1541,17 @@ export default function StatusConciliacaoPage() {
                                 ) : status.status === 'pendente' ? (
                                   <Stack spacing={1}>
                                     {status.totalTransacoes > 0 ? (
-                                    <Button
-                                      variant="contained"
-                                      size="small"
-                                      color="warning"
-                                      fullWidth
-                                      startIcon={<Iconify icon="eva:edit-fill" />}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleVerDetalhes(status.conciliacaoId);
-                                      }}
-                                    >
+                                      <Button
+                                        variant="contained"
+                                        size="small"
+                                        color="warning"
+                                        fullWidth
+                                        startIcon={<Iconify icon="eva:edit-fill" />}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleVerDetalhes(status.conciliacaoId);
+                                        }}
+                                      >
                                         Conciliar Agora
                                       </Button>
                                     ) : (
@@ -1371,31 +1568,31 @@ export default function StatusConciliacaoPage() {
                                           }}
                                         >
                                           Ver Conciliação
-                                    </Button>
-                                    <Tooltip
-                                      title={
-                                        !bancoAtivo
-                                          ? 'Banco inativo — reative em Gerenciar Bancos para enviar extratos.'
-                                          : 'Enviar novo arquivo (OFX, PDF etc.)'
-                                      }
-                                    >
-                                      <span style={{ width: '100%', display: 'block' }}>
-                                        <Button
-                                          variant="outlined"
-                                          size="small"
-                                          color="primary"
-                                          fullWidth
-                                          disabled={!bancoAtivo}
-                                          startIcon={<Iconify icon="eva:upload-fill" />}
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleEnviarExtrato(banco._id, mes.mesAno);
-                                          }}
-                                        >
-                                          Reenviar Arquivo
                                         </Button>
-                                      </span>
-                                    </Tooltip>
+                                        <Tooltip
+                                          title={
+                                            !bancoAtivo
+                                              ? 'Banco inativo — reative em Gerenciar Bancos para enviar extratos.'
+                                              : 'Enviar novo arquivo (OFX, PDF etc.)'
+                                          }
+                                        >
+                                          <span style={{ width: '100%', display: 'block' }}>
+                                            <Button
+                                              variant="outlined"
+                                              size="small"
+                                              color="primary"
+                                              fullWidth
+                                              disabled={!bancoAtivo}
+                                              startIcon={<Iconify icon="eva:upload-fill" />}
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEnviarExtrato(banco._id, mes.mesAno);
+                                              }}
+                                            >
+                                              Reenviar Arquivo
+                                            </Button>
+                                          </span>
+                                        </Tooltip>
                                       </>
                                     )}
                                   </Stack>
@@ -1437,8 +1634,61 @@ export default function StatusConciliacaoPage() {
             );
           })}
         </Stack>
-      )}
+      )
+      }
 
-    </Box>
+      <Popover
+        open={Boolean(popoverReenviar.anchorEl)}
+        anchorEl={popoverReenviar.anchorEl}
+        onClose={() =>
+          setPopoverReenviar({ anchorEl: null, bancoId: null, mesAno: null, conciliacaoId: null })
+        }
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <List dense sx={{ py: 0.5, minWidth: 200 }}>
+          <ListItemButton
+            onClick={() => {
+              const { bancoId, mesAno, conciliacaoId } = popoverReenviar;
+              setPopoverReenviar({ anchorEl: null, bancoId: null, mesAno: null, conciliacaoId: null });
+              setDialogConfirmReenviar({ open: true, bancoId, mesAno, conciliacaoId });
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 36 }}>
+              <Iconify icon="eva:refresh-fill" width={20} />
+            </ListItemIcon>
+            <ListItemText primary="Reenviar extrato" />
+          </ListItemButton>
+        </List>
+      </Popover>
+
+      <Dialog
+        open={dialogConfirmReenviar.open}
+        onClose={() => !reenviandoExtrato && setDialogConfirmReenviar({ open: false, bancoId: null, mesAno: null, conciliacaoId: null })}
+      >
+        <DialogTitle>Reenviar extrato</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Esta ação irá remover todas as transações e permitir o envio de um novo extrato. O arquivo original será
+            descartado.
+          </Alert>
+          <Typography variant="body2" color="text.secondary">
+            Deseja continuar?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            disabled={reenviandoExtrato}
+            onClick={() => setDialogConfirmReenviar({ open: false, bancoId: null, mesAno: null, conciliacaoId: null })}
+          >
+            Cancelar
+          </Button>
+          <Button variant="contained" color="warning" onClick={handleConfirmReenviarExtrato} disabled={reenviandoExtrato}>
+            {reenviandoExtrato ? 'Removendo...' : 'Confirmar'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+    </Box >
   );
 }

@@ -35,10 +35,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/utils/axios';
+import { toTitleCase } from 'src/utils/helper';
 import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
 import { getClientes } from 'src/actions/clientes';
-import { listarMesesDisponiveis } from 'src/actions/conciliacao';
+import { listarMesesDisponiveis, removerTransacoesConciliacao } from 'src/actions/conciliacao';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -72,6 +73,8 @@ export default function ConciliaçõesPage() {
   const [dialogMarcarNaoEnviado, setDialogMarcarNaoEnviado] = useState({ open: false, cliente: null, mes: null });
   const [dialogFechadoSemMovimento, setDialogFechadoSemMovimento] = useState({ open: false, cliente: null, mes: null });
   const [dialogMarcarEnviada, setDialogMarcarEnviada] = useState({ open: false, cliente: null, mes: null });
+  const [dialogReenviarExtrato, setDialogReenviarExtrato] = useState({ open: false, cliente: null, mes: null });
+  const [reenviandoExtratoId, setReenviandoExtratoId] = useState(null);
   const [exportando, setExportando] = useState({ clienteId: null, bancoId: null }); // ✅ Estado para exportação
 
   // Carregar clientes
@@ -441,6 +444,29 @@ export default function ConciliaçõesPage() {
     }
   }, [dialogMarcarEnviada, carregarConciliacoesCliente]);
 
+  const handleReenviarExtrato = useCallback(async () => {
+    const { cliente, mes } = dialogReenviarExtrato;
+    if (!cliente || !mes?.conciliacaoId) return;
+
+    try {
+      setReenviandoExtratoId(mes.conciliacaoId);
+      await removerTransacoesConciliacao(mes.conciliacaoId);
+      toast.success('Extrato removido. O cliente pode enviar um novo arquivo.');
+      setDialogReenviarExtrato({ open: false, cliente: null, mes: null });
+      await carregarConciliacoesCliente(cliente._id || cliente.id);
+    } catch (error) {
+      console.error('Erro ao reenviar extrato:', error);
+      const msg =
+        error?.response?.data?.erro ||
+        error?.response?.data?.message ||
+        error?.message ||
+        'Erro ao remover transações';
+      toast.error(msg);
+    } finally {
+      setReenviandoExtratoId(null);
+    }
+  }, [dialogReenviarExtrato, carregarConciliacoesCliente]);
+
   const obterCorStatus = (status) => {
     switch (status) {
       case 'conciliado':
@@ -452,6 +478,8 @@ export default function ConciliaçõesPage() {
       case 'fechado_sem_movimento':
         return 'error';
       case 'enviada':
+        return 'info';
+      case 'processando':
         return 'info';
       default:
         return 'default';
@@ -470,6 +498,8 @@ export default function ConciliaçõesPage() {
         return 'Fechado sem Movimento';
       case 'enviada':
         return 'Enviada';
+      case 'processando':
+        return 'Processando';
       default:
         return 'Desconhecido';
     }
@@ -649,7 +679,7 @@ export default function ConciliaçõesPage() {
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2" fontWeight="medium">
-                          {linha.mesNome}
+                          {toTitleCase(linha.mesNome)}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
@@ -664,6 +694,34 @@ export default function ConciliaçõesPage() {
                       </TableCell>
                       <TableCell align="center">
                         <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
+                          {linha.conciliacaoId && ['pendente', 'processando', 'enviada'].includes(linha.status) && (
+                            <Tooltip title="Reenviar extrato (remove transações e libera novo upload)">
+                              <IconButton
+                                size="small"
+                                color="warning"
+                                onClick={() => {
+                                  const cliente = clientes.find((c) => (c._id || c.id) === linha.clienteId);
+                                  setDialogReenviarExtrato({
+                                    open: true,
+                                    cliente,
+                                    mes: {
+                                      mesAno: linha.mesAno,
+                                      mesNome: linha.mesNome,
+                                      bancoId: linha.bancoId,
+                                      conciliacaoId: linha.conciliacaoId,
+                                    },
+                                  });
+                                }}
+                                disabled={reenviandoExtratoId === linha.conciliacaoId}
+                              >
+                                {reenviandoExtratoId === linha.conciliacaoId ? (
+                                  <CircularProgress size={16} />
+                                ) : (
+                                  <Iconify icon="eva:refresh-fill" />
+                                )}
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           {linha.conciliacaoId && (
                             <Tooltip title="Editar Conciliação">
                               <IconButton
@@ -931,6 +989,35 @@ export default function ConciliaçõesPage() {
           <Button onClick={() => setDialogMarcarEnviada({ open: false, cliente: null, mes: null })}>Cancelar</Button>
           <Button variant="contained" color="info" onClick={handleMarcarEnviada}>
             Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={dialogReenviarExtrato.open} onClose={() => !reenviandoExtratoId && setDialogReenviarExtrato({ open: false, cliente: null, mes: null })}>
+        <DialogTitle>Reenviar extrato</DialogTitle>
+        <DialogContent>
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            Serão removidas <strong>todas as transações</strong> desta conciliação e o status voltará para aguardar novo
+            arquivo. O cliente (ou você) precisará fazer o upload novamente.
+            <br />
+            <br />
+            Mês: <strong>{dialogReenviarExtrato.mes?.mesNome}</strong>
+            <br />
+            Cliente:{' '}
+            <strong>
+              {dialogReenviarExtrato.cliente?.razaoSocial || dialogReenviarExtrato.cliente?.nomeFantasia}
+            </strong>
+          </Alert>
+          <Typography variant="body2" color="text.secondary">
+            Deseja continuar?
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button disabled={Boolean(reenviandoExtratoId)} onClick={() => setDialogReenviarExtrato({ open: false, cliente: null, mes: null })}>
+            Cancelar
+          </Button>
+          <Button variant="contained" color="warning" onClick={handleReenviarExtrato} disabled={Boolean(reenviandoExtratoId)}>
+            {reenviandoExtratoId ? 'Removendo...' : 'Confirmar'}
           </Button>
         </DialogActions>
       </Dialog>

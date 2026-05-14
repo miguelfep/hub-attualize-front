@@ -9,16 +9,16 @@ import { m, LazyMotion, domAnimation } from 'framer-motion';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Alert from '@mui/material/Alert';
 import Grid from '@mui/material/Grid';
-import Paper from '@mui/material/Paper';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
+import Paper from '@mui/material/Paper';
 import Switch from '@mui/material/Switch';
 import Dialog from '@mui/material/Dialog';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import MenuItem from '@mui/material/MenuItem';
 import Skeleton from '@mui/material/Skeleton';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -31,14 +31,13 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import axios from 'src/utils/axios';
 
 import { useGetSettings, updateSettings, uploadInterCertificates } from 'src/actions/settings';
-
 import {
   desativarCertificado,
-  getPortalCertificadoAtivo,
-  getPortalCertificadosCliente,
   uploadPortalCertificado,
   validarSenhaCertificado,
+  getPortalCertificadoAtivo,
   validarArquivoCertificado,
+  getPortalCertificadosCliente,
 } from 'src/actions/certificados';
 
 import { Iconify } from 'src/components/iconify';

@@ -1,6 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { NumericFormat } from 'react-number-format';
 
@@ -25,6 +26,8 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { paths } from 'src/routes/paths';
+
 import axios from 'src/utils/axios';
 import { fCurrency } from 'src/utils/format-number';
 
@@ -36,16 +39,16 @@ import { SelectContaContabil } from 'src/components/plano-contas';
 // ✅ Helper para formatar data ISO sem problemas de timezone
 const formatarDataISO = (dataISO) => {
   if (!dataISO) return '';
-  
+
   if (typeof dataISO === 'string' && dataISO.includes('T')) {
     const [ano, mes, dia] = dataISO.split('T')[0].split('-');
     return `${dia}/${mes}/${ano}`;
   }
-  
+
   if (dataISO instanceof Date) {
     return dataISO.toLocaleDateString('pt-BR');
   }
-  
+
   try {
     const data = new Date(dataISO);
     if (typeof dataISO === 'string') {
@@ -75,6 +78,7 @@ function getApiErrorMessage(error) {
  * Componente para gerenciar bancos do cliente no dashboard
  */
 export default function ClienteBancosSection({ clienteId }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [bancos, setBancos] = useState([]);
   const [mostrarForm, setMostrarForm] = useState(false);
@@ -355,16 +359,27 @@ export default function ClienteBancosSection({ clienteId }) {
 
   return (
     <Box>
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
-        <Typography variant="h6">🏦 Bancos do Cliente</Typography>
-        <Button
-          variant="contained"
-          startIcon={<Iconify icon="eva:plus-fill" />}
-          onClick={() => setMostrarForm(!mostrarForm)}
-        >
-          {mostrarForm ? 'Cancelar' : 'Adicionar Banco'}
-        </Button>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ p: 2 }}>
+        <Typography variant="h6" gutterBottom>🏦 Bancos do Cliente</Typography>
+        <Box sx={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ cursor: 'pointer', '&:hover': { color: 'primary.main' } }}
+            title="Não encontrou o banco? Cadastre por aqui"
+            onClick={() => router.push(`${paths.dashboard.contabil.instituicoesBancarias}`)}
+          >
+            Lista de Bancos Disponíveis
+          </Typography>
+          <Button
+            variant="contained"
+            onClick={() => { setMostrarForm(!mostrarForm); handleFecharEdicao(); }}
+          >
+            {mostrarForm ? 'Cancelar' : 'Novo Banco do Cliente'}
+          </Button>
+        </Box>
       </Stack>
+
 
       {/* Formulário de Cadastro */}
       {mostrarForm && (
@@ -526,7 +541,7 @@ export default function ClienteBancosSection({ clienteId }) {
             </Grid>
 
             <Stack direction="row" spacing={2} justifyContent="flex-end">
-              <Button type="button" variant="outlined" onClick={() => setMostrarForm(false)}>
+              <Button type="button" variant="outlined" onClick={() => { setMostrarForm(false); handleFecharEdicao(); }}>
                 Cancelar
               </Button>
               <Button type="button" variant="contained" onClick={cadastrarConta}>
@@ -646,7 +661,7 @@ export default function ClienteBancosSection({ clienteId }) {
                               {(() => {
                                 const contaContabil = banco.contaContabilId || banco.contaContabil;
                                 if (!contaContabil) return null;
-                                
+
                                 if (typeof contaContabil === 'object' && contaContabil !== null) {
                                   return (
                                     <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
@@ -659,7 +674,7 @@ export default function ClienteBancosSection({ clienteId }) {
                                     </Stack>
                                   );
                                 }
-                                
+
                                 return null;
                               })()}
                             </Stack>
@@ -802,8 +817,8 @@ export default function ClienteBancosSection({ clienteId }) {
                           {saldoInicialAlterado && dataInicioAlterada
                             ? 'Saldo inicial e data de início alterados. O saldo atual será recalculado automaticamente com base em todas as transações conciliadas.'
                             : saldoInicialAlterado
-                            ? 'Saldo inicial alterado. O saldo atual será recalculado automaticamente com base em todas as transações conciliadas.'
-                            : 'Data de início alterada. O saldo atual será recalculado automaticamente.'}
+                              ? 'Saldo inicial alterado. O saldo atual será recalculado automaticamente com base em todas as transações conciliadas.'
+                              : 'Data de início alterada. O saldo atual será recalculado automaticamente.'}
                         </Typography>
                       </Alert>
                     );

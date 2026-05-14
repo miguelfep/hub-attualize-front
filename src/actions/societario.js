@@ -25,6 +25,18 @@ export async function updateAbertura(id, itemData) {
   return axios.put(`${baseUrl}societario/abertura/atualizar/${id}`, itemData);
 }
 
+export async function verificarAcessoWordpress(id) {
+  return axios.get(`${baseUrl}societario/abertura/acesso/verificar/${id}`);
+}
+
+export async function regenerarAcessoWordpress(id) {
+  return axios.post(`${baseUrl}societario/abertura/acesso/regenerar/${id}`);
+}
+
+export async function notificarClienteRegeneracaoAcesso(id) {
+  return axios.post(`${baseUrl}societario/abertura/acesso/notificar/${id}`);
+}
+
 // Função para fazer upload de arquivos
 export async function uploadArquivo(clientId, documentType, file) {
   const data = new FormData();

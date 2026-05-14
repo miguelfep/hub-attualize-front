@@ -27,10 +27,11 @@ axiosInstance.interceptors.response.use(
             data.error.message.trim());
 
         if (!hasReadableMessage && response?.status) {
-          return Promise.reject({
-            ...data,
-            message: `Erro HTTP ${response.status}${response.statusText ? ` (${response.statusText})` : ''}`,
-          });
+          const message = `Erro HTTP ${response.status}${response.statusText ? ` (${response.statusText})` : ''}`;
+          const err = new Error(message);
+          Object.assign(err, data);
+          err.message = message;
+          return Promise.reject(err);
         }
       }
       return Promise.reject(data);

@@ -7,7 +7,6 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { CONFIG } from 'src/config-global';
 import { primary } from 'src/theme/core/palette';
 import { LocalizationProvider } from 'src/locales';
-import { detectLanguage } from 'src/locales/server';
 import { I18nProvider } from 'src/locales/i18n-provider';
 import { ThemeProvider } from 'src/theme/theme-provider';
 
@@ -111,14 +110,18 @@ export const metadata = {
 };
 
 export default async function RootLayout({ children }) {
-  const lang = CONFIG.isStaticExport ? 'en' : await detectLanguage();
+  const lang = 'pt-BR';
   const settings = CONFIG.isStaticExport ? defaultSettings : await detectSettings();
 
   const basePath = CONFIG.site.basePath || '';
 
   return (
-    <html lang={lang ?? 'en'} suppressHydrationWarning>
+    <html lang={lang} translate="no" suppressHydrationWarning>
       <head>
+        {/* Bloqueia Google Translate (Chrome Translate / translate.google.com) para evitar
+            que ele envolva nós de texto com <font> e quebre a virtual DOM do React. */}
+        <meta name="google" content="notranslate" />
+        <meta httpEquiv="Content-Language" content="pt-BR" />
         {/* Preconnect para Google Analytics - melhora tempo de conexão */}
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
@@ -131,7 +134,7 @@ export default async function RootLayout({ children }) {
         />
         <InitColorSchemeScript />
       </head>
-      <body>
+      <body className="notranslate">
         {/* Google Analytics - Carregado com lazyOnload para não bloquear renderização inicial */}
         <Script
           src="https://www.googletagmanager.com/gtag/js?id=G-L5BFBLV0Z4"
@@ -151,7 +154,7 @@ export default async function RootLayout({ children }) {
             `,
           }}
         />
-        <I18nProvider lang={CONFIG.isStaticExport ? undefined : lang}>
+        <I18nProvider lang={lang}>
           <LocalizationProvider>
             <AuthProvider>
               <SettingsProvider

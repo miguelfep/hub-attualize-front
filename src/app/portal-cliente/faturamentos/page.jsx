@@ -41,6 +41,34 @@ import { useAuthContext } from 'src/auth/hooks';
 
 const PAGE_SIZE = 50;
 
+/** Data civil a partir de ISO ou Date (evita deslocamento por timezone na parte da data). */
+function formatNotaDateOnly(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'string' && value.includes('T')) {
+    const datePart = value.split('T')[0];
+    const [ano, mes, dia] = datePart.split('-');
+    if (ano && mes && dia) return `${dia}/${mes}/${ano}`;
+  }
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    const [ano, mes, dia] = value.split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+  return dayjs(value).format('DD/MM/YYYY');
+}
+
+/** Data e hora para exibição (mesma lógica de parsing ISO do card). */
+function formatNotaDateTimeDisplay(value) {
+  if (value == null || value === '') return null;
+  if (typeof value === 'string' && value.includes('T')) {
+    const datePart = value.split('T')[0];
+    const timePart = value.split('T')[1]?.split('.')[0] || '';
+    const [ano, mes, dia] = datePart.split('-');
+    const [hora, minuto] = timePart.split(':');
+    return `${dia}/${mes}/${ano} ${hora || '00'}:${minuto || '00'}`;
+  }
+  return dayjs(value).format('DD/MM/YYYY HH:mm');
+}
+
 const notaInnerBoxSx = {
   p: 1.5,
   borderRadius: 2,
@@ -439,6 +467,17 @@ export default function PortalFaturamentoPage() {
               disabled={!!filtroNumeroNota}
             />
           </Grid>
+          {!filtroNumeroNota && (
+            <Grid xs={12}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ display: 'block', mt: -0.5 }}
+              >
+                O período (De / Até) filtra pela competência da nota. Se não houver competência, usa-se a data de emissão.
+              </Typography>
+            </Grid>
+          )}
           <Grid xs={12} md={6}>
             <Stack spacing={0}>
               <Stack
@@ -559,6 +598,8 @@ export default function PortalFaturamentoPage() {
                 const color = s === 'emitida' ? 'success' : s === 'cancelada' || s === 'negada' ? 'error' : 'warning';
                 const colorEnotas = se === 'autorizada' ? 'success' : se === 'cancelada' || se === 'negada' ? 'error' : 'warning';
                 const dataEmissao = n.dataEmissao || n.createdAt || n.data;
+                const competenciaFmt = formatNotaDateOnly(n.competencia);
+                const emissaoFmt = formatNotaDateTimeDisplay(dataEmissao);
                 const servicoDesc = Array.isArray(n.servicos) && n.servicos.length ? n.servicos[0]?.descricao : (n.descricao || n.discriminacao);
                 const isSieg = n.origem === 'sieg';
                 const isEnotas = n.origem === 'enotas' || !n.origem;
@@ -599,21 +640,26 @@ export default function PortalFaturamentoPage() {
                           </Label>
                         )}
                       </Stack>
-                      <Typography variant="caption" color="text.secondary">
-                        {dataEmissao
-                          ? (() => {
-                            // Extrair apenas a parte da data da string ISO para evitar problemas de timezone
-                            if (typeof dataEmissao === 'string' && dataEmissao.includes('T')) {
-                              const datePart = dataEmissao.split('T')[0];
-                              const timePart = dataEmissao.split('T')[1]?.split('.')[0] || '';
-                              const [ano, mes, dia] = datePart.split('-');
-                              const [hora, minuto] = timePart.split(':');
-                              return `${dia}/${mes}/${ano} ${hora || '00'}:${minuto || '00'}`;
-                            }
-                            return dayjs(dataEmissao).format('DD/MM/YYYY HH:mm');
-                          })()
-                          : '-'}
-                      </Typography>
+                      <Stack
+                        spacing={0.25}
+                        alignItems={{ xs: 'flex-start', sm: 'flex-start' }}
+                        sx={{ textAlign: { xs: 'left', sm: 'left' } }}
+                      >
+                        {competenciaFmt ? (
+                          <>
+                            <Typography variant="caption" color="text.secondary">
+                              Competência <b>{competenciaFmt}</b>
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              Emissão: <b>{emissaoFmt || '—'}</b>
+                            </Typography>
+                          </>
+                        ) : (
+                          <Typography variant="caption" color="text.secondary">
+                            {emissaoFmt ? `Emissão: ${emissaoFmt}` : '—'}
+                          </Typography>
+                        )}
+                      </Stack>
                     </Stack>
 
                     <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 1.5 }}>

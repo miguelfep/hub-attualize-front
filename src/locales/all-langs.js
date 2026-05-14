@@ -11,7 +11,7 @@ import { ptBR as ptBRDataGrid } from '@mui/x-data-grid/locales';
 
 export const allLangs = [
   {
-    value: 'pt',
+    value: 'pt-BR',
     label: 'Portuguese',
     countryCode: 'BR',
     adapterLocale: 'pt-BR',
