@@ -135,7 +135,7 @@ export function GuiaFiscalEditView({ id }) {
         ]);
 
         toast.success('Guia atualizada com sucesso!');
-        router.push(paths.dashboard.guiasFiscais.details(id));
+        router.push(paths.dashboard.guiasEDocumentos.details(id));
       } catch (error) {
         console.error('Erro ao atualizar guia:', error);
         toast.error(error?.message || 'Erro ao atualizar guia');
@@ -160,7 +160,7 @@ export function GuiaFiscalEditView({ id }) {
         heading="Editar Documento"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Gerenciador de Arquivos', href: paths.dashboard.guiasFiscais.list },
+          { name: 'Documentos e Guias', href: paths.dashboard.guiasEDocumentos.list },
           { name: 'Editar' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
@@ -219,7 +219,7 @@ export function GuiaFiscalEditView({ id }) {
               <Button
                 variant="outlined"
                 component={RouterLink}
-                href={paths.dashboard.guiasFiscais.details(id)}
+                href={paths.dashboard.guiasEDocumentos.details(id)}
                 disabled={isSubmitting}
               >
                 Cancelar

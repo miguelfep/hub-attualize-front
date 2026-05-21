@@ -78,7 +78,6 @@ export function GuiaFiscalPortalReadEye({ guia, iconWidth = 22, showInlineSummar
         spacing={0.75}
         sx={{
           cursor: 'default',
-          flexShrink: 0,
           minWidth: 0,
         }}
       >
@@ -91,6 +90,7 @@ export function GuiaFiscalPortalReadEye({ guia, iconWidth = 22, showInlineSummar
             sx={{
               lineHeight: 1.2,
               minWidth: 0,
+              flexShrink: 1,
               maxWidth: showInlineSummary ? { xs: 100, sm: 160, md: 200 } : 'none',
               textAlign: 'right',
             }}

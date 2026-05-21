@@ -160,10 +160,12 @@ export function GuiaFiscalUploadView() {
         }
         
         // Mostrar resumo
-        const { processadas, erros, duplicatas, resumo, clientesNaoEncontrados, errosDetalhados } = response.data;
+        const { processadas, erros, duplicatas, substituidas, resumo, clientesNaoEncontrados, errosDetalhados } =
+          response.data;
         
         console.log('📊 Resumo do processamento:', {
           processadas,
+          substituidas,
           erros,
           duplicatas,
           resumo,
@@ -172,12 +174,19 @@ export function GuiaFiscalUploadView() {
         });
         
         let mensagem = `${processadas} documento(s) processado(s) com sucesso!`;
+        if (substituidas > 0) {
+          mensagem += ` ${substituidas} guia(s) vencida(s) atualizada(s).`;
+        }
         if (duplicatas > 0) {
           mensagem += ` ${duplicatas} documento(s) duplicado(s) foram ignorados.`;
         }
         
         toast.success(mensagem);
         
+        if (substituidas > 0) {
+          toast.info(`${substituidas} guia(s) vencida(s) foram substituídas pela versão mais recente.`);
+        }
+
         // Mostrar aviso sobre duplicatas
         if (duplicatas > 0) {
           toast.warning(`${duplicatas} documento(s) duplicado(s) foram ignorados.`);
@@ -191,7 +200,7 @@ export function GuiaFiscalUploadView() {
         } else {
           // Redirecionar para a lista com parâmetro refresh para forçar atualização
           setTimeout(() => {
-            router.push(`${paths.dashboard.guiasFiscais.list}?refresh=${Date.now()}`);
+            router.push(`${paths.dashboard.guiasEDocumentos.list}?refresh=${Date.now()}`);
           }, 1500);
         }
       } else {
@@ -261,7 +270,7 @@ export function GuiaFiscalUploadView() {
         heading="Express"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Gerenciador de Arquivos', href: paths.dashboard.guiasFiscais.list },
+          { name: 'Documentos e Guias', href: paths.dashboard.guiasEDocumentos.list },
           { name: 'Express' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
@@ -354,6 +363,11 @@ export function GuiaFiscalUploadView() {
                       </Typography>
                     </>
                   )}
+                  {uploadResult.substituidas > 0 && (
+                    <Typography variant="body2" color="info.main">
+                      🔄 Guias vencidas atualizadas: {uploadResult.substituidas}
+                    </Typography>
+                  )}
                   {uploadResult.duplicatas > 0 && (
                     <Typography variant="body2" color="warning.main">
                       ⚠️ Duplicatas ignoradas: {uploadResult.duplicatas}
@@ -384,7 +398,7 @@ export function GuiaFiscalUploadView() {
               <Button
                 variant="outlined"
                 component={RouterLink}
-                href={paths.dashboard.guiasFiscais.list}
+                href={paths.dashboard.guiasEDocumentos.list}
                 disabled={loading}
               >
                 Cancelar
@@ -434,7 +448,7 @@ export function GuiaFiscalUploadView() {
             variant="contained"
             onClick={() => {
               dialogClientesNaoEncontrados.onFalse();
-              router.push(paths.dashboard.guiasFiscais.list);
+              router.push(paths.dashboard.guiasEDocumentos.list);
             }}
           >
             Ver Lista

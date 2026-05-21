@@ -4,26 +4,17 @@ import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import Chip from '@mui/material/Chip';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
-import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
 import Divider from '@mui/material/Divider';
-import Tooltip from '@mui/material/Tooltip';
-import Checkbox from '@mui/material/Checkbox';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import ToggleButton from '@mui/material/ToggleButton';
 import Autocomplete from '@mui/material/Autocomplete';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-import CardActionArea from '@mui/material/CardActionArea';
 import CircularProgress from '@mui/material/CircularProgress';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -48,11 +39,25 @@ import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import { isDocumentoNovoParaClientePortal } from '../guia-documento-visualizacao';
-import { GuiaFiscalPortalReadEye } from '../components/guia-fiscal-portal-read-eye';
 import { GuiaFiscalMovePastaDialog } from '../components/guia-fiscal-move-pasta-dialog';
 import { GuiaFiscalPastaUploadDialog } from '../components/guia-fiscal-pasta-upload-dialog';
+import { GuiaFiscalDriveAdminToolbar } from '../components/guia-fiscal-drive-admin-toolbar';
 import { getCompetencia, SLUG_PASTA_REGEX, findPastaNodeById, formatCompetencia, suggestSlugFromNome } from '../utils';
+import {
+  DriveFileCardGrid,
+  DriveFileCardList,
+  DriveEmptyDropZone,
+  DriveFolderCardGrid,
+  DriveFolderStripCard,
+} from '../components/guia-fiscal-drive-admin-cards';
+import {
+  DRIVE_SHADOW_SOFT,
+  DRIVE_BORDER_COLOR,
+  DRIVE_FILE_GRID_SX,
+  DRIVE_SURFACE_RADIUS,
+  DRIVE_SECTION_TITLE_SX,
+  DRIVE_FOLDER_GRID_AUTO_SX,
+} from '../guia-drive-file-visual';
 
 // ----------------------------------------------------------------------
 
@@ -67,20 +72,6 @@ function apiErrMsg(err) {
   if (typeof err === 'string') return err;
   return err.message || err.error || 'Erro na operação';
 }
-
-/** Botão “Mais ações”: sem círculo branco, ícone menor. */
-const DRIVE_MORE_ACTIONS_ICON_BTN_SX = {
-  position: 'absolute',
-  zIndex: 2,
-  p: 0.25,
-  minWidth: 26,
-  width: 26,
-  height: 26,
-  color: 'text.secondary',
-  bgcolor: 'transparent',
-  boxShadow: 'none',
-  '&:hover': { bgcolor: 'action.hover', boxShadow: 'none' },
-};
 
 function findFolderPath(nodes, id, trail = []) {
   const list = nodes || [];
@@ -197,8 +188,10 @@ export function GuiaFiscalDriveAdminView() {
     [folders, currentFolderId]
   );
 
-  const visibleFolders = useMemo(() => {
-    if (!currentFolderId) return folders || [];
+  const mainFolders = useMemo(() => folders || [], [folders]);
+
+  const visibleSubfolders = useMemo(() => {
+    if (!currentFolderId) return [];
     return findPastaNodeById(folders, currentFolderId)?.children || [];
   }, [folders, currentFolderId]);
 
@@ -206,14 +199,16 @@ export function GuiaFiscalDriveAdminView() {
     if (!Array.isArray(data?.guias)) return [];
     // Na raiz do drive, exibir apenas documentos novos que ainda não foram vistos no portal.
     if (!currentFolderId) {
-      return data.guias.filter((guia) => isDocumentoNovoParaClientePortal(guia));
+      return [];
     }
     return data.guias;
   }, [data?.guias, currentFolderId]);
 
-  const totalFilesFromApi = Array.isArray(data?.guias) ? data.guias.length : 0;
+  const hasFolderOrFiles =
+    (!currentFolderId && mainFolders.length > 0) ||
+    visibleSubfolders.length > 0 ||
+    files.length > 0;
 
-  const hasFolderOrFiles = visibleFolders.length > 0 || files.length > 0;
   const showFilesLoadingPlaceholder = Boolean(loadingFiles && !hasFolderOrFiles);
 
   useEffect(() => {
@@ -567,6 +562,25 @@ export function GuiaFiscalDriveAdminView() {
     [queuePastaUploadFiles]
   );
 
+  const handleGoBack = useCallback(() => {
+    if (!currentFolderId) return;
+    const parent = findParentFolderId(folders, currentFolderId);
+    setCurrentFolderId(parent !== undefined ? parent : null);
+  }, [folders, currentFolderId]);
+
+  const handleTriggerUpload = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept =
+      '.pdf,.xlsx,.xls,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel';
+    input.onchange = () => {
+      const picked = Array.from(input.files || []);
+      queuePastaUploadFiles(picked);
+    };
+    input.click();
+  }, [queuePastaUploadFiles]);
+
   const handleDriveSurfaceContextMenu = useCallback(
     (e) => {
       if (!clienteId) return;
@@ -637,38 +651,95 @@ export function GuiaFiscalDriveAdminView() {
     );
   };
 
+  const breadcrumbLinks = useMemo(() => {
+    const links = [
+      { name: 'Dashboard', href: paths.dashboard.root },
+      { name: 'Documentos', href: paths.dashboard.guiasEDocumentos.list },
+    ];
+    if (selectedCliente) {
+      links.push({ name: getClienteLabel(selectedCliente) });
+    }
+    folderPath.forEach((folder) => {
+      links.push({ name: folder.nome });
+    });
+    return links;
+  }, [selectedCliente, folderPath]);
+
   return (
-    <DashboardContent maxWidth={false} sx={{ py: 2 }}>
-      <Box sx={{ maxWidth: 1280, mx: 'auto', width: '100%' }}>
-        <CustomBreadcrumbs
-          heading="Documentos e guias"
-          links={[
-            { name: 'Dashboard', href: paths.dashboard.root },
-            { name: 'Documentos e guias', href: paths.dashboard.guiasEDocumentos.list },
-          ]}
-          sx={{ mb: 2 }}
-        />
+    <DashboardContent maxWidth sx={{ py: 2 }}>
+      <Box sx={{ width: '100%' }}>
+        <CustomBreadcrumbs heading="Documentos e Guias" links={breadcrumbLinks} sx={{ mb: 2 }} />
 
         <Stack spacing={2.5}>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2}>
-            <Autocomplete
-              fullWidth
-              options={clientes}
-              loading={loadingClientes}
-              value={selectedCliente}
-              onChange={(_, value) => {
-                setClienteId(value?._id || '');
-                setCurrentFolderId(null);
-              }}
-              getOptionLabel={(option) => getClienteLabel(option)}
-              renderOption={(props, option) => (
-                <li {...props} key={option?._id || option?.codigoCliente || option?.codigo}>
-                  {getClienteLabel(option)}
-                </li>
-              )}
-              renderInput={(params) => <TextField {...params} label="Selecionar cliente" placeholder="Digite para buscar..." />}
-            />
-          </Stack>
+          <Card
+            variant="outlined"
+            sx={{
+              p: { xs: 2.5, md: 3 },
+              borderRadius: DRIVE_SURFACE_RADIUS,
+              border: `1px solid ${DRIVE_BORDER_COLOR}`,
+              boxShadow: DRIVE_SHADOW_SOFT,
+              bgcolor: 'background.paper',
+            }}
+          >
+            <Stack spacing={2}>
+              <Stack direction="row" alignItems="flex-start" spacing={2}>
+                <Box
+                  sx={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    bgcolor: 'primary.lighter',
+                    color: 'primary.main',
+                    flexShrink: 0,
+                    boxShadow: '0 4px 12px rgba(25, 118, 210, 0.15)',
+                  }}
+                >
+                  <Iconify icon="solar:users-group-rounded-bold-duotone" width={28} />
+                </Box>
+                <Box sx={{ minWidth: 0, flex: 1, pt: 0.25 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ letterSpacing: '-0.02em', mb: 0.25 }}>
+                    Cliente Ativo
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Altere o cliente para atualizar pastas, documentos e uploads do drive.
+                  </Typography>
+                </Box>
+              </Stack>
+              <Autocomplete
+                fullWidth
+                options={clientes}
+                loading={loadingClientes}
+                value={selectedCliente}
+                onChange={(_, value) => {
+                  setClienteId(value?._id || '');
+                  setCurrentFolderId(null);
+                }}
+                getOptionLabel={(option) => getClienteLabel(option)}
+                renderOption={(props, option) => (
+                  <li {...props} key={option?._id || option?.codigoCliente || option?.codigo}>
+                    {getClienteLabel(option)}
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Selecionar cliente"
+                    placeholder="Busque por código ou razão social..."
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: DRIVE_SURFACE_RADIUS,
+                        bgcolor: 'background.paper',
+                        fontSize: '0.9375rem',
+                      },
+                    }}
+                  />
+                )}
+              />
+            </Stack>
+          </Card>
 
           {!clienteId ? (
             <Stack alignItems="center" spacing={2} sx={{ py: 6 }}>
@@ -681,9 +752,18 @@ export function GuiaFiscalDriveAdminView() {
             <Card
               sx={{
                 p: { xs: 2, md: 3 },
-                borderRadius: 3,
+                borderRadius: DRIVE_SURFACE_RADIUS,
                 position: 'relative',
-                border: isDragOver ? (theme) => `2px dashed ${theme.palette.primary.main}` : undefined,
+                bgcolor: 'background.paper',
+                transition: (theme) =>
+                  theme.transitions.create(['border-color', 'box-shadow'], { duration: theme.transitions.duration.shorter }),
+                border: (theme) =>
+                  isDragOver
+                    ? `2px dashed ${theme.palette.primary.main}`
+                    : `1px solid ${DRIVE_BORDER_COLOR}`,
+                boxShadow: isDragOver
+                  ? (theme) => `0 0 0 4px ${theme.palette.primary.lighter}`
+                  : '0 1px 3px rgba(15, 23, 42, 0.06)',
               }}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
@@ -699,394 +779,243 @@ export function GuiaFiscalDriveAdminView() {
                   </Stack>
                 ) : (
                   <>
-                    <Divider />
+                    <GuiaFiscalDriveAdminToolbar
+                      canGoBack={Boolean(currentFolderId)}
+                      onGoBack={handleGoBack}
+                      onNavigateRoot={() => setCurrentFolderId(null)}
+                      folderPath={folderPath}
+                      onNavigateFolder={setCurrentFolderId}
+                      onUpload={handleTriggerUpload}
+                      uploadDisabled={!currentFolderId || uploading}
+                      filesViewMode={filesViewMode}
+                      onFilesViewModeChange={setFilesViewMode}
+                    />
 
-                    <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-                      <Button size="small" variant={!currentFolderId ? 'contained' : 'outlined'} onClick={() => setCurrentFolderId(null)}>
-                        Drive do cliente
-                      </Button>
-                      {folderPath.map((folder) => (
-                        <Button key={folder._id} size="small" variant="text" onClick={() => setCurrentFolderId(folder._id)}>
-                          / {folder.nome}
-                        </Button>
-                      ))}
-                    </Stack>
-
-                    <Alert severity="info" variant="outlined" sx={{ alignItems: 'flex-start', py: 1.25 }}>
-                      <Stack spacing={0.5}>
-                        <Typography variant="body2">
-                          <strong>Arraste e solte arquivos</strong> neste quadro para enviar à <strong>pasta atual</strong> (caminho acima). Você
-                          também pode usar <strong>Enviar arquivos</strong>.
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary">
-                          Vários arquivos de uma vez: após confirmar no diálogo, o envio é feito em <strong>fila</strong> (um por vez).
-                        </Typography>
-                      </Stack>
-                    </Alert>
-
-                    <Typography variant="caption" color="text.secondary">
-                      Pastas: botão direito na área vazia ou no cartão da pasta. Arquivos: marque os checkboxes para mover ou excluir em massa; botão
-                      direito ou
-                      três pontos para excluir um a um.
-                    </Typography>
-
-                    <Box>
-                      <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={1} sx={{ mb: 1.5 }} flexWrap="wrap">
-                        <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap">
-                          <Iconify icon="solar:folder-with-files-bold-duotone" width={22} />
-                          <Typography variant="subtitle1">Pastas e arquivos</Typography>
-                          {visibleFolders.length > 0 ? <Chip size="small" label={`${visibleFolders.length} pasta(s)`} /> : null}
-                          <Chip size="small" label={`${totalFilesFromApi} arquivo(s)`} />
-                          {loadingFiles ? <CircularProgress size={18} /> : null}
-                        </Stack>
-                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                          <Button
-                            size="small"
-                            variant="outlined"
-                            startIcon={<Iconify icon="solar:upload-bold" />}
-                            disabled={!currentFolderId || uploading}
-                            onClick={() => {
-                              const input = document.createElement('input');
-                              input.type = 'file';
-                              input.multiple = true;
-                              input.accept =
-                                '.pdf,.xlsx,.xls,application/pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel';
-                              input.onchange = () => {
-                                const picked = Array.from(input.files || []);
-                                queuePastaUploadFiles(picked);
-                              };
-                              input.click();
-                            }}
-                          >
-                            Enviar arquivos
-                          </Button>
-                          <ToggleButtonGroup
-                            size="small"
-                            exclusive
-                            value={filesViewMode}
-                            onChange={(_, value) => {
-                              if (value) setFilesViewMode(value);
-                            }}
-                          >
-                            <ToggleButton value="grid">
-                              <Iconify icon="solar:widget-5-bold-duotone" width={16} />
-                            </ToggleButton>
-                            <ToggleButton value="list">
-                              <Iconify icon="solar:list-bold-duotone" width={16} />
-                            </ToggleButton>
-                          </ToggleButtonGroup>
-                          {files.length > 0 ? (
-                            <>
-                              <Button
-                                size="small"
-                                variant="text"
-                                onClick={() =>
-                                  setSelectedFileIds((prev) =>
-                                    prev.length === files.length ? [] : files.map((f) => f._id).filter(Boolean)
-                                  )
-                                }
-                              >
-                                {selectedFileIds.length === files.length ? 'Desmarcar todos' : 'Selecionar todos'}
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="text"
-                                disabled={!selectedFileIds.length}
-                                onClick={() => setSelectedFileIds([])}
-                              >
-                                Limpar seleção
-                              </Button>
-                              <Button
-                                size="small"
-                                variant="soft"
-                                color="primary"
-                                disabled={!selectedFileIds.length}
-                                startIcon={<Iconify icon="solar:transfer-horizontal-bold" width={18} />}
-                                onClick={openBulkMoveDialog}
-                              >
-                                Mover ({selectedFileIds.length})
-                              </Button>
-                              <Button
-                                size="small"
-                                color="error"
-                                variant="soft"
-                                disabled={!selectedFileIds.length}
-                                startIcon={<Iconify icon="solar:trash-bin-trash-bold" width={18} />}
-                                onClick={openBulkDeleteDialog}
-                              >
-                                Excluir ({selectedFileIds.length})
-                              </Button>
-                            </>
-                          ) : null}
-                        </Stack>
-                      </Stack>
-
-                      <Box onContextMenu={handleDriveSurfaceContextMenu} sx={{ minHeight: 80 }}>
-                        {showFilesLoadingPlaceholder ? (
-                          <Stack alignItems="center" spacing={1} sx={{ py: 3 }}>
-                            <CircularProgress size={24} />
-                            <Typography variant="body2" color="text.secondary">
-                              Carregando documentos...
-                            </Typography>
-                          </Stack>
-                        ) : !hasFolderOrFiles ? (
+                    <Box onContextMenu={handleDriveSurfaceContextMenu} sx={{ pt: 2 }}>
+                      {showFilesLoadingPlaceholder ? (
+                        <Stack alignItems="center" spacing={1} sx={{ py: 3 }}>
+                          <CircularProgress size={24} />
                           <Typography variant="body2" color="text.secondary">
-                            Esta pasta está vazia. Arraste arquivos para cá ou use Enviar arquivos. Botão direito nesta área para criar pasta (é
-                            preciso estar <strong>dentro</strong> de uma pasta para subpastas).
+                            Carregando documentos...
                           </Typography>
-                        ) : filesViewMode === 'grid' ? (
-                          <Box
-                            sx={{
-                              display: 'grid',
-                              gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
-                              gap: 1,
-                            }}
-                          >
-                            {visibleFolders.map((folder) => (
-                              <Card
-                                key={folder._id}
-                                data-folder-card
-                                variant="outlined"
-                                sx={{ position: 'relative' }}
-                                onContextMenu={(e) => handleFolderContextMenu(e, folder)}
-                              >
-                                <Tooltip title="Mais ações">
-                                  <IconButton
+                        </Stack>
+                      ) : (
+                        <Stack spacing={3}>
+                          {!currentFolderId ? (
+                            <Box>
+                              <Typography sx={{ ...DRIVE_SECTION_TITLE_SX, mb: 1.5 }}>
+                                Pastas principais
+                              </Typography>
+                              {mainFolders.length ? (
+                                <Box sx={DRIVE_FOLDER_GRID_AUTO_SX}>
+                                  {mainFolders.map((folder) => (
+                                    <DriveFolderCardGrid
+                                      key={folder._id}
+                                      folder={folder}
+                                      onOpen={() => setCurrentFolderId(folder._id)}
+                                      onContextMenu={(e) => handleFolderContextMenu(e, folder)}
+                                      onMoreClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setMenuState({ type: 'icon', anchorEl: e.currentTarget, folder });
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              ) : (
+                                <Typography variant="body2" color="text.secondary" sx={{ py: 0.5 }}>
+                                  Nenhuma pasta principal disponível.
+                                </Typography>
+                              )}
+                            </Box>
+                          ) : null}
+
+                          {currentFolderId ? (
+                            <Box>
+                              <Typography sx={{ ...DRIVE_SECTION_TITLE_SX, mb: 1.5 }}>
+                                Subpastas
+                              </Typography>
+                              {visibleSubfolders.length ? (
+                                <Box sx={DRIVE_FOLDER_GRID_AUTO_SX}>
+                                  {visibleSubfolders.map((folder) => (
+                                    <DriveFolderStripCard
+                                      key={folder._id}
+                                      folder={folder}
+                                      onOpen={() => setCurrentFolderId(folder._id)}
+                                      onContextMenu={(e) => handleFolderContextMenu(e, folder)}
+                                      onMoreClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setMenuState({ type: 'icon', anchorEl: e.currentTarget, folder });
+                                      }}
+                                    />
+                                  ))}
+                                </Box>
+                              ) : (
+                                <Typography variant="body2" color="text.secondary" sx={{ py: 0.5 }}>
+                                  Nenhuma subpasta neste nível.
+                                </Typography>
+                              )}
+                            </Box>
+                          ) : null}
+
+                          <Box sx={{ mt: 0, pt: 0 }} onContextMenu={handleDriveSurfaceContextMenu}>
+                            <Stack
+                              direction="row"
+                              alignItems="center"
+                              justifyContent="space-between"
+                              spacing={1}
+                              flexWrap="wrap"
+                              useFlexGap
+                              sx={{ mb: 2 }}
+                            >
+                              <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" useFlexGap>
+                                <Typography sx={DRIVE_SECTION_TITLE_SX}>
+                                  Arquivos
+                                </Typography>
+                                {loadingFiles ? <CircularProgress size={16} /> : null}
+                              </Stack>
+
+                              {files.length > 0 ? (
+                                <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                                  <Button
                                     size="small"
-                                    sx={{
-                                      ...DRIVE_MORE_ACTIONS_ICON_BTN_SX,
-                                      top: 4,
-                                      right: 4,
-                                    }}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setMenuState({ type: 'icon', anchorEl: e.currentTarget, folder });
-                                    }}
+                                    variant="text"
+                                    onClick={() =>
+                                      setSelectedFileIds((prev) =>
+                                        prev.length === files.length ? [] : files.map((f) => f._id).filter(Boolean)
+                                      )
+                                    }
                                   >
-                                    <Iconify icon="eva:more-vertical-fill" width={14} />
-                                  </IconButton>
-                                </Tooltip>
-                                <CardActionArea onClick={() => setCurrentFolderId(folder._id)} sx={{ p: 1.5, pr: 5 }}>
-                                  <Stack direction="row" alignItems="center" spacing={1.2}>
-                                    <Avatar sx={{ bgcolor: 'warning.lighter', color: 'warning.dark' }}>
-                                      <Iconify icon="solar:folder-with-files-bold-duotone" width={20} />
-                                    </Avatar>
-                                    <Box sx={{ minWidth: 0 }}>
-                                      <Typography variant="subtitle2" noWrap>
-                                        {folder.nome}
-                                      </Typography>
-                                      <Typography variant="caption" color="text.secondary">
-                                        Abrir pasta
-                                      </Typography>
-                                    </Box>
-                                  </Stack>
-                                </CardActionArea>
-                              </Card>
-                            ))}
-                            {files.map((file) => (
-                              <Card
-                                key={file._id}
-                                data-file-card
-                                variant="outlined"
-                                sx={{
-                                  p: 1,
-                                  position: 'relative',
-                                  pr: 4.5,
-                                  ...(selectedFileIds.includes(file._id)
-                                    ? { boxShadow: (t) => `0 0 0 2px ${t.palette.primary.main}` }
-                                    : {}),
-                                }}
-                                onContextMenu={(e) => handleFileContextMenu(e, file)}
-                              >
-                                <Checkbox
-                                  size="small"
-                                  checked={selectedFileIds.includes(file._id)}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleFileSelected(file._id);
-                                  }}
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 2,
-                                    left: 2,
-                                    zIndex: 3,
-                                    p: 0.25,
-                                    bgcolor: 'background.paper',
-                                    borderRadius: 0.5,
-                                    boxShadow: 1,
-                                  }}
-                                />
-                                <Tooltip title="Mais ações">
-                                  <IconButton
+                                    {selectedFileIds.length === files.length ? 'Desmarcar todos' : 'Selecionar todos'}
+                                  </Button>
+                                  <Button
                                     size="small"
-                                    sx={{
-                                      ...DRIVE_MORE_ACTIONS_ICON_BTN_SX,
-                                      top: 4,
-                                      right: 4,
-                                    }}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setFileMenuState({ type: 'icon', anchorEl: e.currentTarget, file });
-                                    }}
+                                    variant="text"
+                                    disabled={!selectedFileIds.length}
+                                    onClick={() => setSelectedFileIds([])}
                                   >
-                                    <Iconify icon="eva:more-vertical-fill" width={14} />
-                                  </IconButton>
-                                </Tooltip>
-                                <Stack spacing={0.8} sx={{ pl: 3 }}>
-                                  <Stack direction="row" alignItems="center" spacing={1}>
-                                    <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.lighter', color: 'primary.main' }}>
-                                      <Iconify icon="solar:file-text-bold-duotone" width={16} />
-                                    </Avatar>
-                                    <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
-                                      {file.tipoGuia || 'Arquivo'}
-                                    </Typography>
-                                  </Stack>
-                                  <Typography variant="body2" fontWeight={600} noWrap>
-                                    {file.nomeArquivo || 'Documento'}
-                                  </Typography>
-                                  <FileMetaLines file={file} />
-                                  <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    justifyContent="space-between"
-                                    columnGap={1}
-                                    rowGap={0.5}
-                                    flexWrap="wrap"
-                                  >
-                                    <Stack direction="row" spacing={0.6}>
-                                      <Button
-                                        size="small"
-                                        variant="outlined"
-                                        sx={{ minWidth: 0, px: 1 }}
-                                        onClick={() => downloadGuiaFiscal(file._id, file.nomeArquivo)}
-                                      >
-                                        Baixar
-                                      </Button>
-                                    </Stack>
-                                    <GuiaFiscalPortalReadEye guia={file} showInlineSummary iconWidth={20} />
-                                  </Stack>
-                                </Stack>
-                              </Card>
-                            ))}
-                          </Box>
-                        ) : (
-                          <Stack spacing={1}>
-                            {visibleFolders.map((folder) => (
-                              <Card
-                                key={`list-${folder._id}`}
-                                data-folder-card
-                                variant="outlined"
-                                sx={{ p: 1, position: 'relative', pr: 5 }}
-                                onContextMenu={(e) => handleFolderContextMenu(e, folder)}
-                              >
-                                <Tooltip title="Mais ações">
-                                  <IconButton
+                                    Limpar
+                                  </Button>
+                                  <Button
                                     size="small"
-                                    sx={{
-                                      ...DRIVE_MORE_ACTIONS_ICON_BTN_SX,
-                                      top: 6,
-                                      right: 6,
-                                    }}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setMenuState({ type: 'icon', anchorEl: e.currentTarget, folder });
-                                    }}
+                                    variant="soft"
+                                    color="primary"
+                                    disabled={!selectedFileIds.length}
+                                    startIcon={<Iconify icon="solar:transfer-horizontal-bold" width={18} />}
+                                    onClick={openBulkMoveDialog}
                                   >
-                                    <Iconify icon="eva:more-vertical-fill" width={14} />
-                                  </IconButton>
-                                </Tooltip>
-                                <Stack direction="row" alignItems="center" spacing={1.2}>
-                                  <Avatar sx={{ bgcolor: 'warning.lighter', color: 'warning.dark', width: 30, height: 30 }}>
-                                    <Iconify icon="solar:folder-with-files-bold-duotone" width={18} />
-                                  </Avatar>
-                                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Typography variant="body2" fontWeight={600} noWrap>
-                                      {folder.nome}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">
-                                      Pasta
-                                    </Typography>
-                                  </Box>
-                                  <Button size="small" variant="outlined" onClick={() => setCurrentFolderId(folder._id)}>
-                                    Abrir
+                                    Mover ({selectedFileIds.length})
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    color="error"
+                                    variant="soft"
+                                    disabled={!selectedFileIds.length}
+                                    startIcon={<Iconify icon="solar:trash-bin-trash-bold" width={18} />}
+                                    onClick={openBulkDeleteDialog}
+                                  >
+                                    Excluir ({selectedFileIds.length})
                                   </Button>
                                 </Stack>
-                              </Card>
-                            ))}
-                            {files.map((file) => (
-                              <Card
-                                key={file._id}
-                                data-file-card
-                                variant="outlined"
-                                sx={{
-                                  p: 1,
-                                  position: 'relative',
-                                  pr: 5,
-                                  ...(selectedFileIds.includes(file._id)
-                                    ? { boxShadow: (t) => `0 0 0 2px ${t.palette.primary.main}` }
-                                    : {}),
-                                }}
-                                onContextMenu={(e) => handleFileContextMenu(e, file)}
-                              >
-                                <Tooltip title="Mais ações">
-                                  <IconButton
-                                    size="small"
-                                    sx={{
-                                      ...DRIVE_MORE_ACTIONS_ICON_BTN_SX,
-                                      top: 6,
-                                      right: 6,
-                                    }}
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setFileMenuState({ type: 'icon', anchorEl: e.currentTarget, file });
-                                    }}
-                                  >
-                                    <Iconify icon="eva:more-vertical-fill" width={14} />
-                                  </IconButton>
-                                </Tooltip>
-                                <Stack direction="row" alignItems="flex-start" spacing={1}>
-                                  <Checkbox
-                                    size="small"
-                                    checked={selectedFileIds.includes(file._id)}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      toggleFileSelected(file._id);
-                                    }}
-                                    sx={{ p: 0.25, mt: 0.25 }}
-                                  />
-                                  <Avatar sx={{ width: 30, height: 30, bgcolor: 'primary.lighter', color: 'primary.main', mt: 0.25 }}>
-                                    <Iconify icon="solar:file-text-bold-duotone" width={16} />
-                                  </Avatar>
-                                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                                    <Typography variant="body2" fontWeight={600} noWrap sx={{ minWidth: 0 }}>
-                                      {file.nomeArquivo || 'Documento'}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary" noWrap>
-                                      {file.tipoGuia || 'Arquivo'}
-                                    </Typography>
-                                    <FileMetaLines file={file} />
-                                  </Box>
-                                  <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    spacing={0.8}
-                                    sx={{ flexShrink: 0, pt: 0.25 }}
-                                  >
-                                    <Button size="small" variant="outlined" onClick={() => downloadGuiaFiscal(file._id, file.nomeArquivo)}>
-                                      Baixar
-                                    </Button>
-                                    <GuiaFiscalPortalReadEye guia={file} showInlineSummary iconWidth={20} />
-                                  </Stack>
+                              ) : null}
+                            </Stack>
+
+                            {files.length ? (
+                              filesViewMode === 'grid' ? (
+                                <Box sx={DRIVE_FILE_GRID_SX}>
+                                  {files.map((file) => (
+                                    <DriveFileCardGrid
+                                      key={file._id}
+                                      file={file}
+                                      selected={selectedFileIds.includes(file._id)}
+                                      fileMetaLines={<FileMetaLines file={file} />}
+                                      onToggleSelect={() => toggleFileSelected(file._id)}
+                                      onContextMenu={(e) => handleFileContextMenu(e, file)}
+                                      onMoreClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setFileMenuState({ type: 'icon', anchorEl: e.currentTarget, file });
+                                      }}
+                                      onDownload={() => downloadGuiaFiscal(file._id, file.nomeArquivo)}
+                                    />
+                                  ))}
+                                </Box>
+                              ) : (
+                                <Stack spacing={1}>
+                                  {files.map((file) => (
+                                    <DriveFileCardList
+                                      key={file._id}
+                                      file={file}
+                                      selected={selectedFileIds.includes(file._id)}
+                                      fileMetaLines={<FileMetaLines file={file} />}
+                                      onToggleSelect={() => toggleFileSelected(file._id)}
+                                      onContextMenu={(e) => handleFileContextMenu(e, file)}
+                                      onMoreClick={(e) => {
+                                        e.preventDefault();
+                                        e.stopPropagation();
+                                        setFileMenuState({ type: 'icon', anchorEl: e.currentTarget, file });
+                                      }}
+                                      onDownload={() => downloadGuiaFiscal(file._id, file.nomeArquivo)}
+                                    />
+                                  ))}
                                 </Stack>
-                              </Card>
-                            ))}
-                          </Stack>
-                        )}
-                      </Box>
+                              )
+                            ) : currentFolderId ? (
+                              <DriveEmptyDropZone
+                                onUpload={handleTriggerUpload}
+                                uploadDisabled={uploading}
+                                hint="Solte PDFs ou planilhas nesta pasta. Você também pode usar o botão Enviar arquivos acima."
+                              />
+                            ) : (
+                              <Stack
+                                alignItems="center"
+                                justifyContent="center"
+                                spacing={3}
+                                sx={{
+                                  py: 8,
+                                  px: 3,
+                                  borderRadius: DRIVE_SURFACE_RADIUS,
+                                  border: (theme) => `1px solid ${theme.palette.divider}`,
+                                  bgcolor: (theme) => theme.palette.mode === 'light' ? '#F4F6F8' : 'background.neutral',
+                                  textAlign: 'center',
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    width: 80,
+                                    height: 80,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    bgcolor: (theme) => theme.palette.action.hover,
+                                    color: 'text.disabled',
+                                  }}
+                                >
+                                  <Iconify icon="solar:file-bold" width={48} />
+                                </Box>
+
+                                <Stack spacing={1} alignItems="center">
+                                  <Typography variant="h6" color="text.secondary">
+                                    Área da Raiz
+                                  </Typography>
+                                  <Typography variant="body2" color="text.disabled" sx={{ maxWidth: 400 }}>
+                                    Não é possível adicionar arquivos diretamente aqui.
+                                    Navegue entre as pastas principais e as subpastas para encontrar e fazer upload de novos arquivos.
+                                  </Typography>
+                                </Stack>
+                              </Stack>
+                            )}
+
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 2 }}>
+                              {currentFolderId
+                                ? 'Arraste arquivos para esta área ou use Enviar arquivos. Botão direito para criar subpasta ou ações nos itens.'
+                                : ''}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                      )}
                     </Box>
                   </>
                 )}
@@ -1096,26 +1025,37 @@ export function GuiaFiscalDriveAdminView() {
                   sx={{
                     position: 'absolute',
                     inset: 0,
-                    borderRadius: 3,
-                    bgcolor: 'rgba(20, 20, 20, 0.35)',
+                    borderRadius: DRIVE_SURFACE_RADIUS,
+                    bgcolor: (theme) => theme.palette.primary.light,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     zIndex: 20,
+                    backdropFilter: 'blur(2px)',
                   }}
                 >
-                  <Stack spacing={1.2} alignItems="center" sx={{ color: 'common.white' }}>
+                  <Stack
+                    spacing={1.2}
+                    alignItems="center"
+                    sx={{
+                      px: 3,
+                      py: 2,
+                      borderRadius: DRIVE_SURFACE_RADIUS,
+                      bgcolor: 'background.paper',
+                      boxShadow: (theme) => theme.shadows[8],
+                    }}
+                  >
                     {uploading ? (
-                      <CircularProgress size={28} color="inherit" />
+                      <CircularProgress size={28} color="primary" />
                     ) : (
-                      <Iconify icon="solar:cloud-upload-bold-duotone" width={34} />
+                      <Iconify icon="solar:cloud-upload-bold-duotone" width={36} sx={{ color: 'primary.main' }} />
                     )}
-                    <Typography variant="subtitle2" align="center">
+                    <Typography variant="subtitle2" align="center" color="text.primary">
                       {uploading
                         ? uploadProgress
                           ? `Enviando ${uploadProgress.current} de ${uploadProgress.total}…`
                           : 'Enviando arquivos…'
-                        : 'Solte os arquivos para enviar para a pasta atual'}
+                        : 'Solte os arquivos na pasta atual'}
                     </Typography>
                   </Stack>
                 </Box>
@@ -1195,7 +1135,7 @@ export function GuiaFiscalDriveAdminView() {
           <MenuItem
             onClick={() => {
               const f = fileMenuState?.file;
-              if (f) router.push(paths.dashboard.guiasFiscais.details(f._id));
+              if (f) router.push(paths.dashboard.guiasEDocumentos.details(f._id));
               closeFileMenu();
             }}
           >
@@ -1327,6 +1267,6 @@ export function GuiaFiscalDriveAdminView() {
           onConfirm={handleConfirmPastaUpload}
         />
       </Box>
-    </DashboardContent>
+    </DashboardContent >
   );
 }

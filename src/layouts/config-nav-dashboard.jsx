@@ -178,13 +178,8 @@ export const navData = [
             roles: ['admin', 'operacional', 'gerencial'],
           },
           {
-            title: 'Gerenciador de Arquivos',
-            path: paths.dashboard.guiasFiscais.list,
-            roles: ['admin', 'operacional', 'gerencial'],
-          },
-          {
             title: 'Express',
-            path: paths.dashboard.guiasFiscais.upload,
+            path: paths.dashboard.guiasEDocumentos.upload,
             roles: ['admin', 'operacional', 'gerencial'],
           },
         ],
@@ -193,12 +188,12 @@ export const navData = [
         title: 'Imposto de Renda',
         path: paths.dashboard.impostoRenda.root,
         icon: ICONS.tax,
-        roles: ['admin', 'operacional', 'financeiro', 'comercial'],
+        roles: ['admin', 'operacional', 'financeiro', 'comercial', 'ir'],
         children: [
           {
             title: 'Pedidos IR',
             path: paths.dashboard.impostoRenda.root,
-            roles: ['admin', 'operacional', 'financeiro', 'comercial'],
+            roles: ['admin', 'operacional', 'financeiro', 'comercial', 'ir'],
           },
           {
             title: 'Planos e Lotes',
@@ -211,7 +206,7 @@ export const navData = [
         title: 'Contábil',
         path: paths.dashboard.contabil.root,
         icon: ICONS.banking,
-        roles: ['admin', 'financeiro', 'operacional', 'gerencial'],
+        roles: ['admin', 'financeiro', 'operacional', 'gerencial', 'contabil_externo'],
         children: [
           {
             title: 'Conciliações Bancárias',

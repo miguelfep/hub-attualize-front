@@ -38,7 +38,6 @@ import {
   usePortalOrcamentos,
   portalBaixarPdfBoleto,
   portalDeleteOrcamento,
-  usePortalOrcamentosStats,
   portalEmitirBoletoOrcamento,
   portalUpdateOrcamentoStatus,
   extractPaymentIdFromBoletoResponse,
@@ -48,8 +47,11 @@ import { useTable } from 'src/components/table';
 import { Iconify } from 'src/components/iconify';
 import { formatToCurrency } from 'src/components/animate';
 import { ConfirmDialog } from 'src/components/custom-dialog';
-import { VendasPageSkeleton } from 'src/components/skeleton/PortalVendasPageSkeleton';
 import { VendaTableRowSkeleton } from 'src/components/skeleton/VendasTableRowSkeleton';
+import {
+  VendasPageSkeleton,
+  VendasStatsCardsSkeleton,
+} from 'src/components/skeleton/PortalVendasPageSkeleton';
 
 import { TableHeadCustom } from 'src/sections/clientes/TableHeadCustom';
 
@@ -361,11 +363,15 @@ export default function PortalOrcamentosPage() {
     setAppliedFilters(filters);
   }, [filters, appliedFilters]);
 
-  const { data: orcamentos, isLoading, mutate: mutateOrcamentos } = usePortalOrcamentos(
-    clienteProprietarioId,
-    appliedFilters
-  );
-  const { data: stats } = usePortalOrcamentosStats(clienteProprietarioId);
+  const {
+    data: orcamentos,
+    estatisticas: stats,
+    isLoading,
+    isValidating,
+    mutate: mutateOrcamentos,
+  } = usePortalOrcamentos(clienteProprietarioId, appliedFilters);
+
+  const statsLoading = (isLoading || isValidating) && !stats;
 
   const table = useTable({ defaultOrderBy: 'dataValidade', defaultOrder: 'desc', defaultRowsPerPage: 25 });
 
@@ -665,7 +671,9 @@ export default function PortalOrcamentosPage() {
             </Stack>
           </Box>
 
-          {stats && (
+          {statsLoading ? (
+            <VendasStatsCardsSkeleton />
+          ) : stats ? (
             <Box sx={{ p: 2.5 }}>
               <Grid container spacing={2}>
                 <Grid xs={12} sm={6} md={2.4}>
@@ -691,7 +699,7 @@ export default function PortalOrcamentosPage() {
                 </Grid>
               </Grid>
             </Box>
-          )}
+          ) : null}
 
           <Box sx={{ p: 2.5, borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
             <Grid container spacing={2} alignItems="flex-end">
