@@ -302,16 +302,12 @@ export const paths = {
       logs: `${ROOTS.DASHBOARD}/pix/logs`,
       relatorios: `${ROOTS.DASHBOARD}/pix/relatorios`,
     },
-    guiasFiscais: {
-      root: `${ROOTS.DASHBOARD}/gerenciador-de-arquivos`,
-      list: `${ROOTS.DASHBOARD}/gerenciador-de-arquivos`,
-      upload: `${ROOTS.DASHBOARD}/gerenciador-de-arquivos/upload`,
-      details: (id) => `${ROOTS.DASHBOARD}/gerenciador-de-arquivos/${id}`,
-      edit: (id) => `${ROOTS.DASHBOARD}/gerenciador-de-arquivos/${id}/edit`,
-    },
     guiasEDocumentos: {
       root: `${ROOTS.DASHBOARD}/guias-e-documentos`,
       list: `${ROOTS.DASHBOARD}/guias-e-documentos`,
+      upload: `${ROOTS.DASHBOARD}/guias-e-documentos/upload`,
+      details: (id) => `${ROOTS.DASHBOARD}/guias-e-documentos/${id}`,
+      edit: (id) => `${ROOTS.DASHBOARD}/guias-e-documentos/${id}/edit`,
     },
     recompensas: {
       root: `${ROOTS.DASHBOARD}/recompensas`,

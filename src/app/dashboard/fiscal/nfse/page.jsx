@@ -49,7 +49,9 @@ const formatTipoNota = (tipo) => {
     'mdfe': 'MDF-e',
     'nfce': 'NFC-e',
   };
-  return tipos[String(tipo || '').toLowerCase()] || tipo?.toUpperCase() || 'NFS-e';
+  const key = String(tipo || '').toLowerCase();
+  if (!key) return 'Não informado';
+  return tipos[key] || tipo?.toUpperCase() || 'Não informado';
 };
 
 // Helper para cor do tipo de nota
@@ -189,8 +191,8 @@ export default function DashboardFiscalPage() {
     // Filtrar por tipo de nota se selecionado
     if (tipoNota) {
       arr = arr.filter((n) => {
-        const tipo = (n.tipoNota || 'nfse').toLowerCase();
-        return tipo === tipoNota.toLowerCase();
+        const tipo = String(n.tipoNota || '').toLowerCase();
+        return tipo && tipo === tipoNota.toLowerCase();
       });
     }
 

@@ -7,10 +7,12 @@ import { useRouter } from 'src/routes/hooks';
 
 import { getUser } from 'src/auth/context/jwt';
 
+import DashboardIrView from './DashboardIrView';
 import DashboardAdminView from './DashboardAdminView';
 import DashboardOperacional from './DashboardOperacional';
 import DashboardComercialView from './DashboardComercialView';
 import DashboardFinanceiroView from './DashboardFinanceiroView';
+import DashboardContabilExternoView from './DashboardContabilExternoView';
 
 export function DashboardRouterView() {
   const user = getUser();
@@ -43,6 +45,14 @@ export function DashboardRouterView() {
 
   if (user.role === 'operacional' || user.role === 'gerencial') {
     return <DashboardOperacional />;
+  }
+
+  if (user.role === 'contabil_externo') {
+    return <DashboardContabilExternoView />;
+  }
+
+  if (user.role === 'ir') {
+    return <DashboardIrView />;
   }
 
   return <div>Permissão não reconhecida.</div>;

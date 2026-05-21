@@ -33,6 +33,8 @@ const ROLE_OPTIONS = [
   { value: 'financeiro', label: 'Financeiro' },
   { value: 'comercial', label: 'Comercial' },
   { value: 'operacional', label: 'Operacional' },
+  { value: 'contabil_externo', label: 'Contábil Externo' },
+  { value: 'ir', label: 'Imposto de Renda' },
 ];
 
 const usuarioInternoSchema = zod
@@ -303,10 +305,14 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
                       control={control}
                       render={({ field }) => (
                         <TextField
-                          {...field}
                           select
                           fullWidth
                           label="Perfis"
+                          name={field.name}
+                          onBlur={field.onBlur}
+                          inputRef={field.ref}
+                          value={Array.isArray(field.value) ? field.value[0] ?? '' : field.value ?? ''}
+                          onChange={(e) => field.onChange([e.target.value])}
                           error={!!errors.role}
                           helperText={errors.role?.message}
                         >

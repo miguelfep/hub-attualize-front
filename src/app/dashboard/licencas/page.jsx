@@ -32,7 +32,10 @@ import {
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
-import { fDate } from 'src/utils/format-time';
+import { useBoolean } from 'src/hooks/use-boolean';
+
+import { toTitleCase } from 'src/utils/helper';
+import { fDate, formatStr } from 'src/utils/format-time';
 import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
 import { getClientes } from 'src/actions/clientes';
@@ -156,6 +159,125 @@ function downloadClientesSemLicencaCsv(clientes) {
   URL.revokeObjectURL(url);
 }
 
+const LICENCAS_CSV_HEADERS = ['Cliente', 'CNPJ', 'Nome da licença', 'Status', 'Data Início', 'Data Vencimento'];
+
+const STATUS_FILTER_LABELS = {
+  '': 'Todos',
+  em_processo: 'Em Processo',
+  valida: 'Válida',
+  vencida: 'Vencida',
+  dispensada: 'Dispensada',
+  a_expirar: 'A Expirar',
+};
+
+const SORT_BY_LABELS = {
+  dataVencimento: 'Data Vencimento',
+  dataInicio: 'Data Início',
+  nome: 'Nome',
+  status: 'Status',
+};
+
+function getLicencaStatusLabel(statusValue) {
+  if (statusValue === 'em_processo') return 'Em Processo';
+  if (statusValue === 'valida') return 'Válida';
+  if (statusValue === 'vencida') return 'Vencida';
+  if (statusValue === 'dispensada') return 'Dispensada';
+  if (statusValue === 'a_expirar') return 'A Expirar';
+  return statusValue || '-';
+}
+
+function formatLicencaStatusExport(statusValue) {
+  return toTitleCase(getLicencaStatusLabel(statusValue));
+}
+
+function mapLicencaToExportCells(row) {
+  return [
+    row?.cliente?.razaoSocial || row?.cliente?.nome || '',
+    row?.cliente?.cnpj || '',
+    row.nome || '',
+    formatLicencaStatusExport(row.status),
+    row.dataInicio ? fDate(row.dataInicio, formatStr.split.date) : '',
+    row.dataVencimento ? fDate(row.dataVencimento, formatStr.split.date) : '',
+  ];
+}
+
+function buildLicencasExportFilename(statusFilter) {
+  const date = new Date().toISOString().slice(0, 10);
+  const suffix = statusFilter || 'todos';
+  return `licencas_${suffix}_${date}.csv`;
+}
+
+function downloadLicencasCsv(licencas, filename) {
+  const dataRows = licencas.map((row) =>
+    mapLicencaToExportCells(row).map(escapeCsvCell).join(',')
+  );
+  const csvBody = [LICENCAS_CSV_HEADERS.join(','), ...dataRows].join('\r\n');
+  const blob = new Blob([`\uFEFF${csvBody}`], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function fetchAllLicencasFiltradas({ status, expiraEmDias, clienteSelecionado, sortBy, sortOrder }) {
+  const pageSize = 100;
+  const all = [];
+  let depth = 0;
+  const maxDepth = 500;
+
+  const fetchPage = async (pageNum, totalPages = 1) => {
+    depth += 1;
+    if (depth > maxDepth || pageNum > totalPages) return;
+
+    if (clienteSelecionado?._id) {
+      const params = { page: pageNum, limit: pageSize };
+      if (status) params.status = status;
+      const response = await listarLicencasPorCliente(clienteSelecionado._id, params);
+      const responseData = response?.data || response;
+
+      if (responseData?.data && responseData?.pagination) {
+        all.push(...responseData.data);
+        const pages = responseData.pagination.pages || 1;
+        if (pageNum < pages && responseData.data.length > 0) {
+          await fetchPage(pageNum + 1, pages);
+        }
+      } else if (Array.isArray(responseData)) {
+        all.push(...responseData);
+      }
+      return;
+    }
+
+    const params = { page: pageNum, limit: pageSize, sortBy, sortOrder };
+    if (status) params.status = status;
+    if (expiraEmDias) params.expiraEmDias = Number(expiraEmDias);
+
+    const response = await listarLicencas(params);
+    const responseData = response?.data || response;
+
+    if (Array.isArray(responseData)) {
+      all.push(...responseData);
+      return;
+    }
+
+    if (responseData?.data) {
+      all.push(...responseData.data);
+      const pages =
+        responseData.totalPages ||
+        Math.max(1, Math.ceil((responseData.total || 0) / (responseData.limit || pageSize)));
+      if (pageNum < pages && responseData.data.length > 0) {
+        await fetchPage(pageNum + 1, pages);
+      }
+    }
+  };
+
+  await fetchPage(1);
+  return all;
+}
+
 export default function LicencasPage() {
   const theme = useTheme();
   const router = useRouter();
@@ -198,12 +320,25 @@ export default function LicencasPage() {
   const [clientesSemLicenca, setClientesSemLicenca] = useState([]);
   const [loadingSemLicenca, setLoadingSemLicenca] = useState(false);
 
+  const exportModal = useBoolean();
+  const [exportandoLicencas, setExportandoLicencas] = useState(false);
+
   const canView = useMemo(() => Boolean(user), [user]);
+
+  const exportFilename = useMemo(
+    () => buildLicencasExportFilename(status),
+    [status]
+  );
+
+  const exportPreviewRows = useMemo(
+    () => rows.slice(0, 5).map((row) => mapLicencaToExportCells(row)),
+    [rows]
+  );
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      
+
       let response;
       let responseData;
 
@@ -219,7 +354,7 @@ export default function LicencasPage() {
 
         response = await listarLicencasPorCliente(clienteSelecionado._id, params);
         responseData = response?.data || response;
-        
+
         // A resposta da rota por cliente retorna { data: [...], pagination: {...} }
         if (responseData?.data && responseData?.pagination) {
           setRows(responseData.data);
@@ -252,7 +387,7 @@ export default function LicencasPage() {
 
         response = await listarLicencas(params);
         responseData = response?.data || response;
-        
+
         // A API retorna array quando não há query params (compatibilidade)
         // ou objeto paginado quando há query params: { data: [...], page, limit, total, totalPages }
         if (Array.isArray(responseData)) {
@@ -462,6 +597,31 @@ export default function LicencasPage() {
     }
   };
 
+  const handleExportLicencas = async () => {
+    setExportandoLicencas(true);
+    try {
+      const licencas = await fetchAllLicencasFiltradas({
+        status,
+        expiraEmDias,
+        clienteSelecionado,
+        sortBy,
+        sortOrder,
+      });
+      if (!licencas.length) {
+        toast.error('Nenhuma licença para exportar.');
+        return;
+      }
+      downloadLicencasCsv(licencas, exportFilename);
+      toast.success('Arquivo CSV baixado.');
+      exportModal.onFalse();
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || 'Erro ao exportar licenças.');
+    } finally {
+      setExportandoLicencas(false);
+    }
+  };
+
   const calcularSituacao = (row) => {
     if (!row.dataVencimento) return '-';
     const hoje = new Date();
@@ -506,6 +666,13 @@ export default function LicencasPage() {
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <Button
+              variant="outlined"
+              startIcon={<Iconify icon="vscode-icons:file-type-excel" />}
+              onClick={exportModal.onTrue}
+            >
+              Exportar CSV
+            </Button>
             <Button
               variant="outlined"
               color="warning"
@@ -675,19 +842,7 @@ export default function LicencasPage() {
                         variant="soft"
                         size="small"
                         icon={<Iconify icon={statusIcon} />}
-                        label={
-                          row.status === 'em_processo'
-                            ? 'Em Processo'
-                            : row.status === 'valida'
-                              ? 'Válida'
-                              : row.status === 'vencida'
-                                ? 'Vencida'
-                                : row.status === 'dispensada'
-                                  ? 'Dispensada'
-                                  : row.status === 'a_expirar'
-                                    ? 'A Expirar'
-                                    : row.status
-                        }
+                        label={getLicencaStatusLabel(row.status)}
                       />
                     </td>
                     <td style={{ padding: 8 }}>{dataInicio}</td>
@@ -1005,6 +1160,146 @@ export default function LicencasPage() {
             Exportar CSV
           </Button>
           <Button onClick={() => setSemLicencaDialogOpen(false)}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal Exportar CSV da tabela */}
+      <Dialog
+        open={exportModal.value}
+        onClose={exportModal.onFalse}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 2, overflow: 'hidden' } }}
+      >
+        <DialogTitle sx={{ pb: 0 }}>
+          <Stack direction="row" alignItems="center" spacing={1.5}>
+            <Box
+              sx={{
+                width: 48,
+                height: 48,
+                borderRadius: 2,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                bgcolor: (t) => alpha(t.palette.success.main, 0.12),
+                color: 'success.main',
+              }}
+            >
+              <Iconify icon="vscode-icons:file-type-excel" width={28} />
+            </Box>
+            <Box>
+              <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                Exportar licenças
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+                O arquivo reflete os filtros aplicados na tabela abaixo.
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent sx={{ pt: 2.5, pb: 2 }}>
+          <Stack spacing={2.5}>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Filtros ativos
+              </Typography>
+              <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Chip size="small" label={`Status: ${STATUS_FILTER_LABELS[status] || status || 'Todos'}`} />
+                <Chip
+                  size="small"
+                  label={
+                    clienteSelecionado
+                      ? `Cliente: ${formatClienteCodigoRazao(clienteSelecionado)}`
+                      : 'Cliente: Todos'
+                  }
+                />
+                <Chip
+                  size="small"
+                  label={expiraEmDias ? `Expira em: ${expiraEmDias} dias` : 'Expira em: —'}
+                />
+                <Chip
+                  size="small"
+                  label={`Ordenação: ${SORT_BY_LABELS[sortBy] || sortBy} (${sortOrder === 'asc' ? 'Asc' : 'Desc'})`}
+                />
+              </Stack>
+            </Box>
+
+            <Box
+              sx={{
+                py: 1.5,
+                px: 2,
+                borderRadius: 1.5,
+                bgcolor: (t) => alpha(t.palette.grey[500], 0.08),
+                border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.2)}`,
+              }}
+            >
+              <Typography variant="caption" sx={{ fontWeight: 600, color: 'text.secondary', display: 'block', mb: 0.75 }}>
+                Nome do arquivo
+              </Typography>
+              <Typography variant="body2" sx={{ fontFamily: 'monospace', fontWeight: 500 }}>
+                {exportFilename}
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                {total} registro{total !== 1 ? 's' : ''} serão exportados
+              </Typography>
+            </Box>
+
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
+                Prévia ({Math.min(exportPreviewRows.length, 5)} de {total})
+              </Typography>
+              {exportPreviewRows.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  Nenhuma licença na página atual para prévia.
+                </Typography>
+              ) : (
+                <>
+                  <TableContainer sx={{ maxHeight: 280, border: (t) => `1px solid ${alpha(t.palette.grey[500], 0.2)}`, borderRadius: 1.5 }}>
+                    <Table size="small" stickyHeader>
+                      <TableHead>
+                        <TableRow>
+                          {LICENCAS_CSV_HEADERS.map((header) => (
+                            <TableCell key={header} sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                              {header}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {exportPreviewRows.map((cells, index) => (
+                          <TableRow key={index}>
+                            {cells.map((cell, cellIndex) => (
+                              <TableCell key={cellIndex} sx={{ whiteSpace: 'nowrap' }}>
+                                {cell || '—'}
+                              </TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                  {total > exportPreviewRows.length && (
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                      Prévia parcial da página atual. O download inclui todos os {total} registros do filtro.
+                    </Typography>
+                  )}
+                </>
+              )}
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, py: 2, pt: 1.5, gap: 1 }}>
+          <Button variant="outlined" color="inherit" onClick={exportModal.onFalse} disabled={exportandoLicencas}>
+            Cancelar
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={exportandoLicencas ? null : <Iconify icon="vscode-icons:file-type-excel" width={20} />}
+            onClick={handleExportLicencas}
+            disabled={exportandoLicencas || total === 0}
+          >
+            {exportandoLicencas ? 'Exportando…' : 'Exportar'}
+          </Button>
         </DialogActions>
       </Dialog>
 

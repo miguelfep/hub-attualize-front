@@ -14,14 +14,48 @@ import { SimplePaper } from 'src/components/paper/SimplePaper';
 
 import { VendaTableRowSkeleton } from './VendasTableRowSkeleton';
 
-function StatCardSkeleton() {
+const VENDAS_STAT_LABEL_WIDTHS = ['48%', '52%', '40%', '58%', '62%'];
+const VENDAS_STAT_VALUE_WIDTHS = ['28%', '32%', '24%', '72%', '36%'];
+
+export function VendasStatCardSkeleton({ labelWidth, valueWidth }) {
   return (
-    <Card>
+    <Card sx={{ height: '100%' }}>
       <CardContent>
-        <Skeleton variant="text" sx={{ width: '50%', fontSize: '0.75rem' }} />
-        <Skeleton variant="text" sx={{ width: '30%', fontSize: '1.5rem' }} />
+        <Stack spacing={0.5}>
+          <Skeleton
+            variant="text"
+            animation="wave"
+            width={labelWidth}
+            height={20}
+            sx={{ transform: 'none', maxWidth: '100%' }}
+          />
+          <Skeleton
+            variant="text"
+            animation="wave"
+            width={valueWidth}
+            height={28}
+            sx={{ transform: 'none', maxWidth: '100%' }}
+          />
+        </Stack>
       </CardContent>
     </Card>
+  );
+}
+
+export function VendasStatsCardsSkeleton({ sx }) {
+  return (
+    <Box sx={{ p: 2.5, ...sx }} aria-busy aria-label="Carregando estatísticas de vendas">
+      <Grid container spacing={2}>
+        {VENDAS_STAT_LABEL_WIDTHS.map((labelWidth, index) => (
+          <Grid key={`vendas-stat-sk-${index}`} xs={12} sm={6} md={2.4}>
+            <VendasStatCardSkeleton
+              labelWidth={labelWidth}
+              valueWidth={VENDAS_STAT_VALUE_WIDTHS[index]}
+            />
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
   );
 }
 
@@ -56,13 +90,7 @@ export function VendasPageSkeleton() {
         <Skeleton variant="rounded" width={180} height={40} />
       </Stack>
 
-      <Grid container spacing={2} sx={{ mb: 3 }}>
-        {[...Array(5)].map((_, i) => (
-          <Grid key={`stat-sk-${i}`} xs={12} sm={6} md={2.4}>
-            <StatCardSkeleton />
-          </Grid>
-        ))}
-      </Grid>
+      <VendasStatsCardsSkeleton sx={{ mb: 3, p: 0 }} />
 
       <Card sx={{ mb: 3 }}>
         <CardContent>

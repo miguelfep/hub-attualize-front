@@ -244,7 +244,6 @@ export const endpoints = {
     },
     orcamentos: {
       list: (clienteProprietarioId) => `${baseUrl}portal/orcamentos/${clienteProprietarioId}`,
-      stats: (clienteProprietarioId) => `${baseUrl}portal/orcamentos/${clienteProprietarioId}/estatisticas`,
       get: (clienteProprietarioId, id) => `${baseUrl}portal/orcamentos/${clienteProprietarioId}/${id}`,
       create: `${baseUrl}portal/orcamentos`,
       update: (id) => `${baseUrl}portal/orcamentos/${id}`,

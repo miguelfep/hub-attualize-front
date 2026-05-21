@@ -236,12 +236,22 @@ export function PagarNewEditForm({ currentConta }) {
 
       if (currentConta) {
         const payload = atualizarFuturas ? { ...updatedData, atualizarFuturas: true } : updatedData;
-        await atualizarContaPagarPorId(currentConta._id, payload);
-        toast.success(
-          atualizarFuturas
-            ? 'Conta e parcelas futuras atualizadas com sucesso'
-            : 'Conta atualizada com sucesso'
-        );
+        const convertendoAvulsaParaRecorrente =
+          currentConta.tipo === 'AVULSA' &&
+          data.tipo === 'RECORRENTE' &&
+          Number(data.parcelas) > 0;
+        const resposta = await atualizarContaPagarPorId(currentConta._id, payload);
+        const parcelasCriadas = resposta?.parcelasCriadas ?? Number(data.parcelas) ?? 0;
+
+        if (convertendoAvulsaParaRecorrente) {
+          toast.success(
+            `Conta convertida para recorrente e ${parcelasCriadas} parcela(s) futura(s) criada(s)`
+          );
+        } else if (atualizarFuturas) {
+          toast.success('Conta e parcelas futuras atualizadas com sucesso');
+        } else {
+          toast.success('Conta atualizada com sucesso');
+        }
       } else {
         await criarContaPagar(updatedData);
         toast.success('Conta criada com sucesso');
@@ -449,17 +459,25 @@ export function PagarNewEditForm({ currentConta }) {
                     control={control}
                     render={({ field, fieldState: { error } }) => {
                       const numParcelas = Number(field.value) || 1;
+                      const editandoAvulsa =
+                        currentConta?.tipo === 'AVULSA' && tipo === 'RECORRENTE';
+                      const helperParcelas = editandoAvulsa
+                        ? `Serão criadas ${numParcelas} parcela(s) adicional(is) (além desta), uma por mês, com vencimento em dia útil.`
+                        : currentConta
+                          ? `Total de ${numParcelas} parcela(s) na série (edição de recorrente existente).`
+                          : `Serão criadas ${numParcelas} parcela(s) (uma por mês a partir do vencimento informado).`;
                       return (
                         <TextField
                           {...field}
-                          label="Quantidade de Parcelas"
+                          label={
+                            editandoAvulsa
+                              ? 'Parcelas adicionais (futuras)'
+                              : 'Quantidade de Parcelas'
+                          }
                           fullWidth
                           type="number"
                           error={!!error}
-                          helperText={
-                            error?.message ||
-                            `Serão criadas ${numParcelas} parcela(s) (uma por mês a partir do vencimento informado).`
-                          }
+                          helperText={error?.message || helperParcelas}
                           inputProps={{ min: 1, max: 120 }}
                         />
                       );

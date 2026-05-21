@@ -146,22 +146,42 @@ const nextConfig = {
     return [
       {
         source: '/dashboard/guias-fiscais',
-        destination: '/dashboard/gerenciador-de-arquivos',
+        destination: '/dashboard/guias-e-documentos',
         permanent: true,
       },
       {
         source: '/dashboard/guias-fiscais/upload',
-        destination: '/dashboard/gerenciador-de-arquivos/upload',
+        destination: '/dashboard/guias-e-documentos/upload',
         permanent: true,
       },
       {
         source: '/dashboard/guias-fiscais/:id',
-        destination: '/dashboard/gerenciador-de-arquivos/:id',
+        destination: '/dashboard/guias-e-documentos/:id',
         permanent: true,
       },
       {
         source: '/dashboard/guias-fiscais/:id/edit',
-        destination: '/dashboard/gerenciador-de-arquivos/:id/edit',
+        destination: '/dashboard/guias-e-documentos/:id/edit',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/gerenciador-de-arquivos',
+        destination: '/dashboard/guias-e-documentos',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/gerenciador-de-arquivos/upload',
+        destination: '/dashboard/guias-e-documentos/upload',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/gerenciador-de-arquivos/:id',
+        destination: '/dashboard/guias-e-documentos/:id',
+        permanent: true,
+      },
+      {
+        source: '/dashboard/gerenciador-de-arquivos/:id/edit',
+        destination: '/dashboard/guias-e-documentos/:id/edit',
         permanent: true,
       },
       {

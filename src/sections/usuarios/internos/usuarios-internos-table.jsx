@@ -30,6 +30,8 @@ const ROLE_LABELS = {
   financeiro: 'Financeiro',
   comercial: 'Comercial',
   operacional: 'Operacional',
+  contabil_externo: 'Contábil Externo',
+  ir: 'Imposto de Renda',
 };
 
 const ROLE_COLORS = {
@@ -38,6 +40,8 @@ const ROLE_COLORS = {
   financeiro: 'success',
   comercial: 'info',
   operacional: 'default',
+  contabil_externo: 'secondary',
+  ir: 'primary',
 };
 
 function getRoleLabel(role) {

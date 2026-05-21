@@ -15,7 +15,7 @@ import axios, { fetcher, endpoints } from 'src/utils/axios';
  */
 export async function uploadGuiasFiscais(files) {
   const formData = new FormData();
-  
+
   files.forEach((file) => {
     formData.append('files', file);
   });
@@ -146,20 +146,6 @@ export async function updateGuiaFiscal(id, data) {
  */
 export async function deleteGuiaFiscal(id) {
   const res = await axios.delete(endpoints.guiasFiscais.delete(id));
-  return res.data;
-}
-
-// ----------------------------------------------------------------------
-
-/**
- * Deletar múltiplas guias fiscais em massa
- * @param {string[]} ids - Array de IDs das guias
- * @returns {Promise}
- */
-export async function deleteGuiasFiscaisBatch(ids) {
-  const res = await axios.delete(endpoints.guiasFiscais.batch, {
-    data: { ids },
-  });
   return res.data;
 }
 

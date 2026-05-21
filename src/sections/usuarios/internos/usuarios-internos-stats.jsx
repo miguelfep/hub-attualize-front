@@ -12,6 +12,8 @@ const ROLE_ICONS = {
   financeiro: 'solar:wallet-money-bold',
   comercial: 'solar:cart-large-bold',
   operacional: 'solar:settings-bold',
+  contabil_externo: 'solar:bank-bold',
+  ir: 'solar:document-text-bold',
 };
 
 export function UsuariosInternosStats({ usuarios = [] }) {

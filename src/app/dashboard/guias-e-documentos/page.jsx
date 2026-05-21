@@ -4,7 +4,7 @@ import { GuiaFiscalDriveAdminView } from 'src/sections/guias-fiscais/view/guia-f
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Documentos e guias | Dashboard - ${CONFIG.site.name}` };
+export const metadata = { title: `Documentos e Guias | Dashboard - ${CONFIG.site.name}` };
 
 export default function Page() {
   return <GuiaFiscalDriveAdminView />;

@@ -142,7 +142,7 @@ export function GuiaFiscalDetailsView({ id }) {
             <Button
               variant="outlined"
               component={RouterLink}
-              href={paths.dashboard.guiasFiscais.list}
+              href={paths.dashboard.guiasEDocumentos.list}
               startIcon={<Iconify icon="eva:arrow-back-fill" />}
             >
               Voltar para Lista
@@ -159,7 +159,7 @@ export function GuiaFiscalDetailsView({ id }) {
         heading="Detalhes do Documento"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
-          { name: 'Gerenciador de Arquivos', href: paths.dashboard.guiasFiscais.list },
+          { name: 'Documentos e Guias', href: paths.dashboard.guiasEDocumentos.list },
           { name: 'Detalhes' },
         ]}
         action={
@@ -174,7 +174,7 @@ export function GuiaFiscalDetailsView({ id }) {
             <Button
               variant="contained"
               component={RouterLink}
-              href={paths.dashboard.guiasFiscais.edit(id)}
+              href={paths.dashboard.guiasEDocumentos.edit(id)}
               startIcon={<Iconify icon="solar:pen-bold" />}
             >
               Editar

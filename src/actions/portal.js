@@ -92,13 +92,17 @@ export function usePortalOrcamentos(clienteProprietarioId, params) {
   const qs = buildQuery(params);
   const url = clienteProprietarioId ? `${endpoints.portal.orcamentos.list(clienteProprietarioId)}${qs}` : null;
   const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, swrOptions);
-  return useMemo(() => ({ data: data || [], isLoading, error, isValidating, mutate }), [data, error, isLoading, isValidating, mutate]);
-}
-
-export function usePortalOrcamentosStats(clienteProprietarioId) {
-  const url = clienteProprietarioId ? endpoints.portal.orcamentos.stats(clienteProprietarioId) : null;
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
-  return useMemo(() => ({ data: data || null, isLoading, error, isValidating }), [data, error, isLoading, isValidating]);
+  return useMemo(
+    () => ({
+      data: data?.data || (Array.isArray(data) ? data : []),
+      estatisticas: data?.estatisticas || null,
+      isLoading,
+      error,
+      isValidating,
+      mutate,
+    }),
+    [data, error, isLoading, isValidating, mutate]
+  );
 }
 
 export async function portalGetOrcamento(clienteProprietarioId, id) {
