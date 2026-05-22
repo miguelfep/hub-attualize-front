@@ -75,16 +75,30 @@ export default function IrAdminListView() {
   const { user } = useAuthContext();
   const { data: usuariosInternos } = useGetUsuariosInternosIr();
 
+  const isIrInterno = user?.role === 'ir' && user?.userType === 'interno';
+  const usuarioLogadoId = user?.id || user?._id || user?.userId || '';
+
   const [filtros, setFiltros] = useState({
     status: '',
     year: '',
-    responsavelId: '',
+    responsavelId: isIrInterno ? usuarioLogadoId : '',
     nomeCpf: '',
     page: 1,
     limit: 20,
   });
-  const [filtrosAplicados, setFiltrosAplicados] = useState({ page: 1, limit: 20 });
+  const [filtrosAplicados, setFiltrosAplicados] = useState(
+    isIrInterno && usuarioLogadoId
+      ? { page: 1, limit: 20, responsavelId: usuarioLogadoId }
+      : { page: 1, limit: 20 }
+  );
   const [exportando, setExportando] = useState(false);
+
+  useEffect(() => {
+    if (isIrInterno && usuarioLogadoId && !filtros.responsavelId) {
+      setFiltros((f) => ({ ...f, responsavelId: usuarioLogadoId }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isIrInterno, usuarioLogadoId]);
 
   const { data, isLoading } = useGetPedidosIrAdmin(filtrosAplicados);
 
@@ -149,8 +163,13 @@ export default function IrAdminListView() {
   }, [filtros]);
 
   const handleLimpar = () => {
-    setFiltros({ status: '', year: '', responsavelId: '', nomeCpf: '', page: 1, limit: 20 });
-    setFiltrosAplicados({ page: 1, limit: 20 });
+    const responsavelTravado = isIrInterno ? usuarioLogadoId : '';
+    setFiltros({ status: '', year: '', responsavelId: responsavelTravado, nomeCpf: '', page: 1, limit: 20 });
+    setFiltrosAplicados(
+      responsavelTravado
+        ? { page: 1, limit: 20, responsavelId: responsavelTravado }
+        : { page: 1, limit: 20 }
+    );
   };
 
   const handlePageChange = (_, newPage) => {
@@ -299,15 +318,15 @@ export default function IrAdminListView() {
               </Grid>
 
               <Grid xs={12} sm={6} md={3}>
-                <FormControl fullWidth size="small">
+                <FormControl fullWidth size="small" disabled={isIrInterno}>
                   <InputLabel>Responsável</InputLabel>
                   <Select
                     value={filtros.responsavelId}
                     label="Responsável"
                     onChange={(e) => setFiltros((f) => ({ ...f, responsavelId: e.target.value }))}
                   >
-                    <MenuItem value="">Todos</MenuItem>
-                    <MenuItem value="nenhum">Sem responsável</MenuItem>
+                    {!isIrInterno && <MenuItem value="">Todos</MenuItem>}
+                    {!isIrInterno && <MenuItem value="nenhum">Sem responsável</MenuItem>}
                     {usuariosList.map((u) => (
                       <MenuItem key={u._id} value={u._id}>
                         {u.name || u.email || u._id}
