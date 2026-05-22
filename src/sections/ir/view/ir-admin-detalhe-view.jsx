@@ -62,6 +62,8 @@ import IrStatusStepper from 'src/components/ir/IrStatusStepper';
 import UploadMultiArquivo from 'src/components/ir/UploadMultiArquivo';
 import BoletoLinhaDigitavel from 'src/components/ir/BoletoLinhaDigitavel';
 
+import { useAuthContext } from 'src/auth/hooks';
+
 // ----------------------------------------------------------------------
 
 /** Normaliza o texto da análise IA (quebras antes de títulos e listas). */
@@ -295,6 +297,8 @@ function ResponsavelCard({
 
 export default function IrAdminDetalheView({ id }) {
   const router = useRouter();
+  const { user } = useAuthContext();
+  const isIrInterno = user?.role === 'ir' && user?.userType === 'interno';
   const { data: order, isLoading, error, mutate } = useGetPedidoIrAdmin(id);
 
   const [statusSelecionado, setStatusSelecionado] = useState('');
@@ -628,8 +632,8 @@ export default function IrAdminDetalheView({ id }) {
   const canChangeStatus = ['coletando_documentos', 'em_validacao', 'em_processo', 'impedimento'].includes(order.status);
   const statusDisponiveis = getStatusDisponiveis(order.status);
 
-  // Pagamento manual disponível para pedidos ainda não pagos
-  const canPagamentoManual = STATUS_PERMITE_PAGAMENTO_MANUAL.includes(order.status);
+  // Pagamento manual disponível para pedidos ainda não pagos (oculto para usuários IR internos)
+  const canPagamentoManual = !isIrInterno && STATUS_PERMITE_PAGAMENTO_MANUAL.includes(order.status);
 
   const canDeliverDeclaracao = ['em_processo', 'finalizada'].includes(order.status);
   const isRetificacao = order.status === 'finalizada';
@@ -649,9 +653,11 @@ export default function IrAdminDetalheView({ id }) {
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
             <IrStatusBadge status={order.status} size="medium" />
-            <Typography variant="subtitle1" fontWeight={700}>
-              {fCurrency(order.valor)}
-            </Typography>
+            {!isIrInterno && (
+              <Typography variant="subtitle1" fontWeight={700}>
+                {fCurrency(order.valor)}
+              </Typography>
+            )}
           </Stack>
         </Stack>
 
@@ -712,15 +718,17 @@ export default function IrAdminDetalheView({ id }) {
                     <Typography variant="body2" color="text.secondary" minWidth={100}>Ano:</Typography>
                     <Typography variant="body2">{order.ano} ({order.year})</Typography>
                   </Stack>
-                  <Stack direction="row" spacing={1}>
-                    <Typography variant="body2" color="text.secondary" minWidth={100}>Pagamento:</Typography>
-                    <Chip
-                      label={FORMAS_PAGAMENTO.find((f) => f.value === order.paymentType)?.label}
-                      size="small"
-                      variant="outlined"
-                    />
-                    <Iconify icon={FORMAS_PAGAMENTO.find((f) => f.value === order.paymentType)?.icon} width={22} color="primary.main" />
-                  </Stack>
+                  {!isIrInterno && (
+                    <Stack direction="row" spacing={1}>
+                      <Typography variant="body2" color="text.secondary" minWidth={100}>Pagamento:</Typography>
+                      <Chip
+                        label={FORMAS_PAGAMENTO.find((f) => f.value === order.paymentType)?.label}
+                        size="small"
+                        variant="outlined"
+                      />
+                      <Iconify icon={FORMAS_PAGAMENTO.find((f) => f.value === order.paymentType)?.icon} width={22} color="primary.main" />
+                    </Stack>
+                  )}
                   <Stack direction="row" spacing={1}>
                     <Typography variant="body2" color="text.secondary" minWidth={100}>Criado em:</Typography>
                     <Typography variant="body2">{formatData(order.createdAt)}</Typography>
@@ -731,7 +739,7 @@ export default function IrAdminDetalheView({ id }) {
                   </Stack>
                 </Stack>
 
-                {(order.linhaDigitavel || order.pixCopiaECola) && (
+                {!isIrInterno && (order.linhaDigitavel || order.pixCopiaECola) && (
                   <>
                     <Divider sx={{ my: 2 }} />
                     {order.paymentType === 'boleto' && order.linhaDigitavel && (
