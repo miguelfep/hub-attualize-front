@@ -68,6 +68,7 @@ function formatData(isoString) {
 // ----------------------------------------------------------------------
 
 const ROLES_RESUMO_FINANCEIRO_IR = ['admin', 'superadmin', 'financeiro'];
+const ROLES_DADOS_PAGAMENTO_IR = ['admin', 'financeiro'];
 
 export default function IrAdminListView() {
   const router = useRouter();
@@ -108,7 +109,7 @@ export default function IrAdminListView() {
     filtrosAplicados
   );
 
-  const showTipoPgtoValor = user?.role === 'admin' || user?.role === 'financeiro';
+  const showTipoPgtoValor = ROLES_DADOS_PAGAMENTO_IR.includes(user?.role);
   const usuariosList = Array.isArray(usuariosInternos) ? usuariosInternos : [];
 
   const pedidosBrutos = data?.orders ?? [];
