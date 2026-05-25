@@ -299,6 +299,7 @@ export default function IrAdminDetalheView({ id }) {
   const router = useRouter();
   const { user } = useAuthContext();
   const isIrInterno = user?.role === 'ir' && user?.userType === 'interno';
+  const showDadosPagamento = user?.role === 'admin' || user?.role === 'financeiro';
   const { data: order, isLoading, error, mutate } = useGetPedidoIrAdmin(id);
 
   const [statusSelecionado, setStatusSelecionado] = useState('');
@@ -633,7 +634,7 @@ export default function IrAdminDetalheView({ id }) {
   const statusDisponiveis = getStatusDisponiveis(order.status);
 
   // Pagamento manual disponível para pedidos ainda não pagos (oculto para usuários IR internos)
-  const canPagamentoManual = !isIrInterno && STATUS_PERMITE_PAGAMENTO_MANUAL.includes(order.status);
+  const canPagamentoManual = showDadosPagamento && STATUS_PERMITE_PAGAMENTO_MANUAL.includes(order.status);
 
   const canDeliverDeclaracao = ['em_processo', 'finalizada'].includes(order.status);
   const isRetificacao = order.status === 'finalizada';
@@ -653,7 +654,7 @@ export default function IrAdminDetalheView({ id }) {
           </Box>
           <Stack direction="row" spacing={1} alignItems="center">
             <IrStatusBadge status={order.status} size="medium" />
-            {!isIrInterno && (
+            {showDadosPagamento && (
               <Typography variant="subtitle1" fontWeight={700}>
                 {fCurrency(order.valor)}
               </Typography>
@@ -718,7 +719,7 @@ export default function IrAdminDetalheView({ id }) {
                     <Typography variant="body2" color="text.secondary" minWidth={100}>Ano:</Typography>
                     <Typography variant="body2">{order.ano} ({order.year})</Typography>
                   </Stack>
-                  {!isIrInterno && (
+                  {showDadosPagamento && (
                     <Stack direction="row" spacing={1}>
                       <Typography variant="body2" color="text.secondary" minWidth={100}>Pagamento:</Typography>
                       <Chip
@@ -739,7 +740,7 @@ export default function IrAdminDetalheView({ id }) {
                   </Stack>
                 </Stack>
 
-                {!isIrInterno && (order.linhaDigitavel || order.pixCopiaECola) && (
+                {showDadosPagamento && (order.linhaDigitavel || order.pixCopiaECola) && (
                   <>
                     <Divider sx={{ my: 2 }} />
                     {order.paymentType === 'boleto' && order.linhaDigitavel && (
