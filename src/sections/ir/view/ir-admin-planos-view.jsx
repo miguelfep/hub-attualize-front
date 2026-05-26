@@ -109,7 +109,8 @@ export default function IrAdminPlanosView() {
           <Button
             variant="outlined"
             startIcon={<Iconify icon="eva:external-link-outline" />}
-            href="/imposto-renda-2026"
+            href="/imposto-de-renda-2026"
+            disabled
             target="_blank"
           >
             Ver página pública
