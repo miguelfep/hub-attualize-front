@@ -33,6 +33,7 @@ import { getCompetencia } from '../utils';
 
 const TIPO_GUIA_OPTIONS = [
   { value: 'DAS', label: 'DAS' },
+  { value: 'EXTRATO_BANCARIO', label: 'Extrato bancário' },
   { value: 'EXTRATO_PGDAS', label: 'Extrato PGDAS' },
   { value: 'INSS', label: 'INSS' },
   { value: 'HOLERITE', label: 'Holerite' },

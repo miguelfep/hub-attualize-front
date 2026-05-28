@@ -648,7 +648,7 @@ export async function atribuirResponsavelIr(id, responsavelId, nota) {
 
 /**
  * Exporta pedidos IR como CSV (admin)
- * @param {{ status?: string, year?: number }} [filtros]
+ * @param {{ status?: string, year?: number, responsavelId?: string, nomeCpf?: string }} [filtros]
  */
 export async function exportarPedidosIrAdmin(filtros = {}) {
   const cleanFiltros = Object.fromEntries(

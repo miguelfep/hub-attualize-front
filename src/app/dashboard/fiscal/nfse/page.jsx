@@ -42,12 +42,11 @@ import { Iconify } from 'src/components/iconify';
 // Helper para formatar tipo de nota
 const formatTipoNota = (tipo) => {
   const tipos = {
-    'nfse': 'NFS-e',
-    'nfc': 'NF-C',
-    'nfe': 'NF-e',
-    'cte': 'CT-e',
-    'mdfe': 'MDF-e',
-    'nfce': 'NFC-e',
+    nfse: 'NFS-e',
+    nfe: 'NF-e',
+    nfce: 'NFC-e',
+    cfe: 'CF-e',
+    cte: 'CT-e',
   };
   const key = String(tipo || '').toLowerCase();
   if (!key) return 'Não informado';
@@ -57,12 +56,11 @@ const formatTipoNota = (tipo) => {
 // Helper para cor do tipo de nota
 const getTipoNotaColor = (tipo) => {
   const tipos = {
-    'nfse': 'primary',
-    'nfc': 'secondary',
-    'nfe': 'info',
-    'cte': 'warning',
-    'mdfe': 'success',
-    'nfce': 'error',
+    nfse: 'primary',
+    nfe: 'info',
+    nfce: 'error',
+    cfe: 'secondary',
+    cte: 'warning',
   };
   return tipos[String(tipo || '').toLowerCase()] || 'default';
 };
@@ -185,20 +183,11 @@ export default function DashboardFiscalPage() {
     load();
   }, []);
 
-  const { totalValorNotas, totalNotas, notasFiltradas } = useMemo(() => {
-    let arr = Array.isArray(notas) ? notas : [];
-
-    // Filtrar por tipo de nota se selecionado
-    if (tipoNota) {
-      arr = arr.filter((n) => {
-        const tipo = String(n.tipoNota || '').toLowerCase();
-        return tipo && tipo === tipoNota.toLowerCase();
-      });
-    }
-
+  const { totalValorNotas, totalNotas } = useMemo(() => {
+    const arr = Array.isArray(notas) ? notas : [];
     const total = arr.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
-    return { totalValorNotas: total, totalNotas: arr.length, notasFiltradas: arr };
-  }, [notas, tipoNota]);
+    return { totalValorNotas: total, totalNotas: arr.length };
+  }, [notas]);
 
   const fetchNotas = async () => {
     if (!selectedCliente) return;
@@ -209,6 +198,7 @@ export default function DashboardFiscalPage() {
         status: status || undefined,
         inicio: startDate || undefined,
         fim: endDate || undefined,
+        tipoNota: tipoNota || undefined,
         page,
         limit: 50,
       });
@@ -231,12 +221,12 @@ export default function DashboardFiscalPage() {
   // Resetar página ao mudar filtros
   useEffect(() => {
     setPage(1);
-  }, [selectedCliente, status, startDate, endDate]);
+  }, [selectedCliente, status, startDate, endDate, tipoNota]);
 
   useEffect(() => {
     fetchNotas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCliente, status, startDate, endDate, page]);
+  }, [selectedCliente, status, startDate, endDate, tipoNota, page]);
 
   // Navegação mensal
   const handlePrevMonth = () => {
@@ -348,14 +338,20 @@ export default function DashboardFiscalPage() {
           <Grid xs={12} md={4}>
             <FormControl fullWidth>
               <InputLabel>Tipo de Nota</InputLabel>
-              <Select label="Tipo de Nota" value={tipoNota} onChange={(e) => { setTipoNota(e.target.value); }}>
+              <Select
+                label="Tipo de Nota"
+                value={tipoNota}
+                onChange={(e) => {
+                  setTipoNota(e.target.value);
+                  setPage(1);
+                }}
+              >
                 <MenuItem value="">Todas</MenuItem>
                 <MenuItem value="nfse">NFS-e (Serviço)</MenuItem>
                 <MenuItem value="nfe">NF-e (Produto)</MenuItem>
-                <MenuItem value="nfc">NF-C (Consumidor)</MenuItem>
-                <MenuItem value="nfce">NFC-e (Eletrônica)</MenuItem>
+                <MenuItem value="nfce">NFC-e (Consumidor)</MenuItem>
+                <MenuItem value="cfe">CF-e (Cupom fiscal)</MenuItem>
                 <MenuItem value="cte">CT-e (Transporte)</MenuItem>
-                <MenuItem value="mdfe">MDF-e (Manifesto)</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -477,7 +473,7 @@ export default function DashboardFiscalPage() {
         <Stack spacing={1.5} aria-busy={loading && !!selectedCliente} aria-live="polite">
           {selectedCliente && loading
             ? Array.from({ length: 5 }, (_, i) => <NotaFiscalCardSkeleton key={`nf-skeleton-${i}`} />)
-            : notasFiltradas.map((n) => {
+            : notas.map((n) => {
               const valor = n.valorServicos || n.valor || 0;
               const statusLabel = n.status || '-';
               const eNotasLabel = n.eNotasStatus || '-';

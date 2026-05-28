@@ -13,8 +13,15 @@ import { fCurrency } from 'src/utils/format-number';
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 
-import { isGuia, getCompetencia, formatCompetencia } from '../utils';
 import { isDocumentoNovoParaClientePortal } from '../guia-documento-visualizacao';
+import {
+  isGuia,
+  getCompetencia,
+  getTipoGuiaLabel,
+  isExtratoBancario,
+  formatCompetencia,
+  getFormatoExtratoLabel,
+} from '../utils';
 
 // ----------------------------------------------------------------------
 
@@ -36,26 +43,6 @@ const getStatusLabel = (status) => {
     erro: 'Erro',
   };
   return labelMap[statusValue] || statusValue || status;
-};
-
-const getTipoGuiaLabel = (tipo) => {
-  const tipoMap = {
-    DAS: 'DAS',
-    EXTRATO_PGDAS: 'Extrato PGDAS',
-    DARF: 'DARF',
-    ICMS: 'ICMS',
-    ISS: 'ISS',
-    PIS: 'PIS',
-    COFINS: 'COFINS',
-    IRPJ: 'IRPJ',
-    CSLL: 'CSLL',
-    INSS: 'INSS',
-    FGTS: 'FGTS',
-    HOLERITE: 'Holerite',
-    EXTRATO_FOLHA_PAGAMENTO: 'Extrato Folha',
-    OUTROS: 'Outros',
-  };
-  return tipoMap[tipo] || tipo;
 };
 
 const getCategoriaLabel = (categoria) => {
@@ -131,6 +118,11 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
               <Label variant="soft" color="info">
                 {getTipoGuiaLabel(tipoGuia)}
               </Label>
+              {isExtratoBancario(guia) && getFormatoExtratoLabel(guia) && (
+                <Label variant="soft" color="default" size="small">
+                  {getFormatoExtratoLabel(guia)}
+                </Label>
+              )}
               <Label variant="soft" color={getStatusColor(currentStatus)}>
                 {getStatusLabel(currentStatus)}
               </Label>

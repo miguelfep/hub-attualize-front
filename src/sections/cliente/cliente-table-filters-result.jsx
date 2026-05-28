@@ -2,6 +2,8 @@ import { useCallback } from 'react';
 
 import Chip from '@mui/material/Chip';
 
+import { ESTADOS_BRASIL } from 'src/assets/data/estados-brasil';
+
 import { chipProps, FiltersBlock, FiltersResult } from 'src/components/filters-result';
 
 // ----------------------------------------------------------------------
@@ -25,6 +27,11 @@ export function ClienteTableFiltersResult({ filters, onResetPage, totalResults, 
   const handleRemovePlanoTributacao = useCallback(() => {
     onResetPage();
     filters.setState({ planoTributacao: 'all' });
+  }, [filters, onResetPage]);
+
+  const handleRemoveEstado = useCallback(() => {
+    onResetPage();
+    filters.setState({ estado: 'all' });
   }, [filters, onResetPage]);
 
   const handleReset = useCallback(() => {
@@ -63,6 +70,12 @@ export function ClienteTableFiltersResult({ filters, onResetPage, totalResults, 
     return options[plano] || plano;
   };
 
+  const getEstadoLabel = (uf) => {
+    const estado = ESTADOS_BRASIL.find((item) => item.sigla === uf);
+    if (estado) return `${estado.nome} (${estado.sigla})`;
+    return uf;
+  };
+
   return (
     <FiltersResult totalResults={totalResults} onReset={handleReset} sx={sx}>
       <FiltersBlock label="Status:" isShow={filters.state.status !== 'all'}>
@@ -95,6 +108,14 @@ export function ClienteTableFiltersResult({ filters, onResetPage, totalResults, 
           {...chipProps}
           label={getPlanoLabel(filters.state.planoTributacao)}
           onDelete={handleRemovePlanoTributacao}
+        />
+      </FiltersBlock>
+
+      <FiltersBlock label="Estado:" isShow={filters.state.estado !== 'all'}>
+        <Chip
+          {...chipProps}
+          label={getEstadoLabel(filters.state.estado)}
+          onDelete={handleRemoveEstado}
         />
       </FiltersBlock>
     </FiltersResult>

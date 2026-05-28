@@ -20,6 +20,7 @@ import {
 
 import { Iconify } from 'src/components/iconify';
 
+import { getTipoGuiaLabel } from '../utils';
 import { isDocumentoNovoParaClientePortal } from '../guia-documento-visualizacao';
 
 // Lazy load FullCalendar e plugins para melhorar performance inicial
@@ -61,25 +62,6 @@ const getStatusColor = (status) => {
     erro: '#f44336',
   };
   return statusMap[status] || '#757575';
-};
-
-const getTipoGuiaLabel = (tipo) => {
-  const tipoMap = {
-    DAS: 'DAS',
-    EXTRATO_PGDAS: 'Extrato PGDAS',
-    DARF: 'DARF',
-    ICMS: 'ICMS',
-    ISS: 'ISS',
-    PIS: 'PIS',
-    COFINS: 'COFINS',
-    IRPJ: 'IRPJ',
-    CSLL: 'CSLL',
-    INSS: 'INSS',
-    FGTS: 'FGTS',
-    HOLERITE: 'Holerite',
-    EXTRATO_FOLHA_PAGAMENTO: 'Extrato Folha',
-  };
-  return tipoMap[tipo] || tipo;
 };
 
 // ----------------------------------------------------------------------

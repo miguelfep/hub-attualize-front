@@ -14,7 +14,6 @@ import { useEmpresa } from 'src/hooks/use-empresa';
 
 import axios from 'src/utils/axios';
 
-import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
 import { useBancosCliente } from 'src/app/portal-cliente/conciliacao-bancaria/hooks/use-bancos-cliente';
 
 import { formatToCurrency } from 'src/components/animate';
@@ -129,8 +128,6 @@ export default function PortalClienteDash2View() {
     loading: loadingTransacoesConta,
   } = useTransacoesConta(clienteId, selectedCategory, selectedBankId, mesAnoAtual);
 
-  // 🎯 Outros dados
-  const { data, isLoading } = useGetGuiasFiscaisPortal({ limit: 200 });
 
   // 🎯 Buscar dados do dashboard da API (para vendas) — mesAno atualiza Vendas quando o backend suportar
   useEffect(() => {
@@ -412,15 +409,9 @@ export default function PortalClienteDash2View() {
           </Box>
 
           <Box sx={{ flexShrink: 0, minHeight: 440, maxHeight: 540, minWidth: 0, maxWidth: '100%' }}>
-            {isLoading ? (
-              <TaxCalendarWidgetSkeleton sx={{ boxShadow: 'none' }} />
-            ) : (
               <TaxCalendarWidgetLazy
-                guias={data?.guias || []}
-                isLoading={false}
                 sx={{ boxShadow: 'none' }}
               />
-            )}
           </Box>
         </Box>
       </Box>

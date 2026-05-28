@@ -182,7 +182,7 @@ export default function EditarServicoPage() {
   }, [clienteProprietarioId]);
 
 
-const handleSubmit = useCallback(async (e) => {
+  const handleSubmit = useCallback(async (e) => {
     e.preventDefault();
     if (!form.nome) { toast.error('Informe o nome do serviço'); return; }
     if (!form.valor || Number(form.valor) <= 0) { toast.error('Informe um valor válido'); return; }
@@ -264,7 +264,7 @@ const handleSubmit = useCallback(async (e) => {
 
             <CardContent sx={{ p: { xs: 2, md: 4 } }}>
               <SectionHeader icon="solar:document-add-bold-duotone" title="Dados do Serviço" />
-              <Grid container spacing={2}>
+              <Grid container spacing={2} sx={{ '& > *': { p: 2.5 } }}>
                 <Grid xs={12}>
                   <TextField
                     fullWidth
@@ -351,7 +351,7 @@ const handleSubmit = useCallback(async (e) => {
                         })}
                       </TextField>
                     </Grid>
-                    
+
                     <Grid xs={12} sm={6}>
                       <TextField
                         fullWidth
@@ -362,7 +362,7 @@ const handleSubmit = useCallback(async (e) => {
                         helperText="Código do serviço conforme cadastro municipal"
                       />
                     </Grid>
-                    
+
                     <Grid xs={12} sm={6}>
                       <TextField
                         fullWidth

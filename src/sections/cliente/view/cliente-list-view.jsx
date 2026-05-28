@@ -26,6 +26,7 @@ import { useSetState } from 'src/hooks/use-set-state';
 import { varAlpha } from 'src/theme/styles';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getClientes, updateCliente } from 'src/actions/clientes';
+import { ESTADO_UF_FILTER_OPTIONS } from 'src/assets/data/estados-brasil';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
@@ -98,7 +99,13 @@ const DEFAULT_FILTERS = {
   status: STATUS_ALL,
   regimeTributario: 'all',
   planoTributacao: 'all',
+  estado: 'all',
 };
+
+function getClienteUf(cliente) {
+  const uf = cliente?.endereco?.[0]?.estado;
+  return typeof uf === 'string' ? uf.trim().toUpperCase() : '';
+}
 
 // ----------------------------------------------------------------------
 
@@ -136,7 +143,7 @@ function getStatusCount(statusValue, counts) {
  * Aplica filtros e ordenação aos dados
  */
 function applyFilter({ inputData, comparator, filters }) {
-  const { search, status, regimeTributario, planoTributacao } = filters || {};
+  const { search, status, regimeTributario, planoTributacao, estado } = filters || {};
 
   // Ordenação estável
   const stabilizedThis = inputData.map((el, index) => [el, index]);
@@ -159,7 +166,7 @@ function applyFilter({ inputData, comparator, filters }) {
     // Depois, aplica a ordenação do usuário (clique nas colunas)
     const order = comparator(a[0], b[0]);
     if (order !== 0) return order;
-    
+
     // Por último, mantém a ordem original para estabilidade
     return a[1] - b[1];
   });
@@ -204,6 +211,11 @@ function applyFilter({ inputData, comparator, filters }) {
     });
   }
 
+  // Filtro por UF (primeiro endereço)
+  if (estado && estado !== 'all') {
+    filteredData = filteredData.filter((cliente) => getClienteUf(cliente) === estado);
+  }
+
   return filteredData;
 }
 
@@ -243,7 +255,8 @@ export function ClienteListView() {
       !!filters.state.search?.trim() ||
       filters.state.status !== STATUS_ALL ||
       filters.state.regimeTributario !== 'all' ||
-      filters.state.planoTributacao !== 'all',
+      filters.state.planoTributacao !== 'all' ||
+      filters.state.estado !== 'all',
     [filters.state]
   );
 
@@ -473,6 +486,31 @@ export function ClienteListView() {
                 ))}
               </Select>
             </FormControl>
+
+            <FormControl size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Estado</InputLabel>
+              <Select
+                value={filters.state.estado || 'all'}
+                label="Estado"
+                onChange={(e) => {
+                  table.onResetPage();
+                  filters.setState({ estado: e.target.value });
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    style: {
+                      maxHeight: 350,
+                    },
+                  },
+                }}
+              >
+                {ESTADO_UF_FILTER_OPTIONS.map((option) => (
+                  <MenuItem key={option.value} value={option.value}>
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Box>
 
           {canReset && (
@@ -566,7 +604,6 @@ export function ClienteListView() {
                                 onDeleteRow={() => handleDeleteRow(rowId)}
                                 onActivateRow={() => handleActivateRow(rowId)}
                                 onEditRow={() => handleEditRow(rowId)}
-                                onUpdate={fetchClientes}
                               />
                             );
                           })}

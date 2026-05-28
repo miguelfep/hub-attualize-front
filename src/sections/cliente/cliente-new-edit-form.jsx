@@ -35,7 +35,6 @@ import { criarCliente, updateCliente, getClienteById, atualizarDadosCliente } fr
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
-import FileUploadField from 'src/components/file-upload/FileUploadField';
 
 // Removido uso de react-input-mask para evitar findDOMNode em StrictMode
 import { useAuthContext } from 'src/auth/hooks';
@@ -233,10 +232,6 @@ export const NewUClienteSchema = zod.object({
       })
     )
     .optional(),
-  contratoSocialUrl: zod.string().optional(),
-  cartaoCnpjUrl: zod.string().optional(),
-  contratoSocialFile: zod.any().optional(),
-  cartaoCnpjFile: zod.any().optional(),
   settings: zod.object({
     funcionalidades: zod.object({
       emissaoNFSe: zod.boolean().optional(),
@@ -278,28 +273,28 @@ export const NewUClienteSchema = zod.object({
         .optional(),
     }).optional()
   })
-  .optional()
-  .superRefine((val, ctx) => {
-    if (!val) return;
-    const func = val.funcionalidades || {};
-    const cfg = val.configuracoes || {};
+    .optional()
+    .superRefine((val, ctx) => {
+      if (!val) return;
+      const func = val.funcionalidades || {};
+      const cfg = val.configuracoes || {};
 
-    const ensureNumberIfActive = (active, value, path) => {
-      if (!active) return; // não validar quando a feature não está ativa
-      if (value === undefined) return; // não obrigatório, apenas validar tipo se informado
-      if (typeof value !== 'number' || Number.isNaN(value)) {
-        ctx.addIssue({
-          code: zod.ZodIssueCode.custom,
-          message: 'Deve ser um número válido',
-          path,
-        });
-      }
-    };
+      const ensureNumberIfActive = (active, value, path) => {
+        if (!active) return; // não validar quando a feature não está ativa
+        if (value === undefined) return; // não obrigatório, apenas validar tipo se informado
+        if (typeof value !== 'number' || Number.isNaN(value)) {
+          ctx.addIssue({
+            code: zod.ZodIssueCode.custom,
+            message: 'Deve ser um número válido',
+            path,
+          });
+        }
+      };
 
-    ensureNumberIfActive(Boolean(func.cadastroClientes), cfg.limiteClientes, ['configuracoes', 'limiteClientes']);
-    ensureNumberIfActive(Boolean(func.cadastroServicos), cfg.limiteServicos, ['configuracoes', 'limiteServicos']);
-    ensureNumberIfActive(Boolean(func.vendas), cfg.limiteOrcamentos, ['configuracoes', 'limiteOrcamentos']);
-  }),
+      ensureNumberIfActive(Boolean(func.cadastroClientes), cfg.limiteClientes, ['configuracoes', 'limiteClientes']);
+      ensureNumberIfActive(Boolean(func.cadastroServicos), cfg.limiteServicos, ['configuracoes', 'limiteServicos']);
+      ensureNumberIfActive(Boolean(func.vendas), cfg.limiteOrcamentos, ['configuracoes', 'limiteOrcamentos']);
+    }),
 });
 
 // ----------------------------------------------------------------------
@@ -379,10 +374,6 @@ export function ClienteNewEditForm({ currentCliente }) {
         administrador: s?.administrador === true,
         dataInclusao: s?.dataInclusao ? new Date(s.dataInclusao) : undefined,
       })),
-      contratoSocialUrl: currentCliente?.contratoSocialUrl || '',
-      cartaoCnpjUrl: currentCliente?.cartaoCnpjUrl || '',
-      contratoSocialFile: null,
-      cartaoCnpjFile: null,
       settings: currentCliente?.settings || {
         funcionalidades: {
           emissaoNFSe: false,
@@ -430,8 +421,8 @@ export function ClienteNewEditForm({ currentCliente }) {
     name: 'endereco',
   });
 
-const onSubmit = handleSubmit(
-  async (data) => {
+  const onSubmit = handleSubmit(
+    async (data) => {
       try {
 
         const formData = new FormData();
@@ -463,11 +454,6 @@ const onSubmit = handleSubmit(
           cleaned.tributacao = [];
         }
 
-        delete cleaned.contratoSocialFile;
-        delete cleaned.cartaoCnpjFile;
-        delete cleaned.contratoSocialUrl;
-        delete cleaned.cartaoCnpjUrl;
-
         if (cleaned.capitalSocial !== undefined && cleaned.capitalSocial !== null) {
           cleaned.capitalSocial = capitalSocialToApi(cleaned.capitalSocial);
         }
@@ -484,8 +470,8 @@ const onSubmit = handleSubmit(
             tributacao:
               updatedCliente.regimeTributario === 'simples'
                 ? (updatedCliente?.tributacao || []).filter((t) =>
-                    TRIBUTACAO_VALUES_ALLOWED.includes(t)
-                  )
+                  TRIBUTACAO_VALUES_ALLOWED.includes(t)
+                )
                 : [],
             status: updatedCliente.status !== undefined ? updatedCliente.status : true,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
@@ -495,8 +481,6 @@ const onSubmit = handleSubmit(
                 ? String(updatedCliente.diaFechamentoFolha)
                 : '',
             folhaComPlano: updatedCliente.folhaComPlano ?? false,
-            contratoSocialFile: null,
-            cartaoCnpjFile: null,
           });
 
           toast.success('Cliente Atualizado com sucesso!');
@@ -536,8 +520,8 @@ const onSubmit = handleSubmit(
         tributacao:
           clienteAtualizado.regimeTributario === 'simples'
             ? (clienteAtualizado?.tributacao || []).filter((t) =>
-                TRIBUTACAO_VALUES_ALLOWED.includes(t)
-              )
+              TRIBUTACAO_VALUES_ALLOWED.includes(t)
+            )
             : [],
         status: clienteAtualizado.status !== undefined ? clienteAtualizado.status : true,
         dataEntrada: clienteAtualizado.dataEntrada ? new Date(clienteAtualizado.dataEntrada) : null,
@@ -557,8 +541,6 @@ const onSubmit = handleSubmit(
           administrador: s?.administrador === true,
           dataInclusao: s?.dataInclusao ? new Date(s.dataInclusao) : undefined,
         })),
-        contratoSocialFile: null,
-        cartaoCnpjFile: null,
       });
 
       toast.success('Dados da Receita atualizados com sucesso!');
@@ -819,35 +801,35 @@ const onSubmit = handleSubmit(
                       <Controller
                         name={`endereco.${index}.cep`}
                         control={control}
-                    render={({ field }) => {
-                      const formatCep = (raw) => {
-                        const digits = String(raw || '').replace(/\D/g, '');
-                        if (digits.length <= 5) return digits;
-                        return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
-                      };
-                      const handleChange = (e) => {
-                        const digits = String(e.target.value || '').replace(/\D/g, '');
-                        const formatted = digits.length <= 5 ? digits : `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
-                        field.onChange(formatted);
-                      };
-                      const handleBlur = () => {
-                        const digits = String(field.value || '').replace(/\D/g, '');
-                        handleCepChange(index, digits);
-                      };
-                      return (
-                        <TextField
-                          label="CEP"
-                          fullWidth
-                          value={formatCep(field.value)}
-                          onChange={handleChange}
-                          onBlur={handleBlur}
-                          disabled={!statusAtivo}
-                          error={!!errors.endereco?.[index]?.cep}
-                          helperText={errors.endereco?.[index]?.cep?.message}
-                          inputProps={{ inputMode: 'numeric' }}
-                        />
-                      );
-                    }}
+                        render={({ field }) => {
+                          const formatCep = (raw) => {
+                            const digits = String(raw || '').replace(/\D/g, '');
+                            if (digits.length <= 5) return digits;
+                            return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+                          };
+                          const handleChange = (e) => {
+                            const digits = String(e.target.value || '').replace(/\D/g, '');
+                            const formatted = digits.length <= 5 ? digits : `${digits.slice(0, 5)}-${digits.slice(5, 8)}`;
+                            field.onChange(formatted);
+                          };
+                          const handleBlur = () => {
+                            const digits = String(field.value || '').replace(/\D/g, '');
+                            handleCepChange(index, digits);
+                          };
+                          return (
+                            <TextField
+                              label="CEP"
+                              fullWidth
+                              value={formatCep(field.value)}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              disabled={!statusAtivo}
+                              error={!!errors.endereco?.[index]?.cep}
+                              helperText={errors.endereco?.[index]?.cep?.message}
+                              inputProps={{ inputMode: 'numeric' }}
+                            />
+                          );
+                        }}
                       />
                     </Grid>
                     <Grid xs={12} sm={3}>
@@ -1012,31 +994,6 @@ const onSubmit = handleSubmit(
                 <Grid xs={12}>
                   <Field.Editor name="observacao" label="Observação" fullWidth disabled={!statusAtivo} />
                 </Grid>
-                <Grid container spacing={2} xs={12} sx={{ mt: 1 }}>
-                  <Grid xs={12}>
-                    <Typography variant="h6" sx={{ mb: -1 }}>Documentos da Empresa</Typography>
-                  </Grid>
-                  <Grid xs={12} sm={6}>
-                    <FileUploadField
-                      name="contratoSocialFile"
-                      label="Contrato Social"
-                      clienteId={currentCliente?._id}
-                      documentType="contratoSocial"
-                      existingFileUrl={watch('contratoSocialUrl')}
-                      disabled={!statusAtivo}
-                    />
-                  </Grid>
-                  <Grid xs={12} sm={6}>
-                    <FileUploadField
-                      name="cartaoCnpjFile"
-                      label="Cartão CNPJ"
-                      clienteId={currentCliente?._id}
-                      documentType="cartaoCnpj"
-                      existingFileUrl={watch('cartaoCnpjUrl')}
-                      disabled={!statusAtivo}
-                    />
-                  </Grid>
-                </Grid>
                 <Grid xs={12} sm={6}>
                   <Controller
                     name="dataEntrada"
@@ -1195,18 +1152,18 @@ const onSubmit = handleSubmit(
                     )}
                   />
                 </Grid>
-                
+
                 {/* Plano de Contas - Mostra apenas se possuiExtrato estiver ativo */}
                 {watch('possuiExtrato') && (
                   <Grid xs={12}>
                     <Divider sx={{ my: 2 }} />
-                    <PlanoContasClienteSection 
-                      clienteId={currentCliente?._id} 
+                    <PlanoContasClienteSection
+                      clienteId={currentCliente?._id}
                       possuiExtrato={watch('possuiExtrato')}
                     />
                   </Grid>
                 )}
-                
+
                 <Grid xs={12}>
                   <Divider sx={{ my: 2 }} />
                 </Grid>
@@ -1337,13 +1294,13 @@ const onSubmit = handleSubmit(
             </Card>
           </Grid>
         )}
-      {tabIndex === portalTabIndex && (
-        <Grid xs={12}>
-          <Card sx={{ p: 3 }}>
-            <ClientePortalSettings clienteId={currentCliente?._id} control={control} />
-          </Card>
-        </Grid>
-      )}
+        {tabIndex === portalTabIndex && (
+          <Grid xs={12}>
+            <Card sx={{ p: 3 }}>
+              <ClientePortalSettings clienteId={currentCliente?._id} control={control} />
+            </Card>
+          </Grid>
+        )}
       </Grid>
       <Stack alignItems="flex-end" sx={{ mt: 3 }}>
         <LoadingButton type="submit" variant="contained" loading={isSubmitting}>

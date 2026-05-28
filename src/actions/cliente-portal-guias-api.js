@@ -188,7 +188,7 @@ export async function uploadParaPastaPortal(folderId, files, options = {}) {
  * Servidor resolve/cria `contabil / {ano} / {MM}`.
  *
  * @param {File[]} files
- * @param {{ competencia: string, dataVencimento?: string }} options
+ * @param {{ competencia: string, dataVencimento?: string, arquivosProtegidos?: string[] }} options
  */
 export async function uploadContabilCompetenciaPortal(files, options = {}) {
   const { competencia: competenciaRaw, dataVencimento } = options;
@@ -209,6 +209,9 @@ export async function uploadContabilCompetenciaPortal(files, options = {}) {
   formData.append('competencia', competencia);
   if (dataVencimento) {
     formData.append('dataVencimento', dataVencimento);
+  }
+  if (options.arquivosProtegidos?.length) {
+    formData.append('arquivosProtegidos', JSON.stringify(options.arquivosProtegidos));
   }
 
   const res = await axios.post(endpoints.guiasFiscais.portal.contabilUpload, formData, {

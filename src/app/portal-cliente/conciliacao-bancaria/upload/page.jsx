@@ -427,6 +427,13 @@ export default function UploadExtratoPage() {
       setMesesFaltantes([]);
 
       if (result) {
+        if (result.arquivado) {
+          setTimeout(() => {
+            router.push(`${paths.cliente.conciliacaoBancaria}/status`);
+          }, 800);
+          return;
+        }
+
         // 🔥 NOVO: Processamento assíncrono (PDF) - redirecionar imediatamente para status
         if (result.processamentoAssincrono) {
           toast.success(result.mensagem || 'Arquivo enviado! O processamento está em andamento.');

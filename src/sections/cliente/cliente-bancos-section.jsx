@@ -264,7 +264,7 @@ export default function ClienteBancosSection({ clienteId }) {
           typeof formData.saldoInicial === 'number'
             ? formData.saldoInicial
             : parseFloat(String(formData.saldoInicial).replace(/\./g, '').replace(',', '.')),
-        contaContabilId: formData.contaContabilId || undefined,
+        contaContabilId: formData.contaContabilId || null,
       };
 
       const response = await axios.put(
@@ -670,6 +670,19 @@ export default function ClienteBancosSection({ clienteId }) {
                                       </Typography>
                                       <Typography variant="body2" fontWeight="medium" color="success.main">
                                         {contaContabil.codigoSequencial || contaContabil.codigo || 'N/A'} - {contaContabil.nome || 'N/A'}
+                                      </Typography>
+                                    </Stack>
+                                  );
+                                }
+
+                                if (typeof contaContabil === 'string') {
+                                  return (
+                                    <Stack direction="row" justifyContent="space-between" sx={{ mt: 1, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                                      <Typography variant="body2" color="text.secondary">
+                                        Conta Contábil:
+                                      </Typography>
+                                      <Typography variant="body2" fontWeight="medium" color="success.main">
+                                        ✓ Vinculada
                                       </Typography>
                                     </Stack>
                                   );
