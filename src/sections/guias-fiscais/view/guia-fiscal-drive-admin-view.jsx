@@ -305,6 +305,24 @@ export function GuiaFiscalDriveAdminView() {
     }
   }, [filesBulkDelete, mutateFiles]);
 
+  const handleBulkDownload = useCallback(async () => {
+    const filesToDownload = files.filter((file) => selectedFileIds.includes(file._id));
+
+    for (let i = 0; i < filesToDownload.length; i += 1) {
+      const file = filesToDownload[i];
+      if (file?._id && file.nomeArquivo) {
+        downloadGuiaFiscal(file._id, file.nomeArquivo);
+      }
+
+      if (i < filesToDownload.length - 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise((resolve) => setTimeout(resolve, 450));
+      }
+    }
+    setSelectedFileIds([]);
+
+  }, [files, selectedFileIds])
+
   const openMoveDialogFromFileMenu = useCallback(
     (file) => {
       if (!file?._id || !clienteId) return;
@@ -896,6 +914,16 @@ export function GuiaFiscalDriveAdminView() {
                                     onClick={() => setSelectedFileIds([])}
                                   >
                                     Limpar
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    variant="soft"
+                                    color="success"
+                                    startIcon={<Iconify icon="solar:download-bold" width={18} />}
+                                    disabled={!selectedFileIds.length}
+                                    onClick={handleBulkDownload}
+                                  >
+                                    Baixar ({selectedFileIds.length})
                                   </Button>
                                   <Button
                                     size="small"

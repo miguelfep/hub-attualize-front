@@ -24,6 +24,7 @@ import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
 import { endpoints } from 'src/utils/axios';
+import { inspectPdfPassword } from 'src/utils/pdf-password-inspect';
 
 import {
   uploadContabilCompetenciaPortal,
@@ -138,7 +139,22 @@ export function UploadDocumentosContabeisDialog({ open, onClose }) {
       setUploading(true);
       toast.loading('A enviar…', { id: TOAST_UPLOAD_ID });
 
-      const res = await uploadContabilCompetenciaPortal(files, { competencia });
+      const checkPromises = files.map(async (file) => {
+        if (file.name.toLowerCase().endsWith('.pdf')) {
+          const { protegido } = await inspectPdfPassword(file);
+          return protegido ? file.name : null;
+        }
+        return null;
+      });
+      
+      const results = await Promise.all(checkPromises);
+      const arquivosProtegidos = results.filter((name) => name !== null);
+
+      const res = await uploadContabilCompetenciaPortal(files, {
+        competencia,
+        arquivosProtegidos,
+      });
+
       if (res.success === false) {
         toast.error(res.message || 'Falha no envio.', { id: TOAST_UPLOAD_ID });
         return;

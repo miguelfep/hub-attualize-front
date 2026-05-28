@@ -31,6 +31,7 @@ export function mapearContextoConciliacao(statusData, conciliacaoIdFallback) {
     nomeBanco: d.nomeBanco || d.bancoNome || null,
     dataProcessamento: d.dataProcessamento || d.updatedAt || d.processadoEm || null,
     resumo: d.resumo || null,
+    arquivoPath: d.arquivoPath || null,
   };
 }
 
@@ -42,12 +43,23 @@ export function mapearContextoConciliacao(statusData, conciliacaoIdFallback) {
  * @param {Function} onUploadProgress - Callback para progresso do upload
  * @returns {Promise}
  */
-export async function uploadArquivoConciliacao(clienteId, bancoId, mesAno, file, onUploadProgress) {
+export async function uploadArquivoConciliacao(
+  clienteId,
+  bancoId,
+  mesAno,
+  file,
+  onUploadProgress,
+  options = {}
+) {
   const formData = new FormData();
   formData.append('file', file); // Backend espera 'file'
   formData.append('clienteId', clienteId);
   formData.append('bancoId', bancoId);
   formData.append('mesAno', mesAno); // 🔥 OBRIGATÓRIO - formato YYYY-MM
+
+  if (options.arquivoProtegido) {
+    formData.append('arquivoProtegido', 'true');
+  }
 
   // API pode responder 202 Accepted (fila assíncrona) — tratar como sucesso axios
   return axios.post(`${baseUrl}conciliacao/upload`, formData, {

@@ -1,5 +1,7 @@
 import { useState } from 'react';
 
+import { inspectPdfPassword } from 'src/utils/pdf-password-inspect';
+
 import { 
   obterStatusConciliacao, 
   uploadArquivoConciliacao, 
@@ -111,6 +113,12 @@ export function useUploadExtrato() {
     let teveErro = false;
 
     try {
+      let arquivoProtegido = false;
+      if (arquivo?.name?.toLowerCase().endsWith('.pdf')) {
+        const inspect = await inspectPdfPassword(arquivo);
+        arquivoProtegido = inspect.protegido;
+      }
+
       const response = await uploadArquivoConciliacao(
         clienteId,
         bancoId,
@@ -121,15 +129,31 @@ export function useUploadExtrato() {
             (progressEvent.loaded * 100) / progressEvent.total
           );
           setUploadProgress(percentCompleted);
-        }
+        },
+        { arquivoProtegido }
       );
 
       // HTTP 202 + fila assíncrona (documentação API conciliação)
       const httpStatus = response.status;
-      const uploadPayloadOk = response.data?.success && (httpStatus === 202 || httpStatus === 200);
+      const uploadPayloadOk =
+        response.data?.success && (httpStatus === 202 || httpStatus === 200 || httpStatus === 201);
 
       if (uploadPayloadOk) {
         const uploadData = response.data?.data;
+
+        if (uploadData?.arquivado) {
+          setResultado(uploadData);
+          setLoading(false);
+          return {
+            arquivado: true,
+            ...uploadData,
+            mensagem:
+              uploadData?.mensagem ||
+              response.data?.message ||
+              'Arquivo arquivado com sucesso.',
+          };
+        }
+
         const id = uploadData?.conciliacaoId;
         const status = uploadData?.status;
 

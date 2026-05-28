@@ -36,6 +36,7 @@ export async function listarNotasFiscaisPorCliente({
   fim,
   numeroNota,
   cpfCnpj,
+  tipoNota,
 }) {
   const params = {};
   if (page) params.page = page;
@@ -45,6 +46,7 @@ export async function listarNotasFiscaisPorCliente({
   if (fim) params.fim = fim;
   if (numeroNota) params.numeroNota = numeroNota;
   if (cpfCnpj) params.cpfCnpj = cpfCnpj;
+  if (tipoNota) params.tipoNota = tipoNota;
   return axios.get(`${baseUrl}nota-fiscal/${clienteId}`, { params });
 }
 

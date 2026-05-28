@@ -56,7 +56,7 @@ export default function DetalhesConciliacaoPage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-  const {conciliacaoId} = params;
+  const { conciliacaoId } = params;
 
   const [loading, setLoading] = useState(true);
   const [conciliacao, setConciliacao] = useState(null);
@@ -135,11 +135,11 @@ export default function DetalhesConciliacaoPage() {
             byId.size > 0
               ? Array.from(byId.values())
               : (transacoesData.todas || []).map((t) => ({
-                  ...t,
-                  status:
-                    t.status ||
-                    (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
-                }));
+                ...t,
+                status:
+                  t.status ||
+                  (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
+              }));
           setTransacoes(merged);
           setResumoTransacoes(transacoesData.resumo || null);
         }
@@ -235,7 +235,7 @@ export default function DetalhesConciliacaoPage() {
             console.error('Erro no fallback de transações:', fallbackErr);
           }
         }
-        
+
         setTransacoes(todasTransacoes);
       } catch (err) {
         console.error('Erro ao carregar conciliação:', err);
@@ -252,12 +252,12 @@ export default function DetalhesConciliacaoPage() {
   // Abrir dialog de edição
   const handleAbrirEdicao = async (transacao) => {
     // 🔥 A nova rota retorna contaSugerida, que para confirmadas é a conta vinculada
-    const contaId = transacao.contaContabilId?._id || 
-                    transacao.contaContabilId || 
-                    transacao.contaSugerida?._id || 
-                    transacao.contaSugerida || 
-                    null;
-    
+    const contaId = transacao.contaContabilId?._id ||
+      transacao.contaContabilId ||
+      transacao.contaSugerida?._id ||
+      transacao.contaSugerida ||
+      null;
+
     setFormEdicao({
       descricao: transacao.descricao || '',
       tipo: transacao.tipo || 'credito',
@@ -351,11 +351,11 @@ export default function DetalhesConciliacaoPage() {
         byId.size > 0
           ? Array.from(byId.values())
           : (transacoesData.todas || []).map((t) => ({
-              ...t,
-              status:
-                t.status ||
-                (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
-            }));
+            ...t,
+            status:
+              t.status ||
+              (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
+          }));
       setTransacoes(merged);
       setResumoTransacoes(transacoesData.resumo || null);
     }
@@ -476,13 +476,13 @@ export default function DetalhesConciliacaoPage() {
       // 🔥 Comparar IDs corretamente (pode ser string ou objeto)
       const contaAtualId = dialogEditar.transacao.contaContabilId?._id || dialogEditar.transacao.contaContabilId || null;
       const novaContaId = formEdicao.contaContabilId || null;
-      
+
       console.log('🔍 Comparando contas:', {
         contaAtualId,
         novaContaId,
         saoIguais: contaAtualId === novaContaId || String(contaAtualId) === String(novaContaId)
       });
-      
+
       if (String(contaAtualId) !== String(novaContaId)) {
         payload.contaContabilId = novaContaId;
         console.log('✅ Conta contábil será atualizada:', novaContaId);
@@ -512,22 +512,22 @@ export default function DetalhesConciliacaoPage() {
         }
       } catch (updateError) {
         console.log('🔍 Erro ao atualizar transação:', updateError.response?.status, updateError.response?.data);
-        
+
         // Se endpoint não existir (404), usar método alternativo
         if (updateError.response?.status === 404 || updateError.response?.status === 405) {
           // Fallback: usar endpoint de confirmação apenas para conta contábil
           if (payload.contaContabilId) {
             console.log('🔄 Usando fallback: endpoint de confirmação com contaContabilId:', payload.contaContabilId);
-            
+
             try {
               const confirmResponse = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}conciliacao/confirmar`, {
                 transacaoId,
                 contaContabilId: payload.contaContabilId,
               });
-              
+
               console.log('✅ Resposta da confirmação:', confirmResponse.data);
               toast.success('Conta contábil atualizada com sucesso!');
-              
+
               try {
                 await recarregarDadosConciliacao();
               } catch (reloadErr) {
@@ -561,12 +561,17 @@ export default function DetalhesConciliacaoPage() {
 
   // Obter nome do banco
   const getNomeBanco = () => {
-    if (!conciliacao?.bancoId) return 'N/A';
+    if (conciliacao?.nomeBanco) return conciliacao.nomeBanco;
+
+    const banco = conciliacao?.bancoId;
+    if (!banco) return 'N/A';
+    if (typeof banco === 'string') return 'N/A';
+
     return (
-      conciliacao.bancoId?.instituicaoBancariaId?.nome ||
-      conciliacao.bancoId?.instituicaoBancaria?.nome ||
-      conciliacao.bancoId?.banco?.nome ||
-      conciliacao.bancoId?.nome ||
+      banco.instituicaoBancariaId?.nome ||
+      banco.instituicaoBancaria?.nome ||
+      banco.banco?.nome ||
+      banco.nome ||
       'N/A'
     );
   };
@@ -595,7 +600,7 @@ export default function DetalhesConciliacaoPage() {
 
       if (response.data?.success) {
         toast.success('🎉 Conciliação finalizada com sucesso!');
-        
+
         // Recarregar dados da conciliação
         const [detalhesResponse, transacoesResponse] = await Promise.allSettled([
           obterConciliacao(conciliacaoId),
@@ -622,11 +627,11 @@ export default function DetalhesConciliacaoPage() {
             byId.size > 0
               ? Array.from(byId.values())
               : (transacoesData.todas || []).map((t) => ({
-                  ...t,
-                  status:
-                    t.status ||
-                    (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
-                }));
+                ...t,
+                status:
+                  t.status ||
+                  (t.contaContabilId || t.contaContabil ? 'confirmada' : 'pendente'),
+              }));
           setTransacoes(merged);
           setResumoTransacoes(transacoesData.resumo || null);
         }
@@ -692,11 +697,11 @@ export default function DetalhesConciliacaoPage() {
     const totalCreditos = transacoes
       .filter(t => t.tipo === 'credito')
       .reduce((sum, t) => sum + (parseFloat(t.valor) || 0), 0);
-    
+
     const totalDebitos = transacoes
       .filter(t => t.tipo === 'debito')
       .reduce((sum, t) => sum + (parseFloat(t.valor) || 0), 0);
-    
+
     return {
       totalCreditos,
       totalDebitos,
@@ -825,8 +830,8 @@ export default function DetalhesConciliacaoPage() {
               {finalizando
                 ? 'Finalizando...'
                 : resumoTransacoes?.pendentes > 0
-                ? `⚠️ ${resumoTransacoes.pendentes} Transações Pendentes`
-                : '✅ Finalizar Conciliação'}
+                  ? `⚠️ ${resumoTransacoes.pendentes} Transações Pendentes`
+                  : '✅ Finalizar Conciliação'}
             </Button>
           )}
           <Button
@@ -858,7 +863,7 @@ export default function DetalhesConciliacaoPage() {
       )}
 
       {/* Informações da Conciliação */}
-      <Grid container spacing={3} mb={3}>
+      <Grid container spacing={3} mb={3} sx={{ mb: 3, '& > *': { p: 2.5 } }}>
         <Grid xs={12} lg={6}>
           <Card sx={{ p: 3 }}>
             <Typography variant="h6" gutterBottom>
@@ -1241,7 +1246,7 @@ export default function DetalhesConciliacaoPage() {
 
             <Alert severity="info">
               <Typography variant="body2">
-                💡 <strong>Nota:</strong> A atualização de descrição, tipo e valor será implementada em breve. 
+                💡 <strong>Nota:</strong> A atualização de descrição, tipo e valor será implementada em breve.
                 Por enquanto, você pode atualizar a conta contábil.
               </Typography>
             </Alert>

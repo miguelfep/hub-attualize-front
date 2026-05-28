@@ -69,6 +69,30 @@ function formatNotaDateTimeDisplay(value) {
   return dayjs(value).format('DD/MM/YYYY HH:mm');
 }
 
+const formatTipoNota = (tipo) => {
+  const tipos = {
+    nfse: 'NFS-e',
+    nfe: 'NF-e',
+    nfce: 'NFC-e',
+    cfe: 'CF-e',
+    cte: 'CT-e',
+  };
+  const key = String(tipo || '').toLowerCase();
+  if (!key) return 'Não informado';
+  return tipos[key] || tipo?.toUpperCase() || 'Não informado';
+};
+
+const getTipoNotaColor = (tipo) => {
+  const tipos = {
+    nfse: 'primary',
+    nfe: 'info',
+    nfce: 'error',
+    cfe: 'secondary',
+    cte: 'warning',
+  };
+  return tipos[String(tipo || '').toLowerCase()] || 'default';
+};
+
 const notaInnerBoxSx = {
   p: 1.5,
   borderRadius: 2,
@@ -167,6 +191,7 @@ export default function PortalFaturamentoPage() {
   const [filtroCpfCnpj, setFiltroCpfCnpj] = useState('');
   const [cpfCnpjAplicado, setCpfCnpjAplicado] = useState('');
   const [cpfCnpjErro, setCpfCnpjErro] = useState('');
+  const [tipoNota, setTipoNota] = useState('');
 
   const [page, setPage] = useState(1);
   const [paginationMeta, setPaginationMeta] = useState({
@@ -264,6 +289,7 @@ export default function PortalFaturamentoPage() {
         status: status || undefined,
         inicio: startDate || undefined,
         fim: endDate || undefined,
+        tipoNota: numeroNota ? undefined : tipoNota || undefined,
       });
 
       const { data } = res;
@@ -287,6 +313,7 @@ export default function PortalFaturamentoPage() {
     endDate,
     numeroNotaDebounce,
     cpfCnpjAplicado,
+    tipoNota,
   ]);
 
   useEffect(() => {
@@ -296,6 +323,10 @@ export default function PortalFaturamentoPage() {
   useEffect(() => {
     if (numeroNotaDebounce) setPage(1);
   }, [numeroNotaDebounce]);
+
+  useEffect(() => {
+    if (filtroNumeroNota) setTipoNota('');
+  }, [filtroNumeroNota]);
 
   // Fetch inicial com loading
   useEffect(() => {
@@ -405,7 +436,7 @@ export default function PortalFaturamentoPage() {
 
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid xs={12} md={3}>
+          <Grid xs={12} md={1.5}>
             <FormControl fullWidth>
               <InputLabel>Status da Nota</InputLabel>
               <Select
@@ -425,7 +456,7 @@ export default function PortalFaturamentoPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={3}>
+          <Grid xs={12} md={2}>
             <TextField
               label="Número da Nota"
               type="number"
@@ -466,6 +497,27 @@ export default function PortalFaturamentoPage() {
               InputLabelProps={{ shrink: true }}
               disabled={!!filtroNumeroNota}
             />
+          </Grid>
+          <Grid xs={12} md={2.5}>
+            <FormControl fullWidth>
+              <InputLabel>Tipo de Nota</InputLabel>
+              <Select
+                label="Tipo de Nota"
+                value={tipoNota}
+                onChange={(e) => {
+                  setTipoNota(e.target.value);
+                  setPage(1);
+                }}
+                disabled={!!filtroNumeroNota}
+              >
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="nfse">NFS-e (Serviço)</MenuItem>
+                <MenuItem value="nfe">NF-e (Produto)</MenuItem>
+                <MenuItem value="nfce">NFC-e (Consumidor)</MenuItem>
+                <MenuItem value="cfe">CF-e (Cupom fiscal)</MenuItem>
+                <MenuItem value="cte">CT-e (Transporte)</MenuItem>
+              </Select>
+            </FormControl>
           </Grid>
           {!filtroNumeroNota && (
             <Grid xs={12}>
@@ -607,11 +659,20 @@ export default function PortalFaturamentoPage() {
                 const tomadorDocFmt = n.tomador?.cpfCnpj
                   ? formatCpfCnpj(removeFormatting(n.tomador.cpfCnpj))
                   : '';
+                const tipoNotaLabel = formatTipoNota(n.tipoNota);
+                const tipoNotaColor = getTipoNotaColor(n.tipoNota);
 
                 return (
                   <Card key={n._id || n.id} variant="outlined" sx={{ p: 2 }}>
                     <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
                       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                        <Label
+                          color={tipoNotaColor}
+                          variant="soft"
+                          sx={{ fontWeight: 600 }}
+                        >
+                          {tipoNotaLabel}
+                        </Label>
                         <Typography variant="subtitle2">
                           Nota #{isSieg ? (n.siegNumero || n.numeroNota || '-') : (n.numeroNota || n.numero || '-')}
                         </Typography>

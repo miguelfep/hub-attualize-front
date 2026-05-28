@@ -9,7 +9,7 @@ import { Iconify } from 'src/components/iconify';
 export function ServicoTableToolbar({ filters, onFilters }) {
   return (
     <Stack spacing={2} sx={{ p: 2.5, borderTop: 1, borderBottom: 1, borderColor: 'divider' }}>
-      <Grid container spacing={2}>
+      <Grid container spacing={2} sx={{ '& > *': { p: 2.5 } }}>
         <Grid xs={12} md={4}>
           <TextField
             fullWidth

@@ -27,7 +27,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import { isGuia, getCompetencia, formatCompetencia } from '../utils';
+import { isGuia, getCompetencia, formatCompetencia, getTipoGuiaLabel, getFormatoExtratoLabel, isExtratoBancario } from '../utils';
 import {
   getClienteVisualizouEm,
   getLeiturasPortalItensAdmin,
@@ -53,26 +53,6 @@ const getStatusLabel = (status) => {
     erro: 'Erro',
   };
   return labelMap[status] || status;
-};
-
-const getTipoGuiaLabel = (tipo) => {
-  const tipoMap = {
-    // Guias Fiscais
-    DAS: 'DAS',
-    EXTRATO_PGDAS: 'Extrato PGDAS',
-    DARF: 'DARF',
-    ICMS: 'ICMS',
-    ISS: 'ISS',
-    PIS: 'PIS',
-    COFINS: 'COFINS',
-    // Guias DP
-    INSS: 'INSS',
-    FGTS: 'FGTS',
-    // Documentos DP
-    HOLERITE: 'Holerite',
-    EXTRATO_FOLHA_PAGAMENTO: 'Extrato Folha',
-  };
-  return tipoMap[tipo] || tipo;
 };
 
 const getCategoriaLabel = (categoria) => {
@@ -218,9 +198,16 @@ export function GuiaFiscalDetailsView({ id }) {
                   <Typography variant="body2" color="text.secondary">
                     Tipo:
                   </Typography>
-                  <Label variant="soft" color="info">
-                    {getTipoGuiaLabel(guia.tipoGuia)}
-                  </Label>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Label variant="soft" color="info">
+                      {getTipoGuiaLabel(guia.tipoGuia)}
+                    </Label>
+                    {isExtratoBancario(guia) && getFormatoExtratoLabel(guia) && (
+                      <Label variant="soft" color="default" size="small">
+                        {getFormatoExtratoLabel(guia)}
+                      </Label>
+                    )}
+                  </Stack>
                 </Stack>
 
                 <Stack direction="row" justifyContent="space-between">

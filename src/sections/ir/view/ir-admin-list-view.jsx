@@ -3,13 +3,11 @@
 import { ptBR } from 'date-fns/locale';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import Stack from '@mui/material/Stack';
-import { alpha, useTheme } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
@@ -17,29 +15,33 @@ import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import Grid from '@mui/material/Unstable_Grid2';
 import Container from '@mui/material/Container';
-import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
+import TableBody from '@mui/material/TableBody';
 import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
-import InputAdornment from '@mui/material/InputAdornment';
 import LoadingButton from '@mui/lab/LoadingButton';
+import CardContent from '@mui/material/CardContent';
 import FormControl from '@mui/material/FormControl';
+import { alpha, useTheme } from '@mui/material/styles';
+import InputAdornment from '@mui/material/InputAdornment';
 import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 
+import { useDebounce } from 'src/hooks/use-debounce';
+
 import { fCurrency } from 'src/utils/format-number';
 
 import {
   IR_STATUS_LABELS,
   useGetPedidosIrAdmin,
-  useGetIrAdminResumoFinanceiro,
   exportarPedidosIrAdmin,
   useGetUsuariosInternosIr,
+  useGetIrAdminResumoFinanceiro,
 } from 'src/actions/ir';
 
 import { toast } from 'src/components/snackbar';
@@ -94,6 +96,8 @@ export default function IrAdminListView() {
   );
   const [exportando, setExportando] = useState(false);
 
+  const nomeCpfDebounced = useDebounce(filtros.nomeCpf, 400);
+
   useEffect(() => {
     if (isIrInterno && usuarioLogadoId && !filtros.responsavelId) {
       setFiltros((f) => ({ ...f, responsavelId: usuarioLogadoId }));
@@ -112,60 +116,45 @@ export default function IrAdminListView() {
   const showTipoPgtoValor = ROLES_DADOS_PAGAMENTO_IR.includes(user?.role);
   const usuariosList = Array.isArray(usuariosInternos) ? usuariosInternos : [];
 
-  const pedidosBrutos = data?.orders ?? [];
+  const pedidos = data?.orders ?? [];
   const total = data?.total ?? 0;
   const totalPages = data?.totalPages ?? 0;
 
-  // Filtro client-side por responsável/nome-cpf (garante resultado mesmo se backend ignorar parâmetro)
-  const pedidos = (() => {
-    const rid = filtrosAplicados.responsavelId;
-    const termo = String(filtrosAplicados.nomeCpf || '').trim();
-    const termoLower = termo.toLowerCase();
-    const termoDigits = termo.replace(/\D/g, '');
-
-    return pedidosBrutos.filter((p) => {
-      const r = p.responsavelId;
-      if (rid === 'nenhum') {
-        const semResponsavel = r == null || r === '' || (typeof r === 'object' && !r._id);
-        if (!semResponsavel) return false;
-      } else if (rid) {
-        if (r == null) return false;
-        const id = typeof r === 'object' ? r._id : r;
-        if (!(id && String(id) === String(rid))) return false;
-      }
-
-      if (!termo) return true;
-
-      const cliente = p.userId;
-      const dadosComprador = p.dadosComprador || {};
-      const nomeCliente = (
-        (typeof cliente === 'object' && (cliente?.name || `${cliente?.firstName ?? ''} ${cliente?.lastName ?? ''}`.trim())) ||
-        dadosComprador?.nome ||
-        ''
-      ).toLowerCase();
-      const cpfPedido = String(
-        dadosComprador?.cpfCnpj || (typeof cliente === 'object' ? cliente?.cpfCnpj : '') || ''
-      );
-      const cpfDigits = cpfPedido.replace(/\D/g, '');
-
-      const matchNome = nomeCliente.includes(termoLower);
-      const matchCpf = termoDigits ? cpfDigits.includes(termoDigits) : false;
-      return matchNome || matchCpf;
-    });
-  })();
+  // Campo vazio: limpa a busca na API na hora. Com texto: usa debounce para não disparar request a cada tecla.
+  const nomeCpfParaApi =
+    !filtros.nomeCpf?.trim() ? undefined : nomeCpfDebounced?.trim() || undefined;
 
   useEffect(() => {
-    const novos = { page: 1, limit: filtros.limit };
-    if (filtros.status) novos.status = filtros.status;
-    if (filtros.year) novos.year = Number(filtros.year);
-    if (filtros.responsavelId) novos.responsavelId = filtros.responsavelId === 'nenhum' ? 'nenhum' : filtros.responsavelId;
-    if (filtros.nomeCpf?.trim()) novos.nomeCpf = filtros.nomeCpf.trim();
-    setFiltrosAplicados(novos);
-  }, [filtros]);
+    setFiltrosAplicados((prev) => {
+      const novos = { page: 1, limit: filtros.limit };
+      if (filtros.status) novos.status = filtros.status;
+      if (filtros.year) novos.year = Number(filtros.year);
+      if (filtros.responsavelId) {
+        novos.responsavelId = filtros.responsavelId === 'nenhum' ? 'nenhum' : filtros.responsavelId;
+      }
+
+      novos.nomeCpf = nomeCpfParaApi;
+
+      if (JSON.stringify(prev) === JSON.stringify(novos)) {
+        return prev;
+      }
+
+      return novos;
+    });
+  }, [filtros.status, filtros.year, filtros.responsavelId, filtros.limit, filtros.nomeCpf, nomeCpfParaApi]);
 
   const handleLimpar = () => {
     const responsavelTravado = isIrInterno ? usuarioLogadoId : '';
-    setFiltros({ status: '', year: '', responsavelId: responsavelTravado, nomeCpf: '', page: 1, limit: 20 });
+
+    setFiltros({
+      status: '',
+      year: '',
+      responsavelId: responsavelTravado,
+      nomeCpf: '',
+      page: 1,
+      limit: 20,
+    });
+    // Atualiza na hora (evita até ~400ms com debounce ainda no valor antigo)
     setFiltrosAplicados(
       responsavelTravado
         ? { page: 1, limit: 20, responsavelId: responsavelTravado }
@@ -250,7 +239,7 @@ export default function IrAdminListView() {
             >
               <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 2, mt: 0.5 }}>
                 Valores somam todos os pedidos que correspondem aos filtros ativos (incluindo outras páginas da
-                tabela, após <strong>Buscar</strong>).
+                tabela). Nome ou CPF aplica após uma breve pausa na digitação.
               </Typography>
               <IrResumoFinanceiroCards
                 loading={loadingResumo}
@@ -382,10 +371,10 @@ export default function IrAdminListView() {
                     ) : (
                       pedidos.map((pedido) => {
                         const cliente = pedido.userId;
-                        const {dadosComprador} = pedido;
+                        const { dadosComprador } = pedido;
                         const nome =
-                          (typeof cliente === 'object' && (cliente?.name || `${cliente?.firstName ?? ''} ${cliente?.lastName ?? ''}`.trim())) ||
                           dadosComprador?.nome ||
+                          (typeof cliente === 'object' && (cliente?.name || `${cliente?.firstName ?? ''} ${cliente?.lastName ?? ''}`.trim())) ||
                           '-';
                         const email = (typeof cliente === 'object' && cliente?.email) || dadosComprador?.email || '';
 

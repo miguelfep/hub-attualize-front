@@ -162,7 +162,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
   const [notaRetroativa, setNotaRetroativa] = React.useState(false);
   const { data: servicosList, isLoading: loadingServicos } =
     usePortalServicos(clienteProprietarioId);
-  
+
   const emiteNotaRetroativa = settings?.eNotasConfig?.emiteNotaRetroativa === true;
   const pollingIntervalsRef = React.useRef({});
 
@@ -203,7 +203,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
     if (statusCode >= 500) return 'Falha interna ao processar a solicitação.';
     return fallback;
   }, []);
-  
+
   // Função para buscar e atualizar notas fiscais
   const fetchNfses = React.useCallback(async () => {
     if (!clienteProprietarioId || !id) return [];
@@ -237,12 +237,12 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
         if (cancelled) return;
         setOrcamento(data);
         setStatus(data?.status || 'pendente');
-        
+
         // Verificar se tem data de competência da nota (nota retroativa)
         if (data?.dataCompetenciaNota) {
           setNotaRetroativa(true);
         }
-        
+
         // inicializa edição de item (apenas o primeiro)
         const first = Array.isArray(data?.itens) && data.itens.length ? data.itens[0] : null;
         if (first) {
@@ -289,7 +289,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
               ? [payload.boletoAtual]
               : Array.isArray(boletosResponse?.boletos)
                 ? boletosResponse.boletos
-              : [];
+                : [];
           setCobrancasCliente(lista);
         } catch (e) {
           setCobrancasCliente([]);
@@ -303,7 +303,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
             if (!cancelled) loadWithRetry(attempt + 1);
           }, 600);
         } else if (!cancelled) {
-      toast.error(getHttpErrorMessage(e, 'Erro ao carregar orçamento.'));
+          toast.error(getHttpErrorMessage(e, 'Erro ao carregar orçamento.'));
           setLoading(false);
         }
       }
@@ -324,7 +324,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
     if (!nota) return false;
     const notaStatus = String(nota.status || '').toLowerCase();
     return (
-      notaStatus === 'emitindo' || 
+      notaStatus === 'emitindo' ||
       notaStatus === 'processando' ||
       nota.linkNota === 'Processando...' ||
       String(nota.numeroNota || '').toLowerCase() === 'processando...'
@@ -360,7 +360,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
 
     // Limpar intervalos para notas que não existem mais
     const notasIdsAtuais = nfseList.map((n) => n._id || n.id).filter(Boolean);
-    
+
     Object.keys(currentPollingIntervals).forEach((notaId) => {
       if (!notasIdsAtuais.includes(notaId)) {
         if (currentPollingIntervals[notaId]) {
@@ -396,26 +396,26 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
                 : dataResp?.notaFiscal
                   ? [dataResp.notaFiscal]
                   : [];
-          
+
           // Atualizar a lista de notas
           setNfseList(notasAtualizadas);
-          
+
           if (!Array.isArray(notasAtualizadas) || notasAtualizadas.length === 0) return;
-          
+
           // Se tinha ID, buscar a nota específica. Se não tinha (placeholder), verificar todas
           if (notaId) {
             const notaAtualizada = notasAtualizadas.find((n) => (n._id || n.id) === notaId);
-            
+
             // Verificar se a nota foi processada
             if (notaAtualizada) {
               const notaStatus = String(notaAtualizada.status || '').toLowerCase();
               const aindaProcessando = (
-                notaStatus === 'emitindo' || 
+                notaStatus === 'emitindo' ||
                 notaStatus === 'processando' ||
                 notaAtualizada.linkNota === 'Processando...' ||
                 String(notaAtualizada.numeroNota || '').toLowerCase() === 'processando...'
               );
-              
+
               if (!aindaProcessando) {
                 // Nota foi processada pelo webhook, parar polling
                 if (currentPollingIntervals[trackingId]) {
@@ -429,13 +429,13 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
             const aindaTemNotaProcessando = notasAtualizadas.some((n) => {
               const notaStatus = String(n.status || '').toLowerCase();
               return (
-                notaStatus === 'emitindo' || 
+                notaStatus === 'emitindo' ||
                 notaStatus === 'processando' ||
                 n.linkNota === 'Processando...' ||
                 String(n.numeroNota || '').toLowerCase() === 'processando...'
               );
             });
-            
+
             if (!aindaTemNotaProcessando) {
               // Não há mais notas processando, parar polling do placeholder
               if (currentPollingIntervals[trackingId]) {
@@ -518,7 +518,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
           ? [payload.boletoAtual]
           : Array.isArray(boletosResponse?.boletos)
             ? boletosResponse.boletos
-          : [];
+            : [];
       setCobrancasCliente(lista);
     } finally {
       setLoadingCobrancasCliente(false);
@@ -668,7 +668,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
       const paymentId = extractPaymentIdFromBoletoResponse(body);
       const temLinhaOuPix = Boolean(
         (pay?.linhaDigitavel && String(pay.linhaDigitavel).trim()) ||
-          (pay?.pixCopiaECola && String(pay.pixCopiaECola).trim())
+        (pay?.pixCopiaECola && String(pay.pixCopiaECola).trim())
       );
 
       await recarregarCobrancasCliente();
@@ -856,11 +856,11 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
   const hasNotaAtiva =
     Array.isArray(nfseList) &&
     nfseList.some((n) => n.status === 'emitida' || n.status === 'emitindo');
-  
+
   const hasNotaProcessando =
     Array.isArray(nfseList) &&
-    nfseList.some((n) => 
-      n.status === 'emitindo' || 
+    nfseList.some((n) =>
+      n.status === 'emitindo' ||
       n.linkNota === 'Processando...' ||
       String(n.numeroNota).toLowerCase() === 'processando...'
     );
@@ -991,11 +991,11 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
                       )}
                       {(orcamento?.clienteDoClienteId?.telefone ||
                         orcamento?.clienteDoClienteId?.whatsapp) && (
-                        <Typography variant="caption" color="text.secondary">
-                          {orcamento?.clienteDoClienteId?.telefone ||
-                            orcamento?.clienteDoClienteId?.whatsapp}
-                        </Typography>
-                      )}
+                          <Typography variant="caption" color="text.secondary">
+                            {orcamento?.clienteDoClienteId?.telefone ||
+                              orcamento?.clienteDoClienteId?.whatsapp}
+                          </Typography>
+                        )}
                     </Stack>
                   </Grid>
                   <Grid xs={12} md={4}>
@@ -1077,51 +1077,52 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
                       const paymentId = c?.paymentId || c?._id || c?.id;
 
                       return (
-                      <Card key={c._id || c.id} variant="outlined" sx={{ p: 2 }}>
-                        <Stack
-                          direction={{ xs: 'column', md: 'row' }}
-                          spacing={2}
-                          alignItems={{ xs: 'flex-start', md: 'center' }}
-                          justifyContent="space-between"
-                        >
-                          <Stack spacing={1} sx={{ width: '100%' }}>
-                            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                              {String(c?.provider || '').toLowerCase() === 'inter' && (
-                                <Iconify icon="simple-icons:bancointer" width={16} sx={{ color: 'warning.main' }} />
-                              )}
-                              <Chip size="small" variant="soft" color={state.color} label={state.label} />
-                              <Chip
-                                size="small"
-                                variant="soft"
-                                color={getStatusInterChipColor(statusInter)}
-                                label={`Inter: ${statusInter}`}
-                              />
+                        <Card key={c._id || c.id} variant="outlined" sx={{ p: 2 }}>
+                          <Stack
+                            direction={{ xs: 'column', md: 'row' }}
+                            spacing={2}
+                            alignItems={{ xs: 'flex-start', md: 'center' }}
+                            justifyContent="space-between"
+                          >
+                            <Stack spacing={1} sx={{ width: '100%' }}>
+                              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                                {String(c?.provider || '').toLowerCase() === 'inter' && (
+                                  <Iconify icon="simple-icons:bancointer" width={16} sx={{ color: 'warning.main' }} />
+                                )}
+                                <Chip size="small" variant="soft" color={state.color} label={state.label} />
+                                <Chip
+                                  size="small"
+                                  variant="soft"
+                                  color={getStatusInterChipColor(statusInter)}
+                                  label={`Inter: ${statusInter}`}
+                                />
+                              </Stack>
+                              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0.5, sm: 2 }} useFlexGap>
+                                <Typography variant="body2">
+                                  <strong>Valor:</strong> {fCurrency(c?.amount || 0)}
+                                </Typography>
+                                <Typography variant="body2">
+                                  <strong>Vencimento:</strong>{' '}
+                                  {c?.dueDate ? new Date(c.dueDate).toLocaleDateString('pt-BR') : '-'}
+                                </Typography>
+                              </Stack>
                             </Stack>
-                            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 0.5, sm: 2 }} useFlexGap>
-                              <Typography variant="body2">
-                                <strong>Valor:</strong> {fCurrency(c?.amount || 0)}
-                              </Typography>
-                              <Typography variant="body2">
-                                <strong>Vencimento:</strong>{' '}
-                                {c?.dueDate ? new Date(c.dueDate).toLocaleDateString('pt-BR') : '-'}
-                              </Typography>
-                            </Stack>
-                          </Stack>
 
-                          <Stack direction="row" spacing={1} alignItems="center" sx={{ alignSelf: { xs: 'flex-start', md: 'center' } }}>
-                            <Button
-                              size="small"
-                              variant="contained"
-                              startIcon={<Iconify icon="solar:download-minimalistic-bold" />}
-                              onClick={() => handleBaixarBoleto(c)}
-                              disabled={!paymentId}
-                            >
-                              Baixar
-                            </Button>
+                            <Stack direction="row" spacing={1} alignItems="center" sx={{ alignSelf: { xs: 'flex-start', md: 'center' } }}>
+                              <Button
+                                size="small"
+                                variant="contained"
+                                startIcon={<Iconify icon="solar:download-minimalistic-bold" />}
+                                onClick={() => handleBaixarBoleto(c)}
+                                disabled={!paymentId}
+                              >
+                                Baixar
+                              </Button>
+                            </Stack>
                           </Stack>
-                        </Stack>
-                      </Card>
-                    )})}
+                        </Card>
+                      )
+                    })}
                   </Stack>
                 )}
               </Box>
@@ -1369,9 +1370,9 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
                                 setOrcamento((o) => ({ ...o, dataCompetenciaNota: null }));
                               } else if (!orcamento.dataCompetenciaNota) {
                                 // Se marcar e não tiver data, seta a atual
-                                setOrcamento((o) => ({ 
-                                  ...o, 
-                                  dataCompetenciaNota: new Date().toISOString().split('T')[0] 
+                                setOrcamento((o) => ({
+                                  ...o,
+                                  dataCompetenciaNota: new Date().toISOString().split('T')[0]
                                 }));
                               }
                             }}
@@ -1386,7 +1387,7 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
                           type="date"
                           label="Data Competência da Nota"
                           value={
-                            orcamento.dataCompetenciaNota 
+                            orcamento.dataCompetenciaNota
                               ? new Date(orcamento.dataCompetenciaNota).toISOString().split('T')[0]
                               : new Date().toISOString().split('T')[0]
                           }

@@ -259,7 +259,7 @@ export default function GestaoBancosPage() {
         tipoConta: formData.tipoConta,
         dataInicio: new Date(formData.dataInicio).toISOString(),
         saldoInicial: parseFloat(formData.saldoInicial),
-        contaContabilId: formData.contaContabilId || undefined,
+        contaContabilId: formData.contaContabilId || null,
       };
 
       // Verificar se saldo inicial ou data de início foram alterados

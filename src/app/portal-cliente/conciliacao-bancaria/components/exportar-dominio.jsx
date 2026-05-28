@@ -81,7 +81,7 @@ export default function ExportarDominio({ clienteId, bancoId, bancoNome, isOpen,
       return 'Não há conciliações finalizadas para este banco. Finalize as conciliações antes de exportar.';
     }
 
-    if (mensagem.includes('Conta bancária não encontrada')) {
+    if (mensagem.includes('Conta bancária não encontrada') || mensagem.includes('Banco sem conta contábil')) {
       return 'Configure uma conta contábil para o banco antes de exportar.';
     }
 

@@ -55,6 +55,44 @@ export const formatCompetencia = (competencia) => {
  */
 export const getCompetencia = (guia) => guia?.competencia || guia?.dadosExtraidos?.competencia || null;
 
+const TIPO_GUIA_LABELS = {
+  DAS: 'DAS',
+  EXTRATO_PGDAS: 'Extrato PGDAS',
+  EXTRATO_BANCARIO: 'Extrato bancário',
+  DARF: 'DARF',
+  ICMS: 'ICMS',
+  ISS: 'ISS',
+  PIS: 'PIS',
+  COFINS: 'COFINS',
+  IRPJ: 'IRPJ',
+  CSLL: 'CSLL',
+  INSS: 'INSS',
+  FGTS: 'FGTS',
+  HOLERITE: 'Holerite',
+  EXTRATO_FOLHA_PAGAMENTO: 'Extrato Folha',
+  OUTROS: 'Outros',
+};
+
+export const getTipoGuiaLabel = (tipo) => TIPO_GUIA_LABELS[tipo] || tipo || '-';
+
+const FORMATO_EXTRATO_LABELS = {
+  pdf: 'PDF',
+  ofx: 'OFX',
+  xlsx: 'Excel',
+  xls: 'Excel',
+};
+
+/** Tag de formato para extratos de conciliação (PDF/OFX etc.) */
+export const getFormatoExtratoLabel = (guia) => {
+  const formato = guia?.dadosExtraidos?.formato;
+  if (!formato) return null;
+  return FORMATO_EXTRATO_LABELS[formato] || String(formato).toUpperCase();
+};
+
+export const isExtratoBancario = (guia) =>
+  guia?.tipoGuia === 'EXTRATO_BANCARIO' ||
+  guia?.dadosExtraidos?.origem === 'conciliacao_extrato';
+
 /** Slug de subpasta: minúsculas, números e hífens */
 export const SLUG_PASTA_REGEX = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 

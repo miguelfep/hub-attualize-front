@@ -7,9 +7,11 @@ import { useMemo, useState } from 'react';
 import { alpha, useTheme } from '@mui/material/styles';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { PickersDay, DateCalendar, LocalizationProvider } from '@mui/x-date-pickers';
-import { Box, Card, Stack, Divider, Typography, CardHeader, IconButton as MuiIconButton } from '@mui/material';
+import { Box, Card, Stack, Divider, Skeleton, Typography, CardHeader, IconButton as MuiIconButton } from '@mui/material';
 
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
+
+import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -17,11 +19,13 @@ import { formatToCurrency } from 'src/components/animate';
 
 import { CARD, CARD_HEADER } from './dash-tokens';
 
+const DAYS_PER_WEEK = 7;
+const WEEKS_COUNT = 5;
+
 // ----------------------------------------------------------------------
 
 function CustomDay(props) {
   const { highlightedDates = [], datesWithDocuments = [], datesUrgent = [], day, outsideCurrentMonth, ...other } = props;
-  const isHighlighted = !outsideCurrentMonth && highlightedDates.includes(day.format('YYYY-MM-DD'));
   const hasDocument = !outsideCurrentMonth && datesWithDocuments.includes(day.format('YYYY-MM-DD'));
   const isUrgent = !outsideCurrentMonth && datesUrgent.includes(day.format('YYYY-MM-DD'));
 
@@ -41,7 +45,6 @@ function CustomDay(props) {
           '&.Mui-selected': { bgcolor: 'primary.main', '&:hover': { bgcolor: 'primary.dark' } }
         }}
       />
-      {/* Bolinha centralizada no meio do dia - camada de fundo */}
       {hasDocument && (
         <Box
           sx={{
@@ -65,9 +68,19 @@ function CustomDay(props) {
 
 // ----------------------------------------------------------------------
 
-export default function TaxCalendarWidget({ guias = [], isLoading = false, sx, ...other }) {
+export default function TaxCalendarWidget({ sx, ...other }) {
   const theme = useTheme();
   const [date, setDate] = useState(dayjs());
+  const [currentMonth, setCurrentMonth] = useState(dayjs());
+
+  const apiParams = useMemo(() => ({
+    limit: 200,
+    dataInicio: currentMonth.startOf('month').format('YYYY-MM-DD'),
+    dataFim: currentMonth.endOf('month').format('YYYY-MM-DD'),
+  }), [currentMonth]);
+
+  const { data, isLoading } = useGetGuiasFiscaisPortal(apiParams);
+  const guias = useMemo(() => data?.guias ?? [], [data]);
 
   const highlightedDates = useMemo(() =>
     [...new Set(guias.map((g) => dayjs(g.dataVencimento).format('YYYY-MM-DD')))],
@@ -77,12 +90,12 @@ export default function TaxCalendarWidget({ guias = [], isLoading = false, sx, .
     [...new Set(guias.map((g) => dayjs(g.dataVencimento).format('YYYY-MM-DD')))],
     [guias]);
 
-  // Datas com documentos que vencem em 3 dias ou menos
   const datesUrgent = useMemo(() => {
     const today = dayjs().startOf('day');
     return [
       ...new Set(
         guias
+          .filter((g) => Boolean(g?.dataVencimento))
           .filter((g) => {
             const vencimento = dayjs(g.dataVencimento).startOf('day');
             const diasRestantes = vencimento.diff(today, 'day');
@@ -93,7 +106,6 @@ export default function TaxCalendarWidget({ guias = [], isLoading = false, sx, .
     ];
   }, [guias]);
 
-  // Verifica se há algum documento urgente para aplicar borda vermelha no calendário
   const hasUrgentDocuments = useMemo(() => datesUrgent.length > 0, [datesUrgent]);
 
   const selectedDayItems = useMemo(() => {
@@ -120,10 +132,7 @@ export default function TaxCalendarWidget({ guias = [], isLoading = false, sx, .
         flexDirection: 'column',
         overflow: 'hidden',
         ...(hasUrgentDocuments && {
-          background: `linear-gradient(to top, ${alpha(
-            '#0096D9',
-            0.05
-          )}, ${alpha(theme.palette.error.main, 0.05)})`,
+          background: `linear-gradient(to top, ${alpha('#0096D9', 0.05)}, ${alpha(theme.palette.error.main, 0.05)})`,
         }),
         ...sx,
       }}
@@ -143,36 +152,67 @@ export default function TaxCalendarWidget({ guias = [], isLoading = false, sx, .
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
         {/* ÁREA DO CALENDÁRIO */}
-        <Box sx={{ px: { xs: 0.5, sm: 1 }, minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
-          <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-            <DateCalendar
-              value={date}
-              onChange={(newDate) => setDate(newDate)}
-              slots={{ day: CustomDay }}
-              slotProps={{ day: { highlightedDates, datesWithDocuments, datesUrgent } }}
-              sx={{
-                width: '100%',
-                maxWidth: '100%',
-                maxHeight: 280,
-                '& .MuiPickersCalendarHeader-root': {
-                  margin: 0,
-                  padding: '4px 8px', // Respiro na navegação
-                  maxHeight: 44,
-                  minHeight: 44,
-                  '& .MuiPickersCalendarHeader-labelContainer': { fontSize: '0.85rem', fontWeight: 800 },
-                },
-                '& .MuiDayCalendar-header': {
-                  justifyContent: 'space-around',
-                  '& span': { width: 32, height: 28, fontSize: '0.65rem', fontWeight: 700 }
-                },
-                '& .MuiDayCalendar-weekContainer': {
-                  justifyContent: 'space-around',
-                  margin: '4px 0' // Espaçamento entre semanas
-                },
-                '& .MuiDayCalendar-monthContainer': { minHeight: 180 }
-              }}
-            />
-          </LocalizationProvider>
+        <Box sx={{ px: { xs: 0.5, sm: 1 }, minWidth: 0, maxWidth: '100%', overflow: 'hidden', minHeight: 284 }}>
+          {isLoading ? (
+            /* INTEGRADO: Miolo do seu esqueleto do calendário */
+            <Box>
+              <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, mb: 0.5, height: 44 }}>
+                <Skeleton variant="rounded" width={32} height={32} />
+                <Skeleton variant="text" width={120} height={20} />
+                <Skeleton variant="rounded" width={32} height={32} />
+              </Stack>
+              <Stack direction="row" justifyContent="space-around" sx={{ mb: 1, px: 0.5 }}>
+                {Array.from({ length: DAYS_PER_WEEK }).map((_, i) => (
+                  <Skeleton key={i} variant="text" width={24} height={14} />
+                ))}
+              </Stack>
+              <Box sx={{ display: 'grid', gridTemplateColumns: `repeat(${DAYS_PER_WEEK}, 1fr)`, gap: 0.5, px: 0.5 }}>
+                {Array.from({ length: DAYS_PER_WEEK * WEEKS_COUNT }).map((_, i) => (
+                  <Skeleton key={i} variant="rounded" width={32} height={32} sx={{ borderRadius: 1, justifySelf: 'center' }} />
+                ))}
+              </Box>
+            </Box>
+          ) : (
+            /* Componente Real do Calendário */
+            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+              <DateCalendar
+                value={date}
+                onChange={(newDate) => {
+                  const nextDate = newDate || dayjs();
+                  setDate(nextDate);
+                  if (nextDate.month() !== currentMonth.month()) {
+                    setCurrentMonth(nextDate);
+                  }
+                }}
+                onMonthChange={(newMonth) => {
+                  setCurrentMonth(newMonth);
+                }}
+                slots={{ day: CustomDay }}
+                slotProps={{ day: { highlightedDates, datesWithDocuments, datesUrgent } }}
+                sx={{
+                  width: '100%',
+                  maxWidth: '100%',
+                  maxHeight: 280,
+                  '& .MuiPickersCalendarHeader-root': {
+                    margin: 0,
+                    padding: '4px 8px',
+                    maxHeight: 44,
+                    minHeight: 44,
+                    '& .MuiPickersCalendarHeader-labelContainer': { fontSize: '0.85rem', fontWeight: 800 },
+                  },
+                  '& .MuiDayCalendar-header': {
+                    justifyContent: 'space-around',
+                    '& span': { width: 32, height: 28, fontSize: '0.65rem', fontWeight: 700 }
+                  },
+                  '& .MuiDayCalendar-weekContainer': {
+                    justifyContent: 'space-around',
+                    margin: '4px 0'
+                  },
+                  '& .MuiDayCalendar-monthContainer': { minHeight: 180 }
+                }}
+              />
+            </LocalizationProvider>
+          )}
         </Box>
 
         <Divider sx={{ borderStyle: 'dashed', mx: 2, my: 0.5, opacity: 0.4 }} />
@@ -185,12 +225,25 @@ export default function TaxCalendarWidget({ guias = [], isLoading = false, sx, .
 
           <Scrollbar sx={{ flex: 1 }}>
             {isLoading ? (
-              <Typography variant="caption" sx={{ pl: 1 }}>Carregando...</Typography>
+              /* INTEGRADO: Seu esqueleto para a lista de itens */
+              <Stack spacing={1}>
+                {[1, 2, 3].map((i) => (
+                  <Stack key={i} direction="row" alignItems="center" spacing={1.25} sx={{ p: 1, borderRadius: 1 }}>
+                    <Skeleton variant="rounded" width={3.5} height={24} sx={{ borderRadius: 1 }} />
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Skeleton variant="text" width="60%" height={12} sx={{ mb: 0.25 }} />
+                      <Skeleton variant="text" width="40%" height={10} />
+                    </Box>
+                    <Skeleton variant="circular" width={28} height={28} />
+                  </Stack>
+                ))}
+              </Stack>
             ) : selectedDayItems.length === 0 ? (
               <Typography variant="caption" color="text.disabled" sx={{ fontStyle: 'italic', pl: 1 }}>
                 Nenhum vencimento selecionado.
               </Typography>
             ) : (
+              /* Lista Real de Guias */
               <Stack spacing={1}>
                 {selectedDayItems.map((guia) => (
                   <Stack
