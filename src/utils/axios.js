@@ -202,6 +202,12 @@ export const endpoints = {
       assinarMercadoPago: (contratoId) => `${baseUrl}contratos/${contratoId}/assinar-mercadopago`,
     },
   },
+  // Relatórios Financeiros (contabilidade) — NRR / MRR
+  financeiroRelatorios: {
+    nrr: `${baseUrl}financeiro/relatorios/nrr`,
+    mrrSnapshot: `${baseUrl}financeiro/relatorios/mrr/snapshot`,
+    mrrBackfill: `${baseUrl}financeiro/relatorios/mrr/backfill`,
+  },
   marketing: {
     getLeads: `${baseUrl}marketing/leads`,
     getLeadOrigens: `${baseUrl}marketing/lead/origens`,
