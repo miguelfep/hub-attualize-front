@@ -22,8 +22,8 @@ import ComposicaoReceberDonnut from 'src/sections/dashboard/admin/chart/Composic
 
 import { getUser } from 'src/auth/context/jwt';
 
-import { AppNewInvoice } from '../app-new-invoice';
 import { AppWidgetSummary } from '../app-widget-summary';
+import RelatorioNrr from '../../../dashboard/admin/relatorio-nrr/RelatorioNrr';
 import VisaoGeralBarras from '../../../dashboard/admin/chart/VisaoGeralBarras';
 import DashboardGeralArea from '../../../dashboard/admin/chart/DashboardGeralArea';
 import { EcommerceCurrentBalance } from '../../e-commerce/ecommerce-current-balance';
@@ -353,19 +353,7 @@ export default function DashboardAdminView() {
         </Grid>
 
         <Grid xs={12}>
-          <AppNewInvoice
-            title="Leads"
-            tableData={dashboardData.leads}
-            headLabel={[
-              { id: 'nome', label: 'Nome' },
-              { id: 'Data de criação', label: 'Data de criação' },
-              { id: 'segment', label: 'Segmento' },
-              { id: 'local', label: 'Local' },
-              { id: 'status', label: 'Contato' },
-              { id: '' },
-            ]}
-            onUpdate={fetchData}
-          />
+          <RelatorioNrr />
         </Grid>
       </Grid>
       {contentMasked && (
