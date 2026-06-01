@@ -255,8 +255,10 @@ export const paths = {
     post: {
       root: `${ROOTS.DASHBOARD}/post`,
       new: `${ROOTS.DASHBOARD}/post/new`,
-      details: (title) => `${ROOTS.DASHBOARD}/post/${paramCase(title)}`,
-      edit: (title) => `${ROOTS.DASHBOARD}/post/${paramCase(title)}/edit`,
+      comentarios: `${ROOTS.DASHBOARD}/post/comentarios`,
+      // Rotas por slug (chave natural do Blog Attualize)
+      details: (slug) => `${ROOTS.DASHBOARD}/post/${slug}`,
+      edit: (slug) => `${ROOTS.DASHBOARD}/post/${slug}/edit`,
       demo: {
         details: `${ROOTS.DASHBOARD}/post/${paramCase(MOCK_TITLE)}`,
         edit: `${ROOTS.DASHBOARD}/post/${paramCase(MOCK_TITLE)}/edit`,

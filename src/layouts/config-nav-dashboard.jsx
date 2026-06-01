@@ -251,6 +251,29 @@ export const navData = [
         ],
       },
       {
+        title: 'Blog',
+        path: paths.dashboard.post.root,
+        icon: ICONS.blog,
+        roles: ['admin', 'operacional', 'gerencial'],
+        children: [
+          {
+            title: 'Postagens',
+            path: paths.dashboard.post.root,
+            roles: ['admin', 'operacional', 'gerencial'],
+          },
+          {
+            title: 'Nova postagem',
+            path: paths.dashboard.post.new,
+            roles: ['admin', 'operacional', 'gerencial'],
+          },
+          {
+            title: 'Comentários',
+            path: paths.dashboard.post.comentarios,
+            roles: ['admin', 'operacional', 'gerencial'],
+          },
+        ],
+      },
+      {
         title: 'Usuários',
         path: paths.dashboard.usuarios.root,
         icon: ICONS.user,

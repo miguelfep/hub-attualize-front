@@ -72,11 +72,12 @@ export const PostItem = memo(({ post }) => {
       </Box>
 
       <CardContent sx={{ pt: 5, pb: 2.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-        <Typography 
-          variant="caption" 
-          component="div" 
+        <Typography
+          variant="caption"
+          component="div"
           sx={{ mb: 0.75, color: 'text.disabled', fontSize: '0.7rem' }}
         >
+          {post.author ? `${post.author} · ` : ''}
           {fDate(post.date)}
         </Typography>
 
@@ -97,14 +98,31 @@ export const PostItem = memo(({ post }) => {
         <Typography
           variant="body2"
           component="p"
-          sx={{ 
-            mt: 'auto',
+          sx={{
             color: 'text.secondary',
             fontSize: '0.8125rem',
             lineHeight: 1.5,
           }}
           dangerouslySetInnerHTML={{ __html: truncateText(post.excerpt, 80) }}
         />
+
+        <Link
+          component={RouterLink}
+          href={`${linkTo}#comentarios`}
+          color="text.disabled"
+          sx={{
+            mt: 'auto',
+            pt: 1.5,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            typography: 'caption',
+          }}
+        >
+          <Iconify icon="eva:message-circle-fill" width={16} />
+          {post.commentsCount || 0}{' '}
+          {(post.commentsCount || 0) === 1 ? 'comentário' : 'comentários'}
+        </Link>
       </CardContent>
     </Card>
   );
@@ -154,6 +172,7 @@ export const PostItemLatest = memo(({ post, index }) => {
         }}
       >
         <Typography variant="caption" component="div" sx={{ mb: 1, opacity: 0.64 }}>
+          {post.author ? `${post.author} · ` : ''}
           {fDate(post.date)}
         </Typography>
 
