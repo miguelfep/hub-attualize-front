@@ -81,6 +81,21 @@ export function getFullAssetUrl(url) {
 }
 
 /**
+ * Converte uma URL de imagem/arquivo do blog em URL absoluta.
+ * Caminhos relativos do storage (ex.: /storage/blog/images/...) são servidos na
+ * RAIZ do host da API (sem o prefixo /api), então usamos `publicBaseUrl`.
+ * URLs já absolutas (http/https) são retornadas como estão.
+ * @param {string} url
+ * @returns {string}
+ */
+export function getStorageAssetUrl(url) {
+  if (!url || typeof url !== 'string') return '';
+  if (/^https?:\/\//i.test(url)) return url;
+  const base = (publicBaseUrl || '').replace(/\/$/, '');
+  return base ? `${base}${url.startsWith('/') ? url : `/${url}`}` : url;
+}
+
+/**
  * Extrai a extensão do arquivo de thumbnailUrl retornado pela API (ex.: thumb.webp → webp).
  * Para usar na URL estática em public: {BASE}/comunidade/materiais|ursos/{id}/thumb.{ext}
  * @param {string} [thumbnailUrl] - Ex.: "comunidade/materiais/xxx/thumbnail/thumb.webp"
@@ -114,6 +129,36 @@ export const endpoints = {
     details: '/api/post/details',
     latest: '/api/post/latest',
     search: '/api/post/search',
+  },
+  // Blog Attualize (ms-me) — leitura pública; escrita exige Bearer token (admin/operacional/gerencial)
+  blog: {
+    // Leitura pública
+    posts: `${baseUrl}blog/posts`,
+    post: (slug) => `${baseUrl}blog/posts/${slug}`,
+    markdown: (slug) => `${baseUrl}blog/posts/${slug}.md`,
+    sitemap: `${baseUrl}blog/sitemap.xml`,
+    rss: `${baseUrl}blog/rss.xml`,
+    // Escrita / Dashboard (Bearer token)
+    create: `${baseUrl}blog/posts`,
+    update: (id) => `${baseUrl}blog/posts/${id}`,
+    publicar: (id) => `${baseUrl}blog/posts/${id}/publicar`,
+    arquivar: (id) => `${baseUrl}blog/posts/${id}/arquivar`,
+    delete: (id) => `${baseUrl}blog/posts/${id}`,
+    importWordpress: `${baseUrl}blog/import/wordpress`,
+    // Imagens (upload + galeria)
+    upload: `${baseUrl}blog/upload`,
+    images: `${baseUrl}blog/images`,
+    // Comentários
+    comentarios: (slug) => `${baseUrl}blog/posts/${slug}/comentarios`, // público (POST)
+    comentariosAdmin: (id) => `${baseUrl}blog/posts/${id}/comentarios`, // admin (GET, Bearer)
+    comentariosGlobais: `${baseUrl}blog/comentarios`, // admin: caixa de todos os comentários
+    comentarioNovoAdmin: (id) => `${baseUrl}blog/posts/${id}/comentarios/novo`, // admin (POST)
+    aprovarComentario: (id, comentarioId) =>
+      `${baseUrl}blog/posts/${id}/comentarios/${comentarioId}/aprovar`,
+    reprovarComentario: (id, comentarioId) =>
+      `${baseUrl}blog/posts/${id}/comentarios/${comentarioId}/reprovar`,
+    deletarComentario: (id, comentarioId) =>
+      `${baseUrl}blog/posts/${id}/comentarios/${comentarioId}`,
   },
   product: {
     list: '/api/product/list',
@@ -193,6 +238,7 @@ export const endpoints = {
     fatura: `${baseUrl}contratos/cobrancas/fatura`,
     enviarMensagem: `${baseUrl}contratos/cobrancas/mensagem`,
     subscription: `${baseUrl}contratos/subscription`,
+    reajustesAplicar: `${baseUrl}contratos/reajustes/aplicar`,
     /** Nova API ms-me: financeiro (boleto, cobranças, assinatura) */
     financeiro: {
       boleto: (cobrancaId) => `${baseUrl}contratos/financeiro/boleto/${cobrancaId}`,

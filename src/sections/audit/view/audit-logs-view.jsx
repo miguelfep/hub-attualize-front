@@ -31,6 +31,7 @@ import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { fDateTime } from 'src/utils/format-time';
+import { fCurrency } from 'src/utils/format-number';
 
 import { getAuditLogs, getEntityHistory } from 'src/actions/audit';
 
@@ -59,7 +60,16 @@ const ENTITY_TYPES = [
   { value: 'Invoice', label: 'Orçamento/Venda' },
   { value: 'Contrato', label: 'Contrato' },
   { value: 'Cobranca', label: 'Cobrança' },
+  { value: 'ContratoReajuste', label: 'Reajuste de Contrato' },
 ];
+
+// Mapa de rótulos amigáveis para exibir o entityType na tabela/detalhes.
+const ENTITY_LABELS = ENTITY_TYPES.reduce((acc, { value, label }) => {
+  if (value) acc[value] = label;
+  return acc;
+}, {});
+
+const getEntityLabel = (entityType) => ENTITY_LABELS[entityType] || entityType;
 
 const ACTION_TYPES = [
   { value: '', label: 'Todas' },
@@ -187,15 +197,27 @@ export function AuditLogsView() {
 
   const formatChanges = (changes) => {
     if (!changes || typeof changes !== 'object') return 'Nenhuma alteração';
-    
+
     const changeKeys = Object.keys(changes);
     if (changeKeys.length === 0) return 'Nenhuma alteração';
-    
+
     if (changeKeys.length <= 3) {
       return changeKeys.join(', ');
     }
-    
+
     return `${changeKeys.slice(0, 3).join(', ')} +${changeKeys.length - 3} mais`;
+  };
+
+  // Detecta um log de reajuste (gravado com entityType ContratoReajuste e dados em newData).
+  const isReajusteLog = (log) => log?.entityType === 'ContratoReajuste' && !!log?.newData;
+
+  // Resumo exibido na coluna "Alterações". Para reajustes mostra o impacto no valor.
+  const formatResumo = (log) => {
+    if (isReajusteLog(log)) {
+      const { percentualAplicado, valorAntes, valorDepois } = log.newData;
+      return `+${percentualAplicado}%: ${fCurrency(valorAntes)} → ${fCurrency(valorDepois)}`;
+    }
+    return formatChanges(log.changes);
   };
 
   return (
@@ -316,7 +338,7 @@ export function AuditLogsView() {
                             />
                           </TableCell>
                           <TableCell>
-                            <Typography variant="body2">{log.entityType}</Typography>
+                            <Typography variant="body2">{getEntityLabel(log.entityType)}</Typography>
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2">{log.userEmail}</Typography>
@@ -333,7 +355,7 @@ export function AuditLogsView() {
                           </TableCell>
                           <TableCell>
                             <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                              {formatChanges(log.changes)}
+                              {formatResumo(log)}
                             </Typography>
                           </TableCell>
                           <TableCell align="right">
@@ -419,7 +441,7 @@ export function AuditLogsView() {
                   </Stack>
                   <Stack direction="row" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">Entidade:</Typography>
-                    <Typography variant="body2">{dialogDetalhes.log.entityType}</Typography>
+                    <Typography variant="body2">{getEntityLabel(dialogDetalhes.log.entityType)}</Typography>
                   </Stack>
                   <Stack direction="row" justifyContent="space-between">
                     <Typography variant="body2" color="text.secondary">ID da Entidade:</Typography>
@@ -445,6 +467,48 @@ export function AuditLogsView() {
                   )}
                 </Stack>
               </Box>
+
+              {isReajusteLog(dialogDetalhes.log) && (
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Reajuste Aplicado
+                  </Typography>
+                  <Stack spacing={1}>
+                    {dialogDetalhes.log.newData.tituloContrato && (
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">Contrato:</Typography>
+                        <Typography variant="body2">{dialogDetalhes.log.newData.tituloContrato}</Typography>
+                      </Stack>
+                    )}
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Percentual aplicado:</Typography>
+                      <Typography variant="body2">{dialogDetalhes.log.newData.percentualAplicado}%</Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Valor antes:</Typography>
+                      <Typography variant="body2">{fCurrency(dialogDetalhes.log.newData.valorAntes)}</Typography>
+                    </Stack>
+                    <Stack direction="row" justifyContent="space-between">
+                      <Typography variant="body2" color="text.secondary">Valor depois:</Typography>
+                      <Typography variant="body2" fontWeight="bold">
+                        {fCurrency(dialogDetalhes.log.newData.valorDepois)}
+                      </Typography>
+                    </Stack>
+                    {dialogDetalhes.log.newData.origem && (
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">Origem:</Typography>
+                        <Typography variant="body2">{dialogDetalhes.log.newData.origem}</Typography>
+                      </Stack>
+                    )}
+                    {dialogDetalhes.log.newData.aplicadoEm && (
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">Aplicado em:</Typography>
+                        <Typography variant="body2">{fDateTime(dialogDetalhes.log.newData.aplicadoEm)}</Typography>
+                      </Stack>
+                    )}
+                  </Stack>
+                </Box>
+              )}
 
               {dialogDetalhes.log.changes && Object.keys(dialogDetalhes.log.changes).length > 0 && (
                 <Box>

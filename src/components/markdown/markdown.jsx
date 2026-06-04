@@ -17,13 +17,17 @@ import { htmlToMarkdown, isMarkdownContent } from './html-to-markdown';
 
 // ----------------------------------------------------------------------
 
-export function Markdown({ children, sx, ...other }) {
+export function Markdown({ children, sx, asMarkdown = false, ...other }) {
   const content = useMemo(() => {
-    if (isMarkdownContent(`${children}`)) {
+    // `asMarkdown`: trata o conteúdo sempre como Markdown puro.
+    // O react-markdown (com remark-gfm + rehype-raw) já renderiza markdown E HTML
+    // embutido, então não usamos a heurística que pode corromper o conteúdo
+    // (ex.: posts que não começam com "#"/"-" eram convertidos via turndown).
+    if (asMarkdown || isMarkdownContent(`${children}`)) {
       return children;
     }
     return htmlToMarkdown(`${children}`.trim());
-  }, [children]);
+  }, [children, asMarkdown]);
 
   return (
     <StyledRoot

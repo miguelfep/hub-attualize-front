@@ -126,6 +126,13 @@ export async function criarAssinaturaMercadoPago(data) {
   return res.data;
 }
 
+// Função para aplicar manualmente os reajustes anuais dos contratos elegíveis
+// (usa o percentualReajusteAnual configurado em cada contrato). Roles: admin, financeiro
+export async function aplicarReajustesContratos() {
+  const res = await axios.post(endpoints.contratos.reajustesAplicar);
+  return res.data;
+}
+
 // ----------------------------------------------------------------------
 // Nova API ms-me — financeiro (boleto, cobranças, assinatura)
 // ----------------------------------------------------------------------

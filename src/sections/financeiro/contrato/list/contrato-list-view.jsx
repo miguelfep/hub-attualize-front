@@ -1,16 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import dayjs from 'dayjs';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
+import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import TableBody from '@mui/material/TableBody';
 import IconButton from '@mui/material/IconButton';
+import LoadingButton from '@mui/lab/LoadingButton';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
@@ -21,7 +24,12 @@ import { useSetState } from 'src/hooks/use-set-state';
 
 import { varAlpha } from 'src/theme/styles';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { getContratos, updateContrato } from 'src/actions/financeiro';
+import {
+  getContratos,
+  updateContrato,
+  getCobrancasPorData,
+  aplicarReajustesContratos,
+} from 'src/actions/financeiro';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
@@ -41,15 +49,21 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 
+import { getUser } from 'src/auth/context/jwt';
+
 import { ContratoTableRow } from './contrato-table-row';
 import { ContratoTableToolbar } from './contrato-table-toolbar';
 import { ContratoTableFiltersResult } from './contrato-table-filters-result';
+import { getReajusteInfo, agruparPendentesPorContrato } from '../contrato-reajuste-utils';
 
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
   { id: 'titulo', label: 'Contrato', width: 50 },
   { id: 'tipoContrato', label: 'Tipo do contrato', width: 130 },
+  { id: 'valorMensalidade', label: 'Valor mensal', width: 120 },
+  { id: 'reajuste', label: 'Reajuste', width: 150 },
+  { id: 'pendente', label: 'Em atraso', width: 120 },
   { id: 'status', label: 'Status', width: 80 },
   { id: '', width: 8 },
 ];
@@ -60,6 +74,37 @@ export const CONTRATO_STATUS_OPTIONS = [
   { value: 'inativo', label: 'Encerrado' },
 ];
 
+// Filtros de análise (computados no client a partir dos contratos e cobranças).
+export const CONTRATO_ANALISE_OPTIONS = [
+  { value: 'all', label: 'Todos' },
+  { value: 'pendente', label: 'Com cobranças vencidas/expiradas' },
+  { value: 'sem-reajuste', label: 'Sem reajuste ativo' },
+  { value: 'a-reajustar', label: 'A reajustar (vencido)' },
+  { value: 'proximo', label: 'Reajuste próximo (30 dias)' },
+];
+
+// Aplica o filtro de análise a um contrato.
+function matchAnalise(contrato, analise, pendenteMap) {
+  if (analise === 'all') return true;
+
+  if (analise === 'pendente') {
+    return (pendenteMap[contrato._id]?.valor ?? 0) > 0;
+  }
+
+  const info = getReajusteInfo(contrato);
+
+  if (analise === 'sem-reajuste') {
+    return contrato.status === 'ativo' && info.category === 'desabilitado';
+  }
+  if (analise === 'a-reajustar') {
+    return contrato.status === 'ativo' && info.category === 'vencido';
+  }
+  if (analise === 'proximo') {
+    return contrato.status === 'ativo' && info.category === 'proximo';
+  }
+  return true;
+}
+
 // ----------------------------------------------------------------------
 
 export function ContratoListView() {
@@ -67,11 +112,17 @@ export function ContratoListView() {
   const router = useRouter();
 
   const confirm = useBoolean();
+  const confirmReajuste = useBoolean();
+  const loadingReajuste = useBoolean();
+
+  const user = getUser();
+  const podeAplicarReajuste = user?.role === 'admin' || user?.role === 'financeiro';
 
   const [tableData, setTableData] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [pendenteMap, setPendenteMap] = useState({});
 
-  const filters = useSetState({ titulo: '', status: 'all' });
+  const filters = useSetState({ titulo: '', status: 'all', analise: 'all' });
 
   const fetchContratos = useCallback(async () => {
     try {
@@ -84,19 +135,47 @@ export function ContratoListView() {
     }
   }, []);
 
+  // Busca cobranças dos últimos 12 meses e agrega apenas as vencidas/expiradas por contrato.
+  const fetchPendentes = useCallback(async () => {
+    try {
+      const dataInicio = dayjs().subtract(12, 'month').startOf('day').format('YYYY-MM-DD');
+      const dataFim = dayjs().endOf('day').format('YYYY-MM-DD');
+      const cobrancas = await getCobrancasPorData(dataInicio, dataFim);
+      setPendenteMap(agruparPendentesPorContrato(cobrancas));
+    } catch (error) {
+      // Pendências são complementares — não bloqueiam a listagem.
+      console.error('Erro ao carregar pendências dos contratos:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchContratos();
-  }, [fetchContratos]);
+    fetchPendentes();
+  }, [fetchContratos, fetchPendentes]);
 
   const dataFiltered = applyFilter({
     inputData: tableData,
     comparator: getComparator(table.order, table.orderBy),
     filters: filters.state,
+    pendenteMap,
   });
 
   const dataInPage = rowInPage(dataFiltered, table.page, table.rowsPerPage);
 
-  const canReset = !!filters.state.titulo || filters.state.status !== 'all';
+  // Contagens por filtro de análise (sobre todos os contratos carregados).
+  const analiseCounts = useMemo(() => {
+    const counts = {};
+    CONTRATO_ANALISE_OPTIONS.forEach((opt) => {
+      counts[opt.value] =
+        opt.value === 'all'
+          ? tableData.length
+          : tableData.filter((contrato) => matchAnalise(contrato, opt.value, pendenteMap)).length;
+    });
+    return counts;
+  }, [tableData, pendenteMap]);
+
+  const canReset =
+    !!filters.state.titulo || filters.state.status !== 'all' || filters.state.analise !== 'all';
 
   const notFound = (!dataFiltered.length && canReset) || !dataFiltered.length;
 
@@ -157,6 +236,39 @@ export function ContratoListView() {
     [filters, table]
   );
 
+  const handleAplicarReajustes = useCallback(async () => {
+    loadingReajuste.onTrue();
+    try {
+      const resultado = await aplicarReajustesContratos();
+
+      const reajustados = resultado?.contratosReajustados ?? 0;
+      const elegiveis = resultado?.contratosElegiveis ?? 0;
+      const semPercentual = resultado?.contratosSemPercentualConfigurado ?? 0;
+      const comErro = resultado?.contratosComErro?.length ?? 0;
+
+      if (reajustados > 0) {
+        toast.success(`${reajustados} de ${elegiveis} contrato(s) reajustado(s) com sucesso.`);
+      } else {
+        toast.info('Nenhum contrato elegível para reajuste no momento.');
+      }
+
+      if (semPercentual > 0) {
+        toast.warning(`${semPercentual} contrato(s) elegível(eis) sem percentual configurado.`);
+      }
+
+      if (comErro > 0) {
+        toast.error(`${comErro} contrato(s) apresentaram erro ao reajustar.`);
+      }
+
+      fetchContratos();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Erro ao aplicar reajustes');
+    } finally {
+      loadingReajuste.onFalse();
+      confirmReajuste.onFalse();
+    }
+  }, [fetchContratos, loadingReajuste, confirmReajuste]);
+
   return (
     <>
       <DashboardContent>
@@ -168,14 +280,27 @@ export function ContratoListView() {
             { name: 'Todos' },
           ]}
           action={
-            <Button
-              component={RouterLink}
-              href={paths.dashboard.contratos.new}
-              variant="contained"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-            >
-              Novo Contrato
-            </Button>
+            <Stack direction="row" spacing={1.5}>
+              {podeAplicarReajuste && (
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  onClick={confirmReajuste.onTrue}
+                  startIcon={<Iconify icon="solar:refresh-circle-bold-duotone" />}
+                >
+                  Aplicar reajustes
+                </Button>
+              )}
+
+              <Button
+                component={RouterLink}
+                href={paths.dashboard.contratos.new}
+                variant="contained"
+                startIcon={<Iconify icon="mingcute:add-line" />}
+              >
+                Novo Contrato
+              </Button>
+            </Stack>
           }
           sx={{ mb: { xs: 3, md: 5 } }}
         />
@@ -210,7 +335,7 @@ export function ContratoListView() {
                   >
                     {tab.value === 'all'
                       ? tableData.length
-                      : tableData.filter((user) => user.status === tab.value).length}
+                      : tableData.filter((contrato) => contrato.status === tab.value).length}
                   </Label>
                 }
               />
@@ -220,6 +345,8 @@ export function ContratoListView() {
             filters={filters}
             onResetPage={table.onResetPage}
             tableData={dataFiltered}
+            analiseOptions={CONTRATO_ANALISE_OPTIONS}
+            analiseCounts={analiseCounts}
           />
 
           {canReset && (
@@ -227,6 +354,7 @@ export function ContratoListView() {
               filters={filters}
               totalResults={dataFiltered.length}
               onResetPage={table.onResetPage}
+              analiseOptions={CONTRATO_ANALISE_OPTIONS}
               sx={{ p: 2.5, pt: 0 }}
             />
           )}
@@ -252,7 +380,7 @@ export function ContratoListView() {
             />
 
             <Scrollbar>
-              <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 960 }}>
+              <Table size={table.dense ? 'small' : 'medium'} sx={{ minWidth: 1200 }}>
                 <TableHeadCustom
                   order={table.order}
                   orderBy={table.orderBy}
@@ -278,6 +406,7 @@ export function ContratoListView() {
                       <ContratoTableRow
                         key={row._id}
                         row={row}
+                        pendente={pendenteMap[row._id]}
                         selected={table.selected.includes(row._id)}
                         onSelectRow={() => table.onSelectRow(row._id)}
                         onDeleteRow={() => handleDeleteRow(row._id)}
@@ -332,13 +461,30 @@ export function ContratoListView() {
           </Button>
         }
       />
+
+      <ConfirmDialog
+        open={confirmReajuste.value}
+        onClose={confirmReajuste.onFalse}
+        title="Aplicar reajustes anuais"
+        content="Esta ação aplica o percentual de reajuste configurado em cada contrato elegível (ativos, mensais e com reajuste anual habilitado que já completaram 12 meses e possuem percentual maior que zero). Deseja continuar?"
+        action={
+          <LoadingButton
+            variant="contained"
+            color="primary"
+            loading={loadingReajuste.value}
+            onClick={handleAplicarReajustes}
+          >
+            Aplicar agora
+          </LoadingButton>
+        }
+      />
     </>
   );
 }
 
 // Função de aplicação de filtros
-function applyFilter({ inputData, comparator, filters }) {
-  const { titulo, status } = filters;
+function applyFilter({ inputData, comparator, filters, pendenteMap = {} }) {
+  const { titulo, status, analise } = filters;
 
   const stabilizedThis = inputData.map((el, index) => [el, index]);
 
@@ -362,6 +508,11 @@ function applyFilter({ inputData, comparator, filters }) {
   // Filtragem pelo status do contrato
   if (status !== 'all') {
     inputData = inputData.filter((row) => row.status === status);
+  }
+
+  // Filtragem pela análise (pendências / situação de reajuste)
+  if (analise && analise !== 'all') {
+    inputData = inputData.filter((row) => matchAnalise(row, analise, pendenteMap));
   }
 
   return inputData;

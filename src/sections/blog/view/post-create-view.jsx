@@ -14,11 +14,11 @@ export function PostCreateView() {
   return (
     <DashboardContent>
       <CustomBreadcrumbs
-        heading="Create a new post"
+        heading="Criar novo post"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Blog', href: paths.dashboard.post.root },
-          { name: 'Create' },
+          { name: 'Criar' },
         ]}
         sx={{ mb: { xs: 3, md: 5 } }}
       />

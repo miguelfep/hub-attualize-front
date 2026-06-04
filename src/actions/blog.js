@@ -1,8 +1,13 @@
+'use client';
+
 import useSWR from 'swr';
 import { useMemo } from 'react';
 
-import { fetcher, endpoints } from 'src/utils/axios';
+import axios, { fetcher, endpoints, getStorageAssetUrl } from 'src/utils/axios';
 
+// ----------------------------------------------------------------------
+// Blog Attualize (ms-me) — dashboard.
+// Leitura via SWR; escrita exige Bearer token (injetado automaticamente após login).
 // ----------------------------------------------------------------------
 
 const swrOptions = {
@@ -11,88 +16,266 @@ const swrOptions = {
   revalidateOnReconnect: false,
 };
 
+// Monta query string ignorando valores vazios.
+function buildQuery(params = {}) {
+  const usp = new URLSearchParams();
+  Object.entries(params).forEach(([key, value]) => {
+    if (value === '' || value === undefined || value === null) return;
+    usp.append(key, String(value));
+  });
+  const qs = usp.toString();
+  return qs ? `?${qs}` : '';
+}
+
+/**
+ * Adapta um post bruto da API para o shape usado pelas telas do dashboard.
+ */
+function adaptPost(p) {
+  if (!p) return null;
+  const comentarios = Array.isArray(p.comentarios) ? p.comentarios : [];
+  const commentsPending = comentarios.filter((c) => c.aprovado === false).length;
+  return {
+    ...p,
+    id: p._id,
+    title: p.titulo,
+    slug: p.slug,
+    description: p.resumo || '',
+    content: p.conteudoMarkdown || '',
+    coverUrl: getStorageAssetUrl(p.coverImage || p.ogImage || ''),
+    createdAt: p.createdAt,
+    publishedAt: p.publishedAt,
+    status: p.status,
+    // mapeia status -> "publish" (compat com componentes do template)
+    publish: p.status === 'publicado' ? 'published' : 'draft',
+    author: { name: p.autor || 'Equipe Attualize Contabil', avatarUrl: '' },
+    categoria: p.categoria || '',
+    tags: Array.isArray(p.tags) ? p.tags : [],
+    // contagem de comentários (total e pendentes = "novos")
+    commentsTotal: comentarios.length,
+    commentsPending,
+    totalViews: 0,
+    totalShares: 0,
+    totalComments: comentarios.length,
+  };
+}
+
+// ----------------------------------------------------------------------
+// LEITURA (hooks)
 // ----------------------------------------------------------------------
 
-export function useGetPosts() {
-  const url = endpoints.post.list;
+/**
+ * Lista posts para o painel. Com token, pode listar qualquer status.
+ * @param {{ status?: string, page?: number, limit?: number, categoria?: string, busca?: string }} params
+ */
+export function useGetBlogPosts(params = {}) {
+  const url = `${endpoints.blog.posts}${buildQuery({ limit: 100, ...params })}`;
 
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
+  const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, swrOptions);
 
-  const memoizedValue = useMemo(
-    () => ({
-      posts: data?.posts || [],
+  return useMemo(() => {
+    const rawPosts = data?.posts || data?.data || [];
+    const posts = rawPosts.map(adaptPost);
+    return {
+      posts,
+      postsTotal: Number(data?.total ?? posts.length),
       postsLoading: isLoading,
       postsError: error,
       postsValidating: isValidating,
-      postsEmpty: !isLoading && !data?.posts.length,
-    }),
-    [data?.posts, error, isLoading, isValidating]
-  );
-
-  return memoizedValue;
+      postsEmpty: !isLoading && posts.length === 0,
+      postsMutate: mutate,
+    };
+  }, [data, error, isLoading, isValidating, mutate]);
 }
 
-// ----------------------------------------------------------------------
+/**
+ * Busca um post pelo slug (inclui rascunhos quando autenticado).
+ */
+export function useGetBlogPost(slug) {
+  const url = slug ? endpoints.blog.post(slug) : null;
 
-export function useGetPost(title) {
-  const url = title ? [endpoints.post.details, { params: { title } }] : '';
+  const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, swrOptions);
 
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
-
-  const memoizedValue = useMemo(
-    () => ({
-      post: data?.post,
+  return useMemo(() => {
+    const raw = data?.post || data?.data || data;
+    return {
+      post: raw && raw.slug ? adaptPost(raw) : null,
       postLoading: isLoading,
       postError: error,
       postValidating: isValidating,
-    }),
-    [data?.post, error, isLoading, isValidating]
-  );
-
-  return memoizedValue;
+      postMutate: mutate,
+    };
+  }, [data, error, isLoading, isValidating, mutate]);
 }
 
 // ----------------------------------------------------------------------
+// ESCRITA (mutações)
+// ----------------------------------------------------------------------
 
-export function useGetLatestPosts(title) {
-  const url = title ? [endpoints.post.latest, { params: { title } }] : '';
+/**
+ * Cria um post. Por padrão como rascunho (envie status: 'publicado' para já publicar).
+ * @param {object} payload - { titulo, conteudoMarkdown, resumo, categoria, tags, keywords, coverImage, seoTitle, metaDescription, faq, autor, status }
+ */
+export async function createBlogPost(payload) {
+  const res = await axios.post(endpoints.blog.create, payload);
+  return res.data?.post || res.data;
+}
 
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, swrOptions);
+/**
+ * Atualiza um post (envie apenas os campos alterados).
+ */
+export async function updateBlogPost(id, payload) {
+  const res = await axios.put(endpoints.blog.update(id), payload);
+  return res.data?.post || res.data;
+}
 
-  const memoizedValue = useMemo(
-    () => ({
-      latestPosts: data?.latestPosts || [],
-      latestPostsLoading: isLoading,
-      latestPostsError: error,
-      latestPostsValidating: isValidating,
-      latestPostsEmpty: !isLoading && !data?.latestPosts.length,
-    }),
-    [data?.latestPosts, error, isLoading, isValidating]
-  );
+/**
+ * Publica um post (gera/atualiza o .md, sitemap e RSS).
+ */
+export async function publishBlogPost(id) {
+  const res = await axios.post(endpoints.blog.publicar(id));
+  return res.data?.post || res.data;
+}
 
-  return memoizedValue;
+/**
+ * Arquiva um post (remove o .md público, mantém no banco).
+ */
+export async function archiveBlogPost(id) {
+  const res = await axios.post(endpoints.blog.arquivar(id));
+  return res.data?.post || res.data;
+}
+
+/**
+ * Remove definitivamente um post (post + .md).
+ */
+export async function deleteBlogPost(id) {
+  const res = await axios.delete(endpoints.blog.delete(id));
+  return res.data;
+}
+
+/**
+ * Importa e reescreve posts do WordPress com IA.
+ * @param {{ limite?: number, publicar?: boolean }} options - limite=0 importa todos
+ */
+export async function importWordpressPosts({ limite = 5, publicar = true } = {}) {
+  const res = await axios.post(endpoints.blog.importWordpress, { limite, publicar });
+  return res.data;
 }
 
 // ----------------------------------------------------------------------
+// IMAGENS (capa)
+// ----------------------------------------------------------------------
 
-export function useSearchPosts(query) {
-  const url = query ? [endpoints.post.search, { params: { query } }] : '';
-
-  const { data, isLoading, error, isValidating } = useSWR(url, fetcher, {
-    ...swrOptions,
-    keepPreviousData: true,
+/**
+ * Faz upload de uma imagem do blog. Retorna { path, url }.
+ * @param {File} file
+ */
+export async function uploadBlogImage(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  const res = await axios.post(endpoints.blog.upload, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return res.data;
+}
 
-  const memoizedValue = useMemo(
-    () => ({
-      searchResults: data?.results || [],
-      searchLoading: isLoading,
-      searchError: error,
-      searchValidating: isValidating,
-      searchEmpty: !isLoading && !data?.results.length,
-    }),
-    [data?.results, error, isLoading, isValidating]
+/**
+ * Lista as imagens já armazenadas (upload + importadas) para a galeria.
+ */
+export function useGetBlogImages(enabled = true) {
+  const { data, isLoading, error, mutate } = useSWR(
+    enabled ? endpoints.blog.images : null,
+    fetcher,
+    swrOptions
   );
 
-  return memoizedValue;
+  return useMemo(
+    () => ({
+      imagens: data?.imagens || [],
+      imagensLoading: isLoading,
+      imagensError: error,
+      imagensMutate: mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+}
+
+// ----------------------------------------------------------------------
+// COMENTÁRIOS
+// ----------------------------------------------------------------------
+
+/**
+ * Envia um comentário pelo site público (entra como pendente até aprovação).
+ * @param {string} slug
+ * @param {{ authorName: string, authorEmail?: string, authorUrl?: string, contentMarkdown: string }} payload
+ */
+export async function createBlogComment(slug, payload) {
+  const res = await axios.post(endpoints.blog.comentarios(slug), payload);
+  return res.data;
+}
+
+/**
+ * Lista todos os comentários de um post (admin — inclui pendentes).
+ * @param {string} postId
+ */
+export function useGetBlogComments(postId) {
+  const url = postId ? endpoints.blog.comentariosAdmin(postId) : null;
+
+  const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, swrOptions);
+
+  return useMemo(() => {
+    const comentarios = data?.comentarios || [];
+    return {
+      comentarios,
+      comentariosLoading: isLoading,
+      comentariosError: error,
+      comentariosValidating: isValidating,
+      comentariosMutate: mutate,
+    };
+  }, [data, error, isLoading, isValidating, mutate]);
+}
+
+/**
+ * Caixa global de comentários (admin) — comentários de todos os posts.
+ * @param {{ status?: 'pendente' | 'aprovado', limit?: number }} params
+ */
+export function useGetAllBlogComments(params = {}) {
+  const qs = buildQuery({ status: params.status, limit: params.limit });
+  const url = `${endpoints.blog.comentariosGlobais}${qs}`;
+
+  const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, swrOptions);
+
+  return useMemo(() => {
+    const comentarios = data?.comentarios || [];
+    return {
+      comentarios,
+      comentariosLoading: isLoading,
+      comentariosError: error,
+      comentariosValidating: isValidating,
+      comentariosMutate: mutate,
+    };
+  }, [data, error, isLoading, isValidating, mutate]);
+}
+
+/** Adiciona um comentário pelo painel (admin) — já aprovado por padrão. */
+export async function createBlogCommentAdmin(postId, payload) {
+  const res = await axios.post(endpoints.blog.comentarioNovoAdmin(postId), payload);
+  return res.data?.comentario || res.data;
+}
+
+/** Aprova um comentário (admin). */
+export async function approveBlogComment(postId, comentarioId) {
+  const res = await axios.post(endpoints.blog.aprovarComentario(postId, comentarioId));
+  return res.data?.comentario || res.data;
+}
+
+/** Reprova um comentário — volta para pendente (admin). */
+export async function rejectBlogComment(postId, comentarioId) {
+  const res = await axios.post(endpoints.blog.reprovarComentario(postId, comentarioId));
+  return res.data?.comentario || res.data;
+}
+
+/** Remove um comentário (admin). */
+export async function deleteBlogComment(postId, comentarioId) {
+  const res = await axios.delete(endpoints.blog.deletarComentario(postId, comentarioId));
+  return res.data;
 }

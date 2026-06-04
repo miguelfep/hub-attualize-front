@@ -3,24 +3,32 @@ import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import Tooltip from '@mui/material/Tooltip';
 import MenuList from '@mui/material/MenuList';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
 import Checkbox from '@mui/material/Checkbox';
 import TableCell from '@mui/material/TableCell';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import { fDate } from 'src/utils/format-time';
+import { fCurrency } from 'src/utils/format-number';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
+import { getReajusteInfo } from '../contrato-reajuste-utils';
+
 // ----------------------------------------------------------------------
 
 export function ContratoTableRow({
   row,
+  pendente,
   selected,
   onEditRow,
   onSelectRow,
@@ -33,6 +41,18 @@ export function ContratoTableRow({
   const quickEdit = useBoolean();
 
   const isActive = row.status === 'ativo'; // Verifica se o contrato está ativo
+
+  const reajuste = getReajusteInfo(row);
+  const valorPendente = pendente?.valor ?? 0;
+
+  const reajusteTooltip = (() => {
+    if (reajuste.category === 'desabilitado') return 'Reajuste anual não habilitado';
+    if (!reajuste.proximaData) return 'Sem data de referência para reajuste';
+    if (reajuste.category === 'vencido') {
+      return `Elegível desde ${fDate(reajuste.proximaData)} (${Math.abs(reajuste.diasRestantes)} dias)`;
+    }
+    return `Próximo reajuste em ${fDate(reajuste.proximaData)} (${reajuste.diasRestantes} dias)`;
+  })();
 
   return (
     <>
@@ -55,6 +75,33 @@ export function ContratoTableRow({
           </Stack>
         </TableCell>
         <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.tipoContrato}</TableCell>
+
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>{fCurrency(row.valorMensalidade)}</TableCell>
+
+        <TableCell>
+          <Tooltip title={reajusteTooltip} arrow>
+            <span>
+              <Label variant="soft" color={reajuste.color}>
+                {reajuste.label}
+              </Label>
+            </span>
+          </Tooltip>
+        </TableCell>
+
+        <TableCell sx={{ whiteSpace: 'nowrap' }}>
+          {valorPendente > 0 ? (
+            <Tooltip title={`${pendente.count} cobrança(s) vencida(s)/expirada(s)`} arrow>
+              <Typography variant="body2" sx={{ fontWeight: 600, color: 'error.main' }}>
+                {fCurrency(valorPendente)}
+              </Typography>
+            </Tooltip>
+          ) : (
+            <Box component="span" sx={{ color: 'text.disabled' }}>
+              —
+            </Box>
+          )}
+        </TableCell>
+
         <TableCell>
           <Label variant="soft" color={isActive ? 'success' : 'warning'}>
             {isActive ? 'Ativo' : 'Encerrado'}

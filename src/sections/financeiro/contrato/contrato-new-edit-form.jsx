@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { z as zod } from 'zod';
 import { toast } from 'sonner';
 import { useForm } from 'react-hook-form';
@@ -43,6 +44,13 @@ export const NewContratoSchema = zod.object({
   tipoContrato: zod.enum(['normal', 'parceiroid']),
   cobrancaContabil: zod.boolean().default(true),
   possuiDecimoTerceiro: zod.boolean().default(true),
+  possuiReajusteAnual: zod.boolean().default(false),
+  percentualReajusteAnual: zod
+    .number({ invalid_type_error: 'Percentual de reajuste é obrigatório!' })
+    .min(0, { message: 'Percentual de reajuste não pode ser negativo!' })
+    .default(6),
+  // Editável: permite registrar manualmente a data do último reajuste (ex.: contratos legados).
+  dataUltimoReajuste: zod.union([zod.string(), zod.date(), zod.null()]).optional(),
   dataVencimento: zod
     .number()
     .min(1)
@@ -62,6 +70,15 @@ export const NewContratoSchema = zod.object({
       })
     )
     .optional(),
+}).superRefine((data, ctx) => {
+  // Quando o reajuste anual está habilitado, o percentual precisa ser maior que zero.
+  if (data.possuiReajusteAnual && !(data.percentualReajusteAnual > 0)) {
+    ctx.addIssue({
+      code: zod.ZodIssueCode.custom,
+      path: ['percentualReajusteAnual'],
+      message: 'Percentual deve ser maior que zero quando o reajuste anual está habilitado!',
+    });
+  }
 });
 
 export function ContratoNewEditForm({ currentContrato }) {
@@ -93,6 +110,9 @@ export function ContratoNewEditForm({ currentContrato }) {
       tipoContrato: currentContrato?.tipoContrato || 'normal',
       cobrancaContabil: currentContrato?.cobrancaContabil ?? false,
       possuiDecimoTerceiro: currentContrato?.possuiDecimoTerceiro ?? false,
+      possuiReajusteAnual: currentContrato?.possuiReajusteAnual ?? false,
+      percentualReajusteAnual: currentContrato?.percentualReajusteAnual ?? 6,
+      dataUltimoReajuste: currentContrato?.dataUltimoReajuste || null,
       dataVencimento: currentContrato?.dataVencimento || 10,
       status: currentContrato?.status || 'ativo',
       dataInicio: currentContrato?.dataInicio || today(),
@@ -129,7 +149,13 @@ export function ContratoNewEditForm({ currentContrato }) {
   // Função para salvar o contrato, com ou sem atualização das cobranças
   const saveContrato = async (data, atualizarCobrancas) => {
     try {
-      const contratoData = { ...data, atualizarCobrancas };
+      // Normaliza a data do último reajuste: envia null quando vazia/inválida (ex.: campo limpo).
+      const dataUltimoReajuste =
+        data.dataUltimoReajuste && dayjs(data.dataUltimoReajuste).isValid()
+          ? data.dataUltimoReajuste
+          : null;
+
+      const contratoData = { ...data, dataUltimoReajuste, atualizarCobrancas };
       const response = currentContrato
         ? await updateContrato(currentContrato._id, contratoData)
         : await postContrato(contratoData);
@@ -200,7 +226,7 @@ export function ContratoNewEditForm({ currentContrato }) {
             <>
               <ContratoNewEditAddress />
               <ContratoNewEditData />
-              <ContratoNewEditStatusDate />
+              <ContratoNewEditStatusDate currentContrato={currentContrato} />
               <ContratoNewEditDetails />
             </>
           )}

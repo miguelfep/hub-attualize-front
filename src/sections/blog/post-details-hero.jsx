@@ -18,7 +18,7 @@ import { Iconify, SocialIcon } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export function PostDetailsHero({ title, author, authorAvatar, coverUrl, createdAt }) {
+export function PostDetailsHero({ title, author, authorRole, authorAvatar, coverUrl, createdAt }) {
   const theme = useTheme();
 
   const _socialsShare = [
@@ -97,7 +97,7 @@ export function PostDetailsHero({ title, author, authorAvatar, coverUrl, created
               <ListItemText
                 sx={{ color: 'common.white' }}
                 primary={typeof author === 'string' ? author : author?.name || 'Autor'}
-                secondary={fDate(createdAt)}
+                secondary={authorRole ? `${authorRole} · ${fDate(createdAt)}` : fDate(createdAt)}
                 primaryTypographyProps={{ typography: 'subtitle1', mb: 0.5 }}
                 secondaryTypographyProps={{ color: 'inherit', sx: { opacity: 0.64 } }}
               />

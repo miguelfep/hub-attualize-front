@@ -1,6 +1,6 @@
 import { getServerSideSitemap } from 'next-sitemap';
 
-import { getPostsSitemapMeta } from 'src/actions/blog-ssr';
+import { getBlogPostsSitemapMeta } from 'src/actions/blog-ssr';
 
 const SITE_URL = 'https://attualize.com.br';
 
@@ -33,7 +33,7 @@ function normalizeDate(dateString) {
 export async function GET() {
   try {
     const perPage = 100;
-    const first = await getPostsSitemapMeta(1, perPage);
+    const first = await getBlogPostsSitemapMeta(1, perPage);
     const allPosts = [...first.posts];
 
     if (first.totalPages > 1) {
@@ -46,7 +46,7 @@ export async function GET() {
         const slice = pageNumbers.slice(i, i + concurrency);
         // eslint-disable-next-line no-await-in-loop
         const batches = await Promise.all(
-          slice.map((p) => getPostsSitemapMeta(p, perPage))
+          slice.map((p) => getBlogPostsSitemapMeta(p, perPage))
         );
         batches.forEach(({ posts }) => {
           allPosts.push(...posts);

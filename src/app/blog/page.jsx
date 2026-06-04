@@ -1,5 +1,5 @@
 import { CONFIG } from 'src/config-global';
-import { getPosts } from 'src/actions/blog-ssr';
+import { getBlogPosts } from 'src/actions/blog-ssr';
 
 import { StructuredData } from 'src/components/seo/structured-data';
 
@@ -40,7 +40,7 @@ export const metadata = {
 };
 
 export default async function Page() {
-  const { posts, totalPages } = await getPosts(1, 15); // Carregar a primeira página com 15 posts
+  const { posts, totalPages } = await getBlogPosts(1, 15); // Primeira página com 15 posts
 
   // Structured data para a página do blog
   const blogStructuredData = {
