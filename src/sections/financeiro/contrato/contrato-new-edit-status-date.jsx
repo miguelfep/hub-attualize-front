@@ -1,16 +1,31 @@
 import { useFormContext } from 'react-hook-form';
 
+import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
+import Typography from '@mui/material/Typography';
+import InputAdornment from '@mui/material/InputAdornment';
 
 import { Field } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
-export function ContratoNewEditStatusDate() {
+// Formata o percentual de reajuste em pt-BR com sinal explícito (ex.: +0,47% / -0,30%)
+const formatPercentualReajuste = (value) => {
+  if (value == null) return '—';
+  const formatted = Math.abs(value).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+  const sinal = value < 0 ? '-' : '+';
+  return `${sinal}${formatted}%`;
+};
+
+export function ContratoNewEditStatusDate({ currentContrato }) {
   const { watch } = useFormContext();
 
-  const values = watch();
+  const possuiReajusteAnual = watch('possuiReajusteAnual');
 
   const statusOptions = [
     { value: 'ativo', label: 'Ativo' },
@@ -92,6 +107,71 @@ export function ContratoNewEditStatusDate() {
             <MenuItem value="pagamento">Após pagamento</MenuItem>
           </Field.Select>
         </Stack>
+      )}
+
+      {/* Reajuste anual (percentual fixo do contrato) */}
+      <Divider sx={{ borderStyle: 'dashed' }} />
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+        <Field.Switch name="possuiReajusteAnual" label="Possui reajuste anual" />
+
+        {possuiReajusteAnual && (
+          <Field.Text
+            type="number"
+            name="percentualReajusteAnual"
+            label="Percentual anual de reajuste"
+            placeholder="6"
+            InputLabelProps={{ shrink: true }}
+            InputProps={{
+              endAdornment: <InputAdornment position="end">%</InputAdornment>,
+            }}
+            sx={{ maxWidth: { sm: 240 } }}
+          />
+        )}
+      </Stack>
+
+      {possuiReajusteAnual && (
+        <>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            Ao completar 12 meses desde o início do contrato (ou desde o último reajuste), o valor da
+            mensalidade é reajustado automaticamente pelo percentual configurado acima.
+          </Typography>
+
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+            <Field.DatePicker
+              name="dataUltimoReajuste"
+              label="Data do último reajuste"
+              slotProps={{
+                textField: {
+                  fullWidth: false,
+                  helperText:
+                    'Preencha para contratos que já tiveram reajuste mas não foi registrado — o próximo reajuste contará 12 meses a partir desta data.',
+                },
+                field: { clearable: true },
+              }}
+              sx={{ maxWidth: { sm: 280 } }}
+            />
+
+            {currentContrato?.percentualUltimoReajuste != null && (
+              <Box>
+                <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
+                  Percentual aplicado no último reajuste
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mt: 0.5,
+                    fontWeight: 600,
+                    color:
+                      currentContrato.percentualUltimoReajuste < 0 ? 'error.main' : 'success.main',
+                  }}
+                >
+                  {formatPercentualReajuste(currentContrato.percentualUltimoReajuste)}
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        </>
       )}
     </Stack>
   );

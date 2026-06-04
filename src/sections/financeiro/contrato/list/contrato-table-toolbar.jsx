@@ -12,13 +12,27 @@ import InputAdornment from '@mui/material/InputAdornment';
 import { Iconify } from 'src/components/iconify';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
-export function ContratoTableToolbar({ filters, onResetPage, tableData }) {
+export function ContratoTableToolbar({
+  filters,
+  onResetPage,
+  tableData,
+  analiseOptions = [],
+  analiseCounts = {},
+}) {
   const popover = usePopover();
 
   const handleFilterTituloOrRazaoSocial = useCallback(
     (event) => {
       onResetPage();
       filters.setState({ titulo: event.target.value }); // Altera o estado para buscar pelo título ou razão social
+    },
+    [filters, onResetPage]
+  );
+
+  const handleFilterAnalise = useCallback(
+    (event) => {
+      onResetPage();
+      filters.setState({ analise: event.target.value });
     },
     [filters, onResetPage]
   );
@@ -96,6 +110,31 @@ export function ContratoTableToolbar({ filters, onResetPage, tableData }) {
               },
             }}
           />
+
+          {!!analiseOptions.length && (
+            <TextField
+              select
+              value={filters.state.analise ?? 'all'}
+              onChange={handleFilterAnalise}
+              label="Análise"
+              SelectProps={{ MenuProps: { PaperProps: { sx: { maxHeight: 320 } } } }}
+              sx={{
+                minWidth: { xs: 1, md: 260 },
+                '& .MuiOutlinedInput-root': {
+                  backgroundColor: 'background.paper',
+                  borderRadius: 2,
+                },
+              }}
+            >
+              {analiseOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                  {analiseCounts[option.value] != null ? ` (${analiseCounts[option.value]})` : ''}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+
           <IconButton
             onClick={popover.onOpen}
             sx={{

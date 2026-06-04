@@ -238,6 +238,7 @@ export const endpoints = {
     fatura: `${baseUrl}contratos/cobrancas/fatura`,
     enviarMensagem: `${baseUrl}contratos/cobrancas/mensagem`,
     subscription: `${baseUrl}contratos/subscription`,
+    reajustesAplicar: `${baseUrl}contratos/reajustes/aplicar`,
     /** Nova API ms-me: financeiro (boleto, cobranças, assinatura) */
     financeiro: {
       boleto: (cobrancaId) => `${baseUrl}contratos/financeiro/boleto/${cobrancaId}`,

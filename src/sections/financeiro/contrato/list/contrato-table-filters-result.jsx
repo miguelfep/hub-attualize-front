@@ -6,10 +6,16 @@ import { chipProps, FiltersBlock, FiltersResult } from 'src/components/filters-r
 
 // ----------------------------------------------------------------------
 
-export function ContratoTableFiltersResult({ filters, onResetPage, totalResults, sx }) {
+export function ContratoTableFiltersResult({
+  filters,
+  onResetPage,
+  totalResults,
+  analiseOptions = [],
+  sx,
+}) {
   const handleRemoveKeyword = useCallback(() => {
     onResetPage();
-    filters.setState({ razaoSocial: '' });
+    filters.setState({ titulo: '' });
   }, [filters, onResetPage]);
 
   const handleRemoveStatus = useCallback(() => {
@@ -17,15 +23,14 @@ export function ContratoTableFiltersResult({ filters, onResetPage, totalResults,
     filters.setState({ status: 'all' });
   }, [filters, onResetPage]);
 
-  const handleRemoveRole = useCallback(
-    (inputValue) => {
-      const newValue = filters.state.role.filter((item) => item !== inputValue);
+  const handleRemoveAnalise = useCallback(() => {
+    onResetPage();
+    filters.setState({ analise: 'all' });
+  }, [filters, onResetPage]);
 
-      onResetPage();
-      filters.setState({ role: newValue });
-    },
-    [filters, onResetPage]
-  );
+  const analiseLabel =
+    analiseOptions.find((opt) => opt.value === filters.state.analise)?.label ??
+    filters.state.analise;
 
   const handleReset = useCallback(() => {
     onResetPage();
@@ -43,8 +48,12 @@ export function ContratoTableFiltersResult({ filters, onResetPage, totalResults,
         />
       </FiltersBlock>
 
-      <FiltersBlock label="Keyword:" isShow={!!filters.state.name}>
-        <Chip {...chipProps} label={filters.state.name} onDelete={handleRemoveKeyword} />
+      <FiltersBlock label="Análise:" isShow={filters.state.analise !== 'all'}>
+        <Chip {...chipProps} label={analiseLabel} onDelete={handleRemoveAnalise} />
+      </FiltersBlock>
+
+      <FiltersBlock label="Busca:" isShow={!!filters.state.titulo}>
+        <Chip {...chipProps} label={filters.state.titulo} onDelete={handleRemoveKeyword} />
       </FiltersBlock>
     </FiltersResult>
   );
