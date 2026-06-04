@@ -43,6 +43,7 @@ import SociosForm from './cliete-socios-form';
 import ClienteBancosSection from './cliente-bancos-section';
 import ClienteLicencasSection from './cliente-licencas-section';
 import { ClientePortalSettings } from './cliente-portal-settings';
+import ClienteCredenciaisSection from './cliente-credenciais-section';
 import PlanoContasClienteSection from './plano-contas-cliente-section';
 import { HistoricoComercialCliente } from './historico-comecial-cliente';
 
@@ -307,6 +308,7 @@ export function ClienteNewEditForm({ currentCliente }) {
   const router = useRouter();
   const { user } = useAuthContext();
   const canSeeHistorico = ['admin', 'comercial'].includes(user?.role);
+  const credenciaisTabIndex = 1;
   const historicoTabIndex = 5;
   const bancosTabIndex = canSeeHistorico ? 6 : 5;
   const licencasTabIndex = canSeeHistorico ? 7 : 6;
@@ -603,10 +605,10 @@ export function ClienteNewEditForm({ currentCliente }) {
 
       <Tabs value={tabIndex} onChange={handleTabChange} aria-label="Cliente Editar" disabled={!statusAtivo}>
         <Tab label="Dados da Empresa" />
-        <Tab label="Sócios" />
-        <Tab label="Dados Fiscais" />
-        <Tab label="Dados Contábeis" />
-        <Tab label="Departamento Pessoal" />
+        <Tab label="Senhas e Acessos" />
+        <Tab label="Fiscal" />
+        <Tab label="Contábil" />
+        <Tab label="DP" />
         {canSeeHistorico && <Tab label="Histórico Comercial" />}
         <Tab label="Bancos" />
         <Tab label="Licenças" />
@@ -1048,18 +1050,17 @@ export function ClienteNewEditForm({ currentCliente }) {
             </Card>
           </Grid>
         )}
-        {tabIndex === 1 && (
-          <Grid xs={12}>
-            <SociosForm />
-          </Grid>
-        )}
         {tabIndex === 2 && (
-          <Grid xs={12}>
-            <Card sx={{ p: 3 }}>
-              <Grid container spacing={2}>
-                <Grid xs={12}>
-                  <Controller
-                    name="atividade_principal"
+          <>
+            <Grid xs={12}>
+              <SociosForm />
+            </Grid>
+            <Grid xs={12}>
+              <Card sx={{ p: 3 }}>
+                <Grid container spacing={2}>
+                  <Grid xs={12}>
+                    <Controller
+                      name="atividade_principal"
                     control={control}
                     render={({ field }) => (
                       <TextField
@@ -1135,6 +1136,7 @@ export function ClienteNewEditForm({ currentCliente }) {
               </Grid>
             </Card>
           </Grid>
+          </>
         )}
         {tabIndex === 3 && (
           <Grid xs={12}>
@@ -1298,6 +1300,13 @@ export function ClienteNewEditForm({ currentCliente }) {
           <Grid xs={12}>
             <Card sx={{ p: 3 }}>
               <ClientePortalSettings clienteId={currentCliente?._id} control={control} />
+            </Card>
+          </Grid>
+        )}
+        {tabIndex === credenciaisTabIndex && (
+          <Grid xs={12}>
+            <Card sx={{ p: 3 }}>
+              <ClienteCredenciaisSection clienteId={currentCliente?._id} />
             </Card>
           </Grid>
         )}

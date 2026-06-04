@@ -326,6 +326,16 @@ export const endpoints = {
         `${baseUrl}portal/vendas/${clienteProprietarioId}/recorrencias/${grupoId}/boletos`,
     },
   },
+  // Credenciais de acesso — rotas INTERNAS (backoffice), escopadas por clienteId.
+  // A senha nunca vem na listagem; só na rota de senha, para perfis autorizados
+  // (admin, operacional, financeiro, contabil_externo).
+  credenciaisAcesso: {
+    listByCliente: (clienteId) => `${baseUrl}credenciais-acesso/cliente/${clienteId}`,
+    create: `${baseUrl}credenciais-acesso`,
+    update: (credencialId) => `${baseUrl}credenciais-acesso/${credencialId}`,
+    delete: (credencialId) => `${baseUrl}credenciais-acesso/${credencialId}`,
+    senha: (credencialId) => `${baseUrl}credenciais-acesso/${credencialId}/senha`,
+  },
   avaliacoes: {
     root: `${baseUrl}avaliacoes`,
     byId: (id) => `${baseUrl}avaliacoes/${id}`,
