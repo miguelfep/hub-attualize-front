@@ -14,32 +14,32 @@ const SIGN_IN_PATH = '/auth/jwt/sign-in';
 let redirecionandoLogin = false;
 
 /**
- * Decodifica o JWT e diz se ele está ausente, ilegível ou EXPIRADO (exp < agora).
- * Usado para confirmar a expiração antes de deslogar — assim um 401 indevido do
- * backend sobre um token ainda VÁLIDO não derruba a sessão (isso estava barrando
- * o login de usuários internos não-admin).
+ * Decodifica o JWT e diz se ele está CONFIRMADAMENTE expirado (exp presente e já
+ * passou). Em qualquer dúvida (sem token, ilegível, sem `exp`) retorna `false`
+ * para NÃO deslogar — assim um 401 indevido do backend sobre um token válido não
+ * derruba a sessão (isso estava barrando o login de internos não-admin).
  */
-function tokenAusenteOuExpirado(token) {
-  if (!token) return true;
+function tokenConfirmadamenteExpirado(token) {
+  if (!token) return false;
   try {
     const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
     const payload = JSON.parse(atob(base64));
-    if (!payload?.exp) return false; // sem `exp` declarado → não trata como expirado
-    return Date.now() >= payload.exp * 1000;
+    return typeof payload?.exp === 'number' && Date.now() >= payload.exp * 1000;
   } catch {
-    return true; // token ilegível
+    return false;
   }
 }
 
 /**
- * Token inválido/expirado (401) ⇒ limpa a sessão e redireciona para o login.
- * Espelha o `signOut` (remove cookies + header) sem importar o auth (evita ciclo).
+ * Sessão expirada ⇒ limpa tudo e redireciona para o login.
+ * Espelha o `signOut` (cookies + localStorage + header) sem importar o auth.
  */
 function forcarLogout() {
   if (typeof window === 'undefined') return;
   try {
     Cookies.remove(STORAGE_KEY);
     Cookies.remove(USER_DATA);
+    localStorage.removeItem(USER_DATA);
   } catch {
     /* ignore */
   }
@@ -57,12 +57,12 @@ axiosInstance.interceptors.response.use(
     const { response } = error;
     const data = response?.data;
 
-    // Sessão expirada → desloga. Só age se o token estiver REALMENTE ausente/
-    // expirado no cliente; um 401 do backend sobre um token válido é ignorado.
+    // Só desloga quando o token está COMPROVADAMENTE expirado no cliente; um 401
+    // do backend sobre um token ainda válido é ignorado (não derruba a sessão).
     if (
       response?.status === 401 &&
       /invalid or expired token/i.test(data?.message || '') &&
-      tokenAusenteOuExpirado(typeof window !== 'undefined' ? Cookies.get(STORAGE_KEY) : null)
+      tokenConfirmadamenteExpirado(typeof window !== 'undefined' ? Cookies.get(STORAGE_KEY) : null)
     ) {
       forcarLogout();
     }

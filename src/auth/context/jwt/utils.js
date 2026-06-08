@@ -97,14 +97,21 @@ export async function setSession(accessToken) {
   }
 }
 
+// O userData é guardado no localStorage (não em cookie): usuários com muitas
+// empresas/setores vinculados geram um JSON > 4KB, que estoura o limite do
+// cookie — o navegador descartava o cookie e a sessão "sumia" (login caía para
+// não-admins). localStorage não tem esse limite.
 export async function setUser(userData) {
   try {
-    if (userData) {
-      // Converter o objeto userData em uma string JSON antes de armazená-lo
-      Cookies.set(USER_DATA, JSON.stringify(userData), { expires: 7 });
-    } else {
-      Cookies.remove(USER_DATA); // Remove o userData dos cookies
+    if (typeof window !== 'undefined') {
+      if (userData) {
+        localStorage.setItem(USER_DATA, JSON.stringify(userData));
+      } else {
+        localStorage.removeItem(USER_DATA);
+      }
     }
+    // Remove o resquício em cookie (sessões antigas / migração).
+    Cookies.remove(USER_DATA);
   } catch (error) {
     console.error('Error during setting user session:', error);
     throw error;
@@ -114,8 +121,10 @@ export async function setUser(userData) {
 // Função adicional para obter userData da sessão
 export function getUser() {
   try {
-    const userData = Cookies.get(USER_DATA); // Obtém userData dos cookies
-    return userData ? JSON.parse(userData) : null;
+    // localStorage primeiro; cookie como fallback para sessões antigas.
+    let raw = typeof window !== 'undefined' ? localStorage.getItem(USER_DATA) : null;
+    if (!raw) raw = Cookies.get(USER_DATA) || null;
+    return raw ? JSON.parse(raw) : null;
   } catch (error) {
     console.error('Error during getting user session:', error);
     return null;
