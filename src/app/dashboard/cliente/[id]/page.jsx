@@ -1,3 +1,5 @@
+import { notFound } from 'next/navigation';
+
 import { CONFIG } from 'src/config-global';
 import { getClientes, getClienteById } from 'src/actions/clientes-ssr';
 
@@ -12,18 +14,14 @@ export default async function Page({ params }) {
   const resolvedParams = await params;
   const { id } = resolvedParams;
 
-  try {
-    const currentCliente = await getClienteById(id);
+  // `null` ⇒ cliente inexistente ou fora do escopo de empresas do usuário.
+  const currentCliente = await getClienteById(id);
 
-    if (!currentCliente) {
-      throw new Error('Cliente não encontrado');
-    }
-
-    return <ClienteEditView cliente={currentCliente} />;
-  } catch (error) {
-    console.error('Erro ao carregar cliente:', error);
-    throw error;
+  if (!currentCliente) {
+    notFound();
   }
+
+  return <ClienteEditView cliente={currentCliente} />;
 }
 
 // ----------------------------------------------------------------------

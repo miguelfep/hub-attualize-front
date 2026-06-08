@@ -1,5 +1,6 @@
 import Zoom from 'yet-another-react-lightbox/plugins/zoom';
 import Video from 'yet-another-react-lightbox/plugins/video';
+import Download from 'yet-another-react-lightbox/plugins/download';
 import Captions from 'yet-another-react-lightbox/plugins/captions';
 import Slideshow from 'yet-another-react-lightbox/plugins/slideshow';
 import Fullscreen from 'yet-another-react-lightbox/plugins/fullscreen';
@@ -22,6 +23,7 @@ export function Lightbox({
   disableSlideshow,
   disableThumbnails,
   disableFullscreen,
+  disableDownload = true,
   onGetCurrentIndex,
   ...other
 }) {
@@ -40,6 +42,7 @@ export function Lightbox({
         disableSlideshow,
         disableThumbnails,
         disableFullscreen,
+        disableDownload,
       })}
       on={{
         view: ({ index }) => {
@@ -51,11 +54,13 @@ export function Lightbox({
       toolbar={{
         buttons: [
           <DisplayTotal key={0} totalItems={totalItems} disableTotal={disableTotal} />,
+          ...(disableDownload ? [] : ['download']),
           'close',
         ],
       }}
       render={{
         iconClose: () => <Iconify width={24} icon="carbon:close" />,
+        iconDownload: () => <Iconify width={24} icon="carbon:download" />,
         iconZoomIn: () => <Iconify width={24} icon="carbon:zoom-in" />,
         iconZoomOut: () => <Iconify width={24} icon="carbon:zoom-out" />,
         iconSlideshowPlay: () => <Iconify width={24} icon="carbon:play" />,
@@ -80,9 +85,13 @@ export function getPlugins({
   disableSlideshow,
   disableThumbnails,
   disableFullscreen,
+  disableDownload,
 }) {
-  let plugins = [Captions, Fullscreen, Slideshow, Thumbnails, Video, Zoom];
+  let plugins = [Captions, Download, Fullscreen, Slideshow, Thumbnails, Video, Zoom];
 
+  if (disableDownload) {
+    plugins = plugins.filter((plugin) => plugin !== Download);
+  }
   if (disableThumbnails) {
     plugins = plugins.filter((plugin) => plugin !== Thumbnails);
   }

@@ -1,229 +1,131 @@
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemButton from '@mui/material/ListItemButton';
 
 import { fToNow } from 'src/utils/format-time';
 
-import { CONFIG } from 'src/config-global';
-
-import { Label } from 'src/components/label';
-import { FileThumbnail } from 'src/components/file-thumbnail';
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
-export function NotificationItem({ notification }) {
+const ICONE_POR_TIPO = {
+  tarefa_mencionada: 'solar:chat-round-line-bold',
+  tarefa_mencao: 'solar:chat-round-line-bold',
+  tarefa_atribuicao: 'solar:clipboard-check-bold',
+  tarefa_prazo: 'solar:clock-circle-bold',
+  tarefa_prazo_digest: 'solar:clock-circle-bold',
+};
+
+/** Ícone correspondente ao tipo de notificação (reusado fora do drawer). */
+export function iconeNotificacao(tipo) {
+  return ICONE_POR_TIPO[tipo] || 'solar:bell-bold';
+}
+
+// ----------------------------------------------------------------------
+
+/**
+ * Item de notificação in-app de tarefas.
+ *
+ * @param {object}   props
+ * @param {object}   props.notification  { _id, tipo, titulo, mensagem, lida, createdAt, tarefa }
+ * @param {(n: object) => void} props.onClick
+ * @param {(n: object) => void} [props.onToggleRead]  alterna lida/não lida sem navegar
+ */
+export function NotificationItem({ notification, onClick, onToggleRead }) {
+  const { tipo, titulo, mensagem, lida, createdAt } = notification;
+  const naoLida = !lida;
+
   const renderAvatar = (
     <ListItemAvatar>
-      {notification.avatarUrl ? (
-        <Avatar src={notification.avatarUrl} sx={{ bgcolor: 'background.neutral' }} />
-      ) : (
-        <Stack
-          alignItems="center"
-          justifyContent="center"
-          sx={{ width: 40, height: 40, borderRadius: '50%', bgcolor: 'background.neutral' }}
-        >
-          <Box
-            component="img"
-            src={`${CONFIG.site.basePath}/assets/icons/notification/${(notification.type === 'order' && 'ic-order') || (notification.type === 'chat' && 'ic-chat') || (notification.type === 'mail' && 'ic-mail') || (notification.type === 'delivery' && 'ic-delivery')}.svg`}
-            sx={{ width: 24, height: 24 }}
-          />
-        </Stack>
-      )}
-    </ListItemAvatar>
-  );
-
-  const renderText = (
-    <ListItemText
-      disableTypography
-      primary={reader(notification.title)}
-      secondary={
-        <Stack
-          direction="row"
-          alignItems="center"
-          sx={{ typography: 'caption', color: 'text.disabled' }}
-          divider={
-            <Box
-              sx={{
-                width: 2,
-                height: 2,
-                bgcolor: 'currentColor',
-                mx: 0.5,
-                borderRadius: '50%',
-              }}
-            />
-          }
-        >
-          {fToNow(notification.createdAt)}
-          {notification.category}
-        </Stack>
-      }
-    />
-  );
-
-  const renderUnReadBadge = notification.isUnRead && (
-    <Box
-      sx={{
-        top: 26,
-        width: 8,
-        height: 8,
-        right: 20,
-        borderRadius: '50%',
-        bgcolor: 'info.main',
-        position: 'absolute',
-      }}
-    />
-  );
-
-  const friendAction = (
-    <Stack spacing={1} direction="row" sx={{ mt: 1.5 }}>
-      <Button size="small" variant="contained">
-        Accept
-      </Button>
-      <Button size="small" variant="outlined">
-        Decline
-      </Button>
-    </Stack>
-  );
-
-  const projectAction = (
-    <Stack alignItems="flex-start">
-      <Box
+      <Stack
+        alignItems="center"
+        justifyContent="center"
         sx={{
-          p: 1.5,
-          my: 1.5,
-          borderRadius: 1.5,
-          color: 'text.secondary',
+          width: 40,
+          height: 40,
+          borderRadius: '50%',
+          color: 'primary.main',
           bgcolor: 'background.neutral',
         }}
       >
-        {reader(
-          `<p><strong>@Jaydon Frankie</strong> feedback by asking questions or just leave a note of appreciation.</p>`
-        )}
-      </Box>
-
-      <Button size="small" variant="contained">
-        Reply
-      </Button>
-    </Stack>
-  );
-
-  const fileAction = (
-    <Stack
-      spacing={1}
-      direction="row"
-      sx={{
-        pl: 1,
-        p: 1.5,
-        mt: 1.5,
-        borderRadius: 1.5,
-        bgcolor: 'background.neutral',
-      }}
-    >
-      <FileThumbnail file="http://localhost:8080/httpsdesign-suriname-2015.mp3" />
-
-      <Stack spacing={1} direction={{ xs: 'column', sm: 'row' }} flexGrow={1} sx={{ minWidth: 0 }}>
-        <ListItemText
-          disableTypography
-          primary={
-            <Typography variant="subtitle2" component="div" sx={{ color: 'text.secondary' }} noWrap>
-              design-suriname-2015.mp3
-            </Typography>
-          }
-          secondary={
-            <Stack
-              direction="row"
-              alignItems="center"
-              sx={{ typography: 'caption', color: 'text.disabled' }}
-              divider={
-                <Box
-                  sx={{
-                    mx: 0.5,
-                    width: 2,
-                    height: 2,
-                    borderRadius: '50%',
-                    bgcolor: 'currentColor',
-                  }}
-                />
-              }
-            >
-              <span>2.3 GB</span>
-              <span>30 min ago</span>
-            </Stack>
-          }
-        />
-
-        <Button size="small" variant="outlined">
-          Download
-        </Button>
+        <Iconify icon={ICONE_POR_TIPO[tipo] || 'solar:bell-bold'} width={22} />
       </Stack>
-    </Stack>
-  );
-
-  const tagsAction = (
-    <Stack direction="row" spacing={0.75} flexWrap="wrap" sx={{ mt: 1.5 }}>
-      <Label variant="outlined" color="info">
-        Design
-      </Label>
-      <Label variant="outlined" color="warning">
-        Dashboard
-      </Label>
-      <Label variant="outlined">Design system</Label>
-    </Stack>
-  );
-
-  const paymentAction = (
-    <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
-      <Button size="small" variant="contained">
-        Pay
-      </Button>
-      <Button size="small" variant="outlined">
-        Decline
-      </Button>
-    </Stack>
+    </ListItemAvatar>
   );
 
   return (
     <ListItemButton
-      disableRipple
+      onClick={() => onClick?.(notification)}
       sx={{
         p: 2.5,
         alignItems: 'flex-start',
         borderBottom: (theme) => `dashed 1px ${theme.vars.palette.divider}`,
       }}
     >
-      {renderUnReadBadge}
+      {naoLida && (
+        <Box
+          sx={{
+            top: 18,
+            width: 8,
+            height: 8,
+            right: 44,
+            borderRadius: '50%',
+            bgcolor: 'info.main',
+            position: 'absolute',
+          }}
+        />
+      )}
 
       {renderAvatar}
 
-      <Stack sx={{ flexGrow: 1 }}>
-        {renderText}
-        {notification.type === 'friend' && friendAction}
-        {notification.type === 'project' && projectAction}
-        {notification.type === 'file' && fileAction}
-        {notification.type === 'tags' && tagsAction}
-        {notification.type === 'payment' && paymentAction}
-      </Stack>
+      <ListItemText
+        disableTypography
+        primary={
+          <Typography variant="subtitle2" sx={{ mb: 0.25, pr: 4 }}>
+            {titulo}
+          </Typography>
+        }
+        secondary={
+          <>
+            {mensagem && (
+              <Typography
+                variant="body2"
+                component="div"
+                sx={{ color: 'text.secondary', mb: 0.5 }}
+                noWrap
+              >
+                {mensagem}
+              </Typography>
+            )}
+            <Typography variant="caption" component="div" sx={{ color: 'text.disabled' }}>
+              {fToNow(createdAt)}
+            </Typography>
+          </>
+        }
+      />
+
+      {onToggleRead && (
+        <Tooltip title={naoLida ? 'Marcar como lida' : 'Marcar como não lida'}>
+          <IconButton
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleRead(notification);
+            }}
+            sx={{ position: 'absolute', top: 12, right: 12 }}
+          >
+            <Iconify
+              width={18}
+              icon={naoLida ? 'solar:check-read-line-duotone' : 'solar:bell-bing-line-duotone'}
+            />
+          </IconButton>
+        </Tooltip>
+      )}
     </ListItemButton>
-  );
-}
-
-// ----------------------------------------------------------------------
-
-function reader(data) {
-  return (
-    <Box
-      dangerouslySetInnerHTML={{ __html: data }}
-      sx={{
-        mb: 0.5,
-        '& p': { typography: 'body2', m: 0 },
-        '& a': { color: 'inherit', textDecoration: 'none' },
-        '& strong': { typography: 'subtitle2' },
-      }}
-    />
   );
 }

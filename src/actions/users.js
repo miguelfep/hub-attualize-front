@@ -26,13 +26,23 @@ export async function getUsersInternos() {
   return axios.get(`${baseUrl}users/internos`);
 }
 
-export async function criarUserInterno({ name, email, password, role, status, empresasId, empresaAtiva }) {
+export async function criarUserInterno({
+  name,
+  email,
+  password,
+  role,
+  status,
+  setores,
+  empresasId,
+  empresaAtiva,
+}) {
   return axios.post(`${baseUrl}users/internos`, {
     name,
     email,
     password,
     role,
     status,
+    setores,
     empresasId,
     empresaAtiva,
   });
