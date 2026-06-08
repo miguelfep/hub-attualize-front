@@ -12,6 +12,18 @@ export const CONFIG = {
     basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? '',
     version: packageJson.version,
   },
+  /**
+   * Links do app móvel "Hub Attualize" nas lojas.
+   * TODO: substituir os placeholders pelas URLs reais (ou definir via env).
+   */
+  appLinks: {
+    ios:
+      process.env.NEXT_PUBLIC_APP_STORE_URL ??
+      'https://apps.apple.com/us/app/hub-attualize/id6765755103',
+    android:
+      process.env.NEXT_PUBLIC_PLAY_STORE_URL ??
+      'https://play.google.com/store/apps/details?id=br.com.attualize.hub',
+  },
   isStaticExport: JSON.parse(`${process.env.BUILD_STATIC_EXPORT}`),
   /**
    * Auth

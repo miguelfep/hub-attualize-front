@@ -13,31 +13,33 @@ axiosInstance.interceptors.response.use(
     const { response } = error;
     const data = response?.data;
 
-    if (data !== undefined && data !== null) {
-      if (typeof data === 'string') {
-        return Promise.reject(data || error.message || 'Something went wrong!');
-      }
-      if (typeof data === 'object' && !Array.isArray(data)) {
-        const hasReadableMessage =
-          (typeof data.message === 'string' && data.message.trim()) ||
-          (typeof data.error === 'string' && data.error.trim()) ||
-          (data.error &&
-            typeof data.error === 'object' &&
-            typeof data.error.message === 'string' &&
-            data.error.message.trim());
+    const statusMsg = response?.status
+      ? `Erro HTTP ${response.status}${response.statusText ? ` (${response.statusText})` : ''}`
+      : '';
 
-        if (!hasReadableMessage && response?.status) {
-          const message = `Erro HTTP ${response.status}${response.statusText ? ` (${response.statusText})` : ''}`;
-          const err = new Error(message);
-          Object.assign(err, data);
-          err.message = message;
-          return Promise.reject(err);
-        }
-      }
-      return Promise.reject(data);
+    // Corpo string
+    if (typeof data === 'string' && data.trim()) {
+      return Promise.reject(new Error(data));
     }
 
-    return Promise.reject(error.message || 'Something went wrong!');
+    // Corpo objeto: extrai a melhor mensagem legível e SEMPRE rejeita um Error.
+    // (Rejeitar o objeto cru fazia um relançamento/rejeição não tratada virar
+    // "[object Object]" no overlay do Next.) Os campos do corpo são preservados.
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const message =
+        (typeof data.message === 'string' && data.message.trim()) ||
+        (typeof data.error === 'string' && data.error.trim()) ||
+        (data.error && typeof data.error === 'object' && data.error.message) ||
+        (Array.isArray(data.errors) && data.errors[0]?.msg) ||
+        statusMsg ||
+        'Something went wrong!';
+      const err = new Error(message);
+      Object.assign(err, data);
+      err.message = message;
+      return Promise.reject(err);
+    }
+
+    return Promise.reject(new Error(error.message || statusMsg || 'Something went wrong!'));
   }
 );
 
@@ -112,6 +114,34 @@ export function getThumbnailExt(thumbnailUrl, fallback = 'jpg') {
 export const endpoints = {
   chat: '/api/chat',
   kanban: `${baseUrl}comercial/board`,
+  tarefas: {
+    root: `${baseUrl}tarefas`,
+    minhas: `${baseUrl}tarefas/minhas`,
+    details: (id) => `${baseUrl}tarefas/${id}`,
+    status: (id) => `${baseUrl}tarefas/${id}/status`,
+    responsavel: (id) => `${baseUrl}tarefas/${id}/responsavel`,
+    comentarios: (id) => `${baseUrl}tarefas/${id}/comentarios`,
+    comentario: (id, comentarioId) => `${baseUrl}tarefas/${id}/comentarios/${comentarioId}`,
+    anexos: (id) => `${baseUrl}tarefas/${id}/anexos`,
+    anexo: (id, anexoId) => `${baseUrl}tarefas/${id}/anexos/${anexoId}`,
+    anexoView: (id, anexoId) => `${baseUrl}tarefas/${id}/anexos/${anexoId}/view`,
+    anexoDownload: (id, anexoId) => `${baseUrl}tarefas/${id}/anexos/${anexoId}/download`,
+    anexoThumbnail: (id, anexoId) => `${baseUrl}tarefas/${id}/anexos/${anexoId}/thumbnail`,
+    historico: (id) => `${baseUrl}tarefas/${id}/historico`,
+    templates: `${baseUrl}tarefas/templates`,
+    template: (id) => `${baseUrl}tarefas/templates/${id}`,
+    gerarRecorrentes: `${baseUrl}tarefas/recorrentes/gerar`,
+  },
+  notificacoes: {
+    root: `${baseUrl}tarefas/notificacoes`,
+    lida: (id) => `${baseUrl}tarefas/notificacoes/${id}/lida`,
+    naoLida: (id) => `${baseUrl}tarefas/notificacoes/${id}/nao-lida`,
+    marcarTodasLidas: `${baseUrl}tarefas/notificacoes/marcar-todas-lidas`,
+  },
+  setores: {
+    root: `${baseUrl}setores`,
+    details: (id) => `${baseUrl}setores/${id}`,
+  },
   calendar: '/api/calendar',
   auth: {
     signIn: `${baseUrl}users/authenticate`,

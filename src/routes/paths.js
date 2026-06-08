@@ -232,6 +232,18 @@ export const paths = {
       itensServico: `${ROOTS.DASHBOARD}/comercial/itens-servico`,
     },
     servicos: `${ROOTS.DASHBOARD}/servicos`,
+    tarefas: {
+      root: `${ROOTS.DASHBOARD}/tarefas`,
+      minhas: `${ROOTS.DASHBOARD}/tarefas/minhas`,
+      templates: `${ROOTS.DASHBOARD}/tarefas/templates`,
+      details: (id) => `${ROOTS.DASHBOARD}/tarefas/${id}`,
+    },
+    setores: {
+      root: `${ROOTS.DASHBOARD}/setores`,
+    },
+    notificacoes: {
+      root: `${ROOTS.DASHBOARD}/notificacoes`,
+    },
     product: {
       root: `${ROOTS.DASHBOARD}/product`,
       new: `${ROOTS.DASHBOARD}/product/new`,

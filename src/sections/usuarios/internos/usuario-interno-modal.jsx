@@ -21,6 +21,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { getSetores } from 'src/actions/setores';
 import { getClientes } from 'src/actions/clientes';
 
 import { Iconify } from 'src/components/iconify';
@@ -50,6 +51,7 @@ const usuarioInternoSchema = zod
     confirmPassword: zod.string().optional(),
     role: zod.array(zod.string()).min(1, 'Selecione pelo menos um perfil'),
     status: zod.string().min(1, 'Status é obrigatório'),
+    setores: zod.array(zod.string()).optional(),
     empresasId: zod.array(zod.string()).optional(),
     empresaAtiva: zod.string().optional(),
   })
@@ -80,6 +82,7 @@ const defaultValues = {
   confirmPassword: '',
   role: ['operacional'],
   status: 'ativo',
+  setores: [],
   empresasId: [],
   empresaAtiva: '',
 };
@@ -88,6 +91,7 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
   const [loading, setLoading] = useState(false);
   const [empresasDisponiveis, setEmpresasDisponiveis] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(false);
+  const [setoresDisponiveis, setSetoresDisponiveis] = useState([]);
 
   const {
     control,
@@ -122,6 +126,9 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
   useEffect(() => {
     if (open) {
       fetchEmpresas();
+      getSetores()
+        .then((data) => setSetoresDisponiveis(Array.isArray(data) ? data : []))
+        .catch(() => setSetoresDisponiveis([]));
 
       if (usuario) {
         const empresasIdArray = Array.isArray(usuario.empresasId)
@@ -137,6 +144,12 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
             ? usuario.empresaAtiva
             : usuario.empresaAtiva?._id || '';
 
+        const setoresArray = Array.isArray(usuario.setores)
+          ? usuario.setores
+              .map((s) => (typeof s === 'string' ? s : s?._id || s?.id))
+              .filter(Boolean)
+          : [];
+
         reset({
           name: usuario.name || '',
           email: usuario.email || '',
@@ -144,6 +157,7 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
           confirmPassword: '',
           role: Array.isArray(usuario.role) ? usuario.role : [usuario.role].filter(Boolean),
           status: usuario.status === true ? 'ativo' : 'inativo',
+          setores: setoresArray,
           empresasId: empresasIdArray,
           empresaAtiva: empresaAtivaId,
         });
@@ -186,6 +200,7 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
         email: data.email,
         role: data.role,
         status: data.status === 'ativo',
+        setores: data.setores || [],
         empresasId: data.empresasId || [],
         empresaAtiva: data.empresaAtiva || undefined,
       };
@@ -341,6 +356,70 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
                   />
                 </Stack>
               </Stack>
+            </Box>
+
+            <Divider />
+
+            <Box>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>
+                Setores
+              </Typography>
+
+              <Alert severity="info" sx={{ mb: 2 }}>
+                Os setores definem quais tarefas o usuário enxerga. Gestores (admin/gerencial) veem
+                todas; demais internos só veem tarefas com pelo menos um setor em comum.
+              </Alert>
+
+              <Controller
+                name="setores"
+                control={control}
+                render={({ field }) => (
+                  <FormControl fullWidth>
+                    <InputLabel>Setores</InputLabel>
+                    <Select
+                      {...field}
+                      multiple
+                      label="Setores"
+                      MenuProps={{ PaperProps: { style: { maxHeight: 300 } } }}
+                      renderValue={(selected) => {
+                        if (!selected?.length) return '';
+                        return selected
+                          .map(
+                            (id) => setoresDisponiveis.find((s) => s._id === id)?.nome || id
+                          )
+                          .join(', ');
+                      }}
+                    >
+                      {setoresDisponiveis.length === 0 ? (
+                        <MenuItem disabled>Nenhum setor cadastrado</MenuItem>
+                      ) : (
+                        setoresDisponiveis.map((setor) => (
+                          <MenuItem key={setor._id} value={setor._id}>
+                            {setor.nome}
+                          </MenuItem>
+                        ))
+                      )}
+                    </Select>
+                  </FormControl>
+                )}
+              />
+
+              {watch('setores')?.length > 0 && (
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
+                  {watch('setores').map((id) => {
+                    const setor = setoresDisponiveis.find((s) => s._id === id);
+                    return setor ? (
+                      <Chip
+                        key={id}
+                        label={setor.nome}
+                        size="small"
+                        color="info"
+                        variant="outlined"
+                      />
+                    ) : null;
+                  })}
+                </Stack>
+              )}
             </Box>
 
             <Divider />

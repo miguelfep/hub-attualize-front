@@ -22,6 +22,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
+import { AppStoreModal } from 'src/components/app-store-modal';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { getUser } from 'src/auth/context/jwt/utils';
@@ -174,6 +175,8 @@ export function JwtSignInView() {
       <Form methods={methods} onSubmit={onSubmit}>
         {renderForm}
       </Form>
+
+      <AppStoreModal />
     </>
   );
 }

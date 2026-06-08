@@ -66,6 +66,35 @@ export const navData = [
 
 
       {
+        title: 'Tarefas',
+        path: paths.dashboard.tarefas.root,
+        icon: ICONS.kanban,
+        roles: ['admin', 'gerencial', 'financeiro', 'operacional', 'comercial', 'contabil_externo', 'ir'],
+        children: [
+          {
+            title: 'Minhas Tarefas',
+            path: paths.dashboard.tarefas.minhas,
+            roles: ['admin', 'gerencial', 'financeiro', 'operacional', 'comercial', 'contabil_externo', 'ir'],
+          },
+          {
+            title: 'Todas as Tarefas',
+            path: paths.dashboard.tarefas.root,
+            roles: ['admin', 'gerencial'],
+          },
+          {
+            title: 'Templates Recorrentes',
+            path: paths.dashboard.tarefas.templates,
+            roles: ['admin', 'gerencial'],
+          },
+          {
+            title: 'Setores',
+            path: paths.dashboard.setores.root,
+            roles: ['admin'],
+          },
+        ],
+      },
+
+      {
         title: 'Comercial',
         path: paths.dashboard.invoice.root,
         icon: ICONS.invoice,

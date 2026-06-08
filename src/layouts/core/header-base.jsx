@@ -14,6 +14,7 @@ import { MenuButton } from '../components/menu-button';
 import { SignInButton } from '../components/sign-in-button';
 import { AccountDrawer } from '../components/account-drawer';
 import { WorkspacesPopover } from '../components/workspaces-popover';
+import { NotificationsDrawer } from '../components/notifications-drawer';
 
 // ----------------------------------------------------------------------
 
@@ -135,6 +136,9 @@ export function HeaderBase({
 
               {/* -- Searchbar -- */}
               {searchbar && <Searchbar data-slot="searchbar" data={data?.nav} />}
+
+              {/* -- Notifications drawer (sino) -- */}
+              {notifications && <NotificationsDrawer data-slot="notifications" />}
 
               {/* -- Account drawer -- */}
               {account && <AccountDrawer data-slot="account" data={data?.account} />}
