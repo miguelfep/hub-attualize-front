@@ -161,11 +161,13 @@ export default async function Page({ params }) {
 
 // ----------------------------------------------------------------------
 
-// ISR: a página é renderizada uma vez e servida do cache (TTFB ~ms), sendo
-// revalidada em background a cada `revalidate` segundos. Slugs novos são
-// gerados sob demanda (`dynamicParams`). Antes era `force-dynamic`, que
-// re-renderizava no servidor a CADA request (TTFB alto).
-export const revalidate = 600; // 10 min
+// Dinâmica por necessidade: o layout raiz lê as configurações/tema via
+// `cookies()` (`detectSettings`), o que torna TODA rota dinâmica. Tentar ISR
+// aqui gera `DYNAMIC_SERVER_USAGE` no build. Os `fetch` do blog continuam
+// cacheados (Data Cache via `revalidate`), e as duas chamadas rodam em
+// paralelo — então o custo por request é só o render (sem round-trip à API
+// quando o cache está quente).
+export const dynamic = 'force-dynamic';
 export const dynamicParams = true;
 
 export async function generateStaticParams() {
