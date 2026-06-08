@@ -118,6 +118,10 @@ export default async function RootLayout({ children }) {
   return (
     <html lang={lang} translate="no" suppressHydrationWarning>
       <head>
+        {/* Charset PRIMEIRO no <head> (precisa estar nos primeiros 1024 bytes do HTML —
+            requisito de Best Practices do Lighthouse). Como temos um <head> manual, o
+            charset automático do Next pode cair depois dos demais tags; declaramos aqui. */}
+        <meta charSet="utf-8" />
         {/* Bloqueia Google Translate (Chrome Translate / translate.google.com) para evitar
             que ele envolva nós de texto com <font> e quebre a virtual DOM do React. */}
         <meta name="google" content="notranslate" />
