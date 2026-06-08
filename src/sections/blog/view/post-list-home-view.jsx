@@ -30,7 +30,7 @@ import { PostSearch } from '../post-search';
 const PER_PAGE = 15;
 
 const WHATSAPP_LINK =
-  'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20blog%20e%20quero%20falar%20com%20um%20contador%20especialista';
+  'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20blog%20e%20quero%20falar%20com%20um%20contador%20especialista';
 
 export function PostListHomeView({ initialPosts, totalPages }) {
   const [posts, setPosts] = useState(initialPosts);

@@ -352,7 +352,7 @@ const PLANS = [
       'Power BI',
     ],
     revenue: 'R$ 20.000,00',
-    link: 'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20START',
+    link: 'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20START',
   },
   {
     license: 'Pleno',
@@ -366,7 +366,7 @@ const PLANS = [
       'Power BI',
     ],
     revenue: 'R$ 100.000,00',
-    link: 'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PLENO',
+    link: 'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PLENO',
   },
   {
     license: 'Premium',
@@ -386,7 +386,7 @@ const PLANS = [
       'Power BI',
     ],
     revenue: 'R$ 300.000,00',
-    link: 'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PREMIUM',
+    link: 'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PREMIUM',
   },
   {
     license: 'Plus',
@@ -406,6 +406,6 @@ const PLANS = [
       'Power BI',
     ],
     revenue: 'Sem limites',
-    link: 'https://api.whatsapp.com/send?phone=55413068-1800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PLUS',
+    link: 'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PLUS',
   },
 ];
