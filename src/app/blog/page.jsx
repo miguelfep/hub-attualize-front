@@ -39,6 +39,9 @@ export const metadata = {
   },
 };
 
+// ISR: rota cacheada e revalidada em background (TTFB ~ms).
+export const revalidate = 1800; // 30 min
+
 export default async function Page() {
   const { posts, totalPages } = await getBlogPosts(1, 15); // Primeira página com 15 posts
 

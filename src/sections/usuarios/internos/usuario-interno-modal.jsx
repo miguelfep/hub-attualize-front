@@ -19,6 +19,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import FormControl from '@mui/material/FormControl';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import InputAdornment from '@mui/material/InputAdornment';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { getSetores } from 'src/actions/setores';
@@ -37,6 +38,26 @@ const ROLE_OPTIONS = [
   { value: 'contabil_externo', label: 'Contábil Externo' },
   { value: 'ir', label: 'Imposto de Renda' },
 ];
+
+const REGIME_LABEL = {
+  simples: 'Simples',
+  simei: 'SIMEI',
+  presumido: 'Presumido',
+  real: 'Real',
+  pf: 'PF',
+};
+
+const PLANO_LABEL = {
+  carneleao: 'Carnê-leão',
+  mei: 'MEI',
+  start: 'Start',
+  pleno: 'Pleno',
+  premium: 'Premium',
+  plus: 'Plus',
+};
+
+const normalizarTexto = (s) =>
+  (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 const usuarioInternoSchema = zod
   .object({
@@ -92,6 +113,7 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
   const [empresasDisponiveis, setEmpresasDisponiveis] = useState([]);
   const [loadingEmpresas, setLoadingEmpresas] = useState(false);
   const [setoresDisponiveis, setSetoresDisponiveis] = useState([]);
+  const [buscaEmpresa, setBuscaEmpresa] = useState('');
 
   const {
     control,
@@ -109,6 +131,34 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
   const isEdit = !!usuario;
   const watchedEmpresasId = watch('empresasId');
 
+  // --- seleção rápida de empresas ---
+  const adicionarEmpresas = (clientes) => {
+    const ids = clientes.map((c) => c._id).filter(Boolean);
+    if (!ids.length) return;
+    const atuais = watch('empresasId') || [];
+    setValue('empresasId', Array.from(new Set([...atuais, ...ids])), {
+      shouldValidate: true,
+      shouldDirty: true,
+    });
+  };
+  const limparEmpresas = () =>
+    setValue('empresasId', [], { shouldValidate: true, shouldDirty: true });
+
+  const regimesPresentes = [
+    ...new Set(empresasDisponiveis.map((e) => e.regimeTributario).filter(Boolean)),
+  ];
+  const planosPresentes = [
+    ...new Set(empresasDisponiveis.map((e) => e.planoEmpresa).filter(Boolean)),
+  ];
+
+  const empresasFiltradas = buscaEmpresa
+    ? empresasDisponiveis.filter((e) =>
+        normalizarTexto(`${e.razaoSocial || ''} ${e.nome || ''} ${e.cnpj || ''}`).includes(
+          normalizarTexto(buscaEmpresa)
+        )
+      )
+    : empresasDisponiveis;
+
   const fetchEmpresas = async () => {
     try {
       setLoadingEmpresas(true);
@@ -125,6 +175,7 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
 
   useEffect(() => {
     if (open) {
+      setBuscaEmpresa('');
       fetchEmpresas();
       getSetores()
         .then((data) => setSetoresDisponiveis(Array.isArray(data) ? data : []))
@@ -435,6 +486,73 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
                 selecionada por padrão.
               </Alert>
 
+              {/* Seleção rápida */}
+              <Stack spacing={1.5} sx={{ mb: 2 }}>
+                <TextField
+                  size="small"
+                  placeholder="Buscar empresa por nome ou CNPJ..."
+                  value={buscaEmpresa}
+                  onChange={(e) => setBuscaEmpresa(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap alignItems="center">
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    Adicionar:
+                  </Typography>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => adicionarEmpresas(empresasDisponiveis)}
+                  >
+                    Todos ({empresasDisponiveis.length})
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    onClick={() => adicionarEmpresas(empresasDisponiveis.filter((e) => e.status === true))}
+                  >
+                    Ativos
+                  </Button>
+                  {regimesPresentes.map((r) => (
+                    <Chip
+                      key={r}
+                      size="small"
+                      variant="outlined"
+                      icon={<Iconify icon="mingcute:add-line" width={14} />}
+                      label={REGIME_LABEL[r] || r}
+                      onClick={() =>
+                        adicionarEmpresas(empresasDisponiveis.filter((e) => e.regimeTributario === r))
+                      }
+                    />
+                  ))}
+                  {planosPresentes.map((p) => (
+                    <Chip
+                      key={p}
+                      size="small"
+                      variant="outlined"
+                      color="info"
+                      icon={<Iconify icon="mingcute:add-line" width={14} />}
+                      label={PLANO_LABEL[p] || p}
+                      onClick={() =>
+                        adicionarEmpresas(empresasDisponiveis.filter((e) => e.planoEmpresa === p))
+                      }
+                    />
+                  ))}
+                  {watchedEmpresasId?.length > 0 && (
+                    <Button size="small" color="inherit" onClick={limparEmpresas}>
+                      Limpar
+                    </Button>
+                  )}
+                </Stack>
+              </Stack>
+
               <Stack spacing={2}>
                 <Controller
                   name="empresasId"
@@ -464,8 +582,12 @@ export function UsuarioInternoModal({ open, onClose, onSave, usuario }) {
                               <Typography variant="body2">Carregando empresas...</Typography>
                             </Stack>
                           </MenuItem>
+                        ) : empresasFiltradas.length === 0 ? (
+                          <MenuItem disabled>
+                            <Typography variant="body2">Nenhuma empresa encontrada.</Typography>
+                          </MenuItem>
                         ) : (
-                          empresasDisponiveis.map((empresa) => (
+                          empresasFiltradas.map((empresa) => (
                             <MenuItem key={empresa._id} value={empresa._id}>
                               <Stack spacing={0.5} sx={{ width: '100%' }}>
                                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
