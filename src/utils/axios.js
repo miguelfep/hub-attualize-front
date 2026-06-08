@@ -14,6 +14,24 @@ const SIGN_IN_PATH = '/auth/jwt/sign-in';
 let redirecionandoLogin = false;
 
 /**
+ * Decodifica o JWT e diz se ele está ausente, ilegível ou EXPIRADO (exp < agora).
+ * Usado para confirmar a expiração antes de deslogar — assim um 401 indevido do
+ * backend sobre um token ainda VÁLIDO não derruba a sessão (isso estava barrando
+ * o login de usuários internos não-admin).
+ */
+function tokenAusenteOuExpirado(token) {
+  if (!token) return true;
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const payload = JSON.parse(atob(base64));
+    if (!payload?.exp) return false; // sem `exp` declarado → não trata como expirado
+    return Date.now() >= payload.exp * 1000;
+  } catch {
+    return true; // token ilegível
+  }
+}
+
+/**
  * Token inválido/expirado (401) ⇒ limpa a sessão e redireciona para o login.
  * Espelha o `signOut` (remove cookies + header) sem importar o auth (evita ciclo).
  */
@@ -39,8 +57,13 @@ axiosInstance.interceptors.response.use(
     const { response } = error;
     const data = response?.data;
 
-    // Sessão inválida/expirada → desloga.
-    if (response?.status === 401 && /invalid or expired token/i.test(data?.message || '')) {
+    // Sessão expirada → desloga. Só age se o token estiver REALMENTE ausente/
+    // expirado no cliente; um 401 do backend sobre um token válido é ignorado.
+    if (
+      response?.status === 401 &&
+      /invalid or expired token/i.test(data?.message || '') &&
+      tokenAusenteOuExpirado(typeof window !== 'undefined' ? Cookies.get(STORAGE_KEY) : null)
+    ) {
       forcarLogout();
     }
 
