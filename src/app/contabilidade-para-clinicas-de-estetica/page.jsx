@@ -1,5 +1,7 @@
 import { Suspense } from 'react';
 
+import { CONFIG } from 'src/config-global';
+
 import { HomeEstetica } from 'src/sections/estetica-home/homeEstetica';
 import { FAQS_ESTETICA } from 'src/sections/estetica-home/estetica-utils';
 
@@ -117,6 +119,14 @@ export default function Page() {
 
   return (
     <section>
+      {/* Preload do banner mobile (LCP desta landing) — só no mobile. React 19 hoist p/ o <head>. */}
+      <link
+        rel="preload"
+        as="image"
+        href={`${CONFIG.site.basePath}/assets/images/about/banner-6-mobile.png`}
+        fetchPriority="high"
+        media="(max-width: 600px)"
+      />
       <script
         type="application/ld+json"
         // eslint-disable-next-line react/no-danger

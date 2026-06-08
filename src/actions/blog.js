@@ -63,17 +63,52 @@ function adaptPost(p) {
 // LEITURA (hooks)
 // ----------------------------------------------------------------------
 
+const POSTS_PER_PAGE = 100; // teto por página da API
+const MAX_PAGES = 100; // trava de segurança (até 10k posts)
+
+/**
+ * Busca TODOS os posts que casam com os filtros, paginando a API (que limita a
+ * 100 por página) e acumulando o resultado. Antes a tela travava no teto de 100.
+ */
+async function fetchAllBlogPosts(baseParams) {
+  const first = await fetcher(
+    `${endpoints.blog.posts}${buildQuery({ ...baseParams, page: 1, limit: POSTS_PER_PAGE })}`
+  );
+  const firstPosts = first?.posts || first?.data || [];
+  const total = Number(first?.total ?? firstPosts.length);
+  const perPage = Number(first?.limit) || POSTS_PER_PAGE;
+  const totalPages = Math.min(MAX_PAGES, Math.max(1, Math.ceil(total / perPage)));
+
+  if (totalPages <= 1) return { posts: firstPosts, total };
+
+  const requests = [];
+  for (let p = 2; p <= totalPages; p += 1) {
+    requests.push(
+      fetcher(`${endpoints.blog.posts}${buildQuery({ ...baseParams, page: p, limit: perPage })}`)
+    );
+  }
+  const rest = await Promise.all(requests);
+  const restPosts = rest.flatMap((r) => r?.posts || r?.data || []);
+  return { posts: [...firstPosts, ...restPosts], total };
+}
+
 /**
  * Lista posts para o painel. Com token, pode listar qualquer status.
- * @param {{ status?: string, page?: number, limit?: number, categoria?: string, busca?: string }} params
+ * Pagina internamente e devolve TODOS os posts (não só os 100 da 1ª página).
+ * @param {{ status?: string, categoria?: string, busca?: string }} params
  */
 export function useGetBlogPosts(params = {}) {
-  const url = `${endpoints.blog.posts}${buildQuery({ limit: 100, ...params })}`;
+  // Chave estável p/ o cache do SWR (o fetcher pagina por conta própria).
+  const key = `${endpoints.blog.posts}${buildQuery(params)}::all`;
 
-  const { data, isLoading, error, isValidating, mutate } = useSWR(url, fetcher, swrOptions);
+  const { data, isLoading, error, isValidating, mutate } = useSWR(
+    key,
+    () => fetchAllBlogPosts(params),
+    swrOptions
+  );
 
   return useMemo(() => {
-    const rawPosts = data?.posts || data?.data || [];
+    const rawPosts = data?.posts || [];
     const posts = rawPosts.map(adaptPost);
     return {
       posts,

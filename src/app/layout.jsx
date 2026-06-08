@@ -41,6 +41,11 @@ export const viewport = {
   themeColor: primary.main,
 };
 
+// Como o app é renderizado dinamicamente (o layout lê configurações via cookie),
+// a função roda no servidor a cada request. Fixar a região em São Paulo (`gru1`)
+// reduz o TTFB para o público no Brasil (o default da Vercel costuma ser US-East).
+export const preferredRegion = 'gru1';
+
 export const metadata = {
   metadataBase: new URL('https://attualize.com.br'),
   title: {
@@ -113,8 +118,6 @@ export default async function RootLayout({ children }) {
   const lang = 'pt-BR';
   const settings = CONFIG.isStaticExport ? defaultSettings : await detectSettings();
 
-  const basePath = CONFIG.site.basePath || '';
-
   return (
     <html lang={lang} translate="no" suppressHydrationWarning>
       <head>
@@ -129,13 +132,8 @@ export default async function RootLayout({ children }) {
         {/* Preconnect para Google Analytics - melhora tempo de conexão */}
         <link rel="preconnect" href="https://www.googletagmanager.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        {/* Preload da imagem do banner mobile (LCP element crítico para página de estética) */}
-        <link
-          rel="preload"
-          as="image"
-          href={`${basePath}/assets/images/about/banner-6-mobile.png`}
-          fetchPriority="high"
-        />
+        {/* NB: o preload do banner mobile saiu daqui (era baixado em TODAS as páginas,
+            prejudicando o FCP/banda no mobile). Agora vive só na landing de estética. */}
         <InitColorSchemeScript />
       </head>
       <body className="notranslate">
