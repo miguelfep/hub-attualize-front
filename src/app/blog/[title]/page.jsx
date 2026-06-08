@@ -79,13 +79,15 @@ export default async function Page({ params }) {
   }
 
   try {
-    const post = await getBlogPostBySlug(title);
+    // Em paralelo (antes eram sequenciais → somavam a latência das duas).
+    const [post, latestPosts] = await Promise.all([
+      getBlogPostBySlug(title),
+      getBlogLatestPosts(8),
+    ]);
 
     if (!post) {
       return <PostDetailsHomeView post={null} latestPosts={[]} />;
     }
-
-    const latestPosts = await getBlogLatestPosts(8);
 
     // JSON-LD: a API já entrega `jsonLd` pronto (Article + FAQPage). Usamos quando disponível;
     // caso contrário, montamos BlogPosting + BreadcrumbList como fallback.
@@ -159,7 +161,11 @@ export default async function Page({ params }) {
 
 // ----------------------------------------------------------------------
 
-export const dynamic = 'force-dynamic';
+// ISR: a página é renderizada uma vez e servida do cache (TTFB ~ms), sendo
+// revalidada em background a cada `revalidate` segundos. Slugs novos são
+// gerados sob demanda (`dynamicParams`). Antes era `force-dynamic`, que
+// re-renderizava no servidor a CADA request (TTFB alto).
+export const revalidate = 600; // 10 min
 export const dynamicParams = true;
 
 export async function generateStaticParams() {

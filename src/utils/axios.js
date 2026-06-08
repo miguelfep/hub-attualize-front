@@ -1,17 +1,48 @@
 import axios from 'axios';
+import Cookies from 'js-cookie';
 
 import { CONFIG } from 'src/config-global';
+
+import { USER_DATA, STORAGE_KEY } from 'src/auth/context/jwt/constant';
 
 // ----------------------------------------------------------------------
 
 const axiosInstance = axios.create({ baseURL: CONFIG.site.serverUrl });
 // const axiosInstance = axios.create({ baseURL: process.env.NEXT_PUBLIC_HOST_API });
 
+const SIGN_IN_PATH = '/auth/jwt/sign-in';
+let redirecionandoLogin = false;
+
+/**
+ * Token inválido/expirado (401) ⇒ limpa a sessão e redireciona para o login.
+ * Espelha o `signOut` (remove cookies + header) sem importar o auth (evita ciclo).
+ */
+function forcarLogout() {
+  if (typeof window === 'undefined') return;
+  try {
+    Cookies.remove(STORAGE_KEY);
+    Cookies.remove(USER_DATA);
+  } catch {
+    /* ignore */
+  }
+  delete axiosInstance.defaults.headers.common.Authorization;
+
+  if (!redirecionandoLogin && !window.location.pathname.startsWith(SIGN_IN_PATH)) {
+    redirecionandoLogin = true;
+    window.location.href = SIGN_IN_PATH;
+  }
+}
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
     const { response } = error;
     const data = response?.data;
+
+    // Sessão inválida/expirada → desloga.
+    if (response?.status === 401 && /invalid or expired token/i.test(data?.message || '')) {
+      forcarLogout();
+    }
 
     const statusMsg = response?.status
       ? `Erro HTTP ${response.status}${response.statusText ? ` (${response.statusText})` : ''}`
