@@ -5,6 +5,9 @@ import axios from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
 
+// Empresa ativa = não marcada explicitamente como inativa (`status`/`ativo === false`).
+const empresaEstaAtiva = (e) => e?.status !== false && e?.ativo !== false;
+
 export function useEmpresa(userId) {
   const [empresas, setEmpresas] = useState([]);
   const [empresaAtiva, setEmpresaAtiva] = useState(null);
@@ -23,7 +26,8 @@ export function useEmpresa(userId) {
       if (response.data.success) {
         const { empresas: empresasData, empresaAtiva: empresaAtivaData } = response.data.data;
 
-        setEmpresas(empresasData || []);
+        // Remove empresas inativas.
+        setEmpresas((empresasData || []).filter(empresaEstaAtiva));
         setEmpresaAtiva(empresaAtivaData?._id || empresaAtivaData);
       } else {
         console.log('useEmpresa: API retornou success: false');

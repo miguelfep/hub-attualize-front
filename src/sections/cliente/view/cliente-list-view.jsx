@@ -56,7 +56,6 @@ import { ClienteTableFiltersResult } from '../cliente-table-filters-result';
 const TABLE_HEAD = [
   { id: 'codigo', label: 'Código', width: 20 },
   { id: 'name', label: 'Nome', width: 50 },
-  { id: 'razaoSocial', label: 'Razão Social', width: 130 },
   { id: 'regimeTributario', label: 'Regime Tributário', width: 100 },
   { id: 'tributacao', label: 'Plano Tributação', width: 120 },
   { id: 'status', label: 'Status', width: 80 },
@@ -383,7 +382,7 @@ export function ClienteListView() {
 
   return (
     <>
-      <DashboardContent>
+      <DashboardContent maxWidth={false}>
         <CustomBreadcrumbs
           heading="Lista de Clientes"
           links={[

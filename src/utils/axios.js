@@ -202,6 +202,9 @@ export const endpoints = {
     signUp: '/api/auth/sign-up',
     resetPassword: `${baseUrl}users/reset-password`,
     updatePassword: `${baseUrl}users/update-password`,
+    // "Logar como cliente" (impersonação). Autenticado pelo interno (admin/operacional/gerencial);
+    // retorna { accessToken, userData, impersonation } no mesmo formato do login.
+    impersonate: `${baseUrl}users/impersonate`,
   },
   mail: {
     list: '/api/mail/list',
