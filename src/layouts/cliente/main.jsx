@@ -7,9 +7,9 @@ import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
+import Button from '@mui/material/Button';
 import Toolbar from '@mui/material/Toolbar';
 import Divider from '@mui/material/Divider';
-import Button from '@mui/material/Button';
 import MenuItem from '@mui/material/MenuItem';
 import Container from '@mui/material/Container';
 import { useTheme } from '@mui/material/styles';
@@ -30,6 +30,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { useSettingsContext } from 'src/components/settings';
 import { PartnerBanners } from 'src/components/banner/partner-banners';
 import { NavSectionVertical } from 'src/components/nav-section/vertical';
+import { ImpersonationBanner } from 'src/components/impersonation/impersonation-banner';
 import { EmpresaSelectorPortal } from 'src/components/empresa-selector/empresa-selector-portal';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -115,6 +116,8 @@ export function ClienteLayout({ children }) {
 
       {/* Main Content Area */}
       <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+        <ImpersonationBanner />
+
         <AppBar
           position="static"
           elevation={0}

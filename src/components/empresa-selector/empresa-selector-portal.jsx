@@ -21,6 +21,10 @@ import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
+// Empresa ativa = não marcada explicitamente como inativa (`status`/`ativo === false`).
+// Mantém empresas sem o campo (não regride caso o backend não envie).
+const empresaEstaAtiva = (e) => e?.status !== false && e?.ativo !== false;
+
 export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false }) {
   
   const [empresas, setEmpresas] = useState([]);
@@ -41,7 +45,8 @@ export function EmpresaSelectorPortal({ userId, onEmpresaChange, compact = false
       if (response.data.success) {
         const { empresas: empresasData, empresaAtiva: empresaAtivaData, settings, cliente } = response.data.data;
 
-        setEmpresas(empresasData || []);
+        // Remove empresas inativas do switch.
+        setEmpresas((empresasData || []).filter(empresaEstaAtiva));
         setEmpresaAtiva(empresaAtivaData);
         if (settings) {
           updateSettings(settings);

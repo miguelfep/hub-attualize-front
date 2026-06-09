@@ -18,6 +18,8 @@ import { Iconify } from 'src/components/iconify';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
+import { ClienteImpersonarButton } from './cliente-impersonar-button';
+
 // ----------------------------------------------------------------------
 
 export function ClienteTableRow({
@@ -94,18 +96,6 @@ export function ClienteTableRow({
             </Stack>
           </Stack>
         </TableCell>
-        <TableCell sx={{ minWidth: 200, maxWidth: 300 }}>
-          <Box
-            sx={{
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              maxWidth: '100%',
-            }}
-          >
-            {row.razaoSocial}
-          </Box>
-        </TableCell>
         <TableCell>
           {row.regimeTributario ? (
             <Label variant="soft" color="info">
@@ -174,9 +164,12 @@ export function ClienteTableRow({
           </Label>
         </TableCell>
         <TableCell>
-          <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
-            <Iconify icon="eva:more-vertical-fill" />
-          </IconButton>
+          <Stack direction="row" alignItems="center" justifyContent="flex-end">
+            <ClienteImpersonarButton cliente={row} />
+            <IconButton color={popover.open ? 'inherit' : 'default'} onClick={popover.onOpen}>
+              <Iconify icon="eva:more-vertical-fill" />
+            </IconButton>
+          </Stack>
         </TableCell>
       </TableRow>
 

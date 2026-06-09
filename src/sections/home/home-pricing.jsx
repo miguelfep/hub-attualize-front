@@ -9,6 +9,7 @@ import { Box, Tab, Tabs, Stack, Button, Divider, Container, Typography } from '@
 import { useTabs } from 'src/hooks/use-tabs';
 
 import { varAlpha } from 'src/theme/styles';
+import { ATTUALIZE_WHATSAPP_PHONE, buildWhatsAppLink } from 'src/utils/whatsapp-link';
 
 import { Iconify } from 'src/components/iconify';
 import { varFade, varScale, MotionViewport } from 'src/components/animate';
@@ -352,7 +353,10 @@ const PLANS = [
       'Power BI',
     ],
     revenue: 'R$ 20.000,00',
-    link: 'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20START',
+    link: buildWhatsAppLink({
+      phoneNumber: ATTUALIZE_WHATSAPP_PHONE,
+      message: 'Oi, vim pelo site e quero informações sobre o plano de contabilidade START',
+    }),
   },
   {
     license: 'Pleno',
@@ -366,7 +370,10 @@ const PLANS = [
       'Power BI',
     ],
     revenue: 'R$ 100.000,00',
-    link: 'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PLENO',
+    link: buildWhatsAppLink({
+      phoneNumber: ATTUALIZE_WHATSAPP_PHONE,
+      message: 'Oi, vim pelo site e quero informações sobre o plano de contabilidade PLENO',
+    }),
   },
   {
     license: 'Premium',
@@ -386,7 +393,10 @@ const PLANS = [
       'Power BI',
     ],
     revenue: 'R$ 300.000,00',
-    link: 'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PREMIUM',
+    link: buildWhatsAppLink({
+      phoneNumber: ATTUALIZE_WHATSAPP_PHONE,
+      message: 'Oi, vim pelo site e quero informações sobre o plano de contabilidade PREMIUM',
+    }),
   },
   {
     license: 'Plus',
@@ -406,6 +416,9 @@ const PLANS = [
       'Power BI',
     ],
     revenue: 'Sem limites',
-    link: 'https://api.whatsapp.com/send?phone=554130681800&text=Oi,%20vim%20pelo%20site%20e%20quero%20informa%C3%A7%C3%B5es%20sobre%20o%20plano%20de%20contabilidade%20PLUS',
+    link: buildWhatsAppLink({
+      phoneNumber: ATTUALIZE_WHATSAPP_PHONE,
+      message: 'Oi, vim pelo site e quero informações sobre o plano de contabilidade PLUS',
+    }),
   },
 ];
