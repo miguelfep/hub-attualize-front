@@ -1,3 +1,5 @@
+import { toast } from 'sonner';
+
 import {
   Chip,
   Stack,
@@ -8,6 +10,8 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
+
+import { abrirPdfNota } from 'src/actions/notafiscal';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -48,14 +52,16 @@ export function VendasTableRow({ row, onEdit }) {
               <Iconify icon="solar:pen-bold" />
             </IconButton>
           </Tooltip>
-          {row?.notaFiscalId?.linkNota && (
+          {row?.notaFiscalId?.linkNota && row.notaFiscalId.linkNota !== 'Processando...' && (
             <Tooltip title="Ver NFSe (PDF)">
               <IconButton
-                href={row.notaFiscalId.linkNota}
-                target="_blank"
-                rel="noopener noreferrer"
                 size="small"
                 color="default"
+                onClick={() =>
+                  abrirPdfNota(row.notaFiscalId).catch((err) =>
+                    toast.error(err?.message || 'Erro ao abrir a nota')
+                  )
+                }
               >
                 <Iconify icon="solar:document-text-bold" />
               </IconButton>

@@ -34,6 +34,7 @@ import { useSettings } from 'src/hooks/useSettings';
 import { toTitleCase } from 'src/utils/helper';
 import { applySortFilter } from 'src/utils/constants/table-utils';
 
+import { abrirPdfNota } from 'src/actions/notafiscal';
 import {
   usePortalOrcamentos,
   portalBaixarPdfBoleto,
@@ -187,15 +188,17 @@ function ServiceOrderMobileCard({
           </Box>
         )}
         <Stack direction="row" spacing={1} justifyContent="flex-end">
-          {serviceOrder?.notaFiscalId?.linkNota && 
+          {serviceOrder?.notaFiscalId?.linkNota &&
            serviceOrder.notaFiscalId.linkNota !== 'Processando...' && (
             <Tooltip title="Ver NFSe (PDF)">
               <IconButton
-                href={serviceOrder.notaFiscalId.linkNota}
-                target="_blank"
-                rel="noopener noreferrer"
                 size="small"
                 color="default"
+                onClick={() =>
+                  abrirPdfNota(serviceOrder.notaFiscalId).catch((err) =>
+                    toast.error(err?.message || 'Erro ao abrir a nota')
+                  )
+                }
               >
                 <Iconify icon="solar:document-text-bold" />
               </IconButton>
@@ -884,15 +887,17 @@ export default function PortalOrcamentosPage() {
                                       </span>
                                     </Tooltip>
                                   )}
-                                  {o?.notaFiscalId?.linkNota && 
+                                  {o?.notaFiscalId?.linkNota &&
                                    o.notaFiscalId.linkNota !== 'Processando...' && (
                                     <Tooltip title="Ver NFSe (PDF)">
                                       <IconButton
-                                        href={o.notaFiscalId.linkNota}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
                                         size="small"
                                         color="default"
+                                        onClick={() =>
+                                          abrirPdfNota(o.notaFiscalId).catch((err) =>
+                                            toast.error(err?.message || 'Erro ao abrir a nota')
+                                          )
+                                        }
                                       >
                                         <Iconify icon="solar:document-text-bold" />
                                       </IconButton>

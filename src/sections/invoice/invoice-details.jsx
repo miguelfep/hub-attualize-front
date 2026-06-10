@@ -23,7 +23,7 @@ import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
 import { updateInvoice } from 'src/actions/invoices';
-import { criarNFSeInvoice, cancelarNFSeInvoice } from 'src/actions/notafiscal';
+import { abrirPdfNota, criarNFSeInvoice, cancelarNFSeInvoice } from 'src/actions/notafiscal';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -523,7 +523,12 @@ export function InvoiceDetails({ invoice, nfses }) {
                       <Stack direction="row" spacing={1}>
                         {n.linkNota && n.linkNota !== 'Processando...' && (
                           <Tooltip title="Abrir NFSe">
-                            <Button href={n.linkNota} target="_blank" rel="noopener noreferrer" variant="outlined" size="small" startIcon={<Iconify icon="solar:document-text-bold" />}>
+                            <Button
+                              variant="outlined"
+                              size="small"
+                              startIcon={<Iconify icon="solar:document-text-bold" />}
+                              onClick={() => abrirPdfNota(n).catch((err) => toast.error(err?.message || 'Erro ao abrir a nota'))}
+                            >
                               Ver Nota
                             </Button>
                           </Tooltip>

@@ -34,6 +34,7 @@ import {
   FormControlLabel,
 } from '@mui/material';
 
+import { getNacionalStatus } from 'src/actions/notafiscal';
 import { useGetSettings, updateSettings } from 'src/actions/settings';
 import {
   uploadCertificado,
@@ -104,16 +105,43 @@ export function ClientePortalSettings({ clienteId }) {
     [settings]
   );
 
-  const [localState, setLocalState] = useState({ funcionalidades, configuracoes, eNotas });
+  const provedorNFSe = settings?.provedorNFSe ?? 'enotas';
+
+  const nfseNacional = useMemo(
+    () => ({
+      ambiente: settings?.nfseNacionalConfig?.ambiente ?? 'homologacao',
+      serieDps: settings?.nfseNacionalConfig?.serieDps ?? '1',
+      proximoNumeroDps: settings?.nfseNacionalConfig?.proximoNumeroDps ?? 1,
+      codigoMunicipio: settings?.nfseNacionalConfig?.codigoMunicipio ?? '',
+      codigoTributacaoNacional: settings?.nfseNacionalConfig?.codigoTributacaoNacional ?? '',
+      codigoTributacaoMunicipal: settings?.nfseNacionalConfig?.codigoTributacaoMunicipal ?? '',
+      regimeEspecialTributacao: settings?.nfseNacionalConfig?.regimeEspecialTributacao ?? 0,
+      optanteSimplesNacional: settings?.nfseNacionalConfig?.optanteSimplesNacional ?? 1,
+      regimeApuracaoTributosSN: settings?.nfseNacionalConfig?.regimeApuracaoTributosSN ?? '',
+      percentualTotalTributosSN: settings?.nfseNacionalConfig?.percentualTotalTributosSN ?? '',
+      ultimoNSU: settings?.nfseNacionalConfig?.ultimoNSU ?? 0,
+      idCertificado: settings?.nfseNacionalConfig?.idCertificado ?? '',
+    }),
+    [settings]
+  );
+
+  const [localState, setLocalState] = useState({
+    funcionalidades,
+    configuracoes,
+    eNotas,
+    provedorNFSe,
+    nfseNacional,
+  });
 
   // Atualiza local state quando settings carregar
-  const syncLocal = () => setLocalState({ funcionalidades, configuracoes, eNotas });
+  const syncLocal = () =>
+    setLocalState({ funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional });
 
   useEffect(() => {
     if (settings) {
-      setLocalState({ funcionalidades, configuracoes, eNotas });
+      setLocalState({ funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional });
     }
-  }, [settings, funcionalidades, configuracoes, eNotas]);
+  }, [settings, funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional]);
 
   const handleToggle = (key) => (event) => {
     setLocalState((prev) => {
@@ -168,6 +196,48 @@ export function ClientePortalSettings({ clienteId }) {
     }));
   };
 
+  const handleProvedorChange = (event) => {
+    setLocalState((prev) => ({ ...prev, provedorNFSe: event.target.value }));
+  };
+
+  const NACIONAL_NUMERIC_FIELDS = [
+    'proximoNumeroDps',
+    'regimeEspecialTributacao',
+    'optanteSimplesNacional',
+    'regimeApuracaoTributosSN',
+    'percentualTotalTributosSN',
+  ];
+
+  const handleNacionalChange = (key) => (event) => {
+    const raw = event.target.value;
+    const value = NACIONAL_NUMERIC_FIELDS.includes(key) && raw !== '' ? Number(raw) : raw;
+    setLocalState((prev) => ({
+      ...prev,
+      nfseNacional: { ...prev.nfseNacional, [key]: value },
+    }));
+  };
+
+  // Checklist de status do Emissor Nacional (GET /nota-fiscal/:clienteId/nacional/status)
+  const [nacionalStatus, setNacionalStatus] = useState(null);
+  const [checkingNacional, setCheckingNacional] = useState(false);
+
+  const handleVerificarNacional = async () => {
+    try {
+      setCheckingNacional(true);
+      const res = await getNacionalStatus(clienteId, { testarConexao: true });
+      setNacionalStatus(res.data);
+      if (res.data?.prontoParaEmitir) {
+        toast.success('Configuração do Emissor Nacional pronta para emitir!');
+      } else {
+        toast.warning('Há pendências na configuração do Emissor Nacional');
+      }
+    } catch (error) {
+      toast.error(error?.message || 'Falha ao verificar configuração do Emissor Nacional');
+    } finally {
+      setCheckingNacional(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
@@ -198,9 +268,27 @@ export function ClientePortalSettings({ clienteId }) {
         },
       };
 
+      const nac = localState?.nfseNacional || {};
+      const numOrUndefined = (v) => (v === '' || v === null || typeof v === 'undefined' ? undefined : Number(v));
+      const nfseNacionalPayload = {
+        ambiente: nac.ambiente || 'homologacao',
+        serieDps: nac.serieDps || '1',
+        proximoNumeroDps: numOrUndefined(nac.proximoNumeroDps) ?? 1,
+        codigoMunicipio: nac.codigoMunicipio || undefined,
+        codigoTributacaoNacional: nac.codigoTributacaoNacional || undefined,
+        codigoTributacaoMunicipal: nac.codigoTributacaoMunicipal || undefined,
+        regimeEspecialTributacao: numOrUndefined(nac.regimeEspecialTributacao) ?? 0,
+        optanteSimplesNacional: numOrUndefined(nac.optanteSimplesNacional),
+        regimeApuracaoTributosSN: numOrUndefined(nac.regimeApuracaoTributosSN),
+        percentualTotalTributosSN: numOrUndefined(nac.percentualTotalTributosSN),
+        idCertificado: nac.idCertificado || undefined,
+      };
+
       const response = await updateSettings(clienteId, {
         funcionalidades: { ...localState.funcionalidades },
         configuracoes: { ...localState.configuracoes },
+        provedorNFSe: localState.provedorNFSe || 'enotas',
+        nfseNacionalConfig: nfseNacionalPayload,
         eNotasConfig: eNotasPayload,
       });
       toast.success('Configurações atualizadas com sucesso');
@@ -241,11 +329,27 @@ export function ClientePortalSettings({ clienteId }) {
               idCertificado: updated?.eNotasConfig?.configuracaoEmpresa?.idCertificado ?? '',
             },
           },
+          provedorNFSe: updated?.provedorNFSe ?? 'enotas',
+          nfseNacional: {
+            ambiente: updated?.nfseNacionalConfig?.ambiente ?? 'homologacao',
+            serieDps: updated?.nfseNacionalConfig?.serieDps ?? '1',
+            proximoNumeroDps: updated?.nfseNacionalConfig?.proximoNumeroDps ?? 1,
+            codigoMunicipio: updated?.nfseNacionalConfig?.codigoMunicipio ?? '',
+            codigoTributacaoNacional: updated?.nfseNacionalConfig?.codigoTributacaoNacional ?? '',
+            codigoTributacaoMunicipal: updated?.nfseNacionalConfig?.codigoTributacaoMunicipal ?? '',
+            regimeEspecialTributacao: updated?.nfseNacionalConfig?.regimeEspecialTributacao ?? 0,
+            optanteSimplesNacional: updated?.nfseNacionalConfig?.optanteSimplesNacional ?? 1,
+            regimeApuracaoTributosSN: updated?.nfseNacionalConfig?.regimeApuracaoTributosSN ?? '',
+            percentualTotalTributosSN: updated?.nfseNacionalConfig?.percentualTotalTributosSN ?? '',
+            ultimoNSU: updated?.nfseNacionalConfig?.ultimoNSU ?? 0,
+            idCertificado: updated?.nfseNacionalConfig?.idCertificado ?? '',
+          },
         });
       }
       await refetchSettings();
     } catch (error) {
-      toast.error('Falha ao atualizar configurações');
+      // Backend retorna 400 com a lista de pendências ao tentar ativar o Emissor Nacional
+      toast.error(error?.message || 'Falha ao atualizar configurações');
     } finally {
       setSaving(false);
     }
@@ -558,7 +662,241 @@ export function ClientePortalSettings({ clienteId }) {
       {localState.funcionalidades.emissaoNFSe && (
         <>
           <Divider sx={{ my: 3 }} />
-          <Typography variant="h6" sx={{ mb: 2 }}>Integração eNotas (NFSe)</Typography>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+            spacing={2}
+            sx={{ mb: 2 }}
+          >
+            <Typography variant="h6">
+              {localState.provedorNFSe === 'nacional'
+                ? 'Emissor Nacional (NFSe)'
+                : 'Integração eNotas (NFSe)'}
+            </Typography>
+            <FormControl size="small" sx={{ minWidth: 220 }}>
+              <InputLabel id="provedor-nfse-label">Provedor NFSe</InputLabel>
+              <Select
+                labelId="provedor-nfse-label"
+                label="Provedor NFSe"
+                value={localState.provedorNFSe}
+                onChange={handleProvedorChange}
+              >
+                <MenuItem value="enotas">eNotas</MenuItem>
+                <MenuItem value="nacional">Emissor Nacional</MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+
+          {localState.provedorNFSe === 'nacional' && (
+            <Grid container spacing={2}>
+              <Grid xs={12}>
+                <Alert severity="info">
+                  Emissão síncrona direto no Emissor Nacional (Sefin). Requer código IBGE do
+                  município, código de tributação nacional e certificado digital A1 ativo.
+                </Alert>
+              </Grid>
+
+              <Grid xs={12} md={3}>
+                <FormControl fullWidth>
+                  <InputLabel id="nacional-ambiente-label">Ambiente</InputLabel>
+                  <Select
+                    labelId="nacional-ambiente-label"
+                    label="Ambiente"
+                    value={localState.nfseNacional.ambiente}
+                    onChange={handleNacionalChange('ambiente')}
+                  >
+                    <MenuItem value="homologacao">Homologação</MenuItem>
+                    <MenuItem value="producao">Produção</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid xs={12} md={3}>
+                <TextField
+                  fullWidth
+                  label="Série DPS"
+                  value={localState.nfseNacional.serieDps}
+                  onChange={handleNacionalChange('serieDps')}
+                />
+              </Grid>
+              <Grid xs={12} md={3}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Próximo nº DPS"
+                  value={localState.nfseNacional.proximoNumeroDps}
+                  onChange={handleNacionalChange('proximoNumeroDps')}
+                />
+              </Grid>
+              <Grid xs={12} md={3}>
+                <TextField
+                  fullWidth
+                  label="Último NSU (ADN)"
+                  value={localState.nfseNacional.ultimoNSU}
+                  InputProps={{ readOnly: true }}
+                  helperText="Controle interno — somente leitura"
+                />
+              </Grid>
+
+              <Grid xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Código do Município (IBGE)"
+                  value={localState.nfseNacional.codigoMunicipio}
+                  onChange={handleNacionalChange('codigoMunicipio')}
+                  helperText="7 dígitos — obrigatório"
+                />
+              </Grid>
+              <Grid xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Cód. Tributação Nacional (cTribNac) — fallback"
+                  value={localState.nfseNacional.codigoTributacaoNacional}
+                  onChange={handleNacionalChange('codigoTributacaoNacional')}
+                  helperText="6 dígitos — usado apenas quando o serviço não tem código próprio no cadastro"
+                />
+              </Grid>
+              <Grid xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  label="Cód. Tributação Municipal (cTribMun) — fallback"
+                  value={localState.nfseNacional.codigoTributacaoMunicipal}
+                  onChange={handleNacionalChange('codigoTributacaoMunicipal')}
+                  helperText="Opcional — usado apenas quando o serviço não tem código próprio no cadastro"
+                />
+              </Grid>
+
+              <Grid xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel id="nacional-opsn-label">Optante Simples Nacional</InputLabel>
+                  <Select
+                    labelId="nacional-opsn-label"
+                    label="Optante Simples Nacional"
+                    value={localState.nfseNacional.optanteSimplesNacional}
+                    onChange={handleNacionalChange('optanteSimplesNacional')}
+                  >
+                    <MenuItem value={1}>Não optante</MenuItem>
+                    <MenuItem value={2}>MEI</MenuItem>
+                    <MenuItem value={3}>ME/EPP (Simples Nacional)</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              {localState.nfseNacional.optanteSimplesNacional === 3 && (
+                <>
+                  <Grid xs={12} md={4}>
+                    <FormControl fullWidth>
+                      <InputLabel id="nacional-regapsn-label">Regime Apuração SN</InputLabel>
+                      <Select
+                        labelId="nacional-regapsn-label"
+                        label="Regime Apuração SN"
+                        value={localState.nfseNacional.regimeApuracaoTributosSN}
+                        onChange={handleNacionalChange('regimeApuracaoTributosSN')}
+                      >
+                        <MenuItem value={1}>1 — Regime de apuração padrão SN</MenuItem>
+                        <MenuItem value={2}>2 — SN com sublimite excedido (ISSQN fora)</MenuItem>
+                        <MenuItem value={3}>3 — SN com retenção/substituição</MenuItem>
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid xs={12} md={4}>
+                    <TextField
+                      fullWidth
+                      type="number"
+                      label="Alíquota efetiva SN (%)"
+                      value={localState.nfseNacional.percentualTotalTributosSN}
+                      onChange={handleNacionalChange('percentualTotalTributosSN')}
+                    />
+                  </Grid>
+                </>
+              )}
+              <Grid xs={12} md={4}>
+                <TextField
+                  fullWidth
+                  type="number"
+                  label="Regime Especial de Tributação"
+                  value={localState.nfseNacional.regimeEspecialTributacao}
+                  onChange={handleNacionalChange('regimeEspecialTributacao')}
+                  helperText="0 = nenhum"
+                />
+              </Grid>
+
+              <Grid xs={12} md={8}>
+                <FormControl fullWidth>
+                  <InputLabel id="nacional-cert-label">Certificado Digital A1</InputLabel>
+                  <Select
+                    labelId="nacional-cert-label"
+                    label="Certificado Digital A1"
+                    value={localState.nfseNacional.idCertificado}
+                    onChange={handleNacionalChange('idCertificado')}
+                  >
+                    <MenuItem value="">Usar certificado ativo do cliente</MenuItem>
+                    {certificados.map((cert) => (
+                      <MenuItem key={cert._id || cert.id} value={cert._id || cert.id}>
+                        {cert.nome} ({cert.status})
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
+                <LoadingButton
+                  fullWidth
+                  variant="outlined"
+                  loading={checkingNacional}
+                  startIcon={<Iconify icon="solar:shield-check-bold" />}
+                  onClick={handleVerificarNacional}
+                >
+                  Verificar configuração
+                </LoadingButton>
+              </Grid>
+
+              {nacionalStatus && (
+                <Grid xs={12}>
+                  <Alert severity={nacionalStatus.prontoParaEmitir ? 'success' : 'warning'}>
+                    <Stack spacing={0.5}>
+                      <Typography variant="subtitle2">
+                        {nacionalStatus.prontoParaEmitir
+                          ? 'Pronto para emitir pelo Emissor Nacional'
+                          : 'Configuração com pendências'}
+                      </Typography>
+                      {(nacionalStatus.pendencias || []).map((p) => (
+                        <Typography key={p} variant="body2">
+                          • {p}
+                        </Typography>
+                      ))}
+                      {nacionalStatus.certificado && (
+                        <Typography variant="body2">
+                          Certificado: {nacionalStatus.certificado.nome} — válido até{' '}
+                          {new Date(nacionalStatus.certificado.validTo).toLocaleDateString('pt-BR')}
+                          {nacionalStatus.certificado.expirado ? ' (EXPIRADO)' : ''}
+                        </Typography>
+                      )}
+                      {nacionalStatus.conexao && (
+                        <Typography variant="body2">
+                          Conexão Sefin: {nacionalStatus.conexao.mtlsOk ? 'mTLS OK' : 'falha mTLS'}
+                          {typeof nacionalStatus.conexao.municipioConveniado === 'boolean'
+                            ? ` · Município ${nacionalStatus.conexao.municipioConveniado ? 'conveniado' : 'NÃO conveniado'}`
+                            : ''}
+                          {nacionalStatus.conexao.erro ? ` · ${nacionalStatus.conexao.erro}` : ''}
+                        </Typography>
+                      )}
+                      {typeof nacionalStatus.servicosComCodigoTributacao === 'number' && (
+                        <Typography variant="body2">
+                          Serviços com código de tributação:{' '}
+                          {nacionalStatus.servicosComCodigoTributacao}
+                          {nacionalStatus.servicosComCodigoTributacao === 0
+                            ? ' — preencha o Cód. Tributação Nacional no cadastro dos serviços (a config acima é apenas fallback)'
+                            : ''}
+                        </Typography>
+                      )}
+                    </Stack>
+                  </Alert>
+                </Grid>
+              )}
+            </Grid>
+          )}
+
+          {localState.provedorNFSe !== 'nacional' && (
           <Grid container spacing={2}>
             <Grid xs={12} md={4}>
               <FormControl fullWidth sx={{ mb: { xs: 2, md: 0 } }}>
@@ -652,6 +990,7 @@ export function ClientePortalSettings({ clienteId }) {
               </>
             )}
           </Grid>
+          )}
         </>
       )}
 
@@ -738,6 +1077,15 @@ export function ClientePortalSettings({ clienteId }) {
                                 size="small"
                                 color="success"
                                 label="Vinculado ao eNotas"
+                              />
+                            )}
+                          {localState?.nfseNacional?.idCertificado &&
+                            (certificado._id === localState.nfseNacional.idCertificado ||
+                              certificado.id === localState.nfseNacional.idCertificado) && (
+                              <Chip
+                                size="small"
+                                color="info"
+                                label="Emissor Nacional"
                               />
                             )}
                         </Stack>

@@ -95,6 +95,8 @@ export default function EditarServicoAdminPage() {
     cnae: '',
     codigoServicoMunicipio: '',
     itemListaServicoLC116: '',
+    codigoTributacaoNacional: '',
+    codigoTributacaoMunicipal: '',
     status: true,
   });
 
@@ -134,6 +136,8 @@ export default function EditarServicoAdminPage() {
             cnae: servicoData.cnae || '',
             codigoServicoMunicipio: servicoData.codigoServicoMunicipio || '',
             itemListaServicoLC116: servicoData.itemListaServicoLC116 || '',
+            codigoTributacaoNacional: servicoData.codigoTributacaoNacional || '',
+            codigoTributacaoMunicipal: servicoData.codigoTributacaoMunicipal || '',
             status: servicoData.status === true || servicoData.status === 'true' || servicoData.status === 1,
           });
         }
@@ -177,6 +181,11 @@ export default function EditarServicoAdminPage() {
       return;
     }
 
+    if (form.codigoTributacaoNacional && !/^\d{6}$/.test(form.codigoTributacaoNacional)) {
+      toast.warning('Código de Tributação Nacional inválido: informe 6 dígitos (ex.: 171901)');
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -189,6 +198,8 @@ export default function EditarServicoAdminPage() {
         cnae: form.cnae?.trim() || '',
         codigoServicoMunicipio: form.codigoServicoMunicipio?.trim() || '',
         itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
+        codigoTributacaoNacional: form.codigoTributacaoNacional?.trim() || '',
+        codigoTributacaoMunicipal: form.codigoTributacaoMunicipal?.trim() || '',
         status: form.status,
         clienteProprietarioId: clienteId,
       };
@@ -243,6 +254,8 @@ export default function EditarServicoAdminPage() {
         cnae: form.cnae?.trim() || '',
         codigoServicoMunicipio: form.codigoServicoMunicipio?.trim() || '',
         itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
+        codigoTributacaoNacional: form.codigoTributacaoNacional?.trim() || '',
+        codigoTributacaoMunicipal: form.codigoTributacaoMunicipal?.trim() || '',
         status: form.status,
       };
 
@@ -403,6 +416,26 @@ export default function EditarServicoAdminPage() {
                     onChange={(e) => handleChange('itemListaServicoLC116', e.target.value)}
                     placeholder="Ex: 01.01"
                     helperText="Item da Lei Complementar 116/2003"
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Cód. Tributação Nacional (cTribNac)"
+                    value={form.codigoTributacaoNacional}
+                    onChange={(e) =>
+                      handleChange('codigoTributacaoNacional', onlyDigits(e.target.value).slice(0, 6))
+                    }
+                    placeholder="Ex: 171901"
+                    helperText="6 dígitos — usado na emissão pelo Emissor Nacional. Empresas com mais de um CNAE devem preencher por serviço"
+                    inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                  />
+
+                  <TextField
+                    fullWidth
+                    label="Cód. Tributação Municipal (cTribMun)"
+                    value={form.codigoTributacaoMunicipal}
+                    onChange={(e) => handleChange('codigoTributacaoMunicipal', e.target.value)}
+                    helperText="Formato definido pelo município (opcional)"
                   />
                 </Stack>
               </CardContent>

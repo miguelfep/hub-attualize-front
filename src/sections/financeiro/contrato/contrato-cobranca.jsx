@@ -24,7 +24,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 
-import { cancelarNFSeInvoice, gerarNotaCobrancaContratos } from 'src/actions/notafiscal';
+import { abrirPdfNota, cancelarNFSeInvoice, gerarNotaCobrancaContratos } from 'src/actions/notafiscal';
 import {
   cancelarBoleto,
   gerarBoletoPorId,
@@ -401,8 +401,13 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                             size="small"
                             color="success"
                             onClick={() => {
-                              const linkNota = cobranca.notaFiscalId?.linkNota || cobranca.notaFiscalId?.link;
-                              if (linkNota && linkNota !== 'Processando...') {
+                              const nf = cobranca.notaFiscalId;
+                              const linkNota = nf?.linkNota || nf?.link;
+                              if (nf?.origem === 'nacional') {
+                                abrirPdfNota(nf).catch((err) =>
+                                  toast.error(err?.message || 'Erro ao abrir a nota fiscal')
+                                );
+                              } else if (linkNota && linkNota !== 'Processando...') {
                                 window.open(linkNota, '_blank', 'noopener,noreferrer');
                               } else {
                                 toast.error('Link da nota fiscal não disponível');

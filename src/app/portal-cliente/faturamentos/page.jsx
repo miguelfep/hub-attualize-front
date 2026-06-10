@@ -31,9 +31,10 @@ import { useDebounce } from 'src/hooks/use-debounce';
 import { toTitleCase } from 'src/utils/helper';
 import { formatCpfCnpj, removeFormatting } from 'src/utils/format-input';
 
-import { listarNotasFiscaisPorCliente } from 'src/actions/notafiscal';
+import { abrirPdfNota, baixarXmlNota, listarNotasFiscaisPorCliente } from 'src/actions/notafiscal';
 
 import { Label } from 'src/components/label';
+import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { formatToCurrency } from 'src/components/animate';
 
@@ -192,6 +193,7 @@ export default function PortalFaturamentoPage() {
   const [cpfCnpjAplicado, setCpfCnpjAplicado] = useState('');
   const [cpfCnpjErro, setCpfCnpjErro] = useState('');
   const [tipoNota, setTipoNota] = useState('');
+  const [tipoMovimento, setTipoMovimento] = useState('saida'); // '' | 'entrada' | 'saida' — filtro local (API não tem query param)
 
   const [page, setPage] = useState(1);
   const [paginationMeta, setPaginationMeta] = useState({
@@ -204,11 +206,20 @@ export default function PortalFaturamentoPage() {
 
   const pollingIntervalsRef = useRef({});
 
-  const { totalValorNotas, totalNotas } = useMemo(() => {
+  // Notas sem siegTipo são emissões próprias → saída
+  const notasFiltradas = useMemo(() => {
     const arr = Array.isArray(notas) ? notas : [];
-    const total = arr.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
-    return { totalValorNotas: total, totalNotas: arr.length };
-  }, [notas]);
+    if (!tipoMovimento) return arr;
+    return arr.filter((n) => (n.siegTipo === 'entrada' ? 'entrada' : 'saida') === tipoMovimento);
+  }, [notas, tipoMovimento]);
+
+  const { totalValorNotas, totalNotas } = useMemo(() => {
+    const total = notasFiltradas.reduce(
+      (acc, n) => acc + Number(n?.valorServicos || n?.valor || 0),
+      0
+    );
+    return { totalValorNotas: total, totalNotas: notasFiltradas.length };
+  }, [notasFiltradas]);
 
   const aplicarFiltroCpfCnpj = useCallback(() => {
     const d = removeFormatting(filtroCpfCnpj);
@@ -325,7 +336,10 @@ export default function PortalFaturamentoPage() {
   }, [numeroNotaDebounce]);
 
   useEffect(() => {
-    if (filtroNumeroNota) setTipoNota('');
+    if (filtroNumeroNota) {
+      setTipoNota('');
+      setTipoMovimento('');
+    }
   }, [filtroNumeroNota]);
 
   // Fetch inicial com loading
@@ -470,7 +484,7 @@ export default function PortalFaturamentoPage() {
               }}
             />
           </Grid>
-          <Grid xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={2.5}>
             <TextField
               label="De"
               type="date"
@@ -484,7 +498,7 @@ export default function PortalFaturamentoPage() {
               disabled={!!filtroNumeroNota}
             />
           </Grid>
-          <Grid xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={2.5}>
             <TextField
               label="Até"
               type="date"
@@ -498,7 +512,7 @@ export default function PortalFaturamentoPage() {
               disabled={!!filtroNumeroNota}
             />
           </Grid>
-          <Grid xs={12} md={2.5}>
+          <Grid xs={12} md={2}>
             <FormControl fullWidth>
               <InputLabel>Tipo de Nota</InputLabel>
               <Select
@@ -516,6 +530,21 @@ export default function PortalFaturamentoPage() {
                 <MenuItem value="nfce">NFC-e (Consumidor)</MenuItem>
                 <MenuItem value="cfe">CF-e (Cupom fiscal)</MenuItem>
                 <MenuItem value="cte">CT-e (Transporte)</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid xs={12} md={1.5}>
+            <FormControl fullWidth>
+              <InputLabel>Entrada/Saída</InputLabel>
+              <Select
+                label="Entrada/Saída"
+                value={tipoMovimento}
+                onChange={(e) => setTipoMovimento(e.target.value)}
+                disabled={!!filtroNumeroNota}
+              >
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="entrada">Entrada</MenuItem>
+                <MenuItem value="saida">Saída</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -634,6 +663,12 @@ export default function PortalFaturamentoPage() {
             <Typography variant="caption" color="text.secondary">
               Soma dos valores nesta página: {formatToCurrency(totalValorNotas)} • Total geral: {formatToCurrency(somaTotal)}
             </Typography>
+            {tipoMovimento && (
+              <Typography variant="caption" color="text.secondary">
+                Filtro Entrada/Saída aplicado nas notas desta página: exibindo {totalNotas} de{' '}
+                {notas.length}
+              </Typography>
+            )}
           </Stack>
         </Stack>
 
@@ -641,7 +676,7 @@ export default function PortalFaturamentoPage() {
           <Stack spacing={1.5}>
             {loading && clienteId
               ? Array.from({ length: 5 }, (_, i) => <NotaFiscalCardSkeleton key={`nf-skeleton-${i}`} />)
-              : notas.map((n) => {
+              : notasFiltradas.map((n) => {
                 const valor = n.valorServicos || n.valor || 0;
                 const statusLabel = n.status || '-';
                 const eNotasLabel = n.eNotasStatus || '-';
@@ -654,6 +689,7 @@ export default function PortalFaturamentoPage() {
                 const emissaoFmt = formatNotaDateTimeDisplay(dataEmissao);
                 const servicoDesc = Array.isArray(n.servicos) && n.servicos.length ? n.servicos[0]?.descricao : (n.descricao || n.discriminacao);
                 const isSieg = n.origem === 'sieg';
+                const isNacional = n.origem === 'nacional';
                 const isEnotas = n.origem === 'enotas' || !n.origem;
                 const tomadorNome = n.tomador?.razaoSocial || n.tomador?.nome;
                 const tomadorDocFmt = n.tomador?.cpfCnpj
@@ -673,6 +709,14 @@ export default function PortalFaturamentoPage() {
                         >
                           {tipoNotaLabel}
                         </Label>
+                        {isNacional && (
+                          <Label color="info" variant="soft">Nacional</Label>
+                        )}
+                        {n.siegTipo && (
+                          <Label variant="soft" color={n.siegTipo === 'entrada' ? 'warning' : 'success'}>
+                            {n.siegTipo === 'entrada' ? 'Entrada' : 'Saída'}
+                          </Label>
+                        )}
                         <Typography variant="subtitle2">
                           Nota #{isSieg ? (n.siegNumero || n.numeroNota || '-') : (n.numeroNota || n.numero || '-')}
                         </Typography>
@@ -732,7 +776,7 @@ export default function PortalFaturamentoPage() {
                               variant="overline"
                               sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
                             >
-                              Tomador
+                              {n.siegTipo === 'entrada' ? 'Emitente' : 'Tomador'}
                             </Typography>
                           </Stack>
                           <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.45 }}>
@@ -845,6 +889,25 @@ export default function PortalFaturamentoPage() {
                             Processando...
                           </Button>
                         </Tooltip>
+                      ) : isNacional ? (
+                        <>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            startIcon={<Iconify icon="solar:document-text-bold" />}
+                            onClick={() => abrirPdfNota(n).catch((err) => toast.error(err?.message || 'Erro ao abrir o PDF da nota'))}
+                          >
+                            Baixar PDF
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Iconify icon="solar:code-square-bold" />}
+                            onClick={() => baixarXmlNota(n).catch((err) => toast.error(err?.message || 'Erro ao baixar o XML da nota'))}
+                          >
+                            Baixar XML
+                          </Button>
+                        </>
                       ) : (
                         <>
                           {!!n.linkNota && n.linkNota !== 'Processando...' && (

@@ -97,6 +97,8 @@ export default function EditarServicoPage() {
     cnae: '',
     codigoServicoMunicipio: '',
     itemListaServicoLC116: '',
+    codigoTributacaoNacional: '',
+    codigoTributacaoMunicipal: '',
   });
 
   const enotasConfig = settings.eNotasConfig;
@@ -128,6 +130,8 @@ export default function EditarServicoPage() {
           cnae: normalizeCNAE(servicoData.cnae || ''),
           codigoServicoMunicipio: servicoData.codigoServicoMunicipio || '',
           itemListaServicoLC116: servicoData.itemListaServicoLC116 || '',
+          codigoTributacaoNacional: servicoData.codigoTributacaoNacional || '',
+          codigoTributacaoMunicipal: servicoData.codigoTributacaoMunicipal || '',
         });
       } catch (error) {
         toast.error('Erro ao carregar dados do serviço.');
@@ -187,6 +191,10 @@ export default function EditarServicoPage() {
     if (!form.nome) { toast.error('Informe o nome do serviço'); return; }
     if (!form.valor || Number(form.valor) <= 0) { toast.error('Informe um valor válido'); return; }
     if (podeEmitirNFSe && !form.cnae) { toast.error('Informe o CNAE'); return; }
+    if (form.codigoTributacaoNacional && !/^\d{6}$/.test(form.codigoTributacaoNacional)) {
+      toast.error('Código de Tributação Nacional inválido: informe 6 dígitos (ex.: 171901)');
+      return;
+    }
 
     try {
       setSaving(true);
@@ -207,6 +215,8 @@ export default function EditarServicoPage() {
           cnae: sanitizeCnae(form.cnae),
           codigoServicoMunicipio: form.codigoServicoMunicipio || '',
           itemListaServicoLC116: form.itemListaServicoLC116 || '',
+          codigoTributacaoNacional: form.codigoTributacaoNacional || '',
+          codigoTributacaoMunicipal: form.codigoTributacaoMunicipal || '',
         } : {}),
       };
       await portalUpdateServico(servicoId, payload);
@@ -371,6 +381,35 @@ export default function EditarServicoPage() {
                         onChange={(e) => setForm((f) => ({ ...f, itemListaServicoLC116: e.target.value }))}
                         placeholder="Ex: 01.01"
                         helperText="Item da Lei Complementar 116/2003"
+                      />
+                    </Grid>
+
+                    <Grid xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Cód. Tributação Nacional (cTribNac)"
+                        value={form.codigoTributacaoNacional}
+                        onChange={(e) =>
+                          setForm((f) => ({
+                            ...f,
+                            codigoTributacaoNacional: onlyDigits(e.target.value).slice(0, 6),
+                          }))
+                        }
+                        placeholder="Ex: 171901"
+                        helperText="6 dígitos — usado na emissão pelo Emissor Nacional. Empresas com mais de um CNAE devem preencher por serviço"
+                        inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                      />
+                    </Grid>
+
+                    <Grid xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        label="Cód. Tributação Municipal (cTribMun)"
+                        value={form.codigoTributacaoMunicipal}
+                        onChange={(e) =>
+                          setForm((f) => ({ ...f, codigoTributacaoMunicipal: e.target.value }))
+                        }
+                        helperText="Formato definido pelo município (opcional)"
                       />
                     </Grid>
                   </Grid>
