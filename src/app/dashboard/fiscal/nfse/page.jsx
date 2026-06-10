@@ -37,6 +37,7 @@ import { useGetSettings } from 'src/actions/settings';
 import {
   abrirPdfNota,
   baixarXmlNota,
+  dadosEmitenteNota,
   tipoMovimentoNota,
   cancelarNotaFiscal,
   cancelarNotaNoProvedor,
@@ -74,6 +75,14 @@ const getTipoNotaColor = (tipo) => {
     cte: 'warning',
   };
   return tipos[String(tipo || '').toLowerCase()] || 'default';
+};
+
+// Rótulo do bloco de descrição conforme o tipo (NF-e/NFC-e/CF-e são notas de produto)
+const getDescricaoNotaLabel = (tipo) => {
+  const key = String(tipo || '').toLowerCase();
+  if (key === 'nfe' || key === 'nfce' || key === 'cfe') return 'Produto';
+  if (key === 'cte') return 'Transporte';
+  return 'Serviço';
 };
 
 const MESES = [
@@ -696,9 +705,13 @@ export default function DashboardFiscalPage() {
               const temRetencao = retencao?.possuiRetencao === true;
               const tipoNotaLabel = formatTipoNota(n.tipoNota);
               const tipoNotaColor = getTipoNotaColor(n.tipoNota);
-              const docRaw =
-                tomador?.cpfCnpj ||
-                (isSieg ? n.siegCnpjEmitente : isNacional ? n.nacionalCnpjEmitente : '');
+              // Nota de entrada: o tomador salvo é o próprio cliente — exibir quem emitiu
+              const emitente = movimento === 'entrada' ? dadosEmitenteNota(n) : null;
+              const parteNome = emitente ? emitente.nome : tomador?.nome;
+              const docRaw = emitente
+                ? emitente.cpfCnpj
+                : tomador?.cpfCnpj ||
+                  (isSieg ? n.siegCnpjEmitente : isNacional ? n.nacionalCnpjEmitente : '');
               const docFormatted = docRaw ? formatCPFOrCNPJ(String(docRaw)) : '';
 
               return (
@@ -756,7 +769,7 @@ export default function DashboardFiscalPage() {
                           </Typography>
                         </Stack>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.45 }}>
-                          {tomador?.nome || '-'}
+                          {parteNome || '-'}
                         </Typography>
                         {!!docFormatted && (
                           <Typography
@@ -784,7 +797,7 @@ export default function DashboardFiscalPage() {
                             variant="overline"
                             sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
                           >
-                            Serviço
+                            {getDescricaoNotaLabel(n.tipoNota)}
                           </Typography>
                         </Stack>
                         <Typography
