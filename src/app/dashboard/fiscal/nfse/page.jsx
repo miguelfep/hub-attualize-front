@@ -37,11 +37,13 @@ import { useGetSettings } from 'src/actions/settings';
 import {
   abrirPdfNota,
   baixarXmlNota,
+  tipoMovimentoNota,
   cancelarNotaFiscal,
   cancelarNotaNoProvedor,
   sincronizarDfeNacional,
   sincronizarPeriodoNacional,
   listarNotasFiscaisPorCliente,
+  reprocessarRetencoesNacional,
 } from 'src/actions/notafiscal';
 
 import { Label } from 'src/components/label';
@@ -170,7 +172,8 @@ export default function DashboardFiscalPage() {
   const [selectedCliente, setSelectedCliente] = useState('');
   const [status, setStatus] = useState('');
   const [tipoNota, setTipoNota] = useState('');
-  const [tipoMovimento, setTipoMovimento] = useState('saida'); // '' | 'entrada' | 'saida' — filtro local (API não tem query param)
+  const [tipoMovimento, setTipoMovimento] = useState('saida'); // '' | 'entrada' | 'saida' — query param tipoMovimento
+  const [comRetencao, setComRetencao] = useState(''); // '' | 'com' | 'sem' — query param comRetencao
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
@@ -197,6 +200,7 @@ export default function DashboardFiscalPage() {
   const { settings: clienteSettings } = useGetSettings(selectedCliente || null);
   const isClienteNacional = clienteSettings?.provedorNFSe === 'nacional';
   const [syncing, setSyncing] = useState(false);
+  const [reprocessandoRetencoes, setReprocessandoRetencoes] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importModo, setImportModo] = useState('mes'); // 'mes' | 'intervalo'
@@ -220,20 +224,11 @@ export default function DashboardFiscalPage() {
     load();
   }, []);
 
-  // Notas sem siegTipo são emissões próprias → saída
-  const notasFiltradas = useMemo(() => {
-    const arr = Array.isArray(notas) ? notas : [];
-    if (!tipoMovimento) return arr;
-    return arr.filter((n) => (n.siegTipo === 'entrada' ? 'entrada' : 'saida') === tipoMovimento);
-  }, [notas, tipoMovimento]);
-
   const { totalValorNotas, totalNotas } = useMemo(() => {
-    const total = notasFiltradas.reduce(
-      (acc, n) => acc + Number(n?.valorServicos || n?.valor || 0),
-      0
-    );
-    return { totalValorNotas: total, totalNotas: notasFiltradas.length };
-  }, [notasFiltradas]);
+    const arr = Array.isArray(notas) ? notas : [];
+    const total = arr.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
+    return { totalValorNotas: total, totalNotas: arr.length };
+  }, [notas]);
 
   const fetchNotas = async () => {
     if (!selectedCliente) return;
@@ -245,6 +240,8 @@ export default function DashboardFiscalPage() {
         inicio: startDate || undefined,
         fim: endDate || undefined,
         tipoNota: tipoNota || undefined,
+        tipoMovimento: tipoMovimento || undefined,
+        comRetencao: comRetencao === 'com' ? true : comRetencao === 'sem' ? false : undefined,
         page,
         limit: 50,
       });
@@ -267,12 +264,12 @@ export default function DashboardFiscalPage() {
   // Resetar página ao mudar filtros
   useEffect(() => {
     setPage(1);
-  }, [selectedCliente, status, startDate, endDate, tipoNota]);
+  }, [selectedCliente, status, startDate, endDate, tipoNota, tipoMovimento, comRetencao]);
 
   useEffect(() => {
     fetchNotas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCliente, status, startDate, endDate, tipoNota, page]);
+  }, [selectedCliente, status, startDate, endDate, tipoNota, tipoMovimento, comRetencao, page]);
 
   // Navegação mensal
   const handlePrevMonth = () => {
@@ -365,6 +362,23 @@ export default function DashboardFiscalPage() {
     }
   };
 
+  // Backfill do campo `retencao` nas notas nacionais antigas (reaproveita o XML salvo, idempotente)
+  const handleReprocessarRetencoes = async () => {
+    if (!selectedCliente) return;
+    try {
+      setReprocessandoRetencoes(true);
+      const res = await reprocessarRetencoesNacional(selectedCliente);
+      toast.success(res.data?.message || 'Retenções reprocessadas');
+      await fetchNotas();
+    } catch (error) {
+      const msg =
+        error?.response?.data?.message || error?.message || 'Erro ao reprocessar retenções';
+      toast.error(msg);
+    } finally {
+      setReprocessandoRetencoes(false);
+    }
+  };
+
   const handleOpenImportDialog = () => {
     setImportResultado(null);
     setImportModo('mes');
@@ -429,6 +443,14 @@ export default function DashboardFiscalPage() {
             >
               Sincronizar novas
             </LoadingButton>
+            <LoadingButton
+              variant="outlined"
+              loading={reprocessandoRetencoes}
+              startIcon={<Iconify icon="solar:shield-check-bold" />}
+              onClick={handleReprocessarRetencoes}
+            >
+              Reprocessar retenções
+            </LoadingButton>
             <Button
               variant="contained"
               startIcon={<Iconify icon="solar:download-square-bold" />}
@@ -469,7 +491,7 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={3}>
+          <Grid xs={12} md={2}>
             <FormControl fullWidth>
               <InputLabel>Tipo de Nota</InputLabel>
               <Select
@@ -489,7 +511,7 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={2}>
+          <Grid xs={12} md={1.5}>
             <FormControl fullWidth>
               <InputLabel>Entrada/Saída</InputLabel>
               <Select
@@ -503,10 +525,24 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
+          <Grid xs={12} md={1.5}>
+            <FormControl fullWidth>
+              <InputLabel>Retenção</InputLabel>
+              <Select
+                label="Retenção"
+                value={comRetencao}
+                onChange={(e) => setComRetencao(e.target.value)}
+              >
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="com">Com retenção</MenuItem>
+                <MenuItem value="sem">Sem retenção</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
         </Grid>
 
         {/* Filtros Ativos */}
-        {(status || tipoNota || tipoMovimento) && (
+        {(status || tipoNota || tipoMovimento || comRetencao) && (
           <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }} useFlexGap>
             <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
               Filtros ativos:
@@ -534,6 +570,15 @@ export default function DashboardFiscalPage() {
                 size="small"
                 label={tipoMovimento === 'entrada' ? 'Entrada' : 'Saída'}
                 onDelete={() => setTipoMovimento('')}
+                color="default"
+                variant="soft"
+              />
+            )}
+            {comRetencao && (
+              <Chip
+                size="small"
+                label={comRetencao === 'com' ? 'Com retenção' : 'Sem retenção'}
+                onDelete={() => setComRetencao('')}
                 color="default"
                 variant="soft"
               />
@@ -608,15 +653,9 @@ export default function DashboardFiscalPage() {
             <Typography variant="caption" color="text.secondary">
               Soma dos valores nesta página: {fCurrency(totalValorNotas)} • Total geral: {fCurrency(somaTotal)}
             </Typography>
-            {tipoMovimento && (
-              <Typography variant="caption" color="text.secondary">
-                Filtro Entrada/Saída aplicado nas notas desta página: exibindo {totalNotas} de{' '}
-                {notas.length}
-              </Typography>
-            )}
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
-            {(status || tipoNota || tipoMovimento) && (
+            {(status || tipoNota || tipoMovimento || comRetencao) && (
               <Button
                 size="small"
                 variant="outlined"
@@ -626,6 +665,7 @@ export default function DashboardFiscalPage() {
                   setStatus('');
                   setTipoNota('');
                   setTipoMovimento('');
+                  setComRetencao('');
                 }}
               >
                 Limpar Filtros
@@ -637,7 +677,7 @@ export default function DashboardFiscalPage() {
         <Stack spacing={1.5} aria-busy={loading && !!selectedCliente} aria-live="polite">
           {selectedCliente && loading
             ? Array.from({ length: 5 }, (_, i) => <NotaFiscalCardSkeleton key={`nf-skeleton-${i}`} />)
-            : notasFiltradas.map((n) => {
+            : notas.map((n) => {
               const valor = n.valorServicos || n.valor || 0;
               const statusLabel = n.status || '-';
               const eNotasLabel = n.eNotasStatus || '-';
@@ -651,6 +691,9 @@ export default function DashboardFiscalPage() {
               const isSieg = n.origem === 'sieg';
               const isNacional = n.origem === 'nacional';
               const isEnotas = n.origem === 'enotas' || !n.origem; // fallback para notas antigas
+              const movimento = tipoMovimentoNota(n);
+              const { retencao } = n;
+              const temRetencao = retencao?.possuiRetencao === true;
               const tipoNotaLabel = formatTipoNota(n.tipoNota);
               const tipoNotaColor = getTipoNotaColor(n.tipoNota);
               const docRaw =
@@ -681,9 +724,12 @@ export default function DashboardFiscalPage() {
                       {n.serie && (
                         <Label variant="soft" color="default">Série {n.serie}</Label>
                       )}
-                      {n.siegTipo && (
-                        <Label variant="soft" color={n.siegTipo === 'entrada' ? 'warning' : 'success'}>
-                          {n.siegTipo === 'entrada' ? 'Entrada' : 'Saída'}
+                      <Label variant="soft" color={movimento === 'entrada' ? 'warning' : 'success'}>
+                        {movimento === 'entrada' ? 'Entrada' : 'Saída'}
+                      </Label>
+                      {temRetencao && (
+                        <Label variant="soft" color="error">
+                          Retenção
                         </Label>
                       )}
                       <Label color={color} variant="soft">{statusLabel}</Label>
@@ -706,7 +752,7 @@ export default function DashboardFiscalPage() {
                             variant="overline"
                             sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
                           >
-                            {n.siegTipo === 'entrada' ? 'Emitente' : 'Tomador'}
+                            {movimento === 'entrada' ? 'Emitente' : 'Tomador'}
                           </Typography>
                         </Stack>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.45 }}>
@@ -800,9 +846,51 @@ export default function DashboardFiscalPage() {
                             ISS {fCurrency(n.valorIss)}
                           </Typography>
                         )}
+                        {temRetencao && (
+                          <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 600 }}>
+                            Retido {fCurrency(retencao.totalRetencoes || 0)}
+                          </Typography>
+                        )}
                       </Stack>
                     </Box>
                   </Stack>
+
+                  {temRetencao && (
+                    <Box sx={{ ...notaInnerBoxSx, mt: 1.5 }}>
+                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                        <Iconify icon="solar:shield-warning-bold" width={18} sx={{ color: 'error.main', flexShrink: 0 }} />
+                        <Typography
+                          variant="overline"
+                          sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
+                        >
+                          Retenções na fonte
+                        </Typography>
+                        {retencao.issRetido && (
+                          <Label variant="soft" color="warning">
+                            ISS retido {fCurrency(retencao.valorIssRetido || 0)}
+                          </Label>
+                        )}
+                        {!!retencao.valorIrrf && (
+                          <Label variant="soft" color="warning">IRRF {fCurrency(retencao.valorIrrf)}</Label>
+                        )}
+                        {!!retencao.valorPis && (
+                          <Label variant="soft" color="warning">PIS {fCurrency(retencao.valorPis)}</Label>
+                        )}
+                        {!!retencao.valorCofins && (
+                          <Label variant="soft" color="warning">COFINS {fCurrency(retencao.valorCofins)}</Label>
+                        )}
+                        {!!retencao.valorCsll && (
+                          <Label variant="soft" color="warning">CSLL {fCurrency(retencao.valorCsll)}</Label>
+                        )}
+                        {!!retencao.valorInss && (
+                          <Label variant="soft" color="warning">INSS {fCurrency(retencao.valorInss)}</Label>
+                        )}
+                        <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                          Total: {fCurrency(retencao.totalRetencoes || 0)}
+                        </Typography>
+                      </Stack>
+                    </Box>
+                  )}
 
                   {(n.eNotasErro || n.motivoCancelamento) && (
                     <Alert severity={se === 'cancelada' || s === 'cancelada' ? 'warning' : 'error'} sx={{ mt: 1 }}>
