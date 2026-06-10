@@ -34,6 +34,7 @@ import { formatCpfCnpj, removeFormatting } from 'src/utils/format-input';
 import {
   abrirPdfNota,
   baixarXmlNota,
+  dadosEmitenteNota,
   tipoMovimentoNota,
   listarNotasFiscaisPorCliente,
 } from 'src/actions/notafiscal';
@@ -97,6 +98,14 @@ const getTipoNotaColor = (tipo) => {
     cte: 'warning',
   };
   return tipos[String(tipo || '').toLowerCase()] || 'default';
+};
+
+// Rótulo do bloco de descrição conforme o tipo (NF-e/NFC-e/CF-e são notas de produto)
+const getDescricaoNotaLabel = (tipo) => {
+  const key = String(tipo || '').toLowerCase();
+  if (key === 'nfe' || key === 'nfce' || key === 'cfe') return 'Produto';
+  if (key === 'cte') return 'Transporte';
+  return 'Serviço';
 };
 
 const notaInnerBoxSx = {
@@ -687,9 +696,14 @@ export default function PortalFaturamentoPage() {
                 const isNacional = n.origem === 'nacional';
                 const isEnotas = n.origem === 'enotas' || !n.origem;
                 const movimento = tipoMovimentoNota(n);
-                const tomadorNome = n.tomador?.razaoSocial || n.tomador?.nome;
-                const tomadorDocFmt = n.tomador?.cpfCnpj
-                  ? formatCpfCnpj(removeFormatting(n.tomador.cpfCnpj))
+                // Nota de entrada: o tomador salvo é o próprio cliente — exibir quem emitiu
+                const emitente = movimento === 'entrada' ? dadosEmitenteNota(n) : null;
+                const tomadorNome = emitente
+                  ? emitente.nome
+                  : n.tomador?.razaoSocial || n.tomador?.nome;
+                const tomadorDoc = emitente ? emitente.cpfCnpj : n.tomador?.cpfCnpj;
+                const tomadorDocFmt = tomadorDoc
+                  ? formatCpfCnpj(removeFormatting(String(tomadorDoc)))
                   : '';
                 const tipoNotaLabel = formatTipoNota(n.tipoNota);
                 const tipoNotaColor = getTipoNotaColor(n.tipoNota);
@@ -799,7 +813,7 @@ export default function PortalFaturamentoPage() {
                               variant="overline"
                               sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
                             >
-                              Serviço
+                              {getDescricaoNotaLabel(n.tipoNota)}
                             </Typography>
                           </Stack>
                           <Typography

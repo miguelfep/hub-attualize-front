@@ -114,6 +114,53 @@ export function tipoMovimentoNota(nota) {
   return nota?.tipoMovimento || nota?.siegTipo || 'saida';
 }
 
+const decodeXmlEntities = (str) =>
+  String(str)
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&(?:apos|#39);/g, "'");
+
+const emitenteCache = new Map();
+
+/**
+ * Dados de quem emitiu a nota (para notas de entrada): o `tomador` persistido é o
+ * destinatário, então nome/CNPJ do emitente só existem no XML salvo (<emit>/<prest>).
+ * Fallback: CNPJ persistido (siegCnpjEmitente/nacionalCnpjEmitente) sem nome.
+ */
+export function dadosEmitenteNota(nota) {
+  const cnpjSalvo = nota?.siegCnpjEmitente || nota?.nacionalCnpjEmitente || '';
+  const xmlBase64 = nota?.siegXmlBase64 || nota?.nacionalXmlBase64;
+  if (!xmlBase64) return { nome: '', cpfCnpj: cnpjSalvo };
+
+  const cacheKey = nota?._id || nota?.id;
+  if (cacheKey && emitenteCache.has(cacheKey)) return emitenteCache.get(cacheKey);
+
+  let resultado = { nome: '', cpfCnpj: cnpjSalvo };
+  try {
+    const bytes = Uint8Array.from(atob(xmlBase64), (c) => c.charCodeAt(0));
+    const xml = new TextDecoder('utf-8').decode(bytes);
+    const blocoEmit =
+      xml.match(/<emit[^>]*>([\s\S]*?)<\/emit>/)?.[1] ||
+      xml.match(/<prest[^>]*>([\s\S]*?)<\/prest>/)?.[1] ||
+      '';
+    const nome =
+      blocoEmit.match(/<xNome>([\s\S]*?)<\/xNome>/)?.[1]?.trim() ||
+      blocoEmit.match(/<xFant>([\s\S]*?)<\/xFant>/)?.[1]?.trim() ||
+      '';
+    const cpfCnpj =
+      blocoEmit.match(/<CNPJ>(\d+)<\/CNPJ>/)?.[1] ||
+      blocoEmit.match(/<CPF>(\d+)<\/CPF>/)?.[1] ||
+      cnpjSalvo;
+    resultado = { nome: decodeXmlEntities(nome), cpfCnpj };
+  } catch {
+    // XML inválido/corrompido — mantém o fallback com o CNPJ persistido
+  }
+  if (cacheKey) emitenteCache.set(cacheKey, resultado);
+  return resultado;
+}
+
 /** True quando a nota tem qualquer retenção de tributos na fonte (notas antigas sem o campo contam como sem). */
 export function notaPossuiRetencao(nota) {
   return nota?.retencao?.possuiRetencao === true;
