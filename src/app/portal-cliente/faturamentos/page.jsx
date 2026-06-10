@@ -31,9 +31,15 @@ import { useDebounce } from 'src/hooks/use-debounce';
 import { toTitleCase } from 'src/utils/helper';
 import { formatCpfCnpj, removeFormatting } from 'src/utils/format-input';
 
-import { listarNotasFiscaisPorCliente } from 'src/actions/notafiscal';
+import {
+  abrirPdfNota,
+  baixarXmlNota,
+  tipoMovimentoNota,
+  listarNotasFiscaisPorCliente,
+} from 'src/actions/notafiscal';
 
 import { Label } from 'src/components/label';
+import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { formatToCurrency } from 'src/components/animate';
 
@@ -192,6 +198,7 @@ export default function PortalFaturamentoPage() {
   const [cpfCnpjAplicado, setCpfCnpjAplicado] = useState('');
   const [cpfCnpjErro, setCpfCnpjErro] = useState('');
   const [tipoNota, setTipoNota] = useState('');
+  const [tipoMovimento, setTipoMovimento] = useState('saida'); // '' | 'entrada' | 'saida' — query param tipoMovimento
 
   const [page, setPage] = useState(1);
   const [paginationMeta, setPaginationMeta] = useState({
@@ -290,6 +297,7 @@ export default function PortalFaturamentoPage() {
         inicio: startDate || undefined,
         fim: endDate || undefined,
         tipoNota: numeroNota ? undefined : tipoNota || undefined,
+        tipoMovimento: numeroNota ? undefined : tipoMovimento || undefined,
       });
 
       const { data } = res;
@@ -314,6 +322,7 @@ export default function PortalFaturamentoPage() {
     numeroNotaDebounce,
     cpfCnpjAplicado,
     tipoNota,
+    tipoMovimento,
   ]);
 
   useEffect(() => {
@@ -325,7 +334,10 @@ export default function PortalFaturamentoPage() {
   }, [numeroNotaDebounce]);
 
   useEffect(() => {
-    if (filtroNumeroNota) setTipoNota('');
+    if (filtroNumeroNota) {
+      setTipoNota('');
+      setTipoMovimento('');
+    }
   }, [filtroNumeroNota]);
 
   // Fetch inicial com loading
@@ -470,7 +482,7 @@ export default function PortalFaturamentoPage() {
               }}
             />
           </Grid>
-          <Grid xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={2.5}>
             <TextField
               label="De"
               type="date"
@@ -484,7 +496,7 @@ export default function PortalFaturamentoPage() {
               disabled={!!filtroNumeroNota}
             />
           </Grid>
-          <Grid xs={12} sm={6} md={3}>
+          <Grid xs={12} sm={6} md={2.5}>
             <TextField
               label="Até"
               type="date"
@@ -498,7 +510,7 @@ export default function PortalFaturamentoPage() {
               disabled={!!filtroNumeroNota}
             />
           </Grid>
-          <Grid xs={12} md={2.5}>
+          <Grid xs={12} md={2}>
             <FormControl fullWidth>
               <InputLabel>Tipo de Nota</InputLabel>
               <Select
@@ -516,6 +528,24 @@ export default function PortalFaturamentoPage() {
                 <MenuItem value="nfce">NFC-e (Consumidor)</MenuItem>
                 <MenuItem value="cfe">CF-e (Cupom fiscal)</MenuItem>
                 <MenuItem value="cte">CT-e (Transporte)</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid xs={12} md={1.5}>
+            <FormControl fullWidth>
+              <InputLabel>Entrada/Saída</InputLabel>
+              <Select
+                label="Entrada/Saída"
+                value={tipoMovimento}
+                onChange={(e) => {
+                  setTipoMovimento(e.target.value);
+                  setPage(1);
+                }}
+                disabled={!!filtroNumeroNota}
+              >
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="entrada">Entrada</MenuItem>
+                <MenuItem value="saida">Saída</MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -654,7 +684,9 @@ export default function PortalFaturamentoPage() {
                 const emissaoFmt = formatNotaDateTimeDisplay(dataEmissao);
                 const servicoDesc = Array.isArray(n.servicos) && n.servicos.length ? n.servicos[0]?.descricao : (n.descricao || n.discriminacao);
                 const isSieg = n.origem === 'sieg';
+                const isNacional = n.origem === 'nacional';
                 const isEnotas = n.origem === 'enotas' || !n.origem;
+                const movimento = tipoMovimentoNota(n);
                 const tomadorNome = n.tomador?.razaoSocial || n.tomador?.nome;
                 const tomadorDocFmt = n.tomador?.cpfCnpj
                   ? formatCpfCnpj(removeFormatting(n.tomador.cpfCnpj))
@@ -672,6 +704,12 @@ export default function PortalFaturamentoPage() {
                           sx={{ fontWeight: 600 }}
                         >
                           {tipoNotaLabel}
+                        </Label>
+                        {isNacional && (
+                          <Label color="info" variant="soft">Nacional</Label>
+                        )}
+                        <Label variant="soft" color={movimento === 'entrada' ? 'warning' : 'success'}>
+                          {movimento === 'entrada' ? 'Entrada' : 'Saída'}
                         </Label>
                         <Typography variant="subtitle2">
                           Nota #{isSieg ? (n.siegNumero || n.numeroNota || '-') : (n.numeroNota || n.numero || '-')}
@@ -732,7 +770,7 @@ export default function PortalFaturamentoPage() {
                               variant="overline"
                               sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
                             >
-                              Tomador
+                              {movimento === 'entrada' ? 'Emitente' : 'Tomador'}
                             </Typography>
                           </Stack>
                           <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.45 }}>
@@ -845,6 +883,25 @@ export default function PortalFaturamentoPage() {
                             Processando...
                           </Button>
                         </Tooltip>
+                      ) : isNacional ? (
+                        <>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            startIcon={<Iconify icon="solar:document-text-bold" />}
+                            onClick={() => abrirPdfNota(n).catch((err) => toast.error(err?.message || 'Erro ao abrir o PDF da nota'))}
+                          >
+                            Baixar PDF
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<Iconify icon="solar:code-square-bold" />}
+                            onClick={() => baixarXmlNota(n).catch((err) => toast.error(err?.message || 'Erro ao baixar o XML da nota'))}
+                          >
+                            Baixar XML
+                          </Button>
+                        </>
                       ) : (
                         <>
                           {!!n.linkNota && n.linkNota !== 'Processando...' && (

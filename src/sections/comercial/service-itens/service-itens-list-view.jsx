@@ -171,6 +171,9 @@ export function ServiceItensListView() {
     preco: '',
     categoriaReceita: '',
     centroCusto: '',
+    codigoTributacaoNacional: '',
+    codigoTributacaoMunicipal: '',
+    itemListaServicoLC116: '',
   });
 
   const carregar = useCallback(async () => {
@@ -207,6 +210,9 @@ export function ServiceItensListView() {
       preco: '',
       categoriaReceita: '',
       centroCusto: '',
+      codigoTributacaoNacional: '',
+      codigoTributacaoMunicipal: '',
+      itemListaServicoLC116: '',
     });
     setDialogOpen(true);
   };
@@ -221,6 +227,9 @@ export function ServiceItensListView() {
       preco: row.preco != null ? String(row.preco) : '',
       categoriaReceita: catId,
       centroCusto: ccId,
+      codigoTributacaoNacional: row.codigoTributacaoNacional || '',
+      codigoTributacaoMunicipal: row.codigoTributacaoMunicipal || '',
+      itemListaServicoLC116: row.itemListaServicoLC116 || '',
     });
     setDialogOpen(true);
   };
@@ -235,6 +244,10 @@ export function ServiceItensListView() {
       toast.error('Preço inválido');
       return;
     }
+    if (form.codigoTributacaoNacional && !/^\d{6}$/.test(form.codigoTributacaoNacional)) {
+      toast.error('Código de Tributação Nacional inválido: informe 6 dígitos (ex.: 171901)');
+      return;
+    }
     try {
       const payload = {
         titulo: form.titulo.trim(),
@@ -242,6 +255,9 @@ export function ServiceItensListView() {
         preco: precoNum,
         categoriaReceita: form.categoriaReceita?.trim() || null,
         centroCusto: form.centroCusto?.trim() || null,
+        codigoTributacaoNacional: form.codigoTributacaoNacional?.trim() || '',
+        codigoTributacaoMunicipal: form.codigoTributacaoMunicipal?.trim() || '',
+        itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
       };
       if (editingId) {
         await updateServiceItem(editingId, payload);
@@ -360,6 +376,39 @@ export function ServiceItensListView() {
                 </MenuItem>
               ))}
             </TextField>
+
+            <Typography variant="subtitle2" sx={{ mt: 1 }}>
+              Tributação (NFS-e Nacional)
+            </Typography>
+            <TextField
+              label="Cód. Tributação Nacional (cTribNac)"
+              value={form.codigoTributacaoNacional}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  codigoTributacaoNacional: e.target.value.replace(/\D/g, '').slice(0, 6),
+                })
+              }
+              placeholder="Ex: 171901"
+              helperText="6 dígitos — usado na emissão de invoices pelo Emissor Nacional"
+              inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+              fullWidth
+            />
+            <TextField
+              label="Cód. Tributação Municipal (cTribMun)"
+              value={form.codigoTributacaoMunicipal}
+              onChange={(e) => setForm({ ...form, codigoTributacaoMunicipal: e.target.value })}
+              helperText="Formato definido pelo município (opcional)"
+              fullWidth
+            />
+            <TextField
+              label="Item Lista Serviço LC 116/2003"
+              value={form.itemListaServicoLC116}
+              onChange={(e) => setForm({ ...form, itemListaServicoLC116: e.target.value })}
+              placeholder="Ex: 17.19.01"
+              helperText="Fallback para derivar o cTribNac"
+              fullWidth
+            />
           </Stack>
         </DialogContent>
         <DialogActions>

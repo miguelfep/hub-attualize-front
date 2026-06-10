@@ -17,6 +17,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { updateInvoice } from 'src/actions/invoices';
 import { useInvoice } from 'src/contexts/InvoiceContext';
+import { abrirPdfNota, baixarXmlNota } from 'src/actions/notafiscal';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -162,12 +163,24 @@ export function OrcamentoView({ invoice: initialInvoice, nfses }) {
               </Stack>
               <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
                 {nfseAtiva.linkNota && (
-                  <Button size="small" variant="outlined" href={nfseAtiva.linkNota} target="_blank" rel="noopener noreferrer" fullWidth sx={{ minWidth: { sm: 'auto' } }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    sx={{ minWidth: { sm: 'auto' } }}
+                    onClick={() => abrirPdfNota(nfseAtiva).catch((err) => toast.error(err?.message || 'Erro ao abrir a nota'))}
+                  >
                     Ver Nota
                   </Button>
                 )}
                 {nfseAtiva.linkXml && (
-                  <Button size="small" variant="outlined" href={nfseAtiva.linkXml} target="_blank" rel="noopener noreferrer" fullWidth sx={{ minWidth: { sm: 'auto' } }}>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    fullWidth
+                    sx={{ minWidth: { sm: 'auto' } }}
+                    onClick={() => baixarXmlNota(nfseAtiva).catch((err) => toast.error(err?.message || 'Erro ao baixar o XML'))}
+                  >
                     Ver XML
                   </Button>
                 )}

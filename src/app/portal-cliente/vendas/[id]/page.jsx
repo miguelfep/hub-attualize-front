@@ -34,6 +34,7 @@ import { useSettings } from 'src/hooks/useSettings';
 import { fCurrency } from 'src/utils/format-number';
 
 import {
+  abrirPdfNota,
   criarNFSeOrcamento,
   getNfsesByOrcamento,
   cancelarNFSeInvoice,
@@ -1484,12 +1485,14 @@ export default function OrcamentoDetalhesPage({ params: paramsPromise }) {
                               {n.linkNota && n.linkNota !== 'Processando...' && (
                                 <Tooltip title="Abrir NFSe">
                                   <Button
-                                    href={n.linkNota}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
                                     variant="outlined"
                                     size="small"
                                     startIcon={<Iconify icon="solar:document-text-bold" />}
+                                    onClick={() =>
+                                      abrirPdfNota(n).catch((err) =>
+                                        toast.error(err?.message || 'Erro ao abrir a nota')
+                                      )
+                                    }
                                   >
                                     Ver Nota
                                   </Button>

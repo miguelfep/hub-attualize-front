@@ -34,6 +34,7 @@ import { paths } from 'src/routes/paths';
 import { formatCNAE } from 'src/utils/formatter';
 import { fCurrency } from 'src/utils/format-number';
 
+import { useGetSettings } from 'src/actions/settings';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getClienteById, useGetAllClientes } from 'src/actions/clientes';
 import { createServicoAdmin, updateServicoAdmin, getServicoAdminById } from 'src/actions/servicos-admin';
@@ -85,6 +86,8 @@ export default function EditarServicoAdminPage() {
   const [saving, setSaving] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
   const [cliente, setCliente] = useState(null);
+  const { settings: clienteSettings } = useGetSettings(clienteId || null);
+  const isNacional = clienteSettings?.provedorNFSe === 'nacional';
   const [form, setForm] = useState({
     nome: '',
     descricao: '',
@@ -95,6 +98,8 @@ export default function EditarServicoAdminPage() {
     cnae: '',
     codigoServicoMunicipio: '',
     itemListaServicoLC116: '',
+    codigoTributacaoNacional: '',
+    codigoTributacaoMunicipal: '',
     status: true,
   });
 
@@ -134,6 +139,8 @@ export default function EditarServicoAdminPage() {
             cnae: servicoData.cnae || '',
             codigoServicoMunicipio: servicoData.codigoServicoMunicipio || '',
             itemListaServicoLC116: servicoData.itemListaServicoLC116 || '',
+            codigoTributacaoNacional: servicoData.codigoTributacaoNacional || '',
+            codigoTributacaoMunicipal: servicoData.codigoTributacaoMunicipal || '',
             status: servicoData.status === true || servicoData.status === 'true' || servicoData.status === 1,
           });
         }
@@ -177,6 +184,11 @@ export default function EditarServicoAdminPage() {
       return;
     }
 
+    if (form.codigoTributacaoNacional && !/^\d{6}$/.test(form.codigoTributacaoNacional)) {
+      toast.warning('Código de Tributação Nacional inválido: informe 6 dígitos (ex.: 171901)');
+      return;
+    }
+
     try {
       setSaving(true);
 
@@ -189,6 +201,8 @@ export default function EditarServicoAdminPage() {
         cnae: form.cnae?.trim() || '',
         codigoServicoMunicipio: form.codigoServicoMunicipio?.trim() || '',
         itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
+        codigoTributacaoNacional: form.codigoTributacaoNacional?.trim() || '',
+        codigoTributacaoMunicipal: form.codigoTributacaoMunicipal?.trim() || '',
         status: form.status,
         clienteProprietarioId: clienteId,
       };
@@ -243,6 +257,8 @@ export default function EditarServicoAdminPage() {
         cnae: form.cnae?.trim() || '',
         codigoServicoMunicipio: form.codigoServicoMunicipio?.trim() || '',
         itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
+        codigoTributacaoNacional: form.codigoTributacaoNacional?.trim() || '',
+        codigoTributacaoMunicipal: form.codigoTributacaoMunicipal?.trim() || '',
         status: form.status,
       };
 
@@ -387,23 +403,53 @@ export default function EditarServicoAdminPage() {
                     inputProps={{ maxLength: 12 }}
                   />
 
-                  <TextField
-                    fullWidth
-                    label="Código do Serviço no Município"
-                    value={form.codigoServicoMunicipio}
-                    onChange={(e) => handleChange('codigoServicoMunicipio', e.target.value)}
-                    placeholder="Ex: 01010501"
-                    helperText="Código do serviço conforme cadastro municipal"
-                  />
+                  {!isNacional && (
+                    <TextField
+                      fullWidth
+                      label="Código do Serviço no Município"
+                      value={form.codigoServicoMunicipio}
+                      onChange={(e) => handleChange('codigoServicoMunicipio', e.target.value)}
+                      placeholder="Ex: 01010501"
+                      helperText="Código do serviço conforme cadastro municipal"
+                    />
+                  )}
 
                   <TextField
                     fullWidth
                     label="Item Lista Serviço LC 116/2003"
                     value={form.itemListaServicoLC116}
                     onChange={(e) => handleChange('itemListaServicoLC116', e.target.value)}
-                    placeholder="Ex: 01.01"
-                    helperText="Item da Lei Complementar 116/2003"
+                    placeholder={isNacional ? 'Ex: 17.19.01' : 'Ex: 01.01'}
+                    helperText={
+                      isNacional
+                        ? 'Fallback para derivar o cTribNac quando não informado'
+                        : 'Item da Lei Complementar 116/2003'
+                    }
                   />
+
+                  {isNacional && (
+                    <>
+                      <TextField
+                        fullWidth
+                        label="Cód. Tributação Nacional (cTribNac)"
+                        value={form.codigoTributacaoNacional}
+                        onChange={(e) =>
+                          handleChange('codigoTributacaoNacional', onlyDigits(e.target.value).slice(0, 6))
+                        }
+                        placeholder="Ex: 171901"
+                        helperText="6 dígitos — usado na emissão pelo Emissor Nacional. Empresas com mais de um CNAE devem preencher por serviço"
+                        inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                      />
+
+                      <TextField
+                        fullWidth
+                        label="Cód. Tributação Municipal (cTribMun)"
+                        value={form.codigoTributacaoMunicipal}
+                        onChange={(e) => handleChange('codigoTributacaoMunicipal', e.target.value)}
+                        helperText="Formato definido pelo município (opcional)"
+                      />
+                    </>
+                  )}
                 </Stack>
               </CardContent>
             </Card>

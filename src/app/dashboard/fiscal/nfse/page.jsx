@@ -33,7 +33,16 @@ import { formatClienteCodigoRazao } from 'src/utils/formatter';
 import { fCurrency, formatCPFOrCNPJ } from 'src/utils/format-number';
 
 import { getClientes } from 'src/actions/clientes';
-import { cancelarNotaFiscal, listarNotasFiscaisPorCliente } from 'src/actions/notafiscal';
+import { useGetSettings } from 'src/actions/settings';
+import {
+  abrirPdfNota,
+  baixarXmlNota,
+  cancelarNotaFiscal,
+  cancelarNotaNoProvedor,
+  sincronizarDfeNacional,
+  sincronizarPeriodoNacional,
+  listarNotasFiscaisPorCliente,
+} from 'src/actions/notafiscal';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
@@ -64,6 +73,21 @@ const getTipoNotaColor = (tipo) => {
   };
   return tipos[String(tipo || '').toLowerCase()] || 'default';
 };
+
+const MESES = [
+  { value: 1, label: 'Janeiro' },
+  { value: 2, label: 'Fevereiro' },
+  { value: 3, label: 'Março' },
+  { value: 4, label: 'Abril' },
+  { value: 5, label: 'Maio' },
+  { value: 6, label: 'Junho' },
+  { value: 7, label: 'Julho' },
+  { value: 8, label: 'Agosto' },
+  { value: 9, label: 'Setembro' },
+  { value: 10, label: 'Outubro' },
+  { value: 11, label: 'Novembro' },
+  { value: 12, label: 'Dezembro' },
+];
 
 const notaInnerBoxSx = {
   p: 1.5,
@@ -146,6 +170,7 @@ export default function DashboardFiscalPage() {
   const [selectedCliente, setSelectedCliente] = useState('');
   const [status, setStatus] = useState('');
   const [tipoNota, setTipoNota] = useState('');
+  const [tipoMovimento, setTipoMovimento] = useState('saida'); // '' | 'entrada' | 'saida' — filtro local (API não tem query param)
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
@@ -168,6 +193,18 @@ export default function DashboardFiscalPage() {
   const [dataCancelamento, setDataCancelamento] = useState(() => dayjs().format('YYYY-MM-DD'));
   const [canceling, setCanceling] = useState(false);
 
+  // Emissor Nacional: sincronização incremental + importação por período (ADN)
+  const { settings: clienteSettings } = useGetSettings(selectedCliente || null);
+  const isClienteNacional = clienteSettings?.provedorNFSe === 'nacional';
+  const [syncing, setSyncing] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importModo, setImportModo] = useState('mes'); // 'mes' | 'intervalo'
+  const [importAno, setImportAno] = useState(() => dayjs().year());
+  const [importMesInicio, setImportMesInicio] = useState(() => dayjs().month() + 1);
+  const [importMesFim, setImportMesFim] = useState(() => dayjs().month() + 1);
+  const [importResultado, setImportResultado] = useState(null);
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -183,11 +220,20 @@ export default function DashboardFiscalPage() {
     load();
   }, []);
 
-  const { totalValorNotas, totalNotas } = useMemo(() => {
+  // Notas sem siegTipo são emissões próprias → saída
+  const notasFiltradas = useMemo(() => {
     const arr = Array.isArray(notas) ? notas : [];
-    const total = arr.reduce((acc, n) => acc + Number(n?.valorServicos || n?.valor || 0), 0);
-    return { totalValorNotas: total, totalNotas: arr.length };
-  }, [notas]);
+    if (!tipoMovimento) return arr;
+    return arr.filter((n) => (n.siegTipo === 'entrada' ? 'entrada' : 'saida') === tipoMovimento);
+  }, [notas, tipoMovimento]);
+
+  const { totalValorNotas, totalNotas } = useMemo(() => {
+    const total = notasFiltradas.reduce(
+      (acc, n) => acc + Number(n?.valorServicos || n?.valor || 0),
+      0
+    );
+    return { totalValorNotas: total, totalNotas: notasFiltradas.length };
+  }, [notasFiltradas]);
 
   const fetchNotas = async () => {
     if (!selectedCliente) return;
@@ -270,16 +316,85 @@ export default function DashboardFiscalPage() {
     }
     try {
       setCanceling(true);
-      const dataISO = dayjs(dataCancelamento).toISOString();
-      await cancelarNotaFiscal(notaToCancel._id || notaToCancel.id, motivoCancelamento, dataISO);
+      const notaId = notaToCancel._id || notaToCancel.id;
+      if (notaToCancel.origem === 'nacional') {
+        // Cancelamento síncrono no Sefin (evento e101101) — backend ramifica por origem
+        await cancelarNotaNoProvedor(notaId, motivoCancelamento);
+      } else {
+        const dataISO = dayjs(dataCancelamento).toISOString();
+        await cancelarNotaFiscal(notaId, motivoCancelamento, dataISO);
+      }
       toast.success('Nota fiscal cancelada com sucesso!');
       handleCloseCancelDialog();
       await fetchNotas(); // Recarrega a lista
     } catch (error) {
-      const msg = error?.response?.data?.message || 'Erro ao cancelar nota fiscal';
+      const msg = error?.response?.data?.message || error?.message || 'Erro ao cancelar nota fiscal';
       toast.error(msg);
     } finally {
       setCanceling(false);
+    }
+  };
+
+  const handleAbrirPdf = async (nota) => {
+    try {
+      await abrirPdfNota(nota);
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao abrir o PDF da nota');
+    }
+  };
+
+  const handleBaixarXml = async (nota) => {
+    try {
+      await baixarXmlNota(nota);
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao baixar o XML da nota');
+    }
+  };
+
+  const handleSincronizarDfe = async () => {
+    if (!selectedCliente) return;
+    try {
+      setSyncing(true);
+      const res = await sincronizarDfeNacional(selectedCliente);
+      toast.success(res.data?.message || 'Sincronização concluída');
+      await fetchNotas();
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao sincronizar notas do Emissor Nacional');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const handleOpenImportDialog = () => {
+    setImportResultado(null);
+    setImportModo('mes');
+    setImportAno(dayjs().year());
+    setImportMesInicio(dayjs().month() + 1);
+    setImportMesFim(dayjs().month() + 1);
+    setImportDialogOpen(true);
+  };
+
+  const handleImportarPeriodo = async () => {
+    if (!selectedCliente) return;
+    if (importModo === 'intervalo' && importMesFim < importMesInicio) {
+      toast.error('O mês final deve ser maior ou igual ao mês inicial');
+      return;
+    }
+    try {
+      setImporting(true);
+      setImportResultado(null);
+      const body =
+        importModo === 'mes'
+          ? { competencia: `${importAno}-${String(importMesInicio).padStart(2, '0')}` }
+          : { ano: Number(importAno), mesInicio: Number(importMesInicio), mesFim: Number(importMesFim) };
+      const res = await sincronizarPeriodoNacional(selectedCliente, body);
+      setImportResultado(res.data);
+      toast.success(res.data?.message || 'Importação concluída');
+      await fetchNotas();
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao importar notas do período');
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -304,6 +419,25 @@ export default function DashboardFiscalPage() {
             Selecione um cliente para visualizar as notas emitidas e o faturamento.
           </Typography>
         </Box>
+        {isClienteNacional && (
+          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+            <LoadingButton
+              variant="outlined"
+              loading={syncing}
+              startIcon={<Iconify icon="solar:refresh-circle-bold" />}
+              onClick={handleSincronizarDfe}
+            >
+              Sincronizar novas
+            </LoadingButton>
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="solar:download-square-bold" />}
+              onClick={handleOpenImportDialog}
+            >
+              Importar período
+            </Button>
+          </Stack>
+        )}
       </Box>
 
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
@@ -323,7 +457,7 @@ export default function DashboardFiscalPage() {
               )}
             />
           </Grid>
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
               <Select label="Status" value={status} onChange={(e) => { setStatus(e.target.value); }}>
@@ -335,7 +469,7 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={3}>
             <FormControl fullWidth>
               <InputLabel>Tipo de Nota</InputLabel>
               <Select
@@ -355,10 +489,24 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
+          <Grid xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Entrada/Saída</InputLabel>
+              <Select
+                label="Entrada/Saída"
+                value={tipoMovimento}
+                onChange={(e) => setTipoMovimento(e.target.value)}
+              >
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="entrada">Entrada</MenuItem>
+                <MenuItem value="saida">Saída</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
         </Grid>
 
         {/* Filtros Ativos */}
-        {(status || tipoNota) && (
+        {(status || tipoNota || tipoMovimento) && (
           <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }} useFlexGap>
             <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
               Filtros ativos:
@@ -377,6 +525,15 @@ export default function DashboardFiscalPage() {
                 size="small"
                 label={`Tipo: ${formatTipoNota(tipoNota)}`}
                 onDelete={() => setTipoNota('')}
+                color="default"
+                variant="soft"
+              />
+            )}
+            {tipoMovimento && (
+              <Chip
+                size="small"
+                label={tipoMovimento === 'entrada' ? 'Entrada' : 'Saída'}
+                onDelete={() => setTipoMovimento('')}
                 color="default"
                 variant="soft"
               />
@@ -451,9 +608,15 @@ export default function DashboardFiscalPage() {
             <Typography variant="caption" color="text.secondary">
               Soma dos valores nesta página: {fCurrency(totalValorNotas)} • Total geral: {fCurrency(somaTotal)}
             </Typography>
+            {tipoMovimento && (
+              <Typography variant="caption" color="text.secondary">
+                Filtro Entrada/Saída aplicado nas notas desta página: exibindo {totalNotas} de{' '}
+                {notas.length}
+              </Typography>
+            )}
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center">
-            {(status || tipoNota) && (
+            {(status || tipoNota || tipoMovimento) && (
               <Button
                 size="small"
                 variant="outlined"
@@ -462,6 +625,7 @@ export default function DashboardFiscalPage() {
                 onClick={() => {
                   setStatus('');
                   setTipoNota('');
+                  setTipoMovimento('');
                 }}
               >
                 Limpar Filtros
@@ -473,7 +637,7 @@ export default function DashboardFiscalPage() {
         <Stack spacing={1.5} aria-busy={loading && !!selectedCliente} aria-live="polite">
           {selectedCliente && loading
             ? Array.from({ length: 5 }, (_, i) => <NotaFiscalCardSkeleton key={`nf-skeleton-${i}`} />)
-            : notas.map((n) => {
+            : notasFiltradas.map((n) => {
               const valor = n.valorServicos || n.valor || 0;
               const statusLabel = n.status || '-';
               const eNotasLabel = n.eNotasStatus || '-';
@@ -485,10 +649,13 @@ export default function DashboardFiscalPage() {
               const tomador = n.tomador || {};
               const servicoDesc = Array.isArray(n.servicos) && n.servicos.length ? n.servicos[0]?.descricao : (n.descricao || n.discriminacao);
               const isSieg = n.origem === 'sieg';
+              const isNacional = n.origem === 'nacional';
               const isEnotas = n.origem === 'enotas' || !n.origem; // fallback para notas antigas
               const tipoNotaLabel = formatTipoNota(n.tipoNota);
               const tipoNotaColor = getTipoNotaColor(n.tipoNota);
-              const docRaw = tomador?.cpfCnpj || (isSieg ? n.siegCnpjEmitente : '');
+              const docRaw =
+                tomador?.cpfCnpj ||
+                (isSieg ? n.siegCnpjEmitente : isNacional ? n.nacionalCnpjEmitente : '');
               const docFormatted = docRaw ? formatCPFOrCNPJ(String(docRaw)) : '';
 
               return (
@@ -503,10 +670,10 @@ export default function DashboardFiscalPage() {
                         {tipoNotaLabel}
                       </Label>
                       <Label
-                        color="default"
+                        color={isNacional ? 'info' : 'default'}
                         variant="soft"
                       >
-                        {isSieg ? 'SIEG' : 'eNotas'}
+                        {isNacional ? 'Nacional' : isSieg ? 'SIEG' : 'eNotas'}
                       </Label>
                       <Typography variant="subtitle2">
                         #{isSieg ? (n.siegNumero || n.numeroNota || '-') : (n.numeroNota || n.numero || '-')}
@@ -514,8 +681,10 @@ export default function DashboardFiscalPage() {
                       {n.serie && (
                         <Label variant="soft" color="default">Série {n.serie}</Label>
                       )}
-                      {isSieg && n.siegTipo && (
-                        <Label variant="soft" color="default">{n.siegTipo === 'entrada' ? 'Entrada' : 'Saída'}</Label>
+                      {n.siegTipo && (
+                        <Label variant="soft" color={n.siegTipo === 'entrada' ? 'warning' : 'success'}>
+                          {n.siegTipo === 'entrada' ? 'Entrada' : 'Saída'}
+                        </Label>
                       )}
                       <Label color={color} variant="soft">{statusLabel}</Label>
                       {isEnotas && (
@@ -537,7 +706,7 @@ export default function DashboardFiscalPage() {
                             variant="overline"
                             sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
                           >
-                            {isSieg && n.siegTipo === 'entrada' ? 'Emitente' : 'Tomador'}
+                            {n.siegTipo === 'entrada' ? 'Emitente' : 'Tomador'}
                           </Typography>
                         </Stack>
                         <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.45 }}>
@@ -642,11 +811,20 @@ export default function DashboardFiscalPage() {
                   )}
 
                   <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap">
-                    {!!n.linkNota && n.linkNota !== 'Processando...' && (
-                      <Button size="small" variant="outlined" href={n.linkNota} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:document-text-bold" />}>PDF</Button>
-                    )}
-                    {!!n.linkXml && (
-                      <Button size="small" variant="outlined" href={n.linkXml} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
+                    {isNacional ? (
+                      <>
+                        <Button size="small" variant="outlined" onClick={() => handleAbrirPdf(n)} startIcon={<Iconify icon="solar:document-text-bold" />}>PDF</Button>
+                        <Button size="small" variant="outlined" onClick={() => handleBaixarXml(n)} startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
+                      </>
+                    ) : (
+                      <>
+                        {!!n.linkNota && n.linkNota !== 'Processando...' && (
+                          <Button size="small" variant="outlined" href={n.linkNota} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:document-text-bold" />}>PDF</Button>
+                        )}
+                        {!!n.linkXml && (
+                          <Button size="small" variant="outlined" href={n.linkXml} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
+                        )}
+                      </>
                     )}
                     {isSieg && n.siegXmlBase64 && (
                       <Button
@@ -668,7 +846,7 @@ export default function DashboardFiscalPage() {
                         XML Sieg
                       </Button>
                     )}
-                    {s !== 'cancelada' && (
+                    {s !== 'cancelada' && s !== 'rejeitada' && s !== 'emitindo' && (
                       <Button
                         size="small"
                         variant="outlined"
@@ -715,7 +893,9 @@ export default function DashboardFiscalPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Alert severity="warning">
-              Esta ação cancelará a nota fiscal no sistema. Certifique-se de cancelar também na Prefeitura/eNotas se necessário.
+              {notaToCancel?.origem === 'nacional'
+                ? 'A nota será cancelada diretamente no Emissor Nacional (Sefin) de forma síncrona.'
+                : 'Esta ação cancelará a nota fiscal no sistema. Certifique-se de cancelar também na Prefeitura/eNotas se necessário.'}
             </Alert>
 
             {notaToCancel && (
@@ -742,14 +922,16 @@ export default function DashboardFiscalPage() {
               placeholder="Descreva o motivo do cancelamento..."
             />
 
-            <TextField
-              fullWidth
-              type="date"
-              label="Data do Cancelamento"
-              value={dataCancelamento}
-              onChange={(e) => setDataCancelamento(e.target.value)}
-              InputLabelProps={{ shrink: true }}
-            />
+            {notaToCancel?.origem !== 'nacional' && (
+              <TextField
+                fullWidth
+                type="date"
+                label="Data do Cancelamento"
+                value={dataCancelamento}
+                onChange={(e) => setDataCancelamento(e.target.value)}
+                InputLabelProps={{ shrink: true }}
+              />
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>
@@ -764,6 +946,123 @@ export default function DashboardFiscalPage() {
             startIcon={<Iconify icon="solar:close-circle-bold" />}
           >
             Confirmar Cancelamento
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Importação por Período — Emissor Nacional (ADN) */}
+      <Dialog
+        open={importDialogOpen}
+        onClose={() => !importing && setImportDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="solar:download-square-bold" width={24} sx={{ color: 'primary.main' }} />
+            <Typography variant="h6">Importar notas — Emissor Nacional</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="warning">
+              A primeira importação pode demorar alguns minutos: o ADN é varrido por NSU desde o
+              início e as notas são filtradas pelo período informado.
+            </Alert>
+
+            <FormControl fullWidth>
+              <InputLabel id="import-modo-label">Modo</InputLabel>
+              <Select
+                labelId="import-modo-label"
+                label="Modo"
+                value={importModo}
+                onChange={(e) => setImportModo(e.target.value)}
+                disabled={importing}
+              >
+                <MenuItem value="mes">Um mês</MenuItem>
+                <MenuItem value="intervalo">Intervalo de meses (mesmo ano)</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Stack direction="row" spacing={2}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Ano"
+                value={importAno}
+                onChange={(e) => setImportAno(Number(e.target.value))}
+                disabled={importing}
+              />
+              <FormControl fullWidth>
+                <InputLabel id="import-mes-inicio-label">
+                  {importModo === 'mes' ? 'Mês' : 'De'}
+                </InputLabel>
+                <Select
+                  labelId="import-mes-inicio-label"
+                  label={importModo === 'mes' ? 'Mês' : 'De'}
+                  value={importMesInicio}
+                  onChange={(e) => setImportMesInicio(Number(e.target.value))}
+                  disabled={importing}
+                >
+                  {MESES.map((m) => (
+                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {importModo === 'intervalo' && (
+                <FormControl fullWidth>
+                  <InputLabel id="import-mes-fim-label">Até</InputLabel>
+                  <Select
+                    labelId="import-mes-fim-label"
+                    label="Até"
+                    value={importMesFim}
+                    onChange={(e) => setImportMesFim(Number(e.target.value))}
+                    disabled={importing}
+                  >
+                    {MESES.map((m) => (
+                      <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Stack>
+
+            {importing && (
+              <Alert severity="info">
+                Importando notas do Emissor Nacional... pode levar alguns minutos.
+              </Alert>
+            )}
+
+            {importResultado && (
+              <Alert severity="success">
+                <Stack spacing={0.5}>
+                  <Typography variant="subtitle2">{importResultado.message}</Typography>
+                  <Typography variant="body2">
+                    Importadas: {importResultado.notasImportadas ?? 0} · Atualizadas:{' '}
+                    {importResultado.notasAtualizadas ?? 0} · Fora do período:{' '}
+                    {importResultado.notasIgnoradasForaPeriodo ?? 0} · Eventos:{' '}
+                    {importResultado.eventosProcessados ?? 0}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Documentos processados: {importResultado.documentosProcessados ?? 0} · Último
+                    NSU: {importResultado.ultimoNSU ?? '-'}
+                  </Typography>
+                </Stack>
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={() => setImportDialogOpen(false)} disabled={importing}>
+            Fechar
+          </Button>
+          <LoadingButton
+            variant="contained"
+            loading={importing}
+            startIcon={<Iconify icon="solar:download-square-bold" />}
+            onClick={handleImportarPeriodo}
+          >
+            Importar
           </LoadingButton>
         </DialogActions>
       </Dialog>
