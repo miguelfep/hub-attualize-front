@@ -37,6 +37,9 @@ export async function listarNotasFiscaisPorCliente({
   numeroNota,
   cpfCnpj,
   tipoNota,
+  tipoMovimento,
+  origem,
+  comRetencao,
 }) {
   const params = {};
   if (page) params.page = page;
@@ -47,6 +50,9 @@ export async function listarNotasFiscaisPorCliente({
   if (numeroNota) params.numeroNota = numeroNota;
   if (cpfCnpj) params.cpfCnpj = cpfCnpj;
   if (tipoNota) params.tipoNota = tipoNota;
+  if (tipoMovimento) params.tipoMovimento = tipoMovimento; // 'entrada' | 'saida'
+  if (origem) params.origem = origem; // 'enotas' | 'sieg' | 'nacional'
+  if (comRetencao === true || comRetencao === false) params.comRetencao = comRetencao;
   return axios.get(`${baseUrl}nota-fiscal/${clienteId}`, { params });
 }
 
@@ -101,6 +107,24 @@ export async function sincronizarPeriodoNacional(clienteId, body) {
 /** Importação ADN por período para TODOS os clientes (somente admin). */
 export async function importarPeriodoNacionalAdmin(body) {
   return axios.post(`${baseUrl}nota-fiscal/nacional/importar-periodo`, body);
+}
+
+/** Movimento da nota: 'entrada' (recebida) | 'saida' (emitida). Notas antigas sem o campo são saída. */
+export function tipoMovimentoNota(nota) {
+  return nota?.tipoMovimento || nota?.siegTipo || 'saida';
+}
+
+/** True quando a nota tem qualquer retenção de tributos na fonte (notas antigas sem o campo contam como sem). */
+export function notaPossuiRetencao(nota) {
+  return nota?.retencao?.possuiRetencao === true;
+}
+
+/**
+ * Backfill do campo `retencao` nas notas nacionais já importadas/emitidas,
+ * reaproveitando o XML salvo (não consulta o ADN). Idempotente.
+ */
+export async function reprocessarRetencoesNacional(clienteId) {
+  return axios.post(`${baseUrl}nota-fiscal/${clienteId}/nacional/reprocessar-retencoes`);
 }
 
 /**
