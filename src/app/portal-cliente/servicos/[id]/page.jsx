@@ -7,8 +7,8 @@ import { m, LazyMotion, domAnimation } from 'framer-motion';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
+import Grid from '@mui/material/Unstable_Grid2';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
@@ -102,6 +102,7 @@ export default function EditarServicoPage() {
   });
 
   const enotasConfig = settings.eNotasConfig;
+  const isNacional = settings?.provedorNFSe === 'nacional';
 
   const [cnaesEmpresa, setCnaesEmpresa] = useState([]);
   const [loadingCnaes, setLoadingCnaes] = useState(false);
@@ -274,7 +275,7 @@ export default function EditarServicoPage() {
 
             <CardContent sx={{ p: { xs: 2, md: 4 } }}>
               <SectionHeader icon="solar:document-add-bold-duotone" title="Dados do Serviço" />
-              <Grid container spacing={2} sx={{ '& > *': { p: 2.5 } }}>
+              <Grid container spacing={2}>
                 <Grid xs={12}>
                   <TextField
                     fullWidth
@@ -362,56 +363,64 @@ export default function EditarServicoPage() {
                       </TextField>
                     </Grid>
 
-                    <Grid xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Código do Serviço no Município"
-                        value={form.codigoServicoMunicipio}
-                        onChange={(e) => setForm((f) => ({ ...f, codigoServicoMunicipio: e.target.value }))}
-                        placeholder="Ex: 01010501"
-                        helperText="Código do serviço conforme cadastro municipal"
-                      />
-                    </Grid>
+                    {!isNacional && (
+                      <Grid xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          label="Código do Serviço no Município"
+                          value={form.codigoServicoMunicipio}
+                          onChange={(e) => setForm((f) => ({ ...f, codigoServicoMunicipio: e.target.value }))}
+                          placeholder="Ex: 01010501"
+                          helperText="Código do serviço conforme cadastro municipal"
+                        />
+                      </Grid>
+                    )}
 
-                    <Grid xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Item Lista Serviço LC 116/2003"
-                        value={form.itemListaServicoLC116}
-                        onChange={(e) => setForm((f) => ({ ...f, itemListaServicoLC116: e.target.value }))}
-                        placeholder="Ex: 01.01"
-                        helperText="Item da Lei Complementar 116/2003"
-                      />
-                    </Grid>
+                    {!isNacional && (
+                      <Grid xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          label="Item Lista Serviço LC 116/2003"
+                          value={form.itemListaServicoLC116}
+                          onChange={(e) => setForm((f) => ({ ...f, itemListaServicoLC116: e.target.value }))}
+                          placeholder="Ex: 01.01"
+                          helperText="Item da Lei Complementar 116/2003"
+                        />
+                      </Grid>
+                    )}
 
-                    <Grid xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Cód. Tributação Nacional (cTribNac)"
-                        value={form.codigoTributacaoNacional}
-                        onChange={(e) =>
-                          setForm((f) => ({
-                            ...f,
-                            codigoTributacaoNacional: onlyDigits(e.target.value).slice(0, 6),
-                          }))
-                        }
-                        placeholder="Ex: 171901"
-                        helperText="6 dígitos — usado na emissão pelo Emissor Nacional. Empresas com mais de um CNAE devem preencher por serviço"
-                        inputProps={{ maxLength: 6, inputMode: 'numeric' }}
-                      />
-                    </Grid>
+                    {isNacional && (
+                      <>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Cód. Tributação Nacional (cTribNac)"
+                            value={form.codigoTributacaoNacional}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                codigoTributacaoNacional: onlyDigits(e.target.value).slice(0, 6),
+                              }))
+                            }
+                            placeholder="Ex: 171901"
+                            helperText="6 dígitos — usado na emissão pelo Emissor Nacional. Empresas com mais de um CNAE devem preencher por serviço"
+                            inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                          />
+                        </Grid>
 
-                    <Grid xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        label="Cód. Tributação Municipal (cTribMun)"
-                        value={form.codigoTributacaoMunicipal}
-                        onChange={(e) =>
-                          setForm((f) => ({ ...f, codigoTributacaoMunicipal: e.target.value }))
-                        }
-                        helperText="Formato definido pelo município (opcional)"
-                      />
-                    </Grid>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Cód. Tributação Municipal (cTribMun)"
+                            value={form.codigoTributacaoMunicipal}
+                            onChange={(e) =>
+                              setForm((f) => ({ ...f, codigoTributacaoMunicipal: e.target.value }))
+                            }
+                            helperText="Formato definido pelo município (opcional)"
+                          />
+                        </Grid>
+                      </>
+                    )}
                   </Grid>
                 </>
               )}
