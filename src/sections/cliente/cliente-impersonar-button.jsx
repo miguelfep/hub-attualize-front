@@ -5,6 +5,7 @@ import { useState, useCallback } from 'react';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
@@ -31,6 +32,9 @@ import {
 // Perfis internos autorizados a logar como cliente (espelha o backend).
 const ROLES_PERMITIDAS = ['admin', 'operacional', 'gerencial'];
 
+// Valor sentinela do seletor para o acesso virtual (sem usuário real).
+const OPCAO_VIRTUAL = '__virtual__';
+
 /**
  * Ícone "Logar como cliente" para a linha da lista. Self-contained: dispara a
  * impersonação, trata o 409 (vários usuários do portal) com um diálogo de
@@ -54,11 +58,13 @@ export function ClienteImpersonarButton({ cliente }) {
   }, []);
 
   const executar = useCallback(
-    async (userId) => {
+    async ({ userId, virtual } = {}) => {
       setLoading(true);
       try {
-        await impersonateCliente({ clienteId, userId });
-        toast.success(`Acessando como ${nome}...`);
+        await impersonateCliente({ clienteId, userId, virtual, clienteNome: nome });
+        toast.success(
+          virtual ? `Acessando ${nome} com usuário virtual...` : `Acessando como ${nome}...`
+        );
         irParaPortal();
       } catch (error) {
         if (isMultipleUsersError(error)) {
@@ -91,7 +97,11 @@ export function ClienteImpersonarButton({ cliente }) {
   const handleConfirmarSelecao = useCallback(() => {
     if (!userIdSelecionado) return;
     setCandidatos(null);
-    executar(userIdSelecionado);
+    if (userIdSelecionado === OPCAO_VIRTUAL) {
+      executar({ virtual: true });
+    } else {
+      executar({ userId: userIdSelecionado });
+    }
   }, [userIdSelecionado, executar]);
 
   if (!podeImpersonar) return null;
@@ -110,7 +120,8 @@ export function ClienteImpersonarButton({ cliente }) {
         <DialogTitle>Selecionar usuário do portal</DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 2 }}>
-            Este cliente possui mais de um usuário de acesso. Escolha qual deseja acessar.
+            Este cliente possui mais de um usuário de acesso. Escolha qual deseja acessar, ou use o
+            acesso virtual para entrar sem assumir nenhum usuário real.
           </DialogContentText>
           <Stack spacing={2}>
             <TextField
@@ -119,12 +130,24 @@ export function ClienteImpersonarButton({ cliente }) {
               label="Usuário"
               value={userIdSelecionado}
               onChange={(e) => setUserIdSelecionado(e.target.value)}
+              helperText={
+                userIdSelecionado === OPCAO_VIRTUAL
+                  ? 'Notificações, preferências e permissões serão as do usuário sintético — para reproduzir exatamente o que um cliente vê, acesse com um usuário real.'
+                  : ''
+              }
             >
               {(candidatos || []).map((c) => (
                 <MenuItem key={c.userId} value={c.userId}>
                   {c.name ? `${c.name} — ${c.email || ''}` : c.email || c.userId}
                 </MenuItem>
               ))}
+              <Divider />
+              <MenuItem value={OPCAO_VIRTUAL}>
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <Iconify icon="solar:ghost-bold-duotone" width={18} />
+                  <span>Acesso Attualize (virtual) — sem usuário real</span>
+                </Stack>
+              </MenuItem>
             </TextField>
           </Stack>
         </DialogContent>

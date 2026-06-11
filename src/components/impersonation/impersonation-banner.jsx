@@ -68,6 +68,7 @@ export function ImpersonationBanner() {
             Você está visualizando como cliente
             {info?.clienteLabel ? `: ${info.clienteLabel}` : ''}
             {info?.clienteEmail ? ` (${info.clienteEmail})` : ''}
+            {info?.virtual ? ' — acesso virtual' : ''}
           </Typography>
         </Stack>
 

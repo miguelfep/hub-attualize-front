@@ -5,7 +5,7 @@ import { m } from 'framer-motion';
 import { useState, useCallback } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
-import { Box, Chip, Stack, Button, Container, Typography } from '@mui/material';
+import { Box, Card, Chip, Stack, Button, Container, Typography } from '@mui/material';
 
 import { CONFIG } from 'src/config-global';
 
@@ -148,10 +148,17 @@ export default function HomeBanner() {
         maxWidth="lg"
         sx={{ position: 'relative', zIndex: 2 }}
       >
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: { md: '1.15fr 1fr', xs: '1fr' },
+            gap: { xs: 6, md: 8 },
+            alignItems: 'center',
+          }}
+        >
         <Stack
           spacing={3}
           sx={{
-            maxWidth: 720,
             textAlign: { xs: 'center', md: 'left' },
             alignItems: { xs: 'center', md: 'flex-start' },
           }}
@@ -365,6 +372,88 @@ export default function HomeBanner() {
             </Stack>
           </m.div>
         </Stack>
+
+        {/* Imagem com cards flutuantes */}
+        <m.div variants={varFade().inRight}>
+          <Box sx={{ position: 'relative', maxWidth: 620, mx: 'auto' }}>
+            <Box
+              sx={{
+                position: 'relative',
+                width: '100%',
+                aspectRatio: '3 / 2',
+                borderRadius: 6,
+                overflow: 'hidden',
+                boxShadow: theme.customShadows.z24,
+              }}
+            >
+              <Image
+                src="/assets/images/home/home-principal.webp"
+                alt="Attualize Contábil - contabilidade digital especializada"
+                fill
+                priority
+                sizes="(min-width: 900px) 620px, 100vw"
+                style={{ objectFit: 'cover', objectPosition: 'center' }}
+              />
+            </Box>
+
+            {/* Card flutuante - 100% digital */}
+            <Card
+              sx={{
+                position: 'absolute',
+                top: 20,
+                right: { xs: -8, md: -24 },
+                px: 2,
+                py: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.25,
+                borderRadius: 2,
+                boxShadow: theme.customShadows.z16,
+                bgcolor: alpha(theme.palette.background.paper, 0.95),
+                backdropFilter: 'blur(6px)',
+              }}
+            >
+              <Iconify icon="solar:monitor-bold-duotone" width={26} sx={{ color: ACCENT }} />
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                  100% Digital
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Atendemos todo o Brasil
+                </Typography>
+              </Box>
+            </Card>
+
+            {/* Card flutuante - atendimento humano */}
+            <Card
+              sx={{
+                position: 'absolute',
+                bottom: 20,
+                left: { xs: -8, md: -24 },
+                px: 2,
+                py: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.25,
+                borderRadius: 2,
+                boxShadow: theme.customShadows.z16,
+                bgcolor: alpha(theme.palette.background.paper, 0.95),
+                backdropFilter: 'blur(6px)',
+              }}
+            >
+              <Iconify icon="solar:hand-heart-bold-duotone" width={26} sx={{ color: YELLOW }} />
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, lineHeight: 1.2 }}>
+                  Pessoas de verdade
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Sem robôs, sem tickets infinitos
+                </Typography>
+              </Box>
+            </Card>
+          </Box>
+        </m.div>
+        </Box>
       </Container>
 
       <SegmentFormAbrirEmpresa

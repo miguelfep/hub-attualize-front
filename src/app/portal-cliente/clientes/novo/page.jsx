@@ -1,7 +1,7 @@
 'use client';
 
 import { mutate } from 'swr';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTheme } from '@emotion/react';
 import { useRouter } from 'next/navigation';
 import { LazyMotion, m as motion, domAnimation } from 'framer-motion';
@@ -29,6 +29,7 @@ import { endpoints } from 'src/utils/axios';
 import { toPayloadLegacyDigits } from 'src/utils/phone-e164';
 
 import { buscarCep } from 'src/actions/cep';
+import { buscarCnpj } from 'src/actions/cnpj';
 import { portalCreateCliente } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
@@ -102,6 +103,8 @@ export default function PortalClienteNovoPage() {
   const clienteProprietarioId = empresaAtiva;
   const { podeGerenciarClientes } = useSettings();
   const [fetchingCep, setFetchingCep] = useState(false);
+  const [fetchingCnpj, setFetchingCnpj] = useState(false);
+  const lastCnpjRef = useRef('');
 
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
@@ -258,6 +261,46 @@ export default function PortalClienteNovoPage() {
     }
   };
 
+  const handleCnpjLookup = async (digits) => {
+    if (lastCnpjRef.current === digits) return;
+    lastCnpjRef.current = digits;
+    try {
+      setFetchingCnpj(true);
+      const data = await buscarCnpj(digits);
+      setFormData((f) => ({
+        ...f,
+        razaoSocial: data.razaoSocial || f.razaoSocial,
+        nome: data.nomeFantasia || data.razaoSocial || f.nome,
+        email: f.email || data.email,
+        telefone: f.telefone || toPhoneInputValue(data.telefone),
+        endereco: {
+          ...f.endereco,
+          cep: data.endereco.cep ? formatCEP(data.endereco.cep) : f.endereco.cep,
+          rua: data.endereco.rua || f.endereco.rua,
+          numero: data.endereco.numero || f.endereco.numero,
+          complemento: (data.endereco.complemento || f.endereco.complemento).slice(0, 30),
+          bairro: data.endereco.bairro || f.endereco.bairro,
+          cidade: data.endereco.cidade || f.endereco.cidade,
+          estado: data.endereco.estado || f.endereco.estado,
+        },
+      }));
+      toast.success('Dados do CNPJ preenchidos automaticamente');
+    } catch (err) {
+      toast.error('CNPJ não encontrado. Preencha os dados manualmente.');
+    } finally {
+      setFetchingCnpj(false);
+    }
+  };
+
+  const handleCpfCnpjChange = (value) => {
+    const masked = formatCPFOrCNPJ(value);
+    setFormData((f) => ({ ...f, cpfCnpj: masked }));
+    const digits = onlyDigits(masked);
+    if (formData.tipoPessoa === 'juridica' && digits.length === 14) {
+      handleCnpjLookup(digits);
+    }
+  };
+
   return (
     <LazyMotion features={domAnimation}>
       <motion.div
@@ -314,16 +357,29 @@ export default function PortalClienteNovoPage() {
                 <Grid xs={12} sm={8}>
                   <TextField
                     fullWidth
-                    label="Nome / Nome Fantasia"
-                    value={formData.nome}
-                    onChange={(e) => setFormData((f) => ({ ...f, nome: e.target.value }))}
-                    error={!!errors.nome}
-                    helperText={errors.nome}
+                    label={formData.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ'}
+                    value={formData.cpfCnpj}
+                    onChange={(e) => handleCpfCnpjChange(e.target.value)}
+                    error={!!errors.cpfCnpj}
+                    helperText={
+                      errors.cpfCnpj ||
+                      (formData.tipoPessoa === 'juridica'
+                        ? 'Digite o CNPJ para preencher os dados automaticamente'
+                        : '')
+                    }
+                    InputProps={{
+                      endAdornment: fetchingCnpj ? (
+                        <InputAdornment position="end">
+                          <Iconify icon="line-md:loading-loop" />
+                        </InputAdornment>
+                      ) : null,
+                    }}
                   />
                 </Grid>
                 {formData.tipoPessoa === 'juridica' && (
                   <Grid xs={12}>
                     <TextField
+                      disabled={fetchingCnpj}
                       fullWidth
                       label="Razão Social"
                       value={formData.razaoSocial}
@@ -335,14 +391,13 @@ export default function PortalClienteNovoPage() {
                 )}
                 <Grid xs={12} sm={6}>
                   <TextField
+                    disabled={fetchingCnpj}
                     fullWidth
-                    label={formData.tipoPessoa === 'fisica' ? 'CPF' : 'CNPJ'}
-                    value={formData.cpfCnpj}
-                    onChange={(e) =>
-                      setFormData((f) => ({ ...f, cpfCnpj: formatCPFOrCNPJ(e.target.value) }))
-                    }
-                    error={!!errors.cpfCnpj}
-                    helperText={errors.cpfCnpj}
+                    label="Nome / Nome Fantasia"
+                    value={formData.nome}
+                    onChange={(e) => setFormData((f) => ({ ...f, nome: e.target.value }))}
+                    error={!!errors.nome}
+                    helperText={errors.nome}
                   />
                 </Grid>
                 <Grid xs={12} sm={6}>
@@ -443,11 +498,14 @@ export default function PortalClienteNovoPage() {
                     label="Complemento"
                     value={formData.endereco.complemento}
                     error={!!errors.complemento}
-                    helperText={errors.complemento}
+                    helperText={
+                      errors.complemento || `${formData.endereco.complemento.length}/30 caracteres`
+                    }
+                    inputProps={{ maxLength: 30 }}
                     onChange={(e) =>
                       setFormData((f) => ({
                         ...f,
-                        endereco: { ...f.endereco, complemento: e.target.value },
+                        endereco: { ...f.endereco, complemento: e.target.value.slice(0, 30) },
                       }))
                     }
                   />

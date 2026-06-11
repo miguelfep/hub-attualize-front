@@ -18,6 +18,7 @@ import { fCurrency } from 'src/utils/format-number';
 import { toPayloadLegacyDigits } from 'src/utils/phone-e164';
 
 import { buscarCep } from 'src/actions/cep';
+import { buscarCnpj } from 'src/actions/cnpj';
 import { usePortalClientes, usePortalServicos, portalCreateCliente, portalCreateServico, portalCreateOrcamento } from 'src/actions/portal';
 
 import { toast } from 'src/components/snackbar';
@@ -64,6 +65,8 @@ export default function NovoOrcamentoPage() {
 
   const [errors, setErrors] = React.useState({});
   const [fetchingCep, setFetchingCep] = React.useState(false);
+  const [fetchingCnpj, setFetchingCnpj] = React.useState(false);
+  const lastCnpjRef = React.useRef('');
 
   const validateForm = () => {
     const newErrors = {};
@@ -77,6 +80,9 @@ export default function NovoOrcamentoPage() {
     }
     if (docDigits.length !== 11 && docDigits.length !== 14) {
       newErrors.doc = 'CPF/CNPJ inválido';
+    }
+    if ((quickCli.endereco?.complemento?.trim() || '').length > 30) {
+      newErrors.complemento = 'Complemento deve possuir no máximo 30 caracteres';
     }
 
     setErrors(newErrors);
@@ -157,6 +163,7 @@ export default function NovoOrcamentoPage() {
     setOpenNovoCliente(false);
     setQuickCli(initialState);
     setErrors({});
+    lastCnpjRef.current = '';
   }
 
   const handleQuickCepBlur = async () => {
@@ -180,6 +187,43 @@ export default function NovoOrcamentoPage() {
     } finally {
       setFetchingCep(false);
     }
+  };
+
+  const handleQuickCnpjLookup = async (digits) => {
+    if (lastCnpjRef.current === digits) return;
+    lastCnpjRef.current = digits;
+    try {
+      setFetchingCnpj(true);
+      const data = await buscarCnpj(digits);
+      setQuickCli((q) => ({
+        ...q,
+        nome: data.razaoSocial || data.nomeFantasia || q.nome,
+        email: q.email || data.email,
+        telefone: q.telefone || toPhoneInputValue(data.telefone),
+        endereco: {
+          ...q.endereco,
+          cep: data.endereco.cep ? formatCEP(data.endereco.cep) : q.endereco.cep,
+          rua: data.endereco.rua || q.endereco.rua,
+          numero: data.endereco.numero || q.endereco.numero,
+          complemento: (data.endereco.complemento || q.endereco.complemento).slice(0, 30),
+          bairro: data.endereco.bairro || q.endereco.bairro,
+          cidade: data.endereco.cidade || q.endereco.cidade,
+          estado: data.endereco.estado || q.endereco.estado,
+        },
+      }));
+      toast.success('Dados do CNPJ preenchidos automaticamente');
+    } catch (e) {
+      toast.error('CNPJ não encontrado. Preencha os dados manualmente.');
+    } finally {
+      setFetchingCnpj(false);
+    }
+  };
+
+  const handleQuickDocChange = (value) => {
+    const masked = formatCPFOrCNPJ(value);
+    setQuickCli((q) => ({ ...q, doc: masked }));
+    const digits = onlyDigits(masked);
+    if (digits.length === 14) handleQuickCnpjLookup(digits);
   };
 
   if (loadingEmpresas || !clienteProprietarioId) return <NovoOrcamentoPageSkeleton />;
@@ -594,7 +638,15 @@ export default function NovoOrcamentoPage() {
                 <TextField fullWidth label="Nome" value={quickCli.nome} onChange={(e) => setQuickCli((q) => ({ ...q, nome: e.target.value }))} error={!!errors.nome} helperText={errors.nome} />
               </Grid>
               <Grid xs={12}>
-                <TextField fullWidth label="CPF/CNPJ" value={quickCli.doc} onChange={(e) => setQuickCli((q) => ({ ...q, doc: formatCPFOrCNPJ(e.target.value) }))} error={!!errors.doc} helperText={errors.doc} />
+                <TextField
+                  fullWidth
+                  label="CPF/CNPJ"
+                  value={quickCli.doc}
+                  onChange={(e) => handleQuickDocChange(e.target.value)}
+                  error={!!errors.doc}
+                  helperText={errors.doc || 'Digite o CNPJ para preencher os dados automaticamente'}
+                  InputProps={{ endAdornment: fetchingCnpj ? <CircularProgress size={20} /> : null }}
+                />
               </Grid>
               <Grid xs={12} sm={6}>
                 <TextField fullWidth label="Email" value={quickCli.email} onChange={(e) => setQuickCli((q) => ({ ...q, email: e.target.value }))} error={!!errors.email} helperText={errors.email} />
@@ -619,7 +671,15 @@ export default function NovoOrcamentoPage() {
                 <TextField fullWidth label="Número" value={quickCli.endereco.numero} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, numero: e.target.value } }))} />
               </Grid>
               <Grid xs={12} sm={5}>
-                <TextField fullWidth label="Complemento" value={quickCli.endereco.complemento} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, complemento: e.target.value } }))} />
+                <TextField
+                  fullWidth
+                  label="Complemento"
+                  value={quickCli.endereco.complemento}
+                  error={!!errors.complemento}
+                  helperText={errors.complemento || `${quickCli.endereco.complemento.length}/30 caracteres`}
+                  inputProps={{ maxLength: 30 }}
+                  onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, complemento: e.target.value.slice(0, 30) } }))}
+                />
               </Grid>
               <Grid xs={12} sm={4}>
                 <TextField fullWidth disabled={fetchingCep} label="Bairro" value={quickCli.endereco.bairro} onChange={(e) => setQuickCli((q) => ({ ...q, endereco: { ...q.endereco, bairro: e.target.value } }))} />
