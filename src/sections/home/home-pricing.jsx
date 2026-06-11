@@ -8,8 +8,9 @@ import { Box, Tab, Tabs, Stack, Button, Divider, Container, Typography } from '@
 
 import { useTabs } from 'src/hooks/use-tabs';
 
+import { buildWhatsAppLink, ATTUALIZE_WHATSAPP_PHONE } from 'src/utils/whatsapp-link';
+
 import { varAlpha } from 'src/theme/styles';
-import { ATTUALIZE_WHATSAPP_PHONE, buildWhatsAppLink } from 'src/utils/whatsapp-link';
 
 import { Iconify } from 'src/components/iconify';
 import { varFade, varScale, MotionViewport } from 'src/components/animate';

@@ -73,7 +73,9 @@ axiosInstance.interceptors.response.use(
 
     // Corpo string
     if (typeof data === 'string' && data.trim()) {
-      return Promise.reject(new Error(data));
+      const err = new Error(data);
+      err.status = response?.status;
+      return Promise.reject(err);
     }
 
     // Corpo objeto: extrai a melhor mensagem legível e SEMPRE rejeita um Error.
@@ -90,10 +92,14 @@ axiosInstance.interceptors.response.use(
       const err = new Error(message);
       Object.assign(err, data);
       err.message = message;
+      // Status HTTP autoritativo da resposta (não o eventual campo do corpo)
+      err.status = response?.status;
       return Promise.reject(err);
     }
 
-    return Promise.reject(new Error(error.message || statusMsg || 'Something went wrong!'));
+    const fallbackErr = new Error(error.message || statusMsg || 'Something went wrong!');
+    fallbackErr.status = response?.status;
+    return Promise.reject(fallbackErr);
   }
 );
 

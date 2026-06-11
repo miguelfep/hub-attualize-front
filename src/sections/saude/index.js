@@ -1,0 +1,10 @@
+export * from './view';
+export { SaudeCta } from './saude-cta';
+export { SaudeFaq } from './saude-faq';
+export { SaudeTax } from './saude-tax';
+export { SaudeWhy } from './saude-why';
+export { SaudeHero } from './saude-hero';
+export { SaudeSteps } from './saude-steps';
+export { SaudeServices } from './saude-services';
+export { SaudeSegments } from './saude-segments';
+export { SaudeTestimonials } from './saude-testimonials';

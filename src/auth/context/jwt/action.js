@@ -10,9 +10,14 @@ import { USER_DATA, STORAGE_KEY } from './constant';
 /** **************************************
  * Sign in
  *************************************** */
-export const signInWithPassword = async ({ email, password }) => {
+export const signInWithPassword = async ({ email, password, turnstileToken }) => {
   try {
     const params = { email, password };
+
+    // Token do Cloudflare Turnstile — o backend valida via /siteverify
+    if (turnstileToken) {
+      params.turnstileToken = turnstileToken;
+    }
 
     const res = await axios.post(endpoints.auth.signIn, params);
 
