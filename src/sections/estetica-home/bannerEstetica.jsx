@@ -19,7 +19,8 @@ import { CONFIG } from 'src/config-global';
 
 import { Iconify } from 'src/components/iconify';
 
-import { FormWizardAbrirEmpresa } from './FormWizardAbrirEmpresaEstetica';
+import { SegmentFormMigrar } from 'src/sections/saude/segment/segment-form-migrar';
+import { SegmentFormAbrirEmpresa } from 'src/sections/saude/segment/segment-form-abrir-empresa';
 
 const STATS = [
   {
@@ -59,13 +60,17 @@ const BENEFICIOS = [
 export function BannerEstetica() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [open, setOpen] = useState(false);
+  const [openAbrir, setOpenAbrir] = useState(false);
+  const [openMigrar, setOpenMigrar] = useState(false);
   const [isVideoLoading, setVideoLoading] = useState(true);
   const [isIntersecting, setIsIntersecting] = useState(false);
   const videoRef = useRef(null);
 
-  const handleOpen = useCallback(() => setOpen(true), []);
-  const handleClose = useCallback(() => setOpen(false), []);
+  const handleOpenAbrir = useCallback(() => setOpenAbrir(true), []);
+  const handleCloseAbrir = useCallback(() => setOpenAbrir(false), []);
+
+  const handleOpenMigrar = useCallback(() => setOpenMigrar(true), []);
+  const handleCloseMigrar = useCallback(() => setOpenMigrar(false), []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -84,16 +89,6 @@ export function BannerEstetica() {
 
     return () => observer.disconnect();
   }, []);
-
-  const handleTrocarContador = () => {
-    try {
-      const message = encodeURIComponent('Olá, estou no site e tenho interesse em trocar de contabilidade”');
-      const whatsappUrl = `https://wa.me/5541996982267?text=${message}`;
-      window.open(whatsappUrl, '_blank', 'noopener,noreferrer');
-    } catch (error) {
-      console.error('Erro ao abrir o WhatsApp:', error);
-    }
-  };
 
   const bannerImageMobile = `${CONFIG.site.basePath}/assets/images/about/banner-6-mobile.png`;
   const bannerImageDesktop = `${CONFIG.site.basePath}/assets/images/about/banner-6.png`;
@@ -342,7 +337,7 @@ export function BannerEstetica() {
                 variant="contained"
                 color="primary"
                 size="large"
-                onClick={handleOpen}
+                onClick={handleOpenAbrir}
                 aria-label="Abrir minha clínica de estética com a Attualize"
                 startIcon={<Iconify icon="solar:buildings-2-bold-duotone" width={22} />}
                 sx={{
@@ -363,7 +358,7 @@ export function BannerEstetica() {
                 variant="outlined"
                 color="inherit"
                 size="large"
-                onClick={handleTrocarContador}
+                onClick={handleOpenMigrar}
                 aria-label="Trocar de contador e migrar para Attualize"
                 sx={{
                   py: 1.5,
@@ -505,7 +500,19 @@ export function BannerEstetica() {
         </Box>
       </Container>
 
-      <FormWizardAbrirEmpresa open={open} onClose={handleClose} />
+      <SegmentFormAbrirEmpresa
+        open={openAbrir}
+        onClose={handleCloseAbrir}
+        origem="site-estetica"
+        leadSegment="estetica"
+      />
+
+      <SegmentFormMigrar
+        open={openMigrar}
+        onClose={handleCloseMigrar}
+        origem="site-estetica"
+        leadSegment="estetica"
+      />
     </Box>
   );
 }

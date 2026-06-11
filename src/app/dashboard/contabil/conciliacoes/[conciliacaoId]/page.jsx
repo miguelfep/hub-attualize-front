@@ -40,6 +40,7 @@ import { paths } from 'src/routes/paths';
 import axios from 'src/utils/axios';
 import { fDate, fDateUTC } from 'src/utils/format-time';
 
+import { getClienteById } from 'src/actions/clientes';
 import {
   obterConciliacao,
   obterStatusConciliacao,
@@ -79,6 +80,7 @@ export default function DetalhesConciliacaoPage() {
   });
 
   const [jobStatus, setJobStatus] = useState(null);
+  const [clienteInfo, setClienteInfo] = useState(null);
 
   const statusConciliacao = conciliacao?.status;
 
@@ -158,6 +160,29 @@ export default function DetalhesConciliacaoPage() {
       clearInterval(id);
     };
   }, [conciliacaoId, statusConciliacao, router]);
+
+  // Status "erro": buscar detalhes do erro no endpoint de status (uma vez)
+  useEffect(() => {
+    if (!conciliacaoId || statusConciliacao !== 'erro' || jobStatus) return;
+
+    const buscarDetalhesErro = async () => {
+      try {
+        const res = await obterStatusConciliacao(conciliacaoId);
+        const d = res.data?.data;
+        if (d) {
+          setJobStatus({
+            status: d.status,
+            progresso: d.progresso ?? 0,
+            erros: d.erros || [],
+          });
+        }
+      } catch (e) {
+        console.warn('Erro ao buscar detalhes do erro da conciliação:', e);
+      }
+    };
+
+    buscarDetalhesErro();
+  }, [conciliacaoId, statusConciliacao, jobStatus]);
 
   // Buscar detalhes da conciliação
   useEffect(() => {
@@ -739,6 +764,35 @@ export default function DetalhesConciliacaoPage() {
     );
   }, [searchParams, conciliacao, dialogEditar]);
 
+  // Buscar dados do cliente quando a conciliação não vem com clienteId populado
+  useEffect(() => {
+    const nomePopulado =
+      conciliacao?.clienteId?.razaoSocial || conciliacao?.clienteId?.nomeFantasia;
+    if (nomePopulado || !clienteIdConciliacao || clienteInfo) return undefined;
+
+    let cancelled = false;
+    const buscarCliente = async () => {
+      try {
+        const data = await getClienteById(clienteIdConciliacao);
+        if (!cancelled && data) setClienteInfo(data);
+      } catch (e) {
+        console.warn('Não foi possível carregar os dados do cliente:', e);
+      }
+    };
+
+    buscarCliente();
+    return () => {
+      cancelled = true;
+    };
+  }, [conciliacao, clienteIdConciliacao, clienteInfo]);
+
+  const nomeCliente =
+    conciliacao?.clienteId?.razaoSocial ||
+    conciliacao?.clienteId?.nomeFantasia ||
+    clienteInfo?.razaoSocial ||
+    clienteInfo?.nomeFantasia ||
+    'N/A';
+
   const getStatusTransacao = (transacao) =>
     transacao.status || (transacao.contaSugerida || transacao.contaContabilId ? 'confirmada' : 'pendente');
 
@@ -761,6 +815,14 @@ export default function DetalhesConciliacaoPage() {
 
   const conciliacaoEmProcessamento =
     conciliacao?.status === 'processando' || conciliacao?.status === 'aguardando_extrato';
+
+  // Mensagens de erro do processamento (vindas do status da fila ou do próprio documento)
+  const errosConciliacao = useMemo(() => {
+    const lista = (jobStatus?.erros?.length ? jobStatus.erros : conciliacao?.erros) || [];
+    return lista
+      .map((e) => (typeof e === 'string' ? e : e?.mensagem || e?.message || ''))
+      .filter(Boolean);
+  }, [jobStatus, conciliacao]);
 
   if (loading) {
     return (
@@ -862,6 +924,29 @@ export default function DetalhesConciliacaoPage() {
         </Alert>
       )}
 
+      {/* Detalhe do erro de processamento */}
+      {conciliacao.status === 'erro' && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          <Typography variant="body2" fontWeight="bold" gutterBottom>
+            ❌ O processamento do extrato falhou
+          </Typography>
+          {errosConciliacao.length > 0 ? (
+            <Box component="ul" sx={{ pl: 2, m: 0 }}>
+              {errosConciliacao.map((erro, index) => (
+                <li key={index}>
+                  <Typography variant="body2">{erro}</Typography>
+                </li>
+              ))}
+            </Box>
+          ) : (
+            <Typography variant="body2">
+              O servidor não retornou detalhes do erro. Use &quot;Resetar extrato&quot; e envie o
+              arquivo novamente; se o problema persistir, verifique o arquivo enviado.
+            </Typography>
+          )}
+        </Alert>
+      )}
+
       {/* Informações da Conciliação */}
       <Grid container spacing={3} mb={3} sx={{ mb: 3, '& > *': { p: 2.5 } }}>
         <Grid xs={12} lg={6}>
@@ -876,7 +961,7 @@ export default function DetalhesConciliacaoPage() {
                   Cliente:
                 </Typography>
                 <Typography variant="body2" fontWeight="bold">
-                  {conciliacao.clienteId?.razaoSocial || conciliacao.clienteId?.nomeFantasia || 'N/A'}
+                  {nomeCliente}
                 </Typography>
               </Stack>
               <Stack direction="row" justifyContent="space-between">
@@ -899,29 +984,35 @@ export default function DetalhesConciliacaoPage() {
                 <Typography variant="body2" color="text.secondary">
                   Status:
                 </Typography>
-                <Chip
-                  label={
-                    conciliacao.status === 'conciliado'
-                      ? 'Conciliado'
-                      : conciliacao.status === 'pendente'
-                        ? 'Pendente'
-                        : conciliacao.status === 'processando'
-                          ? 'Processando'
-                          : conciliacao.status === 'aguardando_extrato'
-                            ? 'Aguardando extrato'
-                            : conciliacao.status
-                  }
-                  color={
-                    conciliacao.status === 'conciliado'
-                      ? 'success'
-                      : conciliacao.status === 'pendente'
-                        ? 'warning'
-                        : conciliacao.status === 'processando' || conciliacao.status === 'aguardando_extrato'
-                          ? 'info'
-                          : 'default'
-                  }
-                  size="small"
-                />
+                <Tooltip title={conciliacao.status === 'erro' ? errosConciliacao.join(' · ') : ''}>
+                  <Chip
+                    label={
+                      conciliacao.status === 'conciliado'
+                        ? 'Conciliado'
+                        : conciliacao.status === 'pendente'
+                          ? 'Pendente'
+                          : conciliacao.status === 'processando'
+                            ? 'Processando'
+                            : conciliacao.status === 'aguardando_extrato'
+                              ? 'Aguardando extrato'
+                              : conciliacao.status === 'erro'
+                                ? 'Erro no processamento'
+                                : conciliacao.status
+                    }
+                    color={
+                      conciliacao.status === 'conciliado'
+                        ? 'success'
+                        : conciliacao.status === 'pendente'
+                          ? 'warning'
+                          : conciliacao.status === 'processando' || conciliacao.status === 'aguardando_extrato'
+                            ? 'info'
+                            : conciliacao.status === 'erro'
+                              ? 'error'
+                              : 'default'
+                    }
+                    size="small"
+                  />
+                </Tooltip>
               </Stack>
               {conciliacao.dataProcessamento && (
                 <Stack direction="row" justifyContent="space-between">

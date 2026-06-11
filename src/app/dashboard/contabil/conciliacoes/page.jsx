@@ -43,6 +43,8 @@ import { listarMesesDisponiveis, removerTransacoesConciliacao } from 'src/action
 
 import { Iconify } from 'src/components/iconify';
 
+import { UploadExtratoDialog } from './upload-extrato-dialog';
+
 // ----------------------------------------------------------------------
 
 const STATUS_FILTERS = [
@@ -76,6 +78,7 @@ export default function ConciliaçõesPage() {
   const [dialogReenviarExtrato, setDialogReenviarExtrato] = useState({ open: false, cliente: null, mes: null });
   const [reenviandoExtratoId, setReenviandoExtratoId] = useState(null);
   const [exportando, setExportando] = useState({ clienteId: null, bancoId: null }); // ✅ Estado para exportação
+  const [dialogUploadExtrato, setDialogUploadExtrato] = useState({ open: false, bancoId: '', mesAno: '' });
 
   // Carregar clientes
   useEffect(() => {
@@ -481,6 +484,8 @@ export default function ConciliaçõesPage() {
         return 'info';
       case 'processando':
         return 'info';
+      case 'erro':
+        return 'error';
       default:
         return 'default';
     }
@@ -500,6 +505,8 @@ export default function ConciliaçõesPage() {
         return 'Enviada';
       case 'processando':
         return 'Processando';
+      case 'erro':
+        return 'Erro no processamento';
       default:
         return 'Desconhecido';
     }
@@ -529,6 +536,20 @@ export default function ConciliaçõesPage() {
               Visualize e gerencie as conciliações bancárias de todos os clientes
             </Typography>
           </div>
+          <Tooltip title={clienteSelecionadoId ? '' : 'Selecione um cliente primeiro'}>
+            <span>
+              <Button
+                variant="contained"
+                startIcon={<Iconify icon="eva:cloud-upload-fill" />}
+                disabled={!clienteSelecionadoId}
+                onClick={() =>
+                  setDialogUploadExtrato({ open: true, bancoId: bancoSelecionadoId, mesAno: '' })
+                }
+              >
+                Enviar Extrato
+              </Button>
+            </span>
+          </Tooltip>
         </Stack>
 
         {/* Filtros */}
@@ -694,6 +715,23 @@ export default function ConciliaçõesPage() {
                       </TableCell>
                       <TableCell align="center">
                         <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap">
+                          {linha.status === 'nao_enviado' && (
+                            <Tooltip title="Enviar extrato (PDF/OFX) para este mês">
+                              <IconButton
+                                size="small"
+                                color="primary"
+                                onClick={() =>
+                                  setDialogUploadExtrato({
+                                    open: true,
+                                    bancoId: linha.bancoId,
+                                    mesAno: linha.mesAno,
+                                  })
+                                }
+                              >
+                                <Iconify icon="eva:cloud-upload-fill" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                           {linha.conciliacaoId && ['pendente', 'processando', 'enviada'].includes(linha.status) && (
                             <Tooltip title="Reenviar extrato (remove transações e libera novo upload)">
                               <IconButton
@@ -1021,6 +1059,22 @@ export default function ConciliaçõesPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Dialog de upload de extrato (PDF/OFX) pelo time interno */}
+      <UploadExtratoDialog
+        open={dialogUploadExtrato.open}
+        onClose={() => setDialogUploadExtrato({ open: false, bancoId: '', mesAno: '' })}
+        clienteId={clienteSelecionadoId}
+        clienteNome={
+          clientes.find((c) => String(c._id || c.id) === String(clienteSelecionadoId))?.razaoSocial ||
+          clientes.find((c) => String(c._id || c.id) === String(clienteSelecionadoId))?.nomeFantasia ||
+          ''
+        }
+        bancos={bancosCliente}
+        bancoIdInicial={dialogUploadExtrato.bancoId}
+        mesAnoInicial={dialogUploadExtrato.mesAno}
+        onSuccess={() => carregarConciliacoesCliente(clienteSelecionadoId)}
+      />
     </>
   );
 }
