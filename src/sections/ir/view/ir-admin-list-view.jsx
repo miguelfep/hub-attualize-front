@@ -114,7 +114,7 @@ export default function IrAdminListView() {
   );
 
   const showTipoPgtoValor = ROLES_DADOS_PAGAMENTO_IR.includes(user?.role);
-  const usuariosList = Array.isArray(usuariosInternos) ? usuariosInternos : [];
+  const usuariosList = (Array.isArray(usuariosInternos) ? usuariosInternos : []).filter(Boolean);
 
   const pedidos = data?.orders ?? [];
   const total = data?.total ?? 0;
@@ -379,7 +379,11 @@ export default function IrAdminListView() {
                         const email = (typeof cliente === 'object' && cliente?.email) || dadosComprador?.email || '';
 
                         const responsavel = pedido.responsavelId;
-                        const nomeResponsavel = typeof responsavel === 'object' ? (responsavel.name || responsavel.email || '—') : '—';
+                        // typeof null === 'object', então o guard precisa excluir null
+                        const nomeResponsavel =
+                          responsavel && typeof responsavel === 'object'
+                            ? responsavel.name || responsavel.email || '—'
+                            : '—';
 
                         return (
                           <TableRow key={pedido._id} hover>
