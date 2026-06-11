@@ -42,7 +42,7 @@ export function isImpersonating() {
   return !!sessionStorage.getItem(ADMIN_SESSION_KEY);
 }
 
-/** Metadados da impersonação ativa: { clienteLabel, clienteEmail, adminLabel } | null */
+/** Metadados da impersonação ativa: { clienteLabel, clienteEmail, adminLabel, virtual } | null */
 export function getImpersonationInfo() {
   if (typeof window === 'undefined') return null;
   return readJson(sessionStorage, IMPERSONATION_INFO_KEY);
@@ -54,10 +54,15 @@ export function getImpersonationInfo() {
  * procuramos nas chaves mais prováveis e normalizamos para { userId, email, name }.
  */
 export function extractImpersonationCandidates(error) {
-  const data = error?.response?.data;
+  // O interceptor do axios (src/utils/axios.js) NÃO rejeita o erro cru: ele cria
+  // um `new Error(message)` com os campos do corpo copiados via Object.assign
+  // (err.status, err.data, ...), sem `err.response`. Aceitamos ambos os formatos.
+  const data = error?.response?.data || error;
   if (!data) return null;
 
+  // Formato atual do backend: { message, data: { candidates: [{ id, name, email }] } }
   const lista =
+    data.data?.candidates ||
     data.candidates ||
     data.usuarios ||
     data.users ||
@@ -76,22 +81,36 @@ export function extractImpersonationCandidates(error) {
 
 /** O erro recebido é o 409 de "escolha qual usuário"? */
 export function isMultipleUsersError(error) {
-  return error?.response?.status === 409 && !!extractImpersonationCandidates(error);
+  const status = error?.response?.status ?? error?.status;
+  return status === 409 && !!extractImpersonationCandidates(error);
 }
 
 /**
  * Loga como cliente. Em sucesso troca a sessão e retorna { userData, impersonation }.
- * Em caso de múltiplos usuários (409), relança o erro — use `isMultipleUsersError`
- * + `extractImpersonationCandidates` para oferecer a escolha e rechamar com `userId`.
  *
- * @param {{ clienteId: string, userId?: string }} params
+ * Sem `userId`/`virtual` o backend escolhe o usuário do portal automaticamente;
+ * se houver vários candidatos ele responde 409 — use `isMultipleUsersError` +
+ * `extractImpersonationCandidates` para oferecer a escolha e rechamar com `userId`.
+ *
+ * `virtual: true` não usa nenhum usuário real: o backend cria/reutiliza um
+ * usuário sintético da empresa ("Acesso Attualize (virtual)"). Não pode ser
+ * combinado com `userId`. `clienteNome` é opcional e só alimenta o banner
+ * (útil no acesso virtual, em que o userData traz o nome sintético).
+ *
+ * @param {{ clienteId: string, userId?: string, virtual?: boolean, clienteNome?: string }} params
  */
-export async function impersonateCliente({ clienteId, userId } = {}) {
+export async function impersonateCliente({ clienteId, userId, virtual, clienteNome } = {}) {
   if (!clienteId) {
     throw new Error('clienteId é obrigatório para logar como cliente');
   }
+  if (virtual && userId) {
+    throw new Error('Acesso virtual não pode ser combinado com a escolha de um usuário');
+  }
 
-  const payload = userId ? { clienteId, userId } : { clienteId };
+  const payload = { clienteId };
+  if (userId) payload.userId = userId;
+  if (virtual) payload.virtual = true;
+
   const res = await axios.post(endpoints.auth.impersonate, payload);
 
   const { accessToken, userData, impersonation } = res.data?.response || {};
@@ -114,11 +133,19 @@ export async function impersonateCliente({ clienteId, userId } = {}) {
   await setSession(accessToken);
   await setUser(userData);
 
+  const isVirtual = !!(impersonation?.virtual || virtual);
   const info = {
     clienteLabel:
-      userData.name || userData.nome || userData.razaoSocial || userData.email || 'Cliente',
-    clienteEmail: impersonation?.targetEmail || userData.email || null,
+      (isVirtual && clienteNome) ||
+      userData.name ||
+      userData.nome ||
+      userData.razaoSocial ||
+      userData.email ||
+      'Cliente',
+    // E-mail do usuário virtual é sintético (@attualize.invalid) — não exibimos.
+    clienteEmail: isVirtual ? null : impersonation?.targetEmail || userData.email || null,
     adminLabel: impersonation?.byName || impersonation?.byEmail || null,
+    virtual: isVirtual,
   };
   sessionStorage.setItem(IMPERSONATION_INFO_KEY, JSON.stringify(info));
 
