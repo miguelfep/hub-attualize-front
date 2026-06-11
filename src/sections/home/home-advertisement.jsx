@@ -1,4 +1,7 @@
+'use client';
+
 import { m } from 'framer-motion';
+import { useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -6,13 +9,16 @@ import Button from '@mui/material/Button';
 import { useTheme } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 
+import { buildWhatsAppLink, ATTUALIZE_WHATSAPP_PHONE } from 'src/utils/whatsapp-link';
+
 import { CONFIG } from 'src/config-global';
 import { varAlpha, textGradient } from 'src/theme/styles';
-import { ATTUALIZE_WHATSAPP_PHONE, buildWhatsAppLink } from 'src/utils/whatsapp-link';
 
 import { Iconify } from 'src/components/iconify';
 import { SvgColor } from 'src/components/svg-color';
 import { varFade, MotionViewport } from 'src/components/animate';
+
+import { SegmentFormAbrirEmpresa } from 'src/sections/saude/segment/segment-form-abrir-empresa';
 
 import { FloatLine, FloatPlusIcon } from './components/svg-elements';
 
@@ -20,6 +26,11 @@ import { FloatLine, FloatPlusIcon } from './components/svg-elements';
 
 export function HomeAdvertisement({ sx, ...other }) {
   const theme = useTheme();
+
+  const [openAbrir, setOpenAbrir] = useState(false);
+
+  const handleOpenAbrir = useCallback(() => setOpenAbrir(true), []);
+  const handleCloseAbrir = useCallback(() => setOpenAbrir(false), []);
 
   const renderLines = (
     <>
@@ -62,7 +73,23 @@ export function HomeAdvertisement({ sx, ...other }) {
       >
         <m.div variants={varFade({ distance: 24 }).inRight}>
           <Button
-            color="success"
+            size="large"
+            variant="contained"
+            onClick={handleOpenAbrir}
+            startIcon={<Iconify icon="solar:buildings-2-bold-duotone" />}
+            sx={{
+              bgcolor: '#0096D9',
+              color: 'white',
+              fontWeight: 700,
+              '&:hover': { bgcolor: '#007cb3' },
+            }}
+          >
+            Abrir Minha Empresa
+          </Button>
+        </m.div>
+
+        <m.div variants={varFade({ distance: 24 }).inRight}>
+          <Button
             size="large"
             variant="contained"
             target="_blank"
@@ -72,6 +99,12 @@ export function HomeAdvertisement({ sx, ...other }) {
               message: 'Oi, vim pelo site e quero informações sobre contabilidade',
             })}
             startIcon={<Iconify icon="mdi:whatsapp" />}
+            sx={{
+              bgcolor: '#FEC615',
+              color: '#333',
+              fontWeight: 700,
+              '&:hover': { bgcolor: '#e5b213' },
+            }}
           >
             Fale conosco
           </Button>
@@ -177,6 +210,13 @@ export function HomeAdvertisement({ sx, ...other }) {
           </Stack>
         </Container>
       </MotionViewport>
+
+      <SegmentFormAbrirEmpresa
+        open={openAbrir}
+        onClose={handleCloseAbrir}
+        origem="site-home-cta-final"
+        leadSegment="home"
+      />
     </Stack>
   );
 }

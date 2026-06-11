@@ -41,6 +41,13 @@ export const CONFIG = {
     apiKey: process.env.NEXT_PUBLIC_MAPBOX_API_KEY ?? '',
   },
   /**
+   * Cloudflare Turnstile (anti força-bruta no login).
+   * Sem a site key configurada, o widget não é exibido e o login segue sem captcha.
+   */
+  turnstile: {
+    siteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '',
+  },
+  /**
    * Firebase
    */
   firebase: {
