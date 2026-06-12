@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
 import { z as zod } from 'zod';
 import { NumericFormat } from 'react-number-format';
-import { useMemo, useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
 
 import { yellow } from '@mui/material/colors';
@@ -423,6 +423,9 @@ export function ClienteNewEditForm({ currentCliente }) {
     name: 'endereco',
   });
 
+  // Ref para salvar as configurações do portal junto com o cliente (botão único)
+  const portalSettingsRef = useRef(null);
+
   const onSubmit = handleSubmit(
     async (data) => {
       try {
@@ -464,6 +467,11 @@ export function ClienteNewEditForm({ currentCliente }) {
 
         if (currentCliente) {
           await updateCliente(currentCliente._id, formData);
+
+          // Salva também as configurações do portal, se a aba estiver aberta com alterações
+          if (portalSettingsRef.current?.isDirty?.()) {
+            await portalSettingsRef.current.save();
+          }
 
           const updatedCliente = await getClienteById(currentCliente._id);
           reset({
@@ -1299,7 +1307,11 @@ export function ClienteNewEditForm({ currentCliente }) {
         {tabIndex === portalTabIndex && (
           <Grid xs={12}>
             <Card sx={{ p: 3 }}>
-              <ClientePortalSettings clienteId={currentCliente?._id} control={control} />
+              <ClientePortalSettings
+                ref={portalSettingsRef}
+                clienteId={currentCliente?._id}
+                control={control}
+              />
             </Card>
           </Grid>
         )}

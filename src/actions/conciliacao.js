@@ -214,6 +214,22 @@ export async function obterMlStatusCliente(clienteId) {
 }
 
 /**
+ * Dispara o (re)treinamento do modelo ML do cliente.
+ * Retorna 202 com jobId — acompanhar via obterMlStatusCliente até lastJob.jobStatus = 'done'.
+ */
+export async function treinarMlCliente(clienteId) {
+  return axios.post(`${baseUrl}conciliacao/ml/treinar/${clienteId}`);
+}
+
+/**
+ * Testa a sugestão de contas do modelo (playground): envia descrição/valor
+ * e recebe as top-3 contas sugeridas com a confiança de cada uma.
+ */
+export async function testarSugestaoMl(clienteId, payload) {
+  return axios.post(`${baseUrl}conciliacao/ml/testar-sugestao/${clienteId}`, payload);
+}
+
+/**
  * Atualizar status da conciliação
  * @param {string} conciliacaoId - ID da conciliação
  * @param {string} status - Novo status (pendente, revisao, concluida, cancelada)

@@ -135,6 +135,9 @@ export const paths = {
     audit: {
       root: `${ROOTS.DASHBOARD}/audit`,
     },
+    status: {
+      root: `${ROOTS.DASHBOARD}/status`,
+    },
     fiscal: {
       root: `${ROOTS.DASHBOARD}/fiscal/nfse`,
     },

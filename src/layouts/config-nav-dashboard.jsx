@@ -329,6 +329,12 @@ export const navData = [
         roles: ['admin'],
       },
       {
+        title: 'Status do Sistema',
+        path: paths.dashboard.status.root,
+        icon: ICONS.analytics,
+        roles: ['admin'],
+      },
+      {
         title: 'Recompensas',
         path: paths.dashboard.recompensas.root,
         icon: ICONS.banking,
