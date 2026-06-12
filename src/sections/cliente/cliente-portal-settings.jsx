@@ -1,6 +1,7 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useWatch } from 'react-hook-form';
+import { useRef, useMemo, useState, useEffect, forwardRef, useCallback, useImperativeHandle } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -31,9 +32,11 @@ import {
   DialogContent,
   DialogActions,
   TableContainer,
+  InputAdornment,
   FormControlLabel,
 } from '@mui/material';
 
+import { buscarCep } from 'src/actions/cep';
 import { getNacionalStatus } from 'src/actions/notafiscal';
 import { useGetSettings, updateSettings } from 'src/actions/settings';
 import {
@@ -54,7 +57,7 @@ import {
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
-export function ClientePortalSettings({ clienteId }) {
+export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) => {
   const { settings, settingsLoading, refetchSettings } = useGetSettings(clienteId);
 
   const [saving, setSaving] = useState(false);
@@ -133,13 +136,14 @@ export function ClientePortalSettings({ clienteId }) {
     nfseNacional,
   });
 
-  // Atualiza local state quando settings carregar
-  const syncLocal = () =>
-    setLocalState({ funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional });
+  // Snapshot do que está salvo no backend — usado para detectar alterações pendentes
+  const savedSnapshotRef = useRef(null);
 
   useEffect(() => {
     if (settings) {
-      setLocalState({ funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional });
+      const snapshot = { funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional };
+      savedSnapshotRef.current = JSON.stringify(snapshot);
+      setLocalState(snapshot);
     }
   }, [settings, funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional]);
 
@@ -163,10 +167,20 @@ export function ClientePortalSettings({ clienteId }) {
   };
 
   const handleEnotasToggle = (key) => (event) => {
-    setLocalState((prev) => ({
-      ...prev,
-      eNotas: { ...prev.eNotas, [key]: event.target.checked },
-    }));
+    const { checked } = event.target;
+    setLocalState((prev) => {
+      const newState = {
+        ...prev,
+        eNotas: { ...prev.eNotas, [key]: checked },
+      };
+
+      // Emite NFSe Nacional define o provedor automaticamente
+      if (key === 'emiteNFSeNacional') {
+        newState.provedorNFSe = checked ? 'nacional' : 'enotas';
+      }
+
+      return newState;
+    });
   };
 
   const handleConfigChange = (key) => (event) => {
@@ -217,9 +231,78 @@ export function ClientePortalSettings({ clienteId }) {
     }));
   };
 
+  // --------------------------------------------------------------
+  // Código IBGE do município — busca pelo CEP cadastrado no cliente
+  // --------------------------------------------------------------
+  const enderecoCliente = useWatch({ control, name: 'endereco' });
+  const cepCliente = (enderecoCliente?.[0]?.cep || '').toString().replace(/\D/g, '');
+
+  const [buscandoIbge, setBuscandoIbge] = useState(false);
+
+  const handleBuscarIbge = useCallback(
+    async ({ silencioso = false } = {}) => {
+      if (cepCliente.length !== 8) {
+        if (!silencioso) {
+          toast.error('Cadastre o CEP do cliente na aba "Dados da Empresa" para buscar o código IBGE');
+        }
+        return;
+      }
+      try {
+        setBuscandoIbge(true);
+        const data = await buscarCep(cepCliente);
+        const codigoIbge = (data?.ibge || '').toString();
+        if (!codigoIbge) throw new Error('CEP sem código IBGE');
+        // Busca manual sobrescreve; preenchimento automático só completa campos vazios
+        setLocalState((prev) => ({
+          ...prev,
+          nfseNacional: {
+            ...prev.nfseNacional,
+            codigoMunicipio: silencioso
+              ? prev.nfseNacional.codigoMunicipio || codigoIbge
+              : codigoIbge,
+          },
+          eNotas: {
+            ...prev.eNotas,
+            configuracaoNFSe: {
+              ...prev.eNotas.configuracaoNFSe,
+              codigoMunicipio: silencioso
+                ? prev.eNotas.configuracaoNFSe.codigoMunicipio || codigoIbge
+                : codigoIbge,
+            },
+          },
+        }));
+        if (!silencioso) {
+          toast.success(`Código IBGE ${codigoIbge} (${data.cidade} - ${data.estado}) preenchido`);
+        }
+      } catch (error) {
+        if (!silencioso) {
+          toast.error('Não foi possível obter o código IBGE pelo CEP do cliente');
+        }
+      } finally {
+        setBuscandoIbge(false);
+      }
+    },
+    [cepCliente]
+  );
+
+  // Preenche automaticamente o código IBGE (uma única vez) quando ainda não há valor salvo
+  const autoIbgeRef = useRef(false);
+  useEffect(() => {
+    if (autoIbgeRef.current || !settings || cepCliente.length !== 8) return;
+    autoIbgeRef.current = true;
+    if (!settings?.nfseNacionalConfig?.codigoMunicipio) {
+      handleBuscarIbge({ silencioso: true });
+    }
+  }, [settings, cepCliente, handleBuscarIbge]);
+
   // Checklist de status do Emissor Nacional (GET /nota-fiscal/:clienteId/nacional/status)
   const [nacionalStatus, setNacionalStatus] = useState(null);
   const [checkingNacional, setCheckingNacional] = useState(false);
+
+  // Campos obrigatórios do Emissor Nacional — habilitam o botão "Verificar configuração"
+  const nacionalCamposObrigatoriosOk = /^\d{7}$/.test(
+    (localState.nfseNacional.codigoMunicipio || '').toString().trim()
+  );
 
   const handleVerificarNacional = async () => {
     try {
@@ -354,6 +437,18 @@ export function ClientePortalSettings({ clienteId }) {
       setSaving(false);
     }
   };
+
+  // Permite ao formulário principal salvar as configurações junto com o cliente
+  useImperativeHandle(
+    ref,
+    () => ({
+      save: handleSave,
+      isDirty: () =>
+        savedSnapshotRef.current !== null && JSON.stringify(localState) !== savedSnapshotRef.current,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [localState, clienteId]
+  );
 
   // --------------------------------------------------------------
   // Certificados Digitais (reutiliza ações existentes)
@@ -562,9 +657,11 @@ export function ClientePortalSettings({ clienteId }) {
     <Box>
       <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
         <Typography variant="h6">Funcionalidades do Portal</Typography>
-        <LoadingButton loading={saving} variant="contained" onClick={handleSave}>
-          Salvar Configurações
-        </LoadingButton>
+        {saving && (
+          <Typography variant="caption" color="text.secondary">
+            Salvando configurações...
+          </Typography>
+        )}
       </Box>
 
       <Grid container spacing={2}>
@@ -693,7 +790,8 @@ export function ClientePortalSettings({ clienteId }) {
               <Grid xs={12}>
                 <Alert severity="info">
                   Emissão síncrona direto no Emissor Nacional (Sefin). Requer código IBGE do
-                  município, código de tributação nacional e certificado digital A1 ativo.
+                  município e certificado digital A1 ativo. O código de tributação nacional é
+                  opcional — usado apenas como fallback quando o serviço não tem código próprio.
                 </Alert>
               </Grid>
 
@@ -744,7 +842,20 @@ export function ClientePortalSettings({ clienteId }) {
                   label="Código do Município (IBGE)"
                   value={localState.nfseNacional.codigoMunicipio}
                   onChange={handleNacionalChange('codigoMunicipio')}
-                  helperText="7 dígitos — obrigatório"
+                  helperText="7 dígitos — obrigatório. Use a lupa para buscar pelo CEP do cliente"
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Tooltip title="Buscar código IBGE pelo CEP do cliente">
+                          <span>
+                            <IconButton edge="end" disabled={buscandoIbge} onClick={() => handleBuscarIbge()}>
+                              <Iconify icon="eva:search-fill" />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      </InputAdornment>
+                    ),
+                  }}
                 />
               </Grid>
               <Grid xs={12} md={4}>
@@ -839,15 +950,22 @@ export function ClientePortalSettings({ clienteId }) {
                 </FormControl>
               </Grid>
               <Grid xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
-                <LoadingButton
-                  fullWidth
-                  variant="outlined"
-                  loading={checkingNacional}
-                  startIcon={<Iconify icon="solar:shield-check-bold" />}
-                  onClick={handleVerificarNacional}
-                >
-                  Verificar configuração
-                </LoadingButton>
+                {nacionalCamposObrigatoriosOk ? (
+                  <LoadingButton
+                    fullWidth
+                    variant="outlined"
+                    loading={checkingNacional}
+                    startIcon={<Iconify icon="solar:shield-check-bold" />}
+                    onClick={handleVerificarNacional}
+                  >
+                    Verificar configuração
+                  </LoadingButton>
+                ) : (
+                  <Typography variant="caption" color="text.secondary">
+                    Preencha o Código do Município (IBGE) com 7 dígitos para habilitar a verificação
+                    da configuração.
+                  </Typography>
+                )}
               </Grid>
 
               {nacionalStatus && (
@@ -958,6 +1076,19 @@ export function ClientePortalSettings({ clienteId }) {
                     label="Código do Município"
                     value={localState.eNotas.configuracaoNFSe.codigoMunicipio}
                     onChange={handleEnotasNFSeChange('codigoMunicipio')}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <Tooltip title="Buscar código IBGE pelo CEP do cliente">
+                            <span>
+                              <IconButton edge="end" disabled={buscandoIbge} onClick={() => handleBuscarIbge()}>
+                                <Iconify icon="eva:search-fill" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                        </InputAdornment>
+                      ),
+                    }}
                   />
                 </Grid>
                 <Grid xs={12} md={3}>
@@ -1266,6 +1397,8 @@ export function ClientePortalSettings({ clienteId }) {
       )}
     </Box>
   );
-}
+});
+
+ClientePortalSettings.displayName = 'ClientePortalSettings';
 
 export default ClientePortalSettings;
