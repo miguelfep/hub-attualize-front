@@ -6,22 +6,19 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
+import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import TableRow from '@mui/material/TableRow';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableHead from '@mui/material/TableHead';
 import TextField from '@mui/material/TextField';
+import Grid from '@mui/material/Unstable_Grid2';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import DialogTitle from '@mui/material/DialogTitle';
+import { alpha, useTheme } from '@mui/material/styles';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import InputAdornment from '@mui/material/InputAdornment';
-import TableContainer from '@mui/material/TableContainer';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -44,7 +41,6 @@ import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-// Perfis autorizados a visualizar a senha (rota interna). O backend também valida.
 const ROLES_PODE_VER_SENHA = ['admin', 'operacional', 'financeiro', 'contabil_externo'];
 
 const FORM_VAZIO = {
@@ -60,38 +56,167 @@ function getId(row) {
 }
 
 // ----------------------------------------------------------------------
+// Sub-componentes de linha dentro do card
+
+function CredRow({ icon, label, value, isLink, onCopy, mono = false }) {
+  if (!value) return null;
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      sx={{ py: 0.6 }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+        <Iconify icon={icon} width={15} sx={{ color: 'text.disabled', flexShrink: 0 }} />
+        <Typography
+          variant="caption"
+          color="text.disabled"
+          sx={{ flexShrink: 0, width: 46, lineHeight: 1.2 }}
+        >
+          {label}
+        </Typography>
+        {isLink ? (
+          <Link
+            href={value}
+            target="_blank"
+            rel="noopener noreferrer"
+            variant="body2"
+            underline="hover"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1,
+              fontSize: '0.8125rem',
+            }}
+          >
+            {value}
+          </Link>
+        ) : (
+          <Typography
+            variant="body2"
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1,
+              fontSize: '0.8125rem',
+              fontFamily: mono ? 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace' : 'inherit',
+            }}
+          >
+            {value}
+          </Typography>
+        )}
+      </Stack>
+      <Tooltip title={`Copiar ${label.toLowerCase()}`}>
+        <IconButton
+          size="small"
+          onClick={onCopy}
+          sx={{ ml: 0.5, flexShrink: 0, color: 'text.disabled', '&:hover': { color: 'primary.main' } }}
+        >
+          <Iconify icon="solar:copy-bold" width={15} />
+        </IconButton>
+      </Tooltip>
+    </Stack>
+  );
+}
+
+function SenhaRow({ revealed, onToggle, onCopy }) {
+  const isLoading = revealed?.loading;
+  const isVisible = revealed?.visible && !!revealed?.value;
+  const value = revealed?.value;
+
+  return (
+    <Stack
+      direction="row"
+      alignItems="center"
+      justifyContent="space-between"
+      sx={{ py: 0.6 }}
+    >
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ minWidth: 0, flex: 1 }}>
+        <Iconify icon="solar:key-bold" width={15} sx={{ color: 'text.disabled', flexShrink: 0 }} />
+        <Typography
+          variant="caption"
+          color="text.disabled"
+          sx={{ flexShrink: 0, width: 46, lineHeight: 1.2 }}
+        >
+          Senha
+        </Typography>
+        {isLoading ? (
+          <CircularProgress size={14} sx={{ ml: 0.5 }} />
+        ) : (
+          <Typography
+            variant="body2"
+            sx={{
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              flex: 1,
+              fontSize: '0.8125rem',
+              letterSpacing: isVisible ? 'inherit' : '0.15em',
+              color: isVisible ? 'text.primary' : 'text.disabled',
+            }}
+          >
+            {isVisible ? value : '••••••••'}
+          </Typography>
+        )}
+      </Stack>
+      <Stack direction="row" sx={{ flexShrink: 0, ml: 0.5 }}>
+        <Tooltip title={isVisible ? 'Ocultar' : 'Revelar senha (30s)'}>
+          <IconButton
+            size="small"
+            onClick={onToggle}
+            sx={{ color: isVisible ? 'warning.main' : 'text.disabled', '&:hover': { color: 'warning.main' } }}
+          >
+            <Iconify icon={isVisible ? 'solar:eye-closed-bold' : 'solar:eye-bold'} width={15} />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Copiar senha">
+          <IconButton
+            size="small"
+            onClick={onCopy}
+            sx={{ color: 'text.disabled', '&:hover': { color: 'primary.main' } }}
+          >
+            <Iconify icon="solar:copy-bold" width={15} />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    </Stack>
+  );
+}
+
+// ----------------------------------------------------------------------
 
 export default function ClienteCredenciaisSection({ clienteId }) {
+  const theme = useTheme();
   const { user } = useAuthContext();
   const podeVerSenha = ROLES_PODE_VER_SENHA.includes(user?.role);
 
   const [credenciais, setCredenciais] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Estado de senha revelada por credencial: { [id]: { loading, value, visible, timerId } }
+  const [revealedPasswords, setRevealedPasswords] = useState({});
+  const [copiandoTudo, setCopiandoTudo] = useState({});
+
   const dialogForm = useBoolean();
-  const [editando, setEditando] = useState(null); // credencial em edição ou null
+  const [editando, setEditando] = useState(null);
   const [form, setForm] = useState(FORM_VAZIO);
   const [salvando, setSalvando] = useState(false);
   const mostrarSenhaForm = useBoolean();
 
-  const [confirmExcluir, setConfirmExcluir] = useState(null); // credencial a excluir
+  const [confirmExcluir, setConfirmExcluir] = useState(null);
   const [excluindo, setExcluindo] = useState(false);
 
-  const dialogSenha = useBoolean();
-  const [senhaVisivel, setSenhaVisivel] = useState({ nome: '', valor: '', loading: false });
-
   const carregar = useCallback(async () => {
-    if (!clienteId) {
-      setCredenciais([]);
-      setLoading(false);
-      return;
-    }
+    if (!clienteId) { setCredenciais([]); setLoading(false); return; }
     try {
       setLoading(true);
       const lista = await getCredenciaisAcesso(clienteId);
       setCredenciais(Array.isArray(lista) ? lista : []);
     } catch (error) {
-      console.error('Erro ao carregar credenciais:', error);
       toast.error(extrairMensagem(error, 'Não foi possível carregar as credenciais.'));
       setCredenciais([]);
     } finally {
@@ -99,9 +224,9 @@ export default function ClienteCredenciaisSection({ clienteId }) {
     }
   }, [clienteId]);
 
-  useEffect(() => {
-    carregar();
-  }, [carregar]);
+  useEffect(() => { carregar(); }, [carregar]);
+
+  // ---- Formulário ----
 
   const abrirNovo = () => {
     setEditando(null);
@@ -117,30 +242,18 @@ export default function ClienteCredenciaisSection({ clienteId }) {
       usuarioLogin: row.usuarioLogin || '',
       urlAcesso: row.urlAcesso || '',
       codigoAcesso: row.codigoAcesso || '',
-      senha: '', // nunca pré-preenche; só envia se o usuário digitar
+      senha: '',
     });
     mostrarSenhaForm.onFalse();
     dialogForm.onTrue();
   };
 
-  const handleChange = (campo) => (e) => {
-    setForm((prev) => ({ ...prev, [campo]: e.target.value }));
-  };
+  const handleChange = (campo) => (e) => setForm((prev) => ({ ...prev, [campo]: e.target.value }));
 
   const handleSalvar = async () => {
-    if (!form.nome.trim()) {
-      toast.error('Informe o nome da credencial.');
-      return;
-    }
-    if (!form.usuarioLogin.trim()) {
-      toast.error('Informe o usuário/login.');
-      return;
-    }
-    if (!editando && !form.senha) {
-      toast.error('A senha é obrigatória no cadastro.');
-      return;
-    }
-
+    if (!form.nome.trim()) { toast.error('Informe o nome da credencial.'); return; }
+    if (!form.usuarioLogin.trim()) { toast.error('Informe o usuário/login.'); return; }
+    if (!editando && !form.senha) { toast.error('A senha é obrigatória no cadastro.'); return; }
     try {
       setSalvando(true);
       const payload = {
@@ -149,12 +262,12 @@ export default function ClienteCredenciaisSection({ clienteId }) {
         urlAcesso: form.urlAcesso.trim(),
         codigoAcesso: form.codigoAcesso.trim(),
       };
-      // Só envia a senha quando preenchida (na edição, vazio mantém a anterior).
       if (form.senha) payload.senha = form.senha;
-
       if (editando) {
         await updateCredencialAcesso(clienteId, getId(editando), payload);
         toast.success('Credencial atualizada com sucesso.');
+        // Limpa senha revelada desta credencial ao editar
+        setRevealedPasswords((prev) => { const n = { ...prev }; delete n[getId(editando)]; return n; });
       } else {
         await createCredencialAcesso(clienteId, payload);
         toast.success('Credencial salva com sucesso.');
@@ -163,7 +276,6 @@ export default function ClienteCredenciaisSection({ clienteId }) {
       setForm(FORM_VAZIO);
       await carregar();
     } catch (error) {
-      console.error('Erro ao salvar credencial:', error);
       toast.error(extrairMensagem(error, 'Erro ao salvar a credencial.'));
     } finally {
       setSalvando(false);
@@ -179,31 +291,87 @@ export default function ClienteCredenciaisSection({ clienteId }) {
       setConfirmExcluir(null);
       await carregar();
     } catch (error) {
-      console.error('Erro ao excluir credencial:', error);
       toast.error(extrairMensagem(error, 'Erro ao remover a credencial.'));
     } finally {
       setExcluindo(false);
     }
   };
 
-  const handleVerSenha = async (row) => {
-    setSenhaVisivel({ nome: row.nome, valor: '', loading: true });
-    dialogSenha.onTrue();
+  // ---- Senha inline ----
+
+  const handleTogglePassword = async (row) => {
+    const id = getId(row);
+    const cur = revealedPasswords[id];
+
+    // Se já visível, ocultar
+    if (cur?.visible && cur?.value) {
+      if (cur.timerId) clearTimeout(cur.timerId);
+      setRevealedPasswords((prev) => ({ ...prev, [id]: { ...prev[id], visible: false, timerId: null } }));
+      return;
+    }
+
+    // Se já carregada, apenas tornar visível
+    if (cur?.value) {
+      const timerId = setTimeout(() => {
+        setRevealedPasswords((prev) => ({ ...prev, [id]: { ...prev[id], visible: false, timerId: null } }));
+      }, 30000);
+      setRevealedPasswords((prev) => ({ ...prev, [id]: { ...prev[id], visible: true, timerId } }));
+      return;
+    }
+
+    // Buscar da API
+    setRevealedPasswords((prev) => ({ ...prev, [id]: { loading: true, value: '', visible: false, timerId: null } }));
     try {
-      const senha = await getSenhaCredencial(getId(row));
-      setSenhaVisivel({ nome: row.nome, valor: senha, loading: false });
+      const senha = await getSenhaCredencial(id);
+      const timerId = setTimeout(() => {
+        setRevealedPasswords((prev) => ({ ...prev, [id]: { ...prev[id], visible: false, timerId: null } }));
+      }, 30000);
+      setRevealedPasswords((prev) => ({ ...prev, [id]: { loading: false, value: senha, visible: true, timerId } }));
     } catch (error) {
-      console.error('Erro ao obter senha:', error);
-      dialogSenha.onFalse();
-      setSenhaVisivel({ nome: '', valor: '', loading: false });
       toast.error(extrairMensagem(error, 'Não foi possível obter a senha.'));
+      setRevealedPasswords((prev) => ({ ...prev, [id]: { loading: false, value: '', visible: false, timerId: null } }));
     }
   };
 
-  const fecharDialogSenha = () => {
-    dialogSenha.onFalse();
-    // Limpa a senha da memória ao fechar — não persistir.
-    setSenhaVisivel({ nome: '', valor: '', loading: false });
+  const handleCopyPassword = async (row) => {
+    const id = getId(row);
+    const cached = revealedPasswords[id]?.value;
+    try {
+      const senha = cached || (await getSenhaCredencial(id));
+      if (!cached) {
+        // guarda em cache sem revelar na tela
+        setRevealedPasswords((prev) => ({ ...prev, [id]: { loading: false, value: senha, visible: false, timerId: null } }));
+      }
+      await navigator.clipboard.writeText(senha);
+      toast.success('Senha copiada');
+    } catch (error) {
+      toast.error(extrairMensagem(error, 'Não foi possível copiar a senha.'));
+    }
+  };
+
+  const handleCopiarTudo = async (row) => {
+    const id = getId(row);
+    setCopiandoTudo((prev) => ({ ...prev, [id]: true }));
+    try {
+      let senha = revealedPasswords[id]?.value;
+      if (!senha && podeVerSenha) {
+        try {
+          senha = await getSenhaCredencial(id);
+          setRevealedPasswords((prev) => ({ ...prev, [id]: { loading: false, value: senha, visible: false, timerId: null } }));
+        } catch { /* segue sem senha */ }
+      }
+      const linhas = [`Sistema: ${row.nome}`];
+      if (row.urlAcesso) linhas.push(`Link: ${row.urlAcesso}`);
+      if (row.usuarioLogin) linhas.push(`Login: ${row.usuarioLogin}`);
+      if (senha) linhas.push(`Senha: ${senha}`);
+      if (row.codigoAcesso) linhas.push(`Código: ${row.codigoAcesso}`);
+      await navigator.clipboard.writeText(linhas.join('\n'));
+      toast.success('Credenciais copiadas!');
+    } catch {
+      toast.error('Não foi possível copiar.');
+    } finally {
+      setCopiandoTudo((prev) => ({ ...prev, [id]: false }));
+    }
   };
 
   const copiar = async (texto, label = 'Copiado') => {
@@ -224,7 +392,8 @@ export default function ClienteCredenciaisSection({ clienteId }) {
   }
 
   return (
-    <Stack spacing={2}>
+    <Stack spacing={2.5}>
+      {/* Cabeçalho */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         alignItems={{ sm: 'center' }}
@@ -234,8 +403,7 @@ export default function ClienteCredenciaisSection({ clienteId }) {
         <Box>
           <Typography variant="h6">Senhas e Acessos</Typography>
           <Typography variant="body2" color="text.secondary">
-            Credenciais de portais e sistemas desta empresa. As senhas são armazenadas
-            criptografadas.
+            Credenciais de portais e sistemas desta empresa. Senhas armazenadas de forma criptografada.
           </Typography>
         </Box>
         <Button
@@ -248,16 +416,24 @@ export default function ClienteCredenciaisSection({ clienteId }) {
         </Button>
       </Stack>
 
+      {/* Lista */}
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <CircularProgress size={32} />
         </Box>
       ) : credenciais.length === 0 ? (
-        <Card variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
+        <Card
+          variant="outlined"
+          sx={{
+            p: 4,
+            textAlign: 'center',
+            background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.04)}, ${alpha(theme.palette.secondary.main, 0.04)})`,
+          }}
+        >
           <Iconify
             icon="solar:lock-password-bold-duotone"
             width={48}
-            sx={{ color: 'text.disabled', mb: 1 }}
+            sx={{ color: 'text.disabled', mb: 1.5 }}
           />
           <Typography variant="subtitle2" color="text.secondary" gutterBottom>
             Nenhuma credencial cadastrada
@@ -267,83 +443,164 @@ export default function ClienteCredenciaisSection({ clienteId }) {
           </Typography>
         </Card>
       ) : (
-        <TableContainer sx={{ overflowX: 'auto' }}>
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>Nome</TableCell>
-                <TableCell>Usuário / Login</TableCell>
-                <TableCell>URL de acesso</TableCell>
-                <TableCell>Código</TableCell>
-                <TableCell>Atualizado em</TableCell>
-                <TableCell align="right">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {credenciais.map((row) => (
-                <TableRow key={getId(row)} hover>
-                  <TableCell>
-                    <Typography variant="subtitle2">{row.nome}</Typography>
-                  </TableCell>
-                  <TableCell>{row.usuarioLogin || '—'}</TableCell>
-                  <TableCell sx={{ maxWidth: 240 }}>
-                    {row.urlAcesso ? (
-                      <Link
-                        href={row.urlAcesso}
-                        target="_blank"
-                        rel="noopener noreferrer"
+        <Grid container spacing={2}>
+          {credenciais.map((row) => {
+            const id = getId(row);
+            const revealed = revealedPasswords[id];
+            const isCopiandoTudo = copiandoTudo[id];
+
+            return (
+              <Grid key={id} xs={12} sm={6} lg={4}>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'box-shadow 0.2s',
+                    '&:hover': {
+                      boxShadow: (t) => t.customShadows?.z8 || '0 8px 16px 0 rgba(0,0,0,0.1)',
+                    },
+                  }}
+                >
+                  {/* Cabeçalho do card */}
+                  <Box
+                    sx={{
+                      px: 2,
+                      py: 1.5,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)}, ${alpha(theme.palette.primary.main, 0.04)})`,
+                      borderBottom: `1px solid ${theme.palette.divider}`,
+                    }}
+                  >
+                    <Stack direction="row" alignItems="center" spacing={1.25} sx={{ minWidth: 0 }}>
+                      <Box
                         sx={{
-                          display: 'inline-block',
-                          maxWidth: '100%',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          width: 32,
+                          height: 32,
+                          borderRadius: 1,
+                          bgcolor: 'primary.main',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
                         }}
                       >
-                        {row.urlAcesso}
-                      </Link>
-                    ) : (
-                      '—'
-                    )}
-                  </TableCell>
-                  <TableCell>{row.codigoAcesso || '—'}</TableCell>
-                  <TableCell>{row.updatedAt ? fDateTime(row.updatedAt) : '—'}</TableCell>
-                  <TableCell align="right">
-                    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
-                      {podeVerSenha && (
-                        <Tooltip title="Ver senha">
-                          <IconButton
-                            type="button"
-                            size="small"
-                            color="warning"
-                            onClick={() => handleVerSenha(row)}
-                          >
-                            <Iconify icon="solar:eye-bold" />
-                          </IconButton>
-                        </Tooltip>
-                      )}
+                        <Iconify icon="solar:lock-password-bold" width={18} sx={{ color: 'primary.contrastText' }} />
+                      </Box>
+                      <Typography
+                        variant="subtitle2"
+                        fontWeight={600}
+                        sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                      >
+                        {row.nome}
+                      </Typography>
+                    </Stack>
+
+                    <Stack direction="row" spacing={0} sx={{ flexShrink: 0, ml: 0.5 }}>
+                      <Tooltip title="Copiar tudo">
+                        <IconButton
+                          size="small"
+                          onClick={() => handleCopiarTudo(row)}
+                          disabled={isCopiandoTudo}
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          {isCopiandoTudo ? (
+                            <CircularProgress size={14} />
+                          ) : (
+                            <Iconify icon="solar:copy-bold" width={16} />
+                          )}
+                        </IconButton>
+                      </Tooltip>
                       <Tooltip title="Editar">
-                        <IconButton type="button" size="small" onClick={() => abrirEditar(row)}>
-                          <Iconify icon="solar:pen-bold" />
+                        <IconButton
+                          size="small"
+                          onClick={() => abrirEditar(row)}
+                          sx={{ color: 'text.secondary' }}
+                        >
+                          <Iconify icon="solar:pen-bold" width={16} />
                         </IconButton>
                       </Tooltip>
                       <Tooltip title="Excluir">
                         <IconButton
-                          type="button"
                           size="small"
                           color="error"
                           onClick={() => setConfirmExcluir(row)}
                         >
-                          <Iconify icon="solar:trash-bin-trash-bold" />
+                          <Iconify icon="solar:trash-bin-trash-bold" width={16} />
                         </IconButton>
                       </Tooltip>
                     </Stack>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+                  </Box>
+
+                  {/* Campos */}
+                  <Box sx={{ px: 2, py: 1.5, flex: 1 }}>
+                    {row.urlAcesso && (
+                      <>
+                        <CredRow
+                          icon="solar:link-bold"
+                          label="Link"
+                          value={row.urlAcesso}
+                          isLink
+                          onCopy={() => copiar(row.urlAcesso, 'Link copiado')}
+                        />
+                        <Divider sx={{ my: 0.25 }} />
+                      </>
+                    )}
+
+                    <CredRow
+                      icon="solar:user-bold"
+                      label="Login"
+                      value={row.usuarioLogin}
+                      mono
+                      onCopy={() => copiar(row.usuarioLogin, 'Login copiado')}
+                    />
+
+                    {podeVerSenha && (
+                      <>
+                        <Divider sx={{ my: 0.25 }} />
+                        <SenhaRow
+                          revealed={revealed}
+                          onToggle={() => handleTogglePassword(row)}
+                          onCopy={() => handleCopyPassword(row)}
+                        />
+                      </>
+                    )}
+
+                    {row.codigoAcesso && (
+                      <>
+                        <Divider sx={{ my: 0.25 }} />
+                        <CredRow
+                          icon="solar:hashtag-bold"
+                          label="Código"
+                          value={row.codigoAcesso}
+                          mono
+                          onCopy={() => copiar(row.codigoAcesso, 'Código copiado')}
+                        />
+                      </>
+                    )}
+                  </Box>
+
+                  {/* Rodapé */}
+                  <Box
+                    sx={{
+                      px: 2,
+                      py: 1,
+                      borderTop: `1px solid ${theme.palette.divider}`,
+                      bgcolor: alpha(theme.palette.grey[500], 0.04),
+                    }}
+                  >
+                    <Typography variant="caption" color="text.disabled">
+                      Atualizado {row.updatedAt ? fDateTime(row.updatedAt) : '—'}
+                    </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+            );
+          })}
+        </Grid>
       )}
 
       {/* Modal de criação / edição */}
@@ -353,7 +610,7 @@ export default function ClienteCredenciaisSection({ clienteId }) {
           <Stack spacing={2.5} sx={{ pt: 1 }}>
             <TextField
               label="Nome"
-              placeholder="Ex.: Portal da Prefeitura"
+              placeholder="Ex.: Portal da Prefeitura, e-CAC, NFSe..."
               value={form.nome}
               onChange={handleChange('nome')}
               required
@@ -375,6 +632,7 @@ export default function ClienteCredenciaisSection({ clienteId }) {
             />
             <TextField
               label="Código de acesso (opcional)"
+              helperText="Código de acesso do contador, certificado, etc."
               value={form.codigoAcesso}
               onChange={handleChange('codigoAcesso')}
               fullWidth
@@ -387,21 +645,12 @@ export default function ClienteCredenciaisSection({ clienteId }) {
               required={!editando}
               fullWidth
               autoComplete="new-password"
-              helperText={
-                editando ? 'Preencha somente se desejar alterar a senha atual.' : undefined
-              }
+              helperText={editando ? 'Preencha somente se desejar alterar a senha atual.' : undefined}
               InputProps={{
                 endAdornment: (
                   <InputAdornment position="end">
-                    <IconButton
-                      type="button"
-                      edge="end"
-                      onClick={mostrarSenhaForm.onToggle}
-                      size="small"
-                    >
-                      <Iconify
-                        icon={mostrarSenhaForm.value ? 'solar:eye-closed-bold' : 'solar:eye-bold'}
-                      />
+                    <IconButton type="button" edge="end" onClick={mostrarSenhaForm.onToggle} size="small">
+                      <Iconify icon={mostrarSenhaForm.value ? 'solar:eye-closed-bold' : 'solar:eye-bold'} />
                     </IconButton>
                   </InputAdornment>
                 ),
@@ -418,56 +667,9 @@ export default function ClienteCredenciaisSection({ clienteId }) {
             variant="contained"
             onClick={handleSalvar}
             disabled={salvando}
-            startIcon={
-              salvando ? <CircularProgress size={16} color="inherit" /> : null
-            }
+            startIcon={salvando ? <CircularProgress size={16} color="inherit" /> : null}
           >
             {editando ? 'Salvar alterações' : 'Salvar'}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Modal de visualização de senha */}
-      <Dialog open={dialogSenha.value} onClose={fecharDialogSenha} maxWidth="xs" fullWidth>
-        <DialogTitle>Senha — {senhaVisivel.nome}</DialogTitle>
-        <DialogContent>
-          {senhaVisivel.loading ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
-              <CircularProgress size={28} />
-            </Box>
-          ) : (
-            <Stack spacing={1.5} sx={{ pt: 1 }}>
-              <TextField
-                label="Senha"
-                value={senhaVisivel.valor}
-                fullWidth
-                InputProps={{
-                  readOnly: true,
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <Tooltip title="Copiar">
-                        <IconButton
-                          type="button"
-                          edge="end"
-                          size="small"
-                          onClick={() => copiar(senhaVisivel.valor, 'Senha copiada')}
-                        >
-                          <Iconify icon="solar:copy-bold" />
-                        </IconButton>
-                      </Tooltip>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <Typography variant="caption" color="text.secondary">
-                Por segurança, esta senha não fica salva no navegador e some ao fechar.
-              </Typography>
-            </Stack>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button type="button" variant="outlined" color="inherit" onClick={fecharDialogSenha}>
-            Fechar
           </Button>
         </DialogActions>
       </Dialog>

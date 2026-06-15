@@ -1,6 +1,7 @@
 'use client';
 
-import { useWatch } from 'react-hook-form';
+import dayjs from 'dayjs';
+import { useWatch, Controller } from 'react-hook-form';
 import { useRef, useMemo, useState, useEffect, forwardRef, useCallback, useImperativeHandle } from 'react';
 
 import { LoadingButton } from '@mui/lab';
@@ -37,8 +38,19 @@ import {
 } from '@mui/material';
 
 import { buscarCep } from 'src/actions/cep';
-import { getNacionalStatus } from 'src/actions/notafiscal';
 import { useGetSettings, updateSettings } from 'src/actions/settings';
+import {
+  getNfeStatus,
+  configurarNfe,
+  getNfePrStatus,
+  getNfcePrStatus,
+  configurarNfcePr,
+  getNacionalStatus,
+  configurarNacional,
+  sincronizarDfeNacional,
+  sincronizarPeriodoNacional,
+  reprocessarRetencoesNacional,
+} from 'src/actions/notafiscal';
 import {
   uploadCertificado,
   deletarCertificado,
@@ -56,6 +68,21 @@ import {
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+
+const MESES = [
+  { value: 1, label: 'Janeiro' },
+  { value: 2, label: 'Fevereiro' },
+  { value: 3, label: 'Março' },
+  { value: 4, label: 'Abril' },
+  { value: 5, label: 'Maio' },
+  { value: 6, label: 'Junho' },
+  { value: 7, label: 'Julho' },
+  { value: 8, label: 'Agosto' },
+  { value: 9, label: 'Setembro' },
+  { value: 10, label: 'Outubro' },
+  { value: 11, label: 'Novembro' },
+  { value: 12, label: 'Dezembro' },
+];
 
 export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) => {
   const { settings, settingsLoading, refetchSettings } = useGetSettings(clienteId);
@@ -112,6 +139,8 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
 
   const nfseNacional = useMemo(
     () => ({
+      // Download/importação das NFS-e do ADN — independente da emissão
+      buscaHabilitada: Boolean(settings?.nfseNacionalConfig?.buscaHabilitada),
       ambiente: settings?.nfseNacionalConfig?.ambiente ?? 'homologacao',
       serieDps: settings?.nfseNacionalConfig?.serieDps ?? '1',
       proximoNumeroDps: settings?.nfseNacionalConfig?.proximoNumeroDps ?? 1,
@@ -128,12 +157,44 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
     [settings]
   );
 
+  // NF-e (modelo 55) — busca/importação via SEFAZ. Escopo atual: apenas busca.
+  const nfe = useMemo(
+    () => ({
+      buscaHabilitada: Boolean(settings?.nfeConfig?.buscaHabilitada),
+      ambiente: settings?.nfeConfig?.ambiente ?? 'producao',
+      manifestacaoAutomatica: settings?.nfeConfig?.manifestacaoAutomatica ?? true,
+      idCertificado: settings?.nfeConfig?.idCertificado ?? '',
+      // Somente leitura — controle incremental mantido pelo backend
+      ultimoNSUDistribuicao: settings?.nfeConfig?.ultimoNSUDistribuicao ?? 0,
+      maxNSUDistribuicao: settings?.nfeConfig?.maxNSUDistribuicao ?? 0,
+      ultimaSincronizacao: settings?.nfeConfig?.ultimaSincronizacao ?? null,
+      bloqueadoAte: settings?.nfeConfig?.bloqueadoAte ?? null,
+    }),
+    [settings]
+  );
+
+  const nfcePr = useMemo(
+    () => ({
+      habilitado: Boolean(settings?.nfcePrConfig?.habilitado),
+      ambiente: settings?.nfcePrConfig?.ambiente ?? 'homologacao',
+      cscId: settings?.nfcePrConfig?.cscId ?? '',
+      cscToken: settings?.nfcePrConfig?.cscToken ?? '',
+      serie: settings?.nfcePrConfig?.serie ?? '001',
+      proximoNumero: settings?.nfcePrConfig?.proximoNumero ?? 1,
+      codigoMunicipio: settings?.nfcePrConfig?.codigoMunicipio ?? '',
+      idCertificado: settings?.nfcePrConfig?.idCertificado ?? '',
+    }),
+    [settings]
+  );
+
   const [localState, setLocalState] = useState({
     funcionalidades,
     configuracoes,
     eNotas,
     provedorNFSe,
     nfseNacional,
+    nfe,
+    nfcePr,
   });
 
   // Snapshot do que está salvo no backend — usado para detectar alterações pendentes
@@ -141,11 +202,11 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
 
   useEffect(() => {
     if (settings) {
-      const snapshot = { funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional };
+      const snapshot = { funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional, nfe, nfcePr };
       savedSnapshotRef.current = JSON.stringify(snapshot);
       setLocalState(snapshot);
     }
-  }, [settings, funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional]);
+  }, [settings, funcionalidades, configuracoes, eNotas, provedorNFSe, nfseNacional, nfe, nfcePr]);
 
   const handleToggle = (key) => (event) => {
     setLocalState((prev) => {
@@ -231,6 +292,22 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
     }));
   };
 
+  const handleNfeToggle = (key) => (event) => {
+    const { checked } = event.target;
+    setLocalState((prev) => ({
+      ...prev,
+      nfe: { ...prev.nfe, [key]: checked },
+    }));
+  };
+
+  const handleNfeChange = (key) => (event) => {
+    const { value } = event.target;
+    setLocalState((prev) => ({
+      ...prev,
+      nfe: { ...prev.nfe, [key]: value },
+    }));
+  };
+
   // --------------------------------------------------------------
   // Código IBGE do município — busca pelo CEP cadastrado no cliente
   // --------------------------------------------------------------
@@ -269,6 +346,12 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
                 ? prev.eNotas.configuracaoNFSe.codigoMunicipio || codigoIbge
                 : codigoIbge,
             },
+          },
+          nfcePr: {
+            ...prev.nfcePr,
+            codigoMunicipio: silencioso
+              ? prev.nfcePr.codigoMunicipio || codigoIbge
+              : codigoIbge,
           },
         }));
         if (!silencioso) {
@@ -321,10 +404,224 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
     }
   };
 
+  // --------------------------------------------------------------
+  // Download / importação de NFS-e do Emissor Nacional (ADN)
+  // Reaproveita os mesmos endpoints da tela Fiscal; disponível quando o
+  // cliente usa o Emissor Nacional como provedor.
+  // --------------------------------------------------------------
+  const [syncingNacional, setSyncingNacional] = useState(false);
+  const [reprocessandoRetencoes, setReprocessandoRetencoes] = useState(false);
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importModo, setImportModo] = useState('mes'); // 'mes' | 'intervalo'
+  const [importAno, setImportAno] = useState(() => dayjs().year());
+  const [importMesInicio, setImportMesInicio] = useState(() => dayjs().month() + 1);
+  const [importMesFim, setImportMesFim] = useState(() => dayjs().month() + 1);
+  const [importResultado, setImportResultado] = useState(null);
+
+  const handleSincronizarDfe = async () => {
+    if (!clienteId || syncingNacional) return;
+    try {
+      setSyncingNacional(true);
+      const res = await sincronizarDfeNacional(clienteId);
+      toast.success(res.data?.message || 'Sincronização concluída');
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao sincronizar notas do Emissor Nacional');
+    } finally {
+      setSyncingNacional(false);
+    }
+  };
+
+  const handleReprocessarRetencoes = async () => {
+    if (!clienteId || reprocessandoRetencoes) return;
+    try {
+      setReprocessandoRetencoes(true);
+      const res = await reprocessarRetencoesNacional(clienteId);
+      toast.success(res.data?.message || 'Retenções reprocessadas');
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao reprocessar retenções');
+    } finally {
+      setReprocessandoRetencoes(false);
+    }
+  };
+
+  const handleOpenImportDialog = () => {
+    setImportResultado(null);
+    setImportModo('mes');
+    setImportAno(dayjs().year());
+    setImportMesInicio(dayjs().month() + 1);
+    setImportMesFim(dayjs().month() + 1);
+    setImportDialogOpen(true);
+  };
+
+  const handleImportarPeriodo = async () => {
+    if (!clienteId) return;
+    if (importModo === 'intervalo' && importMesFim < importMesInicio) {
+      toast.error('O mês final deve ser maior ou igual ao mês inicial');
+      return;
+    }
+    try {
+      setImporting(true);
+      setImportResultado(null);
+      const body =
+        importModo === 'mes'
+          ? { competencia: `${importAno}-${String(importMesInicio).padStart(2, '0')}` }
+          : { ano: Number(importAno), mesInicio: Number(importMesInicio), mesFim: Number(importMesFim) };
+      const res = await sincronizarPeriodoNacional(clienteId, body);
+      setImportResultado(res.data);
+      toast.success(res.data?.message || 'Importação concluída');
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao importar notas do período');
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const handleNacionalBuscaToggle = (event) => {
+    const { checked } = event.target;
+    setLocalState((prev) => ({
+      ...prev,
+      nfseNacional: { ...prev.nfseNacional, buscaHabilitada: checked },
+    }));
+  };
+
+  const NFCE_NUMERIC_FIELDS = ['proximoNumero'];
+
+  const handleNfcePrToggle = (key) => (event) => {
+    setLocalState((prev) => ({
+      ...prev,
+      nfcePr: { ...prev.nfcePr, [key]: event.target.checked },
+    }));
+  };
+
+  const handleNfcePrChange = (key) => (event) => {
+    const raw = event.target.value;
+    const value = NFCE_NUMERIC_FIELDS.includes(key) && raw !== '' ? Number(raw) : raw;
+    setLocalState((prev) => ({
+      ...prev,
+      nfcePr: { ...prev.nfcePr, [key]: value },
+    }));
+  };
+
+  // Testa a conexão com o Emissor Nacional (cert ativo + mTLS) p/ o contexto de download.
+  const [nacionalDownloadStatus, setNacionalDownloadStatus] = useState(null);
+  const [checkingNacionalDownload, setCheckingNacionalDownload] = useState(false);
+
+  const handleTestarConexaoNacional = async () => {
+    try {
+      setCheckingNacionalDownload(true);
+      const res = await getNacionalStatus(clienteId, { testarConexao: true });
+      const data = res.data || {};
+      setNacionalDownloadStatus(data);
+      const cert = data?.certificado;
+      const mtls = data?.conexao?.mtlsOk;
+      if (!cert || cert.expirado) {
+        toast.warning('Certificado digital A1 ausente ou expirado');
+      } else if (mtls) {
+        toast.success('Conexão com o Emissor Nacional OK');
+      } else {
+        toast.warning(data?.conexao?.erro || 'Falha na conexão com o Emissor Nacional');
+      }
+    } catch (error) {
+      toast.error(error?.message || 'Falha ao testar conexão com o Emissor Nacional');
+    } finally {
+      setCheckingNacionalDownload(false);
+    }
+  };
+
+  // Checklist de status da busca de NF-e na SEFAZ (GET /nota-fiscal/:clienteId/nfe/status)
+  // "Verificar" só checa pré-requisitos; "Testar conexão" faz chamada real à SEFAZ
+  // (sujeita a cooldown de 15 min — só ao clique explícito, nunca no load).
+  const [nfeStatus, setNfeStatus] = useState(null);
+  const [checkingNfe, setCheckingNfe] = useState(false);
+  const [testandoConexaoNfe, setTestandoConexaoNfe] = useState(false);
+
+  // NF-e PR (SEFAZ-PR — consulta direta por chave). Usa cert/ambiente do nfeConfig.
+  const [nfePrStatus, setNfePrStatus] = useState(null);
+  const [checkingNfePr, setCheckingNfePr] = useState(false);
+
+  const handleStatusNfePr = async ({ testarSefaz }) => {
+    try {
+      setCheckingNfePr(true);
+      const res = await getNfePrStatus(clienteId, { testarSefaz });
+      const data = res.data || {};
+      setNfePrStatus(data);
+      if (data.pronto) toast.success('Serviço SEFAZ-PR para NF-e OK');
+      else toast.warning('Há pendências na configuração do serviço SEFAZ-PR');
+    } catch (error) {
+      toast.error(error?.message || 'Falha ao consultar status do serviço SEFAZ-PR');
+    } finally {
+      setCheckingNfePr(false);
+    }
+  };
+
+  // NFC-e PR (SEFAZ-PR — emissão direta)
+  const [nfcePrStatus, setNfcePrStatus] = useState(null);
+  const [checkingNfcePr, setCheckingNfcePr] = useState(false);
+  const [testandoSefazNfcePr, setTestandoSefazNfcePr] = useState(false);
+
+  const handleStatusNfcePr = async ({ testarSefaz }) => {
+    const setLoading = testarSefaz ? setTestandoSefazNfcePr : setCheckingNfcePr;
+    try {
+      setLoading(true);
+      const res = await getNfcePrStatus(clienteId, { testarSefaz });
+      const data = res.data || {};
+      setNfcePrStatus(data);
+      if (data.pronto) toast.success('Configuração de NFC-e pronta!');
+      else toast.warning('Há pendências na configuração de NFC-e');
+    } catch (error) {
+      toast.error(error?.message || 'Falha ao consultar status do NFC-e');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStatusNfe = async ({ testarConexao }) => {
+    const setLoading = testarConexao ? setTestandoConexaoNfe : setCheckingNfe;
+    try {
+      setLoading(true);
+      const res = await getNfeStatus(clienteId, { testarConexao });
+      const data = res.data || {};
+      setNfeStatus(data);
+
+      if (!testarConexao) {
+        if (data.pronto) toast.success('Configuração de busca de NF-e pronta!');
+        else toast.warning('Há pendências na configuração de busca de NF-e na SEFAZ');
+        return;
+      }
+
+      // Teste de conexão real — interpreta o cStat retornado pela SEFAZ
+      const cStat = data?.conexao?.cStat;
+      if (cStat === '656' || data?.bloqueadoAte) {
+        const ate = data?.bloqueadoAte
+          ? new Date(data.bloqueadoAte).toLocaleString('pt-BR')
+          : null;
+        toast.warning(
+          ate
+            ? `SEFAZ bloqueou as consultas deste CNPJ. Liberação após ${ate}.`
+            : data?.conexao?.xMotivo || 'SEFAZ bloqueou temporariamente as consultas.',
+          { duration: 8000 }
+        );
+      } else if (cStat === 'cached') {
+        toast.info('Conexão OK (verificada recentemente)');
+      } else if (data?.conexao?.mtlsOk) {
+        toast.success(data?.conexao?.xMotivo || 'Conexão com a SEFAZ OK');
+      } else {
+        toast.warning(data?.conexao?.erro || data?.conexao?.xMotivo || 'Falha na conexão com a SEFAZ');
+      }
+    } catch (error) {
+      toast.error(error?.message || 'Falha ao consultar o status de busca de NF-e');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       setSaving(true);
-      // Monta payload explícito para garantir envio correto da integração eNotas
+      const numOrUndefined = (v) => (v === '' || v === null || typeof v === 'undefined' ? undefined : Number(v));
+
+      // --- Portal settings (funcionalidades, limites, provedor, eNotas) ---
       const nfseCfg = localState?.eNotas?.configuracaoNFSe || {};
       const empCfg = localState?.eNotas?.configuracaoEmpresa || {};
       const eNotasPayload = {
@@ -351,9 +648,18 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         },
       };
 
+      await updateSettings(clienteId, {
+        funcionalidades: { ...localState.funcionalidades },
+        configuracoes: { ...localState.configuracoes },
+        provedorNFSe: localState.provedorNFSe || 'enotas',
+        eNotasConfig: eNotasPayload,
+      });
+
+      // --- Emissor Nacional (PUT /nota-fiscal/:id/nacional/configurar) ---
       const nac = localState?.nfseNacional || {};
-      const numOrUndefined = (v) => (v === '' || v === null || typeof v === 'undefined' ? undefined : Number(v));
-      const nfseNacionalPayload = {
+      await configurarNacional(clienteId, {
+        provedorNFSe: localState.provedorNFSe || 'enotas',
+        buscaHabilitada: Boolean(nac.buscaHabilitada),
         ambiente: nac.ambiente || 'homologacao',
         serieDps: nac.serieDps || '1',
         proximoNumeroDps: numOrUndefined(nac.proximoNumeroDps) ?? 1,
@@ -364,71 +670,30 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         optanteSimplesNacional: numOrUndefined(nac.optanteSimplesNacional),
         regimeApuracaoTributosSN: numOrUndefined(nac.regimeApuracaoTributosSN),
         percentualTotalTributosSN: numOrUndefined(nac.percentualTotalTributosSN),
-        idCertificado: nac.idCertificado || undefined,
-      };
-
-      const response = await updateSettings(clienteId, {
-        funcionalidades: { ...localState.funcionalidades },
-        configuracoes: { ...localState.configuracoes },
-        provedorNFSe: localState.provedorNFSe || 'enotas',
-        nfseNacionalConfig: nfseNacionalPayload,
-        eNotasConfig: eNotasPayload,
       });
+
+      // --- NF-e SEFAZ (PUT /nota-fiscal/:id/nfe/configurar) ---
+      const nfeCfg = localState?.nfe || {};
+      await configurarNfe(clienteId, {
+        buscaHabilitada: Boolean(nfeCfg.buscaHabilitada),
+        ambiente: nfeCfg.ambiente || 'producao',
+        manifestacaoAutomatica: Boolean(nfeCfg.manifestacaoAutomatica),
+      });
+
+      // --- NFC-e PR (PUT /nota-fiscal/:id/nfce-pr/configurar) ---
+      const nfcePrCfg = localState?.nfcePr || {};
+      await configurarNfcePr(clienteId, {
+        habilitado: Boolean(nfcePrCfg.habilitado),
+        ambiente: nfcePrCfg.ambiente || 'homologacao',
+        cscId: nfcePrCfg.cscId || undefined,
+        cscToken: nfcePrCfg.cscToken || undefined,
+        serie: nfcePrCfg.serie || '001',
+        proximoNumero: numOrUndefined(nfcePrCfg.proximoNumero),
+        codigoMunicipio: nfcePrCfg.codigoMunicipio || undefined,
+        idCertificado: nfcePrCfg.idCertificado || undefined,
+      });
+
       toast.success('Configurações atualizadas com sucesso');
-      // Atualiza o estado local imediatamente com o retorno da API (quando disponível)
-      const updated = response?.data?.settings || response?.settings;
-      if (updated) {
-        setLocalState({
-          funcionalidades: {
-            emissaoNFSe: Boolean(updated?.funcionalidades?.emissaoNFSe),
-            cadastroClientes: Boolean(updated?.funcionalidades?.cadastroClientes),
-            cadastroServicos: Boolean(updated?.funcionalidades?.cadastroServicos),
-            vendas: Boolean(updated?.funcionalidades?.vendas),
-            cobrancaInterPortal: Boolean(updated?.funcionalidades?.cobrancaInterPortal),
-            agendamentos: Boolean(updated?.funcionalidades?.agendamentos),
-          },
-          configuracoes: {
-            limiteClientes: updated?.configuracoes?.limiteClientes ?? '',
-            limiteServicos: updated?.configuracoes?.limiteServicos ?? '',
-            limiteOrcamentos: updated?.configuracoes?.limiteOrcamentos ?? '',
-          },
-          eNotas: {
-            empresaId: updated?.eNotasConfig?.empresaId ?? '',
-            ambiente: updated?.eNotasConfig?.ambiente ?? 'homologacao',
-            status: updated?.eNotasConfig?.status ?? 'inativa',
-            emiteNFSeNacional: Boolean(updated?.eNotasConfig?.emiteNFSeNacional),
-            emiteNotaRetroativa: Boolean(updated?.eNotasConfig?.emiteNotaRetroativa),
-            configuracaoNFSe: {
-              codigoMunicipio: updated?.eNotasConfig?.configuracaoNFSe?.codigoMunicipio ?? '',
-              codigoServico: updated?.eNotasConfig?.configuracaoNFSe?.codigoServico ?? '',
-              aliquotaIss: updated?.eNotasConfig?.configuracaoNFSe?.aliquotaIss ?? '',
-              discriminacao: updated?.eNotasConfig?.configuracaoNFSe?.discriminacao ?? '',
-            },
-            configuracaoEmpresa: {
-              logo: updated?.eNotasConfig?.configuracaoEmpresa?.logo ?? '',
-              certificadoVinculado:
-                (updated?.eNotasConfig?.configuracaoEmpresa?.certificadoVinculado ??
-                  updated?.eNotasConfig?.configuracaoEmpresa?.cerfificadoVinculado) ?? false,
-              idCertificado: updated?.eNotasConfig?.configuracaoEmpresa?.idCertificado ?? '',
-            },
-          },
-          provedorNFSe: updated?.provedorNFSe ?? 'enotas',
-          nfseNacional: {
-            ambiente: updated?.nfseNacionalConfig?.ambiente ?? 'homologacao',
-            serieDps: updated?.nfseNacionalConfig?.serieDps ?? '1',
-            proximoNumeroDps: updated?.nfseNacionalConfig?.proximoNumeroDps ?? 1,
-            codigoMunicipio: updated?.nfseNacionalConfig?.codigoMunicipio ?? '',
-            codigoTributacaoNacional: updated?.nfseNacionalConfig?.codigoTributacaoNacional ?? '',
-            codigoTributacaoMunicipal: updated?.nfseNacionalConfig?.codigoTributacaoMunicipal ?? '',
-            regimeEspecialTributacao: updated?.nfseNacionalConfig?.regimeEspecialTributacao ?? 0,
-            optanteSimplesNacional: updated?.nfseNacionalConfig?.optanteSimplesNacional ?? 1,
-            regimeApuracaoTributosSN: updated?.nfseNacionalConfig?.regimeApuracaoTributosSN ?? '',
-            percentualTotalTributosSN: updated?.nfseNacionalConfig?.percentualTotalTributosSN ?? '',
-            ultimoNSU: updated?.nfseNacionalConfig?.ultimoNSU ?? 0,
-            idCertificado: updated?.nfseNacionalConfig?.idCertificado ?? '',
-          },
-        });
-      }
       await refetchSettings();
     } catch (error) {
       // Backend retorna 400 com a lista de pendências ao tentar ativar o Emissor Nacional
@@ -931,23 +1196,10 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
                 />
               </Grid>
 
-              <Grid xs={12} md={8}>
-                <FormControl fullWidth>
-                  <InputLabel id="nacional-cert-label">Certificado Digital A1</InputLabel>
-                  <Select
-                    labelId="nacional-cert-label"
-                    label="Certificado Digital A1"
-                    value={localState.nfseNacional.idCertificado}
-                    onChange={handleNacionalChange('idCertificado')}
-                  >
-                    <MenuItem value="">Usar certificado ativo do cliente</MenuItem>
-                    {certificados.map((cert) => (
-                      <MenuItem key={cert._id || cert.id} value={cert._id || cert.id}>
-                        {cert.nome} ({cert.status})
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
+              <Grid xs={12} md={8} sx={{ display: 'flex', alignItems: 'center' }}>
+                <Alert severity="info" sx={{ width: '100%' }}>
+                  Usa automaticamente o certificado digital A1 ativo do cliente.
+                </Alert>
               </Grid>
               <Grid xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
                 {nacionalCamposObrigatoriosOk ? (
@@ -1123,6 +1375,603 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
           </Grid>
           )}
         </>
+      )}
+
+      <Divider sx={{ my: 3 }} />
+
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems={{ sm: 'center' }}
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Box>
+          <Typography variant="h6">Download de NFS-e (Emissor Nacional)</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Importa as NFS-e do CNPJ do cliente direto do Ambiente de Dados Nacional (ADN). Não
+            depende da emissão — basta um certificado digital A1 ativo.
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Grid container spacing={2}>
+        <Grid xs={12} md={6}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localState.nfseNacional.buscaHabilitada}
+                onChange={handleNacionalBuscaToggle}
+              />
+            }
+            label="Baixar NFS-e do Emissor Nacional"
+          />
+        </Grid>
+      </Grid>
+
+      {localState.nfseNacional.buscaHabilitada && (
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
+          <Grid xs={12}>
+            <Alert severity="info">
+              Usa automaticamente o certificado digital A1 ativo do cliente. A distribuição é
+              incremental por NSU; também é possível importar um período específico.
+            </Alert>
+          </Grid>
+
+          <Grid xs={12} md={4}>
+            <FormControl fullWidth>
+              <InputLabel id="nacional-download-ambiente-label">Ambiente</InputLabel>
+              <Select
+                labelId="nacional-download-ambiente-label"
+                label="Ambiente"
+                value={localState.nfseNacional.ambiente}
+                onChange={handleNacionalChange('ambiente')}
+              >
+                <MenuItem value="producao">Produção</MenuItem>
+                <MenuItem value="homologacao">Homologação</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Último NSU (ADN)"
+              value={localState.nfseNacional.ultimoNSU}
+              InputProps={{ readOnly: true }}
+              helperText="Controle interno — somente leitura"
+            />
+          </Grid>
+          <Grid xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
+            <LoadingButton
+              fullWidth
+              variant="outlined"
+              loading={checkingNacionalDownload}
+              startIcon={<Iconify icon="solar:shield-check-bold" />}
+              onClick={handleTestarConexaoNacional}
+            >
+              Testar conexão
+            </LoadingButton>
+          </Grid>
+
+          <Grid xs={12}>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <LoadingButton
+                variant="contained"
+                color="info"
+                loading={syncingNacional}
+                startIcon={<Iconify icon="solar:cloud-download-bold" />}
+                onClick={handleSincronizarDfe}
+              >
+                Sincronizar novas
+              </LoadingButton>
+              <LoadingButton
+                variant="outlined"
+                loading={reprocessandoRetencoes}
+                startIcon={<Iconify icon="solar:shield-check-bold" />}
+                onClick={handleReprocessarRetencoes}
+              >
+                Reprocessar retenções
+              </LoadingButton>
+              <Button
+                variant="outlined"
+                startIcon={<Iconify icon="solar:download-square-bold" />}
+                onClick={handleOpenImportDialog}
+              >
+                Importar período
+              </Button>
+            </Stack>
+          </Grid>
+
+          {nacionalDownloadStatus && (
+            <Grid xs={12}>
+              <Alert
+                severity={
+                  nacionalDownloadStatus?.certificado &&
+                  !nacionalDownloadStatus.certificado.expirado &&
+                  nacionalDownloadStatus?.conexao?.mtlsOk
+                    ? 'success'
+                    : 'warning'
+                }
+              >
+                <Stack spacing={0.5}>
+                  {nacionalDownloadStatus.certificado ? (
+                    <Typography variant="body2">
+                      Certificado: {nacionalDownloadStatus.certificado.nome} — válido até{' '}
+                      {new Date(nacionalDownloadStatus.certificado.validTo).toLocaleDateString('pt-BR')}
+                      {nacionalDownloadStatus.certificado.expirado ? ' (EXPIRADO)' : ''}
+                    </Typography>
+                  ) : (
+                    <Typography variant="body2">
+                      Nenhum certificado digital A1 ativo encontrado.
+                    </Typography>
+                  )}
+                  {nacionalDownloadStatus.conexao && (
+                    <Typography variant="body2">
+                      Conexão Sefin:{' '}
+                      {nacionalDownloadStatus.conexao.mtlsOk ? 'mTLS OK' : 'falha mTLS'}
+                      {nacionalDownloadStatus.conexao.erro
+                        ? ` · ${nacionalDownloadStatus.conexao.erro}`
+                        : ''}
+                    </Typography>
+                  )}
+                </Stack>
+              </Alert>
+            </Grid>
+          )}
+        </Grid>
+      )}
+
+      <Divider sx={{ my: 3 }} />
+
+      <Typography variant="h6" sx={{ mb: 1 }}>Integração Sieg</Typography>
+      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+        Importa automaticamente as notas fiscais (NF-e, NFS-e, CT-e, etc.) disponibilizadas pela
+        Sieg para o CNPJ do cliente.
+      </Typography>
+      <Controller
+        name="importarNotasSieg"
+        control={control}
+        render={({ field }) => (
+          <FormControlLabel
+            control={<Switch {...field} checked={!!field.value} />}
+            label="Importar Notas Fiscais da Sieg automaticamente"
+          />
+        )}
+      />
+
+      <Divider sx={{ my: 3 }} />
+
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems={{ sm: 'center' }}
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Box>
+          <Typography variant="h6">Busca de NF-e na SEFAZ (Produto, modelo 55)</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Importa automaticamente as NF-e do CNPJ do cliente direto da SEFAZ (Ambiente Nacional).
+            Requer CNPJ cadastrado e certificado digital A1 ativo.
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Grid container spacing={2}>
+        <Grid xs={12} md={6}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localState.nfe.buscaHabilitada}
+                onChange={handleNfeToggle('buscaHabilitada')}
+              />
+            }
+            label="Buscar NF-e na SEFAZ"
+          />
+          {localState.nfe.buscaHabilitada && (
+            <Tooltip title="Necessária para a SEFAZ liberar o XML completo das notas recebidas (ciência da operação)">
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={localState.nfe.manifestacaoAutomatica}
+                    onChange={handleNfeToggle('manifestacaoAutomatica')}
+                  />
+                }
+                label="Manifestação automática (ciência da operação)"
+                sx={{
+                  ml: 4,
+                  '& .MuiFormControlLabel-label': {
+                    fontSize: '0.875rem',
+                    color: 'text.secondary',
+                  },
+                }}
+              />
+            </Tooltip>
+          )}
+        </Grid>
+      </Grid>
+
+      {localState.nfe.buscaHabilitada && (
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
+          <Grid xs={12}>
+            <Alert severity="info">
+              A SEFAZ distribui as notas de forma incremental por NSU e mantém apenas os últimos 90
+              dias. A emissão de NF-e ainda não está disponível (apenas busca/importação).
+            </Alert>
+          </Grid>
+
+          <Grid xs={12} md={4}>
+            <FormControl fullWidth>
+              <InputLabel id="nfe-ambiente-label">Ambiente</InputLabel>
+              <Select
+                labelId="nfe-ambiente-label"
+                label="Ambiente"
+                value={localState.nfe.ambiente}
+                onChange={handleNfeChange('ambiente')}
+              >
+                <MenuItem value="producao">Produção</MenuItem>
+                <MenuItem value="homologacao">Homologação</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+
+          <Grid xs={12} md={8} sx={{ display: 'flex', alignItems: 'center' }}>
+            <Alert severity="info" sx={{ width: '100%' }}>
+              Usa automaticamente o certificado digital A1 ativo do cliente.
+            </Alert>
+          </Grid>
+
+          <Grid xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="Último NSU"
+              value={localState.nfe.ultimoNSUDistribuicao}
+              InputProps={{ readOnly: true }}
+              helperText="Controle interno — somente leitura"
+            />
+          </Grid>
+          <Grid xs={12} md={4}>
+            <TextField
+              fullWidth
+              label="NSU máximo na SEFAZ"
+              value={localState.nfe.maxNSUDistribuicao}
+              InputProps={{ readOnly: true }}
+              helperText="Somente leitura"
+            />
+          </Grid>
+          <Grid xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
+            <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+              <LoadingButton
+                fullWidth
+                variant="outlined"
+                loading={checkingNfe}
+                startIcon={<Iconify icon="solar:shield-check-bold" />}
+                onClick={() => handleStatusNfe({ testarConexao: false })}
+              >
+                Verificar
+              </LoadingButton>
+              <Tooltip title="Faz uma consulta real à SEFAZ para validar o certificado/mTLS (limitado a 1 a cada 15 min)">
+                <span style={{ width: '100%' }}>
+                  <LoadingButton
+                    fullWidth
+                    variant="contained"
+                    color="info"
+                    loading={testandoConexaoNfe}
+                    startIcon={<Iconify icon="solar:wi-fi-router-bold" />}
+                    onClick={() => handleStatusNfe({ testarConexao: true })}
+                  >
+                    Testar conexão
+                  </LoadingButton>
+                </span>
+              </Tooltip>
+            </Stack>
+          </Grid>
+
+          {localState.nfe.bloqueadoAte &&
+            new Date(localState.nfe.bloqueadoAte).getTime() > Date.now() && (
+              <Grid xs={12}>
+                <Alert severity="warning">
+                  A SEFAZ limitou temporariamente as consultas deste CNPJ (consumo indevido). Tente
+                  novamente após {new Date(localState.nfe.bloqueadoAte).toLocaleString('pt-BR')}.
+                </Alert>
+              </Grid>
+            )}
+
+          {nfeStatus && (
+            <Grid xs={12}>
+              <Alert severity={nfeStatus.pronto ? 'success' : 'warning'}>
+                <Stack spacing={0.5}>
+                  <Typography variant="subtitle2">
+                    {nfeStatus.pronto
+                      ? 'Pronto para buscar NF-e na SEFAZ'
+                      : 'Configuração com pendências'}
+                  </Typography>
+                  {(nfeStatus.pendencias || []).map((p) => (
+                    <Typography key={p} variant="body2">
+                      • {p}
+                    </Typography>
+                  ))}
+                  {nfeStatus.certificado && (
+                    <Typography variant="body2">
+                      Certificado: {nfeStatus.certificado.nome} — válido até{' '}
+                      {new Date(nfeStatus.certificado.validTo).toLocaleDateString('pt-BR')}
+                      {nfeStatus.certificado.expirado ? ' (EXPIRADO)' : ''}
+                    </Typography>
+                  )}
+                  {nfeStatus.conexao && (
+                    <Typography variant="body2">
+                      Conexão SEFAZ: {nfeStatus.conexao.mtlsOk ? 'mTLS OK' : 'falha mTLS'}
+                      {nfeStatus.conexao.xMotivo ? ` · ${nfeStatus.conexao.xMotivo}` : ''}
+                      {nfeStatus.conexao.erro ? ` · ${nfeStatus.conexao.erro}` : ''}
+                    </Typography>
+                  )}
+                  {typeof nfeStatus.maxNSU === 'number' &&
+                    typeof nfeStatus.ultimoNSU === 'number' &&
+                    nfeStatus.maxNSU > nfeStatus.ultimoNSU && (
+                      <Typography variant="body2">
+                        Há documentos novos aguardando sincronização (NSU {nfeStatus.ultimoNSU} →{' '}
+                        {nfeStatus.maxNSU}).
+                      </Typography>
+                    )}
+                </Stack>
+              </Alert>
+            </Grid>
+          )}
+        </Grid>
+      )}
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* NF-e PR — consulta direta por chave via SEFAZ-PR. Usa cert/ambiente de nfeConfig. */}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems={{ sm: 'center' }}
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Box>
+          <Typography variant="h6">NF-e por chave (SEFAZ-PR)</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Consulta/importação de NF-e (modelo 55) diretamente no SEFAZ-PR por chave de acesso.
+            Complementar ao Ambiente Nacional — não precisa de NSU. Usa o certificado e ambiente
+            configurados na seção NF-e acima.
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1}>
+          <LoadingButton
+            variant="outlined"
+            loading={checkingNfePr}
+            startIcon={<Iconify icon="solar:shield-check-bold" />}
+            onClick={() => handleStatusNfePr({ testarSefaz: false })}
+          >
+            Verificar
+          </LoadingButton>
+          <Tooltip title="Consulta o NFeStatusServico4 real no SEFAZ-PR">
+            <span>
+              <LoadingButton
+                variant="contained"
+                color="info"
+                loading={checkingNfePr}
+                startIcon={<Iconify icon="solar:wi-fi-router-bold" />}
+                onClick={() => handleStatusNfePr({ testarSefaz: true })}
+              >
+                Testar SEFAZ
+              </LoadingButton>
+            </span>
+          </Tooltip>
+        </Stack>
+      </Stack>
+
+      {nfePrStatus && (
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid xs={12}>
+            <Alert severity={nfePrStatus.pronto ? 'success' : 'warning'}>
+              <Stack spacing={0.5}>
+                <Typography variant="subtitle2">
+                  {nfePrStatus.pronto ? 'SEFAZ-PR pronto para NF-e por chave' : 'Configuração com pendências'}
+                </Typography>
+                {(nfePrStatus.pendencias || []).map((p) => (
+                  <Typography key={p} variant="body2">• {p}</Typography>
+                ))}
+                {nfePrStatus.certificado && (
+                  <Typography variant="body2">
+                    Certificado: {nfePrStatus.certificado.nome ?? nfePrStatus.certificado.id} —{' '}
+                    {nfePrStatus.certificado.expirado ? 'EXPIRADO' : `status: ${nfePrStatus.certificado.status}`}
+                  </Typography>
+                )}
+                {nfePrStatus.sefaz && (
+                  <Typography variant="body2">
+                    SEFAZ-PR ({nfePrStatus.sefaz.cStat}): {nfePrStatus.sefaz.xMotivo}
+                  </Typography>
+                )}
+              </Stack>
+            </Alert>
+          </Grid>
+        </Grid>
+      )}
+
+      <Divider sx={{ my: 3 }} />
+
+      {/* NFC-e PR — emissão direta no SEFAZ-PR */}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems={{ sm: 'center' }}
+        justifyContent="space-between"
+        spacing={2}
+        sx={{ mb: 2 }}
+      >
+        <Box>
+          <Typography variant="h6">NFC-e (modelo 65) — SEFAZ-PR</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Emissão de Nota Fiscal de Consumidor Eletrônica diretamente no SEFAZ-PR.
+            Requer CSC fornecido pela SEFAZ-PR por empresa.
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Grid container spacing={2}>
+        <Grid xs={12} md={6}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localState.nfcePr.habilitado}
+                onChange={handleNfcePrToggle('habilitado')}
+              />
+            }
+            label="Habilitar emissão de NFC-e"
+          />
+        </Grid>
+      </Grid>
+
+      {localState.nfcePr.habilitado && (
+        <Grid container spacing={2} sx={{ mt: 0.5 }}>
+          <Grid xs={12}>
+            <Alert severity="info">
+              Os campos CSC (cscId e cscToken) são fornecidos pela SEFAZ-PR por empresa.
+              O código IBGE do município e um certificado digital A1 ativo são obrigatórios.
+            </Alert>
+          </Grid>
+
+          <Grid xs={12} md={3}>
+            <FormControl fullWidth>
+              <InputLabel id="nfce-ambiente-label">Ambiente</InputLabel>
+              <Select
+                labelId="nfce-ambiente-label"
+                label="Ambiente"
+                value={localState.nfcePr.ambiente}
+                onChange={handleNfcePrChange('ambiente')}
+              >
+                <MenuItem value="homologacao">Homologação</MenuItem>
+                <MenuItem value="producao">Produção</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="Série NFC-e"
+              value={localState.nfcePr.serie}
+              onChange={handleNfcePrChange('serie')}
+              helperText="Padrão: 001"
+            />
+          </Grid>
+          <Grid xs={12} md={3}>
+            <TextField
+              fullWidth
+              type="number"
+              label="Próximo número"
+              value={localState.nfcePr.proximoNumero}
+              onChange={handleNfcePrChange('proximoNumero')}
+            />
+          </Grid>
+          <Grid xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="Código do Município (IBGE)"
+              value={localState.nfcePr.codigoMunicipio}
+              onChange={handleNfcePrChange('codigoMunicipio')}
+              helperText="7 dígitos — obrigatório"
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <Tooltip title="Buscar código IBGE pelo CEP do cliente">
+                      <span>
+                        <IconButton edge="end" disabled={buscandoIbge} onClick={() => handleBuscarIbge()}>
+                          <Iconify icon="eva:search-fill" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </InputAdornment>
+                ),
+              }}
+            />
+          </Grid>
+
+          <Grid xs={12} md={3}>
+            <TextField
+              fullWidth
+              label="CSC ID"
+              value={localState.nfcePr.cscId}
+              onChange={handleNfcePrChange('cscId')}
+              helperText="ID do CSC (até 6 dígitos) — ex: 000001"
+            />
+          </Grid>
+          <Grid xs={12} md={6}>
+            <TextField
+              fullWidth
+              label="CSC Token"
+              value={localState.nfcePr.cscToken}
+              onChange={handleNfcePrChange('cscToken')}
+              helperText="Token CSC fornecido pela SEFAZ-PR — obrigatório para QR Code"
+            />
+          </Grid>
+
+          <Grid xs={12} md={3} sx={{ display: 'flex', alignItems: 'center' }}>
+            <Alert severity="info" sx={{ width: '100%' }}>
+              Usa o certificado A1 ativo do cliente automaticamente.
+            </Alert>
+          </Grid>
+
+          <Grid xs={12} md={6} sx={{ display: 'flex', alignItems: 'center' }}>
+            <Stack direction="row" spacing={1} sx={{ width: '100%' }}>
+              <LoadingButton
+                fullWidth
+                variant="outlined"
+                loading={checkingNfcePr}
+                startIcon={<Iconify icon="solar:shield-check-bold" />}
+                onClick={() => handleStatusNfcePr({ testarSefaz: false })}
+              >
+                Verificar
+              </LoadingButton>
+              <Tooltip title="Consulta o NFeStatusServico4 real no SEFAZ-PR">
+                <span style={{ width: '100%' }}>
+                  <LoadingButton
+                    fullWidth
+                    variant="contained"
+                    color="info"
+                    loading={testandoSefazNfcePr}
+                    startIcon={<Iconify icon="solar:wi-fi-router-bold" />}
+                    onClick={() => handleStatusNfcePr({ testarSefaz: true })}
+                  >
+                    Testar SEFAZ
+                  </LoadingButton>
+                </span>
+              </Tooltip>
+            </Stack>
+          </Grid>
+
+          {nfcePrStatus && (
+            <Grid xs={12}>
+              <Alert severity={nfcePrStatus.pronto ? 'success' : 'warning'}>
+                <Stack spacing={0.5}>
+                  <Typography variant="subtitle2">
+                    {nfcePrStatus.pronto ? 'Pronto para emitir NFC-e' : 'Configuração com pendências'}
+                  </Typography>
+                  {(nfcePrStatus.pendencias || []).map((p) => (
+                    <Typography key={p} variant="body2">• {p}</Typography>
+                  ))}
+                  {!nfcePrStatus.cscConfigurado && (
+                    <Typography variant="body2">• CSC (cscId + cscToken) não configurado</Typography>
+                  )}
+                  {nfcePrStatus.certificado && (
+                    <Typography variant="body2">
+                      Certificado:{' '}
+                      {nfcePrStatus.certificado.expirado
+                        ? 'EXPIRADO'
+                        : `status: ${nfcePrStatus.certificado.status}`}
+                    </Typography>
+                  )}
+                  {nfcePrStatus.sefaz && (
+                    <Typography variant="body2">
+                      SEFAZ-PR ({nfcePrStatus.sefaz.cStat}): {nfcePrStatus.sefaz.xMotivo}
+                    </Typography>
+                  )}
+                </Stack>
+              </Alert>
+            </Grid>
+          )}
+        </Grid>
       )}
 
       <Divider sx={{ my: 3 }} />
@@ -1387,6 +2236,123 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => { setShowPasswordDialog(false); if (passwordTimerId) clearTimeout(passwordTimerId); }}>Fechar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Modal de Importação por Período — Emissor Nacional (ADN) */}
+      <Dialog
+        open={importDialogOpen}
+        onClose={() => !importing && setImportDialogOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <Iconify icon="solar:download-square-bold" width={24} sx={{ color: 'primary.main' }} />
+            <Typography variant="h6">Importar NFS-e — Emissor Nacional</Typography>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="warning">
+              A primeira importação pode demorar alguns minutos: o ADN é varrido por NSU desde o
+              início e as notas são filtradas pelo período informado.
+            </Alert>
+
+            <FormControl fullWidth>
+              <InputLabel id="import-modo-label">Modo</InputLabel>
+              <Select
+                labelId="import-modo-label"
+                label="Modo"
+                value={importModo}
+                onChange={(e) => setImportModo(e.target.value)}
+                disabled={importing}
+              >
+                <MenuItem value="mes">Um mês</MenuItem>
+                <MenuItem value="intervalo">Intervalo de meses (mesmo ano)</MenuItem>
+              </Select>
+            </FormControl>
+
+            <Stack direction="row" spacing={2}>
+              <TextField
+                fullWidth
+                type="number"
+                label="Ano"
+                value={importAno}
+                onChange={(e) => setImportAno(Number(e.target.value))}
+                disabled={importing}
+              />
+              <FormControl fullWidth>
+                <InputLabel id="import-mes-inicio-label">
+                  {importModo === 'mes' ? 'Mês' : 'De'}
+                </InputLabel>
+                <Select
+                  labelId="import-mes-inicio-label"
+                  label={importModo === 'mes' ? 'Mês' : 'De'}
+                  value={importMesInicio}
+                  onChange={(e) => setImportMesInicio(Number(e.target.value))}
+                  disabled={importing}
+                >
+                  {MESES.map((m) => (
+                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {importModo === 'intervalo' && (
+                <FormControl fullWidth>
+                  <InputLabel id="import-mes-fim-label">Até</InputLabel>
+                  <Select
+                    labelId="import-mes-fim-label"
+                    label="Até"
+                    value={importMesFim}
+                    onChange={(e) => setImportMesFim(Number(e.target.value))}
+                    disabled={importing}
+                  >
+                    {MESES.map((m) => (
+                      <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+            </Stack>
+
+            {importing && (
+              <Alert severity="info">
+                Importando notas do Emissor Nacional... pode levar alguns minutos.
+              </Alert>
+            )}
+
+            {importResultado && (
+              <Alert severity="success">
+                <Stack spacing={0.5}>
+                  <Typography variant="subtitle2">{importResultado.message}</Typography>
+                  <Typography variant="body2">
+                    Importadas: {importResultado.notasImportadas ?? 0} · Atualizadas:{' '}
+                    {importResultado.notasAtualizadas ?? 0} · Fora do período:{' '}
+                    {importResultado.notasIgnoradasForaPeriodo ?? 0} · Eventos:{' '}
+                    {importResultado.eventosProcessados ?? 0}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Documentos processados: {importResultado.documentosProcessados ?? 0} · Último
+                    NSU: {importResultado.ultimoNSU ?? '-'}
+                  </Typography>
+                </Stack>
+              </Alert>
+            )}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" onClick={() => setImportDialogOpen(false)} disabled={importing}>
+            Fechar
+          </Button>
+          <LoadingButton
+            variant="contained"
+            loading={importing}
+            startIcon={<Iconify icon="solar:download-square-bold" />}
+            onClick={handleImportarPeriodo}
+          >
+            Importar
+          </LoadingButton>
         </DialogActions>
       </Dialog>
 

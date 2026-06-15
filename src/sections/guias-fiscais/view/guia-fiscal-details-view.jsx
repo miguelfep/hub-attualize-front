@@ -27,7 +27,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import { isGuia, getCompetencia, formatCompetencia, getTipoGuiaLabel, getFormatoExtratoLabel, isExtratoBancario } from '../utils';
+import { isGuia, getCompetencia, getTipoGuiaLabel, formatCompetencia, isExtratoBancario, getFormatoExtratoLabel } from '../utils';
 import {
   getClienteVisualizouEm,
   getLeiturasPortalItensAdmin,

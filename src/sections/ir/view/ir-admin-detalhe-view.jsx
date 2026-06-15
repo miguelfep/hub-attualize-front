@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { ptBR } from 'date-fns/locale';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { format, parseISO } from 'date-fns';
 
@@ -47,10 +47,10 @@ import {
   uploadDocumentoIrAdmin,
   downloadDocumentoAdmin,
   notificarClienteIrAdmin,
+  removerDocumentoIrAdmin,
   useGetUsuariosInternosIr,
   registrarPagamentoManualIr,
   atualizarObservacoesInternasIrAdmin,
-  removerDocumentoIrAdmin,
 } from 'src/actions/ir';
 
 import { toast } from 'src/components/snackbar';

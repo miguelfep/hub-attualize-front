@@ -15,6 +15,7 @@ import {
   Button,
   Select,
   Dialog,
+  Tooltip,
   Skeleton,
   MenuItem,
   TextField,
@@ -29,20 +30,26 @@ import {
   DialogActions,
 } from '@mui/material';
 
+import axios from 'src/utils/axios';
 import { formatClienteCodigoRazao } from 'src/utils/formatter';
 import { fCurrency, formatCPFOrCNPJ } from 'src/utils/format-number';
 
 import { getClientes } from 'src/actions/clientes';
 import { useGetSettings } from 'src/actions/settings';
 import {
+  isNotaSefaz,
+  isNotaNfcePr,
   abrirPdfNota,
   baixarXmlNota,
+  isNotaNacional,
+  cancelarNfcePr,
+  consultarNfcePr,
   dadosEmitenteNota,
   tipoMovimentoNota,
   cancelarNotaFiscal,
+  sincronizarUnificado,
   cancelarNotaNoProvedor,
-  sincronizarDfeNacional,
-  sincronizarPeriodoNacional,
+  sincronizarTodosNfeSefaz,
   listarNotasFiscaisPorCliente,
   reprocessarRetencoesNacional,
 } from 'src/actions/notafiscal';
@@ -50,6 +57,8 @@ import {
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 // Helper para formatar tipo de nota
 const formatTipoNota = (tipo) => {
@@ -177,10 +186,13 @@ function NotaFiscalCardSkeleton() {
 
 export default function DashboardFiscalPage() {
   const theme = useTheme();
+  const { user } = useAuthContext();
+  const isAdmin = user?.role === 'admin';
 
   const [selectedCliente, setSelectedCliente] = useState('');
   const [status, setStatus] = useState('');
   const [tipoNota, setTipoNota] = useState('');
+  const [origem, setOrigem] = useState(''); // '' | 'enotas' | 'sieg' | 'nacional' | 'sefaz'
   const [tipoMovimento, setTipoMovimento] = useState('saida'); // '' | 'entrada' | 'saida' — query param tipoMovimento
   const [comRetencao, setComRetencao] = useState(''); // '' | 'com' | 'sem' — query param comRetencao
   const [loading, setLoading] = useState(false);
@@ -205,10 +217,19 @@ export default function DashboardFiscalPage() {
   const [dataCancelamento, setDataCancelamento] = useState(() => dayjs().format('YYYY-MM-DD'));
   const [canceling, setCanceling] = useState(false);
 
-  // Emissor Nacional: sincronização incremental + importação por período (ADN)
+  // Emissor Nacional: sincronização incremental + importação por período (ADN).
+  // Disponível para quem emite pelo Nacional OU habilitou só o download (buscaHabilitada).
   const { settings: clienteSettings } = useGetSettings(selectedCliente || null);
-  const isClienteNacional = clienteSettings?.provedorNFSe === 'nacional';
+  const isClienteNacional =
+    clienteSettings?.provedorNFSe === 'nacional' ||
+    Boolean(clienteSettings?.nfseNacionalConfig?.buscaHabilitada);
+  // NF-e SEFAZ: busca/importação de NF-e (modelo 55)
+  const nfeBuscaHabilitada = Boolean(clienteSettings?.nfeConfig?.buscaHabilitada);
+  const nfeBloqueadoAte = clienteSettings?.nfeConfig?.bloqueadoAte || null;
+  const nfeBloqueado = !!nfeBloqueadoAte && new Date(nfeBloqueadoAte).getTime() > Date.now();
+  const [syncingTodosNfe, setSyncingTodosNfe] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [baixandoLote, setBaixandoLote] = useState(false);
   const [reprocessandoRetencoes, setReprocessandoRetencoes] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -249,6 +270,7 @@ export default function DashboardFiscalPage() {
         inicio: startDate || undefined,
         fim: endDate || undefined,
         tipoNota: tipoNota || undefined,
+        origem: origem || undefined,
         tipoMovimento: tipoMovimento || undefined,
         comRetencao: comRetencao === 'com' ? true : comRetencao === 'sem' ? false : undefined,
         page,
@@ -273,12 +295,12 @@ export default function DashboardFiscalPage() {
   // Resetar página ao mudar filtros
   useEffect(() => {
     setPage(1);
-  }, [selectedCliente, status, startDate, endDate, tipoNota, tipoMovimento, comRetencao]);
+  }, [selectedCliente, status, startDate, endDate, tipoNota, origem, tipoMovimento, comRetencao]);
 
   useEffect(() => {
     fetchNotas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCliente, status, startDate, endDate, tipoNota, tipoMovimento, comRetencao, page]);
+  }, [selectedCliente, status, startDate, endDate, tipoNota, origem, tipoMovimento, comRetencao, page]);
 
   // Navegação mensal
   const handlePrevMonth = () => {
@@ -320,10 +342,18 @@ export default function DashboardFiscalPage() {
       toast.error('Informe o motivo do cancelamento');
       return;
     }
+    // NFC-e exige motivo com no mínimo 15 caracteres (requisito SEFAZ)
+    if (isNotaNfcePr(notaToCancel) && motivoCancelamento.trim().length < 15) {
+      toast.error('O motivo do cancelamento deve ter no mínimo 15 caracteres');
+      return;
+    }
     try {
       setCanceling(true);
       const notaId = notaToCancel._id || notaToCancel.id;
-      if (notaToCancel.origem === 'nacional') {
+      if (isNotaNfcePr(notaToCancel)) {
+        // NFC-e SEFAZ-PR — evento 110111 (prazo de 30 min)
+        await cancelarNfcePr(notaId, motivoCancelamento);
+      } else if (notaToCancel.origem === 'nacional') {
         // Cancelamento síncrono no Sefin (evento e101101) — backend ramifica por origem
         await cancelarNotaNoProvedor(notaId, motivoCancelamento);
       } else {
@@ -357,17 +387,61 @@ export default function DashboardFiscalPage() {
     }
   };
 
-  const handleSincronizarDfe = async () => {
-    if (!selectedCliente) return;
+  const handleConsultarNfce = async (nota) => {
+    try {
+      const res = await consultarNfcePr(nota._id || nota.id);
+      const d = res.data || {};
+      toast.info(`SEFAZ-PR (${d.cStat || '-'}): ${d.xMotivo || 'consulta concluída'}`, {
+        duration: 7000,
+      });
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao consultar a NFC-e no SEFAZ-PR');
+    }
+  };
+
+  // Sincronização unificada — todos os provedores habilitados, modo incremental.
+  const handleSincronizar = async () => {
+    if (!selectedCliente || syncing) return;
     try {
       setSyncing(true);
-      const res = await sincronizarDfeNacional(selectedCliente);
-      toast.success(res.data?.message || 'Sincronização concluída');
+      const res = await sincronizarUnificado(selectedCliente, {});
+      const data = res.data || {};
+
+      if (data.totalImportadas > 0 || data.totalAtualizadas > 0) {
+        toast.success(data.message || `${data.totalImportadas} importadas, ${data.totalAtualizadas} atualizadas`);
+      } else {
+        toast.info(data.message || 'Sincronização concluída sem novas notas');
+      }
+
+      if (data.erros?.nfe) toast.warning(`NF-e SEFAZ: ${data.erros.nfe}`, { duration: 7000 });
+      if (data.erros?.nacional) toast.warning(`Emissor Nacional: ${data.erros.nacional}`, { duration: 7000 });
+      if (data.erros?.sieg) toast.warning(`SIEG: ${data.erros.sieg}`, { duration: 7000 });
+      if (data.resultados?.nfe?.bloqueadoAte) {
+        toast.warning(
+          `SEFAZ bloqueou as consultas. Tente após ${new Date(data.resultados.nfe.bloqueadoAte).toLocaleString('pt-BR')}.`,
+          { duration: 8000 }
+        );
+      }
+
       await fetchNotas();
     } catch (error) {
-      toast.error(error?.message || 'Erro ao sincronizar notas do Emissor Nacional');
+      toast.error(error?.message || 'Erro ao sincronizar notas');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  // Admin: sincroniza NF-e de todos os clientes habilitados (mesmo efeito do cron)
+  const handleSincronizarTodosNfe = async () => {
+    if (syncingTodosNfe) return;
+    try {
+      setSyncingTodosNfe(true);
+      const res = await sincronizarTodosNfeSefaz();
+      toast.success(res.data?.message || 'Sincronização de NF-e disparada para todos os clientes habilitados');
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao sincronizar NF-e de todos os clientes');
+    } finally {
+      setSyncingTodosNfe(false);
     }
   };
 
@@ -410,7 +484,7 @@ export default function DashboardFiscalPage() {
         importModo === 'mes'
           ? { competencia: `${importAno}-${String(importMesInicio).padStart(2, '0')}` }
           : { ano: Number(importAno), mesInicio: Number(importMesInicio), mesFim: Number(importMesFim) };
-      const res = await sincronizarPeriodoNacional(selectedCliente, body);
+      const res = await sincronizarUnificado(selectedCliente, body);
       setImportResultado(res.data);
       toast.success(res.data?.message || 'Importação concluída');
       await fetchNotas();
@@ -418,6 +492,89 @@ export default function DashboardFiscalPage() {
       toast.error(error?.message || 'Erro ao importar notas do período');
     } finally {
       setImporting(false);
+    }
+  };
+
+  const handleBaixarXmlLote = async () => {
+    if (!selectedCliente) return;
+    try {
+      setBaixandoLote(true);
+      toast.info('Buscando notas para download...');
+
+      const res = await listarNotasFiscaisPorCliente({
+        clienteId: selectedCliente,
+        status: status || undefined,
+        inicio: startDate || undefined,
+        fim: endDate || undefined,
+        tipoNota: tipoNota || undefined,
+        origem: origem || undefined,
+        tipoMovimento: tipoMovimento || undefined,
+        comRetencao: comRetencao === 'com' ? true : comRetencao === 'sem' ? false : undefined,
+        limit: 500,
+      });
+
+      const todasNotas = res.data?.notasFiscais || [];
+      const notasComXml = todasNotas.filter(
+        (n) => isNotaNfcePr(n) || isNotaSefaz(n) || isNotaNacional(n) || n.siegXmlBase64
+      );
+
+      if (notasComXml.length === 0) {
+        toast.warning('Nenhuma nota com XML disponível para download em lote');
+        return;
+      }
+
+      toast.info(`Baixando ${notasComXml.length} XML(s)...`);
+
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const JSZip = (await import('jszip')).default;
+      const { saveAs } = await import('file-saver');
+      const zip = new JSZip();
+
+      const results = await Promise.allSettled(
+        notasComXml.map(async (nota) => {
+          const id = nota._id || nota.id;
+          const num = nota.numeroNota || nota.chaveAcesso || id;
+          const tipo = (nota.tipoNota || 'nota').toUpperCase();
+          const filename = `${tipo}-${num}.xml`;
+          if (nota.siegXmlBase64) {
+            const bytes = Uint8Array.from(atob(nota.siegXmlBase64), (c) => c.charCodeAt(0));
+            zip.file(filename, bytes);
+          } else {
+            let endpoint;
+            if (isNotaNfcePr(nota)) {
+              endpoint = `${baseUrl}nota-fiscal/${id}/nfce-pr/xml`;
+            } else if (isNotaSefaz(nota)) {
+              endpoint = `${baseUrl}nota-fiscal/${id}/sefaz/xml`;
+            } else {
+              endpoint = `${baseUrl}nota-fiscal/${id}/nacional/xml`;
+            }
+            const xmlRes = await axios.get(endpoint, { responseType: 'blob' });
+            zip.file(filename, xmlRes.data);
+          }
+        })
+      );
+
+      const success = results.filter((r) => r.status === 'fulfilled').length;
+      const failed = results.filter((r) => r.status === 'rejected').length;
+
+      if (success === 0) {
+        toast.error('Nenhum XML pôde ser baixado');
+        return;
+      }
+
+      const blob = await zip.generateAsync({ type: 'blob' });
+      const periodo = `${startDate}_${endDate}`.replace(/-/g, '');
+      saveAs(blob, `XMLs-${periodo}.zip`);
+
+      if (failed > 0) {
+        toast.warning(`${success} XML(s) baixados, ${failed} com erro`);
+      } else {
+        toast.success(`${success} XML(s) baixados com sucesso`);
+      }
+    } catch (error) {
+      toast.error(error?.message || 'Erro ao baixar XMLs em lote');
+    } finally {
+      setBaixandoLote(false);
     }
   };
 
@@ -442,16 +599,31 @@ export default function DashboardFiscalPage() {
             Selecione um cliente para visualizar as notas emitidas e o faturamento.
           </Typography>
         </Box>
-        {isClienteNacional && (
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <LoadingButton
+        <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+          {selectedCliente && (isClienteNacional || nfeBuscaHabilitada) && (
+            <Tooltip title="Sincronização incremental de todos os provedores habilitados (NFS-e Nacional + NF-e SEFAZ)">
+              <span>
+                <LoadingButton
+                  variant="contained"
+                  loading={syncing}
+                  startIcon={<Iconify icon="solar:refresh-circle-bold" />}
+                  onClick={handleSincronizar}
+                >
+                  Sincronizar
+                </LoadingButton>
+              </span>
+            </Tooltip>
+          )}
+          {selectedCliente && (isClienteNacional || nfeBuscaHabilitada) && (
+            <Button
               variant="outlined"
-              loading={syncing}
-              startIcon={<Iconify icon="solar:refresh-circle-bold" />}
-              onClick={handleSincronizarDfe}
+              startIcon={<Iconify icon="solar:download-square-bold" />}
+              onClick={handleOpenImportDialog}
             >
-              Sincronizar novas
-            </LoadingButton>
+              Importar período
+            </Button>
+          )}
+          {selectedCliente && isClienteNacional && (
             <LoadingButton
               variant="outlined"
               loading={reprocessandoRetencoes}
@@ -460,15 +632,24 @@ export default function DashboardFiscalPage() {
             >
               Reprocessar retenções
             </LoadingButton>
-            <Button
-              variant="contained"
-              startIcon={<Iconify icon="solar:download-square-bold" />}
-              onClick={handleOpenImportDialog}
-            >
-              Importar período
-            </Button>
-          </Stack>
-        )}
+          )}
+          {isAdmin && (
+            <Tooltip title="Sincroniza NF-e de todos os clientes habilitados (equivale ao cron)">
+              <span>
+                <LoadingButton
+                  variant="outlined"
+                  color="inherit"
+                  size="small"
+                  loading={syncingTodosNfe}
+                  startIcon={<Iconify icon="solar:refresh-circle-bold" />}
+                  onClick={handleSincronizarTodosNfe}
+                >
+                  Sincronizar todos
+                </LoadingButton>
+              </span>
+            </Tooltip>
+          )}
+        </Stack>
       </Box>
 
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
@@ -520,6 +701,18 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
+          <Grid xs={12} md={2}>
+            <FormControl fullWidth>
+              <InputLabel>Origem</InputLabel>
+              <Select label="Origem" value={origem} onChange={(e) => setOrigem(e.target.value)}>
+                <MenuItem value="">Todas</MenuItem>
+                <MenuItem value="enotas">eNotas</MenuItem>
+                <MenuItem value="sieg">SIEG</MenuItem>
+                <MenuItem value="nacional">Nacional</MenuItem>
+                <MenuItem value="sefaz">SEFAZ</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
           <Grid xs={12} md={1.5}>
             <FormControl fullWidth>
               <InputLabel>Entrada/Saída</InputLabel>
@@ -551,7 +744,7 @@ export default function DashboardFiscalPage() {
         </Grid>
 
         {/* Filtros Ativos */}
-        {(status || tipoNota || tipoMovimento || comRetencao) && (
+        {(status || tipoNota || origem || tipoMovimento || comRetencao) && (
           <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }} useFlexGap>
             <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
               Filtros ativos:
@@ -570,6 +763,15 @@ export default function DashboardFiscalPage() {
                 size="small"
                 label={`Tipo: ${formatTipoNota(tipoNota)}`}
                 onDelete={() => setTipoNota('')}
+                color="default"
+                variant="soft"
+              />
+            )}
+            {origem && (
+              <Chip
+                size="small"
+                label={`Origem: ${origem === 'sefaz' ? 'SEFAZ' : origem === 'sieg' ? 'SIEG' : origem === 'nacional' ? 'Nacional' : 'eNotas'}`}
+                onDelete={() => setOrigem('')}
                 color="default"
                 variant="soft"
               />
@@ -663,8 +865,8 @@ export default function DashboardFiscalPage() {
               Soma dos valores nesta página: {fCurrency(totalValorNotas)} • Total geral: {fCurrency(somaTotal)}
             </Typography>
           </Stack>
-          <Stack direction="row" spacing={1} alignItems="center">
-            {(status || tipoNota || tipoMovimento || comRetencao) && (
+          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+            {(status || tipoNota || origem || tipoMovimento || comRetencao) && (
               <Button
                 size="small"
                 variant="outlined"
@@ -673,6 +875,7 @@ export default function DashboardFiscalPage() {
                 onClick={() => {
                   setStatus('');
                   setTipoNota('');
+                  setOrigem('');
                   setTipoMovimento('');
                   setComRetencao('');
                 }}
@@ -680,8 +883,28 @@ export default function DashboardFiscalPage() {
                 Limpar Filtros
               </Button>
             )}
+            {selectedCliente && (
+              <LoadingButton
+                size="small"
+                variant="outlined"
+                color="success"
+                loading={baixandoLote}
+                startIcon={<Iconify icon="solar:zip-file-bold" />}
+                onClick={handleBaixarXmlLote}
+              >
+                Baixar XMLs em lote
+              </LoadingButton>
+            )}
           </Stack>
         </Stack>
+
+        {nfeBuscaHabilitada && nfeBloqueado && (
+          <Alert severity="warning" sx={{ mb: 2 }}>
+            A SEFAZ limitou temporariamente as consultas de NF-e deste cliente (consumo indevido).
+            A sincronização ficará disponível após{' '}
+            {new Date(nfeBloqueadoAte).toLocaleString('pt-BR')}.
+          </Alert>
+        )}
 
         <Stack spacing={1.5} aria-busy={loading && !!selectedCliente} aria-live="polite">
           {selectedCliente && loading
@@ -699,7 +922,10 @@ export default function DashboardFiscalPage() {
               const servicoDesc = Array.isArray(n.servicos) && n.servicos.length ? n.servicos[0]?.descricao : (n.descricao || n.discriminacao);
               const isSieg = n.origem === 'sieg';
               const isNacional = n.origem === 'nacional';
+              const isNfce = isNotaNfcePr(n); // NFC-e SEFAZ-PR (origem sefaz + tipoNota nfce)
+              const isSefaz = n.origem === 'sefaz' && !isNfce; // NF-e SEFAZ (modelo 55)
               const isEnotas = n.origem === 'enotas' || !n.origem; // fallback para notas antigas
+              const isSefazResumo = isSefaz && n.sefazResumo === true;
               const movimento = tipoMovimentoNota(n);
               const { retencao } = n;
               const temRetencao = retencao?.possuiRetencao === true;
@@ -711,7 +937,13 @@ export default function DashboardFiscalPage() {
               const docRaw = emitente
                 ? emitente.cpfCnpj
                 : tomador?.cpfCnpj ||
-                  (isSieg ? n.siegCnpjEmitente : isNacional ? n.nacionalCnpjEmitente : '');
+                  (isSieg
+                    ? n.siegCnpjEmitente
+                    : isNacional
+                      ? n.nacionalCnpjEmitente
+                      : isSefaz
+                        ? n.sefazCnpjEmitente
+                        : '');
               const docFormatted = docRaw ? formatCPFOrCNPJ(String(docRaw)) : '';
 
               return (
@@ -726,11 +958,26 @@ export default function DashboardFiscalPage() {
                         {tipoNotaLabel}
                       </Label>
                       <Label
-                        color={isNacional ? 'info' : 'default'}
+                        color={isNacional ? 'info' : isSefaz ? 'secondary' : isNfce ? 'secondary' : 'default'}
                         variant="soft"
                       >
-                        {isNacional ? 'Nacional' : isSieg ? 'SIEG' : 'eNotas'}
+                        {isNacional
+                          ? 'Nacional'
+                          : isNfce
+                            ? 'SEFAZ-PR'
+                            : isSefaz
+                              ? 'SEFAZ'
+                              : isSieg
+                                ? 'SIEG'
+                                : 'eNotas'}
                       </Label>
+                      {isSefazResumo && (
+                        <Tooltip title="XML completo será liberado após a manifestação automática (ciência da operação)">
+                          <Label color="warning" variant="soft">
+                            Resumo
+                          </Label>
+                        </Tooltip>
+                      )}
                       <Typography variant="subtitle2">
                         #{isSieg ? (n.siegNumero || n.numeroNota || '-') : (n.numeroNota || n.numero || '-')}
                       </Typography>
@@ -912,7 +1159,33 @@ export default function DashboardFiscalPage() {
                   )}
 
                   <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap">
-                    {isNacional ? (
+                    {isNfce ? (
+                      <>
+                        {!!n.linkNota && n.linkNota !== 'Processando...' && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            href={n.linkNota}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            startIcon={<Iconify icon="solar:qr-code-bold" />}
+                          >
+                            Cupom / QR
+                          </Button>
+                        )}
+                        <Button size="small" variant="outlined" onClick={() => handleBaixarXml(n)} startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
+                        <Button size="small" variant="outlined" onClick={() => handleConsultarNfce(n)} startIcon={<Iconify icon="solar:refresh-linear" />}>Consultar</Button>
+                      </>
+                    ) : isSefaz ? (
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        onClick={() => handleBaixarXml(n)}
+                        startIcon={<Iconify icon="solar:code-square-bold" />}
+                      >
+                        {isSefazResumo ? 'XML (resumo)' : 'XML'}
+                      </Button>
+                    ) : isNacional ? (
                       <>
                         <Button size="small" variant="outlined" onClick={() => handleAbrirPdf(n)} startIcon={<Iconify icon="solar:document-text-bold" />}>PDF</Button>
                         <Button size="small" variant="outlined" onClick={() => handleBaixarXml(n)} startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
@@ -994,9 +1267,11 @@ export default function DashboardFiscalPage() {
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
             <Alert severity="warning">
-              {notaToCancel?.origem === 'nacional'
-                ? 'A nota será cancelada diretamente no Emissor Nacional (Sefin) de forma síncrona.'
-                : 'Esta ação cancelará a nota fiscal no sistema. Certifique-se de cancelar também na Prefeitura/eNotas se necessário.'}
+              {isNotaNfcePr(notaToCancel)
+                ? 'A NFC-e será cancelada no SEFAZ-PR (evento 110111). Prazo de 30 minutos após a emissão; o motivo deve ter no mínimo 15 caracteres.'
+                : notaToCancel?.origem === 'nacional'
+                  ? 'A nota será cancelada diretamente no Emissor Nacional (Sefin) de forma síncrona.'
+                  : 'Esta ação cancelará a nota fiscal no sistema. Certifique-se de cancelar também na Prefeitura/eNotas se necessário.'}
             </Alert>
 
             {notaToCancel && (
@@ -1023,7 +1298,7 @@ export default function DashboardFiscalPage() {
               placeholder="Descreva o motivo do cancelamento..."
             />
 
-            {notaToCancel?.origem !== 'nacional' && (
+            {notaToCancel?.origem !== 'nacional' && !isNotaNfcePr(notaToCancel) && (
               <TextField
                 fullWidth
                 type="date"
@@ -1135,21 +1410,75 @@ export default function DashboardFiscalPage() {
             )}
 
             {importResultado && (
-              <Alert severity="success">
-                <Stack spacing={0.5}>
-                  <Typography variant="subtitle2">{importResultado.message}</Typography>
-                  <Typography variant="body2">
-                    Importadas: {importResultado.notasImportadas ?? 0} · Atualizadas:{' '}
-                    {importResultado.notasAtualizadas ?? 0} · Fora do período:{' '}
-                    {importResultado.notasIgnoradasForaPeriodo ?? 0} · Eventos:{' '}
-                    {importResultado.eventosProcessados ?? 0}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    Documentos processados: {importResultado.documentosProcessados ?? 0} · Último
-                    NSU: {importResultado.ultimoNSU ?? '-'}
-                  </Typography>
-                </Stack>
-              </Alert>
+              <Stack spacing={1}>
+                <Alert severity={importResultado.success !== false ? 'success' : 'warning'}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="subtitle2">{importResultado.message}</Typography>
+                    <Typography variant="body2">
+                      Total importadas: {importResultado.totalImportadas ?? 0} · Atualizadas:{' '}
+                      {importResultado.totalAtualizadas ?? 0}
+                    </Typography>
+                  </Stack>
+                </Alert>
+
+                {importResultado.resultados?.nacional && (
+                  <Alert severity="info">
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>Emissor Nacional</Typography>
+                    <Typography variant="body2">
+                      {importResultado.resultados.nacional.notasImportadas ?? 0} importadas ·{' '}
+                      {importResultado.resultados.nacional.notasAtualizadas ?? 0} atualizadas ·{' '}
+                      NSU: {importResultado.resultados.nacional.ultimoNSU ?? '-'}
+                    </Typography>
+                  </Alert>
+                )}
+
+                {importResultado.resultados?.nfe && (
+                  <Alert severity="info">
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>NF-e SEFAZ</Typography>
+                    <Typography variant="body2">
+                      {importResultado.resultados.nfe.notasImportadas ?? 0} importadas ·{' '}
+                      {importResultado.resultados.nfe.resumosImportados ?? 0} resumos ·{' '}
+                      NSU: {importResultado.resultados.nfe.ultimoNSU ?? '-'}
+                    </Typography>
+                    {importResultado.resultados.nfe._aviso && (
+                      <Typography variant="caption" color="text.secondary">
+                        {importResultado.resultados.nfe._aviso}
+                      </Typography>
+                    )}
+                  </Alert>
+                )}
+
+                {importResultado.resultados?.sieg && (
+                  <Alert severity="info">
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>SIEG</Typography>
+                    <Typography variant="body2">
+                      {importResultado.resultados.sieg.totalCriados ?? 0} criadas ·{' '}
+                      {importResultado.resultados.sieg.totalAtualizados ?? 0} atualizadas ·{' '}
+                      {importResultado.resultados.sieg.totalPulados ?? 0} ignoradas
+                    </Typography>
+                  </Alert>
+                )}
+
+                {importResultado.erros && Object.keys(importResultado.erros).length > 0 && (
+                  <Alert severity="error">
+                    {Object.entries(importResultado.erros).map(([tipo, msg]) => (
+                      <Typography key={tipo} variant="body2">
+                        <strong>{tipo.toUpperCase()}:</strong> {msg}
+                      </Typography>
+                    ))}
+                  </Alert>
+                )}
+
+                {importResultado.ignorados && Object.keys(importResultado.ignorados).length > 0 && (
+                  <Alert severity="warning">
+                    {Object.entries(importResultado.ignorados).map(([tipo, msg]) => (
+                      <Typography key={tipo} variant="body2">
+                        <strong>{tipo.toUpperCase()}:</strong> {msg}
+                      </Typography>
+                    ))}
+                  </Alert>
+                )}
+              </Stack>
             )}
           </Stack>
         </DialogContent>

@@ -240,7 +240,7 @@ export function GuiaFiscalUploadView() {
         
         // Capturar warnings
         if (errorData.warnings && Array.isArray(errorData.warnings)) {
-          warnings = errorData.warnings;
+          ({ warnings } = errorData);
         }
         
         // Tratamento específico por código
