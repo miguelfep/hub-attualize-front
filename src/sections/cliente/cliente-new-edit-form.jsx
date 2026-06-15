@@ -1121,22 +1121,6 @@ export function ClienteNewEditForm({ currentCliente }) {
                 </Grid>
                 <Grid xs={12}>
                   <Divider sx={{ my: 1 }} />
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>Integração Sieg</Typography>
-                </Grid>
-                <Grid xs={12}>
-                  <Controller
-                    name="importarNotasSieg"
-                    control={control}
-                    render={({ field }) => (
-                      <FormControlLabel
-                        control={<Switch {...field} checked={field.value} />}
-                        label="Importar Notas Fiscais da Sieg automaticamente"
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <Divider sx={{ my: 1 }} />
                 </Grid>
                 <Grid xs={12}>
                   <Field.Editor name="dadosFiscal" label="Dados Fiscais" fullWidth disabled={!statusAtivo} />

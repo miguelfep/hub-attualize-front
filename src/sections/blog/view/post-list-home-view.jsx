@@ -15,7 +15,7 @@ import { paths } from 'src/routes/paths';
 import { useDebounce } from 'src/hooks/use-debounce';
 
 import { orderBy } from 'src/utils/helper';
-import { ATTUALIZE_WHATSAPP_PHONE, buildWhatsAppLink } from 'src/utils/whatsapp-link';
+import { buildWhatsAppLink, ATTUALIZE_WHATSAPP_PHONE } from 'src/utils/whatsapp-link';
 
 import { POST_SORT_OPTIONS } from 'src/_mock';
 import { getBlogPosts, BLOG_CATEGORIAS } from 'src/actions/blog-ssr';

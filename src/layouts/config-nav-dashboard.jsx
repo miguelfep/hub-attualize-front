@@ -170,12 +170,6 @@ export const navData = [
         path: paths.dashboard.fiscal.root,
         icon: ICONS.tax,
         roles: ['admin', 'financeiro', 'operacional', 'gerencial'],
-        children: [
-          {
-            title: 'Notas Fiscais por Cliente',
-            path: paths.dashboard.fiscal.root,
-          },
-        ],
       },
       {
         title: 'Departamento Pessoal',

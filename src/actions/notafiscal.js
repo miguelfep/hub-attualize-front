@@ -51,7 +51,7 @@ export async function listarNotasFiscaisPorCliente({
   if (cpfCnpj) params.cpfCnpj = cpfCnpj;
   if (tipoNota) params.tipoNota = tipoNota;
   if (tipoMovimento) params.tipoMovimento = tipoMovimento; // 'entrada' | 'saida'
-  if (origem) params.origem = origem; // 'enotas' | 'sieg' | 'nacional'
+  if (origem) params.origem = origem; // 'enotas' | 'sieg' | 'nacional' | 'sefaz'
   if (comRetencao === true || comRetencao === false) params.comRetencao = comRetencao;
   return axios.get(`${baseUrl}nota-fiscal/${clienteId}`, { params });
 }
@@ -130,7 +130,8 @@ const emitenteCache = new Map();
  * Fallback: CNPJ persistido (siegCnpjEmitente/nacionalCnpjEmitente) sem nome.
  */
 export function dadosEmitenteNota(nota) {
-  const cnpjSalvo = nota?.siegCnpjEmitente || nota?.nacionalCnpjEmitente || '';
+  const cnpjSalvo =
+    nota?.siegCnpjEmitente || nota?.nacionalCnpjEmitente || nota?.sefazCnpjEmitente || '';
   const xmlBase64 = nota?.siegXmlBase64 || nota?.nacionalXmlBase64;
   if (!xmlBase64) return { nome: '', cpfCnpj: cnpjSalvo };
 
@@ -182,6 +183,153 @@ export async function cancelarNotaNoProvedor(notaFiscalId, motivo) {
   return axios.post(`${baseUrl}nota-fiscal/${notaFiscalId}/cancelar`, { motivo });
 }
 
+// ----------------------------------------------------------------------
+// NF-e (modelo 55) — Busca/importação via SEFAZ / Ambiente Nacional
+// (web service NFeDistribuicaoDFe). Escopo atual: apenas busca.
+// ----------------------------------------------------------------------
+
+export function isNotaSefaz(nota) {
+  // NF-e (modelo 55) da SEFAZ — NFC-e também usa origem 'sefaz', mas tipoNota 'nfce'
+  return nota?.origem === 'sefaz' && (nota?.tipoNota || 'nfe') !== 'nfce';
+}
+
+/** NFC-e (modelo 65) emitida no SEFAZ-PR — origem 'sefaz' + tipoNota 'nfce'. */
+export function isNotaNfcePr(nota) {
+  return nota?.origem === 'sefaz' && nota?.tipoNota === 'nfce';
+}
+
+/** True enquanto só temos o resumo (resNFe) — XML completo ainda não liberado. */
+export function isNotaSefazResumo(nota) {
+  return isNotaSefaz(nota) && nota?.sefazResumo === true;
+}
+
+/**
+ * Status/checklist da configuração de busca de NF-e na SEFAZ do cliente.
+ * @param {string} clienteId
+ * @param {{ testarConexao?: boolean }} [options] - testarConexao valida o mTLS com a SEFAZ
+ */
+export async function getNfeStatus(clienteId, { testarConexao = false } = {}) {
+  return axios.get(`${baseUrl}nota-fiscal/${clienteId}/nfe/status`, {
+    params: testarConexao ? { testarConexao: true } : {},
+  });
+}
+
+/**
+ * Sincronização incremental de NF-e (a partir do último NSU salvo na SEFAZ).
+ * @param {string} clienteId
+ * @param {{ forcarSync?: boolean }} [options] - forcarSync bypassa o intervalo
+ *   mínimo de 15 min entre syncs (somente admin). Ainda respeita o bloqueio 656.
+ */
+export async function sincronizarNfeSefaz(clienteId, { forcarSync = false } = {}) {
+  return axios.post(`${baseUrl}nota-fiscal/${clienteId}/nfe/sincronizar`, undefined, {
+    params: forcarSync ? { forcarSync: true } : {},
+  });
+}
+
+/** Sincroniza NF-e de TODOS os clientes habilitados (somente admin). */
+export async function sincronizarTodosNfeSefaz() {
+  return axios.post(`${baseUrl}nota-fiscal/nfe/sincronizar-todos`);
+}
+
+/**
+ * Baixa o XML da NF-e (procNFe completo, ou o resumo resNFe se ainda for
+ * `sefazResumo`). Sempre via rota autenticada, retornando blob.
+ */
+export async function baixarXmlNfeSefaz(nota) {
+  const id = nota._id || nota.id;
+  const res = await axios.get(`${baseUrl}nota-fiscal/${id}/sefaz/xml`, {
+    responseType: 'blob',
+  });
+  const blob = new Blob([res.data], { type: 'application/xml' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `NFe-${nota.chaveAcesso || id}.xml`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+// ----------------------------------------------------------------------
+// NFC-e (modelo 65) — emissão direta no SEFAZ-PR (nfce.sefa.pr.gov.br)
+// ----------------------------------------------------------------------
+
+/**
+ * Status/checklist da configuração de NFC-e (SEFAZ-PR) do cliente.
+ * @param {string} clienteId
+ * @param {{ testarSefaz?: boolean }} [options] - testarSefaz consulta o NFeStatusServico4 real
+ */
+export async function getNfcePrStatus(clienteId, { testarSefaz = false } = {}) {
+  return axios.get(`${baseUrl}nota-fiscal/${clienteId}/nfce-pr/status`, {
+    params: testarSefaz ? { testarSefaz: true } : {},
+  });
+}
+
+/** Configura os parâmetros de emissão de NFC-e (CSC, ambiente, série, etc.). */
+export async function configurarNfcePr(clienteId, payload) {
+  return axios.put(`${baseUrl}nota-fiscal/${clienteId}/nfce-pr/configurar`, payload);
+}
+
+/** Emite (gera e transmite) uma NFC-e ao SEFAZ-PR. */
+export async function emitirNfcePr(clienteId, body) {
+  return axios.post(`${baseUrl}nota-fiscal/${clienteId}/nfce-pr/emitir`, body);
+}
+
+/** Status do serviço NF-e PR (SEFAZ-PR — consulta direta por chave). Sem configuração própria; usa cert/ambiente de nfeConfig. */
+export async function getNfePrStatus(clienteId, { testarSefaz = false } = {}) {
+  return axios.get(`${baseUrl}nota-fiscal/${clienteId}/nfe-pr/status`, {
+    params: testarSefaz ? { testarSefaz: true } : {},
+  });
+}
+
+/** Configura o Emissor Nacional (download e/ou emissão de NFS-e). Todos os campos são opcionais — apenas os informados são atualizados. */
+export async function configurarNacional(clienteId, payload) {
+  return axios.put(`${baseUrl}nota-fiscal/${clienteId}/nacional/configurar`, payload);
+}
+
+/** Configura os parâmetros de busca/importação de NF-e via SEFAZ Ambiente Nacional (modelo 55). */
+export async function configurarNfe(clienteId, payload) {
+  return axios.put(`${baseUrl}nota-fiscal/${clienteId}/nfe/configurar`, payload);
+}
+
+/**
+ * Rota unificada — dispara todos os provedores habilitados em uma única chamada.
+ * Sem período: incremental (NF-e + Nacional). Com período: inclui SIEG por competência.
+ * @param {string} clienteId
+ * @param {{ competencia?: string, ano?: number, mesInicio?: number, mesFim?: number, tipos?: string[], forcarSync?: boolean }} body
+ */
+export async function sincronizarUnificado(clienteId, body = {}) {
+  return axios.post(`${baseUrl}nota-fiscal/${clienteId}/sincronizar`, body);
+}
+
+/** Cancela uma NFC-e (evento 110111) — prazo de 30 min; motivo com no mín. 15 caracteres. */
+export async function cancelarNfcePr(notaFiscalId, motivo) {
+  return axios.post(`${baseUrl}nota-fiscal/${notaFiscalId}/nfce-pr/cancelar`, { motivo });
+}
+
+/** Consulta a situação atual da NFC-e no SEFAZ-PR (NFeConsultaProtocolo4). */
+export async function consultarNfcePr(notaFiscalId) {
+  return axios.get(`${baseUrl}nota-fiscal/${notaFiscalId}/nfce-pr/consultar`);
+}
+
+/** Baixa o XML autorizado (nfeProc) da NFC-e. */
+export async function baixarXmlNfcePr(nota) {
+  const id = nota._id || nota.id;
+  const res = await axios.get(`${baseUrl}nota-fiscal/${id}/nfce-pr/xml`, {
+    responseType: 'blob',
+  });
+  const blob = new Blob([res.data], { type: 'application/xml' });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `NFCe-${nota.chaveAcesso || id}.xml`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 /**
  * Abre o PDF (DANFSe) da nota. Notas nacionais exigem download autenticado
  * (linkNota é caminho relativo da API), as demais abrem o link externo direto.
@@ -208,6 +356,14 @@ export async function abrirPdfNota(nota) {
  * as demais abrem o linkXml externo.
  */
 export async function baixarXmlNota(nota) {
+  if (isNotaNfcePr(nota)) {
+    await baixarXmlNfcePr(nota);
+    return;
+  }
+  if (isNotaSefaz(nota)) {
+    await baixarXmlNfeSefaz(nota);
+    return;
+  }
   if (!isNotaNacional(nota)) {
     if (nota?.linkXml) window.open(nota.linkXml, '_blank', 'noopener,noreferrer');
     return;
