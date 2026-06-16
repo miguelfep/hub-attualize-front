@@ -5,18 +5,20 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Grid from '@mui/material/Grid';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
+import Alert from '@mui/material/Alert';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
-import { alpha } from '@mui/material/styles';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CardContent from '@mui/material/CardContent';
+import CardHeader from '@mui/material/CardHeader';
 import InputAdornment from '@mui/material/InputAdornment';
+import Grid from '@mui/material/Unstable_Grid2';
 
 import { paths } from 'src/routes/paths';
 
@@ -31,29 +33,6 @@ import { createServicoAdmin } from 'src/actions/servicos-admin';
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
-
-const CustomDivider = () => <Divider sx={{ my: 4, borderStyle: 'dashed' }} />;
-
-const SectionHeader = ({ icon, title }) => (
-  <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
-    <Box
-      sx={{
-        width: 40,
-        height: 40,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderRadius: '50%',
-        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.08),
-      }}
-    >
-      <Iconify icon={icon} width={24} color="primary.main" />
-    </Box>
-    <Typography variant="h6" sx={{ fontWeight: 700 }}>
-      {title}
-    </Typography>
-  </Stack>
-);
 
 const onlyDigits = (v) => (v || '').replace(/\D/g, '');
 
@@ -73,8 +52,11 @@ export default function NovoServicoAdminPage() {
   const [saving, setSaving] = useState(false);
   const [loadingCliente, setLoadingCliente] = useState(true);
   const [cliente, setCliente] = useState(null);
-  const { settings: clienteSettings } = useGetSettings(clienteIdFromUrl || null);
+
+  const { settings: clienteSettings, settingsLoading } = useGetSettings(clienteIdFromUrl || null);
   const isNacional = clienteSettings?.provedorNFSe === 'nacional';
+  const aliquotaGeralEmpresa = clienteSettings?.eNotasConfig?.configuracaoNFSe?.aliquotaIss ?? null;
+
   const [form, setForm] = useState({
     nome: '',
     descricao: '',
@@ -87,29 +69,26 @@ export default function NovoServicoAdminPage() {
     itemListaServicoLC116: '',
     codigoTributacaoNacional: '',
     codigoTributacaoMunicipal: '',
+    aliquotaIss: '',
     status: true,
   });
 
-  // Carregar dados do cliente
   useEffect(() => {
     const loadCliente = async () => {
       if (!clienteIdFromUrl) {
         setLoadingCliente(false);
         return;
       }
-      
       try {
         setLoadingCliente(true);
         const clienteData = await getClienteById(clienteIdFromUrl);
         setCliente(clienteData);
-      } catch (error) {
-        console.error('Erro ao carregar cliente:', error);
+      } catch {
         toast.error('Erro ao carregar dados do cliente');
       } finally {
         setLoadingCliente(false);
       }
     };
-
     loadCliente();
   }, [clienteIdFromUrl]);
 
@@ -122,29 +101,26 @@ export default function NovoServicoAdminPage() {
     setForm((prev) => ({ ...prev, valorText: text, valor: value }));
   }, []);
 
-  const handleCNAEChange = useCallback((e) => {
-    const formatted = formatCNAE(e.target.value);
-    handleChange('cnae', formatted);
-  }, [handleChange]);
+  const handleCNAEChange = useCallback(
+    (e) => handleChange('cnae', formatCNAE(e.target.value)),
+    [handleChange]
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!clienteIdFromUrl) {
       toast.error('Cliente não informado');
       return;
     }
-    
     if (!form.nome?.trim()) {
       toast.warning('O nome do serviço é obrigatório');
       return;
     }
-    
     if (form.valor <= 0) {
       toast.warning('O valor deve ser maior que zero');
       return;
     }
-
     if (form.codigoTributacaoNacional && !/^\d{6}$/.test(form.codigoTributacaoNacional)) {
       toast.warning('Código de Tributação Nacional inválido: informe 6 dígitos (ex.: 171901)');
       return;
@@ -152,7 +128,6 @@ export default function NovoServicoAdminPage() {
 
     try {
       setSaving(true);
-
       const payload = {
         nome: form.nome.trim(),
         descricao: form.descricao?.trim() || '',
@@ -160,38 +135,33 @@ export default function NovoServicoAdminPage() {
         unidade: form.unidade,
         categoria: form.categoria?.trim() || '',
         cnae: form.cnae?.trim() || '',
-        codigoServicoMunicipio: form.codigoServicoMunicipio?.trim() || '',
+        codigoServicoMunicipio: isNacional ? '' : form.codigoServicoMunicipio?.trim() || '',
         itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
-        codigoTributacaoNacional: form.codigoTributacaoNacional?.trim() || '',
-        codigoTributacaoMunicipal: form.codigoTributacaoMunicipal?.trim() || '',
+        codigoTributacaoNacional: isNacional ? form.codigoTributacaoNacional?.trim() || '' : '',
+        codigoTributacaoMunicipal: isNacional ? form.codigoTributacaoMunicipal?.trim() || '' : '',
+        aliquotaIss: form.aliquotaIss !== '' && form.aliquotaIss != null ? Number(form.aliquotaIss) : null,
         status: form.status,
         clienteProprietarioId: clienteIdFromUrl,
       };
-
       await createServicoAdmin(payload);
-      
       toast.success('Serviço criado com sucesso!');
       router.push(`${paths.dashboard.servicos}?clienteId=${clienteIdFromUrl}`);
     } catch (error) {
-      console.error('Erro ao criar:', error);
-      
-      // Extrair mensagem de erro da resposta da API
-      const errorMessage = 
-        error?.response?.data?.message || 
-        error?.message || 
-        'Erro ao criar serviço';
-      
-      toast.error(errorMessage);
+      toast.error(
+        error?.response?.data?.message || error?.message || 'Erro ao criar serviço'
+      );
     } finally {
       setSaving(false);
     }
   };
 
-  if (loadingCliente) {
+  const backHref = `${paths.dashboard.servicos}?clienteId=${clienteIdFromUrl}`;
+
+  if (loadingCliente || settingsLoading) {
     return (
       <DashboardContent>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 400 }}>
-          <Typography>Carregando...</Typography>
+          <Typography color="text.secondary">Carregando...</Typography>
         </Box>
       </DashboardContent>
     );
@@ -202,17 +172,11 @@ export default function NovoServicoAdminPage() {
       <DashboardContent>
         <Card>
           <CardContent>
-            <Typography variant="h6" color="error">
-              Cliente não informado
-            </Typography>
+            <Typography variant="h6" color="error">Cliente não informado</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Por favor, selecione um cliente na página de gerenciamento de serviços.
+              Selecione um cliente na página de serviços.
             </Typography>
-            <Button
-              sx={{ mt: 2 }}
-              variant="contained"
-              onClick={() => router.push(paths.dashboard.servicos)}
-            >
+            <Button sx={{ mt: 2 }} variant="contained" onClick={() => router.push(paths.dashboard.servicos)}>
               Voltar
             </Button>
           </CardContent>
@@ -223,172 +187,261 @@ export default function NovoServicoAdminPage() {
 
   return (
     <DashboardContent>
-      <Box sx={{ mb: 3 }}>
-        <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 2 }}>
-          <Button
-            startIcon={<Iconify icon="solar:arrow-left-bold" />}
-            onClick={() => router.push(`${paths.dashboard.servicos}?clienteId=${clienteIdFromUrl}`)}
-          >
-            Voltar
-          </Button>
-        </Stack>
-        
-        <Typography variant="h4" sx={{ mb: 0.5 }}>
-          Novo Serviço
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          Cliente: {cliente?.razaoSocial || cliente?.nomeFantasia || cliente?.email || 'Carregando...'}
-        </Typography>
-      </Box>
+      {/* Cabeçalho */}
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }}>
+        <Button
+          size="small"
+          color="inherit"
+          startIcon={<Iconify icon="solar:arrow-left-bold" />}
+          onClick={() => router.push(backHref)}
+        >
+          Voltar
+        </Button>
+      </Stack>
+
+      <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} justifyContent="space-between" spacing={1} sx={{ mb: 3 }}>
+        <Box>
+          <Typography variant="h4">Novo Serviço</Typography>
+          <Typography variant="body2" color="text.secondary">
+            {cliente?.razaoSocial || cliente?.nomeFantasia || cliente?.email || ''}
+          </Typography>
+        </Box>
+        <Chip
+          icon={<Iconify icon={isNacional ? 'solar:buildings-bold' : 'solar:cloud-bold'} />}
+          label={isNacional ? 'Emissor Nacional (Sefin)' : 'eNotas'}
+          color={isNacional ? 'info' : 'default'}
+          variant="outlined"
+        />
+      </Stack>
 
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
+
+          {/* ── Coluna principal ── */}
           <Grid xs={12} md={8}>
-            <Card>
-              <CardContent sx={{ p: 3 }}>
-                <SectionHeader
-                  icon="solar:clipboard-list-bold-duotone"
-                  title="Informações do Serviço"
-                />
+            <Stack spacing={3}>
 
-                <Stack spacing={3}>
-                  <TextField
-                    fullWidth
-                    required
-                    label="Nome do Serviço"
-                    value={form.nome}
-                    onChange={(e) => handleChange('nome', e.target.value)}
-                    placeholder="Ex: Consulta psicológica"
-                  />
-
-                  <TextField
-                    fullWidth
-                    multiline
-                    rows={3}
-                    label="Descrição"
-                    value={form.descricao}
-                    onChange={(e) => handleChange('descricao', e.target.value)}
-                    placeholder="Descreva o serviço..."
-                  />
-
-                  <Grid container spacing={2}>
-                    <Grid xs={12} sm={6}>
-                      <TextField
-                        fullWidth
-                        required
-                        label="Valor"
-                        value={form.valorText}
-                        onChange={handleValorChange}
-                        InputProps={{
-                          startAdornment: <InputAdornment position="start">R$</InputAdornment>,
-                        }}
-                      />
-                    </Grid>
-
-                    <Grid xs={12} sm={6}>
-                      <TextField
-                        select
-                        fullWidth
-                        label="Unidade"
-                        value={form.unidade}
-                        onChange={(e) => handleChange('unidade', e.target.value)}
-                      >
-                        <MenuItem value="UN">Unidade (UN)</MenuItem>
-                        <MenuItem value="HR">Hora (HR)</MenuItem>
-                        <MenuItem value="DI">Dia (DI)</MenuItem>
-                        <MenuItem value="MÊS">Mês (MÊS)</MenuItem>
-                        <MenuItem value="SESSÃO">Sessão</MenuItem>
-                      </TextField>
-                    </Grid>
-                  </Grid>
-                </Stack>
-
-                <CustomDivider />
-
-                <SectionHeader
-                  icon="solar:tag-bold-duotone"
-                  title="Categorização e Informações Fiscais"
-                />
-
-                <Stack spacing={3}>
-                  <TextField
-                    fullWidth
-                    label="Categoria"
-                    value={form.categoria}
-                    onChange={(e) => handleChange('categoria', e.target.value)}
-                    placeholder="Ex: Consultoria, Serviços"
-                  />
-
-                  <TextField
-                    fullWidth
-                    label="CNAE"
-                    value={form.cnae}
-                    onChange={handleCNAEChange}
-                    placeholder="Ex: 8690-9/01"
-                    inputProps={{ maxLength: 12 }}
-                  />
-
-                  {!isNacional && (
+              {/* Informações básicas */}
+              <Card>
+                <CardHeader title="Informações básicas" titleTypographyProps={{ variant: 'h6' }} sx={{ pb: 0 }} />
+                <Divider sx={{ mt: 2 }} />
+                <CardContent>
+                  <Stack spacing={2.5}>
                     <TextField
                       fullWidth
-                      label="Código do Serviço no Município"
-                      value={form.codigoServicoMunicipio}
-                      onChange={(e) => handleChange('codigoServicoMunicipio', e.target.value)}
-                      placeholder="Ex: 01010501"
-                      helperText="Código do serviço conforme cadastro municipal"
+                      required
+                      label="Nome do serviço"
+                      value={form.nome}
+                      onChange={(e) => handleChange('nome', e.target.value)}
+                      placeholder="Ex: Declaração de IRPF"
                     />
-                  )}
 
-                  <TextField
-                    fullWidth
-                    label="Item Lista Serviço LC 116/2003"
-                    value={form.itemListaServicoLC116}
-                    onChange={(e) => handleChange('itemListaServicoLC116', e.target.value)}
-                    placeholder={isNacional ? 'Ex: 17.19.01' : 'Ex: 01.01'}
-                    helperText={
-                      isNacional
-                        ? 'Fallback para derivar o cTribNac quando não informado'
-                        : 'Item da Lei Complementar 116/2003'
-                    }
+                    <TextField
+                      fullWidth
+                      multiline
+                      rows={2}
+                      label="Descrição"
+                      value={form.descricao}
+                      onChange={(e) => handleChange('descricao', e.target.value)}
+                      placeholder="Descreva o serviço..."
+                    />
+
+                    <Grid container spacing={2} disableEqualOverflow>
+                      <Grid xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          required
+                          label="Valor"
+                          value={form.valorText}
+                          onChange={handleValorChange}
+                          InputProps={{
+                            startAdornment: <InputAdornment position="start">R$</InputAdornment>,
+                          }}
+                        />
+                      </Grid>
+                      <Grid xs={12} sm={6}>
+                        <TextField
+                          select
+                          fullWidth
+                          label="Unidade"
+                          value={form.unidade}
+                          onChange={(e) => handleChange('unidade', e.target.value)}
+                        >
+                          <MenuItem value="UN">Unidade (UN)</MenuItem>
+                          <MenuItem value="HR">Hora (HR)</MenuItem>
+                          <MenuItem value="DI">Dia (DI)</MenuItem>
+                          <MenuItem value="MÊS">Mês (MÊS)</MenuItem>
+                          <MenuItem value="SESSÃO">Sessão</MenuItem>
+                        </TextField>
+                      </Grid>
+                    </Grid>
+
+                    <Grid container spacing={2} disableEqualOverflow>
+                      <Grid xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          label="Categoria"
+                          value={form.categoria}
+                          onChange={(e) => handleChange('categoria', e.target.value)}
+                          placeholder="Ex: Contabilidade"
+                        />
+                      </Grid>
+                      <Grid xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          label="CNAE"
+                          value={form.cnae}
+                          onChange={handleCNAEChange}
+                          placeholder="Ex: 6920-6/01"
+                          inputProps={{ maxLength: 12 }}
+                        />
+                      </Grid>
+                    </Grid>
+                  </Stack>
+                </CardContent>
+              </Card>
+
+              {/* Fiscal — eNotas */}
+              {!isNacional && (
+                <Card>
+                  <CardHeader
+                    title="Configuração Fiscal — eNotas"
+                    titleTypographyProps={{ variant: 'h6' }}
+                    subheader="Campos usados na emissão de NFS-e via eNotas"
+                    sx={{ pb: 0 }}
                   />
+                  <Divider sx={{ mt: 2 }} />
+                  <CardContent>
+                    <Stack spacing={2.5}>
+                      <Grid container spacing={2} disableEqualOverflow>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Alíquota ISS (%)"
+                            type="number"
+                            value={form.aliquotaIss}
+                            onChange={(e) => handleChange('aliquotaIss', e.target.value)}
+                            placeholder={
+                              aliquotaGeralEmpresa != null
+                                ? `${aliquotaGeralEmpresa}% (geral da empresa)`
+                                : 'Usar alíquota geral'
+                            }
+                            inputProps={{ min: 0, max: 100, step: 0.01 }}
+                            helperText="Vazio = usa a alíquota geral da empresa"
+                          />
+                        </Grid>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Código do Serviço no Município"
+                            value={form.codigoServicoMunicipio}
+                            onChange={(e) => handleChange('codigoServicoMunicipio', e.target.value)}
+                            placeholder="Ex: 01010501"
+                            helperText="Conforme cadastro municipal"
+                          />
+                        </Grid>
+                      </Grid>
 
-                  {isNacional && (
-                    <>
                       <TextField
                         fullWidth
-                        label="Cód. Tributação Nacional (cTribNac)"
-                        value={form.codigoTributacaoNacional}
-                        onChange={(e) =>
-                          handleChange('codigoTributacaoNacional', onlyDigits(e.target.value).slice(0, 6))
-                        }
-                        placeholder="Ex: 171901"
-                        helperText="6 dígitos — usado na emissão pelo Emissor Nacional. Empresas com mais de um CNAE devem preencher por serviço"
-                        inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                        label="Item Lista Serviço LC 116/2003"
+                        value={form.itemListaServicoLC116}
+                        onChange={(e) => handleChange('itemListaServicoLC116', e.target.value)}
+                        placeholder="Ex: 17.19"
+                        helperText="Subitem da Lei Complementar 116/2003"
                       />
+                    </Stack>
+                  </CardContent>
+                </Card>
+              )}
 
-                      <TextField
-                        fullWidth
-                        label="Cód. Tributação Municipal (cTribMun)"
-                        value={form.codigoTributacaoMunicipal}
-                        onChange={(e) => handleChange('codigoTributacaoMunicipal', e.target.value)}
-                        helperText="Formato definido pelo município (opcional)"
-                      />
-                    </>
-                  )}
-                </Stack>
-              </CardContent>
-            </Card>
+              {/* Fiscal — Emissor Nacional */}
+              {isNacional && (
+                <Card>
+                  <CardHeader
+                    title="Configuração Fiscal — Emissor Nacional"
+                    titleTypographyProps={{ variant: 'h6' }}
+                    subheader="Campos usados na emissão de NFS-e pelo Sefin (Ambiente Nacional)"
+                    sx={{ pb: 0 }}
+                  />
+                  <Divider sx={{ mt: 2 }} />
+                  <CardContent>
+                    <Stack spacing={2.5}>
+                      <Alert severity="info" sx={{ mb: 0.5 }}>
+                        O <strong>Cód. Tributação Nacional (cTribNac)</strong> identifica o serviço no Sefin.
+                        Preencha por serviço quando a empresa tiver mais de um CNAE ativo.
+                      </Alert>
+
+                      <Grid container spacing={2} disableEqualOverflow>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Cód. Tributação Nacional (cTribNac)"
+                            value={form.codigoTributacaoNacional}
+                            onChange={(e) =>
+                              handleChange('codigoTributacaoNacional', onlyDigits(e.target.value).slice(0, 6))
+                            }
+                            placeholder="Ex: 171901"
+                            helperText="6 dígitos — obrigatório para emissão pelo Sefin"
+                            inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                          />
+                        </Grid>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Alíquota ISS (%)"
+                            type="number"
+                            value={form.aliquotaIss}
+                            onChange={(e) => handleChange('aliquotaIss', e.target.value)}
+                            placeholder={
+                              aliquotaGeralEmpresa != null
+                                ? `${aliquotaGeralEmpresa}% (geral da empresa)`
+                                : 'Usar alíquota geral'
+                            }
+                            inputProps={{ min: 0, max: 100, step: 0.01 }}
+                            helperText="Vazio = usa a alíquota geral da empresa"
+                          />
+                        </Grid>
+                      </Grid>
+
+                      <Grid container spacing={2} disableEqualOverflow>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Cód. Tributação Municipal (cTribMun)"
+                            value={form.codigoTributacaoMunicipal}
+                            onChange={(e) => handleChange('codigoTributacaoMunicipal', e.target.value)}
+                            helperText="Formato definido pelo município (opcional)"
+                          />
+                        </Grid>
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Item Lista Serviço LC 116/2003"
+                            value={form.itemListaServicoLC116}
+                            onChange={(e) => handleChange('itemListaServicoLC116', e.target.value)}
+                            placeholder="Ex: 17.19.01"
+                            helperText="Fallback para derivar o cTribNac quando não informado"
+                          />
+                        </Grid>
+                      </Grid>
+                    </Stack>
+                  </CardContent>
+                </Card>
+              )}
+
+            </Stack>
           </Grid>
 
+          {/* ── Coluna lateral ── */}
           <Grid xs={12} md={4}>
             <Stack spacing={3}>
+
+              {/* Status */}
               <Card>
-                <CardContent sx={{ p: 3 }}>
-                  <SectionHeader
-                    icon="solar:settings-bold-duotone"
-                    title="Status"
-                  />
-                  
+                <CardHeader title="Status" titleTypographyProps={{ variant: 'h6' }} sx={{ pb: 0 }} />
+                <Divider sx={{ mt: 2 }} />
+                <CardContent>
                   <TextField
                     select
                     fullWidth
@@ -402,9 +455,10 @@ export default function NovoServicoAdminPage() {
                 </CardContent>
               </Card>
 
+              {/* Ações */}
               <Card>
-                <CardContent sx={{ p: 3 }}>
-                  <Stack spacing={2}>
+                <CardContent>
+                  <Stack spacing={1.5}>
                     <LoadingButton
                       fullWidth
                       size="large"
@@ -415,23 +469,23 @@ export default function NovoServicoAdminPage() {
                     >
                       Criar Serviço
                     </LoadingButton>
-
                     <Button
                       fullWidth
                       variant="outlined"
                       color="inherit"
-                      onClick={() => router.push(`${paths.dashboard.servicos}?clienteId=${clienteIdFromUrl}`)}
+                      onClick={() => router.push(backHref)}
                     >
                       Cancelar
                     </Button>
                   </Stack>
                 </CardContent>
               </Card>
+
             </Stack>
           </Grid>
+
         </Grid>
       </form>
     </DashboardContent>
   );
 }
-

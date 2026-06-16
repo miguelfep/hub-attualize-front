@@ -283,6 +283,18 @@ export async function getNfePrStatus(clienteId, { testarSefaz = false } = {}) {
   });
 }
 
+/**
+ * Registra a empresa no eNotas em uma única chamada:
+ * cria/atualiza o registro com dados do cliente, envia a alíquota ISS e demais
+ * configs NFSe, e salva o empresaId retornado nas Settings do cliente.
+ * O certificado ativo é vinculado automaticamente pelo backend.
+ * @param {string} clienteId
+ * @param {{ ambiente: string, configuracaoNFSe: { aliquotaIss: number, codigoMunicipio: string, codigoServico: string, discriminacao?: string } }} payload
+ */
+export async function configurarEnotas(clienteId, payload) {
+  return axios.post(`${baseUrl}nota-fiscal/${clienteId}/configurar-enotas`, payload);
+}
+
 /** Configura o Emissor Nacional (download e/ou emissão de NFS-e). Todos os campos são opcionais — apenas os informados são atualizados. */
 export async function configurarNacional(clienteId, payload) {
   return axios.put(`${baseUrl}nota-fiscal/${clienteId}/nacional/configurar`, payload);

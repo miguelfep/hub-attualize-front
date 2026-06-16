@@ -99,10 +99,12 @@ export default function EditarServicoPage() {
     itemListaServicoLC116: '',
     codigoTributacaoNacional: '',
     codigoTributacaoMunicipal: '',
+    aliquotaIss: '',
   });
 
   const enotasConfig = settings.eNotasConfig;
   const isNacional = settings?.provedorNFSe === 'nacional';
+  const aliquotaGeralEmpresa = settings?.eNotasConfig?.configuracaoNFSe?.aliquotaIss ?? null;
 
   const [cnaesEmpresa, setCnaesEmpresa] = useState([]);
   const [loadingCnaes, setLoadingCnaes] = useState(false);
@@ -133,6 +135,7 @@ export default function EditarServicoPage() {
           itemListaServicoLC116: servicoData.itemListaServicoLC116 || '',
           codigoTributacaoNacional: servicoData.codigoTributacaoNacional || '',
           codigoTributacaoMunicipal: servicoData.codigoTributacaoMunicipal || '',
+          aliquotaIss: servicoData.aliquotaIss != null ? String(servicoData.aliquotaIss) : '',
         });
       } catch (error) {
         toast.error('Erro ao carregar dados do serviço.');
@@ -218,6 +221,7 @@ export default function EditarServicoPage() {
           itemListaServicoLC116: form.itemListaServicoLC116 || '',
           codigoTributacaoNacional: form.codigoTributacaoNacional || '',
           codigoTributacaoMunicipal: form.codigoTributacaoMunicipal || '',
+          aliquotaIss: form.aliquotaIss !== '' && form.aliquotaIss != null ? Number(form.aliquotaIss) : null,
         } : {}),
       };
       await portalUpdateServico(servicoId, payload);
@@ -380,6 +384,25 @@ export default function EditarServicoPage() {
                       <Grid xs={12} sm={6}>
                         <TextField
                           fullWidth
+                          label="Alíquota ISS (%)"
+                          type="number"
+                          value={form.aliquotaIss}
+                          onChange={(e) => setForm((f) => ({ ...f, aliquotaIss: e.target.value }))}
+                          placeholder={
+                            aliquotaGeralEmpresa != null
+                              ? `${aliquotaGeralEmpresa}% (geral da empresa)`
+                              : 'Usar alíquota geral'
+                          }
+                          inputProps={{ min: 0, max: 100, step: 0.01 }}
+                          helperText="Vazio = usa a alíquota geral configurada na empresa"
+                        />
+                      </Grid>
+                    )}
+
+                    {!isNacional && (
+                      <Grid xs={12}>
+                        <TextField
+                          fullWidth
                           label="Item Lista Serviço LC 116/2003"
                           value={form.itemListaServicoLC116}
                           onChange={(e) => setForm((f) => ({ ...f, itemListaServicoLC116: e.target.value }))}
@@ -405,6 +428,23 @@ export default function EditarServicoPage() {
                             placeholder="Ex: 171901"
                             helperText="6 dígitos — usado na emissão pelo Emissor Nacional. Empresas com mais de um CNAE devem preencher por serviço"
                             inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                          />
+                        </Grid>
+
+                        <Grid xs={12} sm={6}>
+                          <TextField
+                            fullWidth
+                            label="Alíquota ISS (%)"
+                            type="number"
+                            value={form.aliquotaIss}
+                            onChange={(e) => setForm((f) => ({ ...f, aliquotaIss: e.target.value }))}
+                            placeholder={
+                              aliquotaGeralEmpresa != null
+                                ? `${aliquotaGeralEmpresa}% (geral da empresa)`
+                                : 'Usar alíquota geral'
+                            }
+                            inputProps={{ min: 0, max: 100, step: 0.01 }}
+                            helperText="Vazio = usa a alíquota geral configurada na empresa"
                           />
                         </Grid>
 
