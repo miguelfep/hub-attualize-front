@@ -41,7 +41,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 // ----------------------------------------------------------------------
 
-const ROLES_PODE_VER_SENHA = ['admin', 'operacional', 'financeiro', 'contabil_externo'];
+const ROLES_PODE_DELETAR = ['admin', 'gerencial', 'superadmin'];
 
 const FORM_VAZIO = {
   nome: '',
@@ -192,7 +192,7 @@ function SenhaRow({ revealed, onToggle, onCopy }) {
 export default function ClienteCredenciaisSection({ clienteId }) {
   const theme = useTheme();
   const { user } = useAuthContext();
-  const podeVerSenha = ROLES_PODE_VER_SENHA.includes(user?.role);
+  const podeDeletar = ROLES_PODE_DELETAR.includes(user?.role);
 
   const [credenciais, setCredenciais] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -354,7 +354,7 @@ export default function ClienteCredenciaisSection({ clienteId }) {
     setCopiandoTudo((prev) => ({ ...prev, [id]: true }));
     try {
       let senha = revealedPasswords[id]?.value;
-      if (!senha && podeVerSenha) {
+      if (!senha) {
         try {
           senha = await getSenhaCredencial(id);
           setRevealedPasswords((prev) => ({ ...prev, [id]: { loading: false, value: senha, visible: false, timerId: null } }));
@@ -523,15 +523,17 @@ export default function ClienteCredenciaisSection({ clienteId }) {
                           <Iconify icon="solar:pen-bold" width={16} />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Excluir">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => setConfirmExcluir(row)}
-                        >
-                          <Iconify icon="solar:trash-bin-trash-bold" width={16} />
-                        </IconButton>
-                      </Tooltip>
+                      {podeDeletar && (
+                        <Tooltip title="Excluir">
+                          <IconButton
+                            size="small"
+                            color="error"
+                            onClick={() => setConfirmExcluir(row)}
+                          >
+                            <Iconify icon="solar:trash-bin-trash-bold" width={16} />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </Stack>
                   </Box>
 
@@ -558,16 +560,14 @@ export default function ClienteCredenciaisSection({ clienteId }) {
                       onCopy={() => copiar(row.usuarioLogin, 'Login copiado')}
                     />
 
-                    {podeVerSenha && (
-                      <>
-                        <Divider sx={{ my: 0.25 }} />
-                        <SenhaRow
-                          revealed={revealed}
-                          onToggle={() => handleTogglePassword(row)}
-                          onCopy={() => handleCopyPassword(row)}
-                        />
-                      </>
-                    )}
+                    <>
+                      <Divider sx={{ my: 0.25 }} />
+                      <SenhaRow
+                        revealed={revealed}
+                        onToggle={() => handleTogglePassword(row)}
+                        onCopy={() => handleCopyPassword(row)}
+                      />
+                    </>
 
                     {row.codigoAcesso && (
                       <>

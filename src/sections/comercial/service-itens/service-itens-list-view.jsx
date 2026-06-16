@@ -64,6 +64,16 @@ function ServiceItemTableRow({ row, onEditar, onExcluir }) {
         <TableCell>{row.titulo || '-'}</TableCell>
         <TableCell sx={{ maxWidth: 280 }}>{row.descricao || '-'}</TableCell>
         <TableCell align="right">{formatPreco(row.preco)}</TableCell>
+        <TableCell>
+          {row.aliquotaIss != null ? (
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <Typography variant="body2">{row.aliquotaIss}%</Typography>
+              <Typography variant="caption" color="success.main">(específica)</Typography>
+            </Stack>
+          ) : (
+            <Typography variant="body2" color="text.secondary">geral da empresa</Typography>
+          )}
+        </TableCell>
         <TableCell>{categoriaNome}</TableCell>
         <TableCell>{centroCustoNome}</TableCell>
         <TableCell align="right">
@@ -129,6 +139,7 @@ function TabelaItens({ lista, onEditar, onExcluir, loading }) {
                 <TableCell>Título</TableCell>
                 <TableCell>Descrição</TableCell>
                 <TableCell align="right">Preço</TableCell>
+                <TableCell>Alíquota ISS</TableCell>
                 <TableCell>Categoria (Receita)</TableCell>
                 <TableCell>Centro de Custo</TableCell>
                 <TableCell align="right">Ações</TableCell>
@@ -169,6 +180,7 @@ export function ServiceItensListView() {
     titulo: '',
     descricao: '',
     preco: '',
+    aliquotaIss: '',
     categoriaReceita: '',
     centroCusto: '',
     codigoTributacaoNacional: '',
@@ -208,6 +220,7 @@ export function ServiceItensListView() {
       titulo: '',
       descricao: '',
       preco: '',
+      aliquotaIss: '',
       categoriaReceita: '',
       centroCusto: '',
       codigoTributacaoNacional: '',
@@ -225,6 +238,7 @@ export function ServiceItensListView() {
       titulo: row.titulo || '',
       descricao: row.descricao || '',
       preco: row.preco != null ? String(row.preco) : '',
+      aliquotaIss: row.aliquotaIss != null ? String(row.aliquotaIss) : '',
       categoriaReceita: catId,
       centroCusto: ccId,
       codigoTributacaoNacional: row.codigoTributacaoNacional || '',
@@ -249,10 +263,12 @@ export function ServiceItensListView() {
       return;
     }
     try {
+      const aliquotaIssNum = form.aliquotaIss !== '' && form.aliquotaIss != null ? Number(form.aliquotaIss) : null;
       const payload = {
         titulo: form.titulo.trim(),
         descricao: (form.descricao || '').trim(),
         preco: precoNum,
+        aliquotaIss: aliquotaIssNum,
         categoriaReceita: form.categoriaReceita?.trim() || null,
         centroCusto: form.centroCusto?.trim() || null,
         codigoTributacaoNacional: form.codigoTributacaoNacional?.trim() || '',
@@ -342,6 +358,16 @@ export function ServiceItensListView() {
               value={form.preco}
               onChange={(e) => setForm({ ...form, preco: e.target.value })}
               inputProps={{ min: 0, step: 0.01 }}
+              fullWidth
+            />
+            <TextField
+              label="Alíquota ISS (%)"
+              type="number"
+              value={form.aliquotaIss}
+              onChange={(e) => setForm({ ...form, aliquotaIss: e.target.value })}
+              placeholder="Usar alíquota geral da Attualize"
+              helperText="Deixe em branco para usar a alíquota geral da Attualize como fallback na emissão da NFS-e"
+              inputProps={{ min: 0, max: 100, step: 0.01 }}
               fullWidth
             />
             <TextField

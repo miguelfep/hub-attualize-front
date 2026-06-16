@@ -8,6 +8,7 @@ import { LoadingButton } from '@mui/lab';
 import Grid from '@mui/material/Unstable_Grid2';
 import {
   Box,
+  Card,
   Chip,
   Stack,
   Alert,
@@ -25,15 +26,18 @@ import {
   TableHead,
   TableBody,
   TableCell,
+  CardHeader,
   Typography,
   InputLabel,
   IconButton,
+  CardContent,
   FormControl,
   DialogTitle,
   DialogContent,
   DialogActions,
   TableContainer,
   InputAdornment,
+  FormHelperText,
   FormControlLabel,
 } from '@mui/material';
 
@@ -45,6 +49,7 @@ import {
   getNfePrStatus,
   getNfcePrStatus,
   configurarNfcePr,
+  configurarEnotas,
   getNacionalStatus,
   configurarNacional,
   sincronizarDfeNacional,
@@ -272,7 +277,18 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
   };
 
   const handleProvedorChange = (event) => {
-    setLocalState((prev) => ({ ...prev, provedorNFSe: event.target.value }));
+    const { value } = event.target;
+    setLocalState((prev) => {
+      const idCertificado =
+        value === 'nacional' && !prev.nfseNacional.idCertificado && certificadoAtivo
+          ? certificadoAtivo._id || certificadoAtivo.id || ''
+          : prev.nfseNacional.idCertificado;
+      return {
+        ...prev,
+        provedorNFSe: value,
+        nfseNacional: { ...prev.nfseNacional, idCertificado },
+      };
+    });
   };
 
   const NACIONAL_NUMERIC_FIELDS = [
@@ -479,10 +495,16 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
 
   const handleNacionalBuscaToggle = (event) => {
     const { checked } = event.target;
-    setLocalState((prev) => ({
-      ...prev,
-      nfseNacional: { ...prev.nfseNacional, buscaHabilitada: checked },
-    }));
+    setLocalState((prev) => {
+      const idCertificado =
+        checked && !prev.nfseNacional.idCertificado && certificadoAtivo
+          ? certificadoAtivo._id || certificadoAtivo.id || ''
+          : prev.nfseNacional.idCertificado;
+      return {
+        ...prev,
+        nfseNacional: { ...prev.nfseNacional, buscaHabilitada: checked, idCertificado },
+      };
+    });
   };
 
   const NFCE_NUMERIC_FIELDS = ['proximoNumero'];
@@ -532,6 +554,36 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
   // Checklist de status da busca de NF-e na SEFAZ (GET /nota-fiscal/:clienteId/nfe/status)
   // "Verificar" só checa pré-requisitos; "Testar conexão" faz chamada real à SEFAZ
   // (sujeita a cooldown de 15 min — só ao clique explícito, nunca no load).
+  const [registrandoEnotas, setRegistrandoEnotas] = useState(false);
+
+  const handleRegistrarNoEnotas = async () => {
+    try {
+      setRegistrandoEnotas(true);
+      const nfseCfg = localState.eNotas.configuracaoNFSe || {};
+      const res = await configurarEnotas(clienteId, {
+        ambiente: localState.eNotas.ambiente || 'homologacao',
+        configuracaoNFSe: {
+          aliquotaIss: nfseCfg.aliquotaIss !== '' && nfseCfg.aliquotaIss != null ? Number(nfseCfg.aliquotaIss) : undefined,
+          codigoMunicipio: nfseCfg.codigoMunicipio || undefined,
+          codigoServico: nfseCfg.codigoServico || undefined,
+          discriminacao: nfseCfg.discriminacao || undefined,
+        },
+      });
+      const empresaIdRetornado = res?.data?.data?.empresaId || res?.data?.empresaId;
+      if (empresaIdRetornado) {
+        setLocalState((prev) => ({
+          ...prev,
+          eNotas: { ...prev.eNotas, empresaId: empresaIdRetornado },
+        }));
+      }
+      toast.success('Empresa registrada no eNotas com sucesso');
+    } catch (error) {
+      toast.error(error?.message || 'Falha ao registrar empresa no eNotas');
+    } finally {
+      setRegistrandoEnotas(false);
+    }
+  };
+
   const [nfeStatus, setNfeStatus] = useState(null);
   const [checkingNfe, setCheckingNfe] = useState(false);
   const [testandoConexaoNfe, setTestandoConexaoNfe] = useState(false);
@@ -648,18 +700,14 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         },
       };
 
-      await updateSettings(clienteId, {
-        funcionalidades: { ...localState.funcionalidades },
-        configuracoes: { ...localState.configuracoes },
-        provedorNFSe: localState.provedorNFSe || 'enotas',
-        eNotasConfig: eNotasPayload,
-      });
-
       // --- Emissor Nacional (PUT /nota-fiscal/:id/nacional/configurar) ---
+      // Salvar ANTES de updateSettings para que o codigoTributacaoNacional já esteja no banco
+      // quando updateSettings ativar provedorNFSe='nacional' e o backend validar as pendências.
       const nac = localState?.nfseNacional || {};
       await configurarNacional(clienteId, {
         provedorNFSe: localState.provedorNFSe || 'enotas',
         buscaHabilitada: Boolean(nac.buscaHabilitada),
+        idCertificado: nac.idCertificado || undefined,
         ambiente: nac.ambiente || 'homologacao',
         serieDps: nac.serieDps || '1',
         proximoNumeroDps: numOrUndefined(nac.proximoNumeroDps) ?? 1,
@@ -672,12 +720,20 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         percentualTotalTributosSN: numOrUndefined(nac.percentualTotalTributosSN),
       });
 
+      await updateSettings(clienteId, {
+        funcionalidades: { ...localState.funcionalidades },
+        configuracoes: { ...localState.configuracoes },
+        provedorNFSe: localState.provedorNFSe || 'enotas',
+        eNotasConfig: eNotasPayload,
+      });
+
       // --- NF-e SEFAZ (PUT /nota-fiscal/:id/nfe/configurar) ---
       const nfeCfg = localState?.nfe || {};
       await configurarNfe(clienteId, {
         buscaHabilitada: Boolean(nfeCfg.buscaHabilitada),
         ambiente: nfeCfg.ambiente || 'producao',
         manifestacaoAutomatica: Boolean(nfeCfg.manifestacaoAutomatica),
+        idCertificado: nfeCfg.idCertificado || undefined,
       });
 
       // --- NFC-e PR (PUT /nota-fiscal/:id/nfce-pr/configurar) ---
@@ -769,6 +825,25 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
   useEffect(() => {
     fetchCertificados();
   }, [fetchCertificados]);
+
+  // Quando os certificados carregam e Nacional está ativo (emissão ou download) sem certificado
+  // definido, pre-seleciona o certificado ativo para que o usuário não precise selecionar manualmente.
+  useEffect(() => {
+    if (!certificadoAtivo) return;
+    setLocalState((prev) => {
+      const nacAtivo = prev.nfseNacional.buscaHabilitada || prev.provedorNFSe === 'nacional';
+      if (nacAtivo && !prev.nfseNacional.idCertificado) {
+        return {
+          ...prev,
+          nfseNacional: {
+            ...prev.nfseNacional,
+            idCertificado: certificadoAtivo._id || certificadoAtivo.id || '',
+          },
+        };
+      }
+      return prev;
+    });
+  }, [certificadoAtivo]);
 
   const handleFileSelect = (event) => {
     const file = event.target.files?.[0];
@@ -919,15 +994,19 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
   // Removido fluxo de confirmação por senha do usuário; agora busca direto com token
 
   return (
-    <Box>
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-        <Typography variant="h6">Funcionalidades do Portal</Typography>
-        {saving && (
-          <Typography variant="caption" color="text.secondary">
-            Salvando configurações...
-          </Typography>
-        )}
-      </Box>
+    <Stack spacing={3}>
+
+      {/* ── Funcionalidades ── */}
+      <Card>
+        <CardHeader
+          title="Funcionalidades do Portal"
+          titleTypographyProps={{ variant: 'h6' }}
+          subheader="Ative as funcionalidades disponíveis neste portal"
+          sx={{ pb: 0 }}
+          action={saving ? <Typography variant="caption" color="text.secondary" sx={{ mr: 1, mt: 1.5, display: 'block' }}>Salvando...</Typography> : undefined}
+        />
+        <Divider sx={{ mt: 2 }} />
+        <CardContent>
 
       <Grid container spacing={2}>
         <Grid xs={12} md={6}>
@@ -1021,34 +1100,36 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         </Grid>
       </Grid>
 
+        </CardContent>
+      </Card>
+
+      {/* ── Emissão NFSe (só aparece quando habilitado nas funcionalidades) ── */}
       {localState.funcionalidades.emissaoNFSe && (
-        <>
-          <Divider sx={{ my: 3 }} />
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            alignItems={{ sm: 'center' }}
-            justifyContent="space-between"
-            spacing={2}
-            sx={{ mb: 2 }}
-          >
-            <Typography variant="h6">
-              {localState.provedorNFSe === 'nacional'
-                ? 'Emissor Nacional (NFSe)'
-                : 'Integração eNotas (NFSe)'}
-            </Typography>
-            <FormControl size="small" sx={{ minWidth: 220 }}>
-              <InputLabel id="provedor-nfse-label">Provedor NFSe</InputLabel>
-              <Select
-                labelId="provedor-nfse-label"
-                label="Provedor NFSe"
-                value={localState.provedorNFSe}
-                onChange={handleProvedorChange}
-              >
-                <MenuItem value="enotas">eNotas</MenuItem>
-                <MenuItem value="nacional">Emissor Nacional</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
+        <Card>
+          <CardHeader
+            title={localState.provedorNFSe === 'nacional' ? 'Emissor Nacional (NFSe)' : 'Integração eNotas (NFSe)'}
+            titleTypographyProps={{ variant: 'h6' }}
+            subheader={localState.provedorNFSe === 'nacional'
+              ? 'Emissão síncrona via Sefin · Requer certificado A1 e código IBGE do município'
+              : 'Emissão via API eNotas · Para migrar para o Emissor Nacional, altere o provedor ao lado'}
+            sx={{ pb: 0 }}
+            action={
+              <FormControl size="small" sx={{ minWidth: 200, mt: 1.5, mr: 1 }}>
+                <InputLabel id="provedor-nfse-label">Provedor NFSe</InputLabel>
+                <Select
+                  labelId="provedor-nfse-label"
+                  label="Provedor NFSe"
+                  value={localState.provedorNFSe}
+                  onChange={handleProvedorChange}
+                >
+                  <MenuItem value="enotas">eNotas</MenuItem>
+                  <MenuItem value="nacional">Emissor Nacional</MenuItem>
+                </Select>
+              </FormControl>
+            }
+          />
+          <Divider sx={{ mt: 2 }} />
+          <CardContent>
 
           {localState.provedorNFSe === 'nacional' && (
             <Grid container spacing={2}>
@@ -1196,10 +1277,28 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
                 />
               </Grid>
 
-              <Grid xs={12} md={8} sx={{ display: 'flex', alignItems: 'center' }}>
-                <Alert severity="info" sx={{ width: '100%' }}>
-                  Usa automaticamente o certificado digital A1 ativo do cliente.
-                </Alert>
+              <Grid xs={12} md={8}>
+                <FormControl fullWidth>
+                  <InputLabel id="nacional-cert-label">Certificado Digital (Emissor Nacional)</InputLabel>
+                  <Select
+                    labelId="nacional-cert-label"
+                    label="Certificado Digital (Emissor Nacional)"
+                    value={localState.nfseNacional.idCertificado || ''}
+                    onChange={handleNacionalChange('idCertificado')}
+                  >
+                    <MenuItem value="">
+                      <em>Usar certificado A1 ativo automaticamente</em>
+                    </MenuItem>
+                    {certificados.map((cert) => (
+                      <MenuItem key={cert._id || cert.id} value={cert._id || cert.id}>
+                        {cert.nome}{cert.status !== 'ativo' ? ` (${cert.status})` : ''} — válido até {formatarDataCertificado(cert.validTo)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                  <FormHelperText>
+                    Usado para mTLS e assinatura do DPS. Deixe em branco para usar o certificado ativo automaticamente.
+                  </FormHelperText>
+                </FormControl>
               </Grid>
               <Grid xs={12} md={4} sx={{ display: 'flex', alignItems: 'center' }}>
                 {nacionalCamposObrigatoriosOk ? (
@@ -1222,45 +1321,103 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
 
               {nacionalStatus && (
                 <Grid xs={12}>
-                  <Alert severity={nacionalStatus.prontoParaEmitir ? 'success' : 'warning'}>
-                    <Stack spacing={0.5}>
-                      <Typography variant="subtitle2">
+                  <Stack spacing={1}>
+                    <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                      {localState.nfseNacional.buscaHabilitada && (
+                        <Alert
+                          severity={nacionalStatus.prontoParaBaixar ? 'success' : 'warning'}
+                          sx={{ flex: 1, py: 0.5 }}
+                        >
+                          {nacionalStatus.prontoParaBaixar
+                            ? 'Download habilitado'
+                            : 'Download com pendências'}
+                        </Alert>
+                      )}
+                      <Alert
+                        severity={nacionalStatus.prontoParaEmitir ? 'success' : 'warning'}
+                        sx={{ flex: 1, py: 0.5 }}
+                      >
                         {nacionalStatus.prontoParaEmitir
                           ? 'Pronto para emitir pelo Emissor Nacional'
-                          : 'Configuração com pendências'}
-                      </Typography>
-                      {(nacionalStatus.pendencias || []).map((p) => (
-                        <Typography key={p} variant="body2">
-                          • {p}
-                        </Typography>
-                      ))}
-                      {nacionalStatus.certificado && (
-                        <Typography variant="body2">
-                          Certificado: {nacionalStatus.certificado.nome} — válido até{' '}
-                          {new Date(nacionalStatus.certificado.validTo).toLocaleDateString('pt-BR')}
-                          {nacionalStatus.certificado.expirado ? ' (EXPIRADO)' : ''}
-                        </Typography>
-                      )}
-                      {nacionalStatus.conexao && (
-                        <Typography variant="body2">
-                          Conexão Sefin: {nacionalStatus.conexao.mtlsOk ? 'mTLS OK' : 'falha mTLS'}
-                          {typeof nacionalStatus.conexao.municipioConveniado === 'boolean'
-                            ? ` · Município ${nacionalStatus.conexao.municipioConveniado ? 'conveniado' : 'NÃO conveniado'}`
-                            : ''}
-                          {nacionalStatus.conexao.erro ? ` · ${nacionalStatus.conexao.erro}` : ''}
-                        </Typography>
-                      )}
-                      {typeof nacionalStatus.servicosComCodigoTributacao === 'number' && (
-                        <Typography variant="body2">
-                          Serviços com código de tributação:{' '}
-                          {nacionalStatus.servicosComCodigoTributacao}
-                          {nacionalStatus.servicosComCodigoTributacao === 0
-                            ? ' — preencha o Cód. Tributação Nacional no cadastro dos serviços (a config acima é apenas fallback)'
-                            : ''}
-                        </Typography>
-                      )}
+                          : 'Emissão com pendências'}
+                      </Alert>
                     </Stack>
-                  </Alert>
+
+                    {(nacionalStatus.pendenciasDownload || []).length > 0 && (
+                      <Alert severity="error">
+                        <Stack spacing={0.25}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                            Bloqueiam download e emissão:
+                          </Typography>
+                          {(nacionalStatus.pendenciasDownload || []).map((p) => (
+                            <Typography key={p} variant="body2">
+                              • {p}
+                            </Typography>
+                          ))}
+                        </Stack>
+                      </Alert>
+                    )}
+
+                    {(nacionalStatus.pendenciasEmissao || []).length > 0 && (
+                      <Alert severity="warning">
+                        <Stack spacing={0.25}>
+                          <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                            Pendências para emissão:
+                          </Typography>
+                          {(nacionalStatus.pendenciasEmissao || []).map((p) => (
+                            <Typography key={p} variant="body2">
+                              • {p}
+                            </Typography>
+                          ))}
+                        </Stack>
+                      </Alert>
+                    )}
+
+                    {!(nacionalStatus.pendenciasDownload) &&
+                      !(nacionalStatus.pendenciasEmissao) &&
+                      (nacionalStatus.pendencias || []).length > 0 && (
+                        <Alert severity={nacionalStatus.prontoParaEmitir ? 'success' : 'warning'}>
+                          <Stack spacing={0.25}>
+                            {(nacionalStatus.pendencias || []).map((p) => (
+                              <Typography key={p} variant="body2">
+                                • {p}
+                              </Typography>
+                            ))}
+                          </Stack>
+                        </Alert>
+                      )}
+
+                    {(nacionalStatus.certificado || nacionalStatus.conexao || typeof nacionalStatus.servicosComCodigoTributacao === 'number') && (
+                      <Alert severity="info" sx={{ py: 0.5 }}>
+                        <Stack spacing={0.25}>
+                          {nacionalStatus.certificado && (
+                            <Typography variant="body2">
+                              Certificado: {nacionalStatus.certificado.nome} — válido até{' '}
+                              {new Date(nacionalStatus.certificado.validTo).toLocaleDateString('pt-BR')}
+                              {nacionalStatus.certificado.expirado ? ' (EXPIRADO)' : ''}
+                            </Typography>
+                          )}
+                          {nacionalStatus.conexao && (
+                            <Typography variant="body2">
+                              Conexão Sefin: {nacionalStatus.conexao.mtlsOk ? 'mTLS OK' : 'falha mTLS'}
+                              {typeof nacionalStatus.conexao.municipioConveniado === 'boolean'
+                                ? ` · Município ${nacionalStatus.conexao.municipioConveniado ? 'conveniado' : 'NÃO conveniado'}`
+                                : ''}
+                              {nacionalStatus.conexao.erro ? ` · ${nacionalStatus.conexao.erro}` : ''}
+                            </Typography>
+                          )}
+                          {typeof nacionalStatus.servicosComCodigoTributacao === 'number' && (
+                            <Typography variant="body2">
+                              Serviços com cód. tributação: {nacionalStatus.servicosComCodigoTributacao}
+                              {nacionalStatus.servicosComCodigoTributacao === 0
+                                ? ' — preencha o Cód. Tributação Nacional nos serviços (config acima é fallback)'
+                                : ''}
+                            </Typography>
+                          )}
+                        </Stack>
+                      </Alert>
+                    )}
+                  </Stack>
                 </Grid>
               )}
             </Grid>
@@ -1306,6 +1463,7 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
                     label="Empresa ID (eNotas)"
                     value={localState.eNotas.empresaId}
                     onChange={handleEnotasRootChange('empresaId')}
+                    helperText={localState.eNotas.empresaId ? 'Registrada' : 'Não registrada — use o botão abaixo para registrar automaticamente'}
                   />
                 </Grid>
 
@@ -1319,6 +1477,27 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
                         </Typography>
                       </Stack>
                     </Alert>
+                  </Grid>
+                )}
+
+                <Grid xs={12} md={4} sx={{ display: 'flex', alignItems: 'flex-start', pt: { md: 1 } }}>
+                  <LoadingButton
+                    fullWidth
+                    variant={localState.eNotas.empresaId ? 'outlined' : 'contained'}
+                    color="primary"
+                    loading={registrandoEnotas}
+                    startIcon={<Iconify icon="solar:buildings-bold" />}
+                    onClick={handleRegistrarNoEnotas}
+                    disabled={!localState.eNotas.configuracaoNFSe?.codigoMunicipio || !localState.eNotas.configuracaoNFSe?.codigoServico}
+                  >
+                    {localState.eNotas.empresaId ? 'Atualizar no eNotas' : 'Registrar no eNotas'}
+                  </LoadingButton>
+                </Grid>
+                {(!localState.eNotas.configuracaoNFSe?.codigoMunicipio || !localState.eNotas.configuracaoNFSe?.codigoServico) && (
+                  <Grid xs={12} md={8}>
+                    <Typography variant="caption" color="text.secondary">
+                      Preencha o Código do Município e o Código do Serviço abaixo para habilitar o registro.
+                    </Typography>
                   </Grid>
                 )}
 
@@ -1374,26 +1553,25 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
             )}
           </Grid>
           )}
-        </>
+          </CardContent>
+        </Card>
       )}
 
-      <Divider sx={{ my: 3 }} />
+      {/* ── Download e Busca de Documentos — sempre visível ── */}
+      <Card>
+        <CardHeader
+          title="Download e Busca de Documentos Fiscais"
+          titleTypographyProps={{ variant: 'h6' }}
+          subheader="Sempre disponível — independente da configuração de emissão de NFSe"
+          sx={{ pb: 0 }}
+        />
+        <Divider sx={{ mt: 2 }} />
+        <CardContent>
 
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        alignItems={{ sm: 'center' }}
-        justifyContent="space-between"
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Box>
-          <Typography variant="h6">Download de NFS-e (Emissor Nacional)</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Importa as NFS-e do CNPJ do cliente direto do Ambiente de Dados Nacional (ADN). Não
-            depende da emissão — basta um certificado digital A1 ativo.
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>NFS-e (Emissor Nacional / ADN)</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Importa as NFS-e do CNPJ do cliente direto do ADN. Não depende da emissão — basta um certificado digital A1 ativo.
           </Typography>
-        </Box>
-      </Stack>
 
       <Grid container spacing={2}>
         <Grid xs={12} md={6}>
@@ -1411,11 +1589,28 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
 
       {localState.nfseNacional.buscaHabilitada && (
         <Grid container spacing={2} sx={{ mt: 0.5 }}>
-          <Grid xs={12}>
-            <Alert severity="info">
-              Usa automaticamente o certificado digital A1 ativo do cliente. A distribuição é
-              incremental por NSU; também é possível importar um período específico.
-            </Alert>
+          <Grid xs={12} md={8}>
+            <FormControl fullWidth>
+              <InputLabel id="nacional-download-cert-label">Certificado Digital (Download ADN)</InputLabel>
+              <Select
+                labelId="nacional-download-cert-label"
+                label="Certificado Digital (Download ADN)"
+                value={localState.nfseNacional.idCertificado || ''}
+                onChange={handleNacionalChange('idCertificado')}
+              >
+                <MenuItem value="">
+                  <em>Usar certificado A1 ativo automaticamente</em>
+                </MenuItem>
+                {certificados.map((cert) => (
+                  <MenuItem key={cert._id || cert.id} value={cert._id || cert.id}>
+                    {cert.nome}{cert.status !== 'ativo' ? ` (${cert.status})` : ''} — válido até {formatarDataCertificado(cert.validTo)}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>
+                Usado para mTLS e download do ADN. Distribuição incremental por NSU.
+              </FormHelperText>
+            </FormControl>
           </Grid>
 
           <Grid xs={12} md={4}>
@@ -1484,50 +1679,74 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
 
           {nacionalDownloadStatus && (
             <Grid xs={12}>
-              <Alert
-                severity={
-                  nacionalDownloadStatus?.certificado &&
-                  !nacionalDownloadStatus.certificado.expirado &&
-                  nacionalDownloadStatus?.conexao?.mtlsOk
-                    ? 'success'
-                    : 'warning'
-                }
-              >
-                <Stack spacing={0.5}>
-                  {nacionalDownloadStatus.certificado ? (
-                    <Typography variant="body2">
-                      Certificado: {nacionalDownloadStatus.certificado.nome} — válido até{' '}
-                      {new Date(nacionalDownloadStatus.certificado.validTo).toLocaleDateString('pt-BR')}
-                      {nacionalDownloadStatus.certificado.expirado ? ' (EXPIRADO)' : ''}
-                    </Typography>
-                  ) : (
-                    <Typography variant="body2">
-                      Nenhum certificado digital A1 ativo encontrado.
-                    </Typography>
-                  )}
-                  {nacionalDownloadStatus.conexao && (
-                    <Typography variant="body2">
-                      Conexão Sefin:{' '}
-                      {nacionalDownloadStatus.conexao.mtlsOk ? 'mTLS OK' : 'falha mTLS'}
-                      {nacionalDownloadStatus.conexao.erro
-                        ? ` · ${nacionalDownloadStatus.conexao.erro}`
-                        : ''}
-                    </Typography>
-                  )}
-                </Stack>
-              </Alert>
+              <Stack spacing={1}>
+                <Alert severity={nacionalDownloadStatus.prontoParaBaixar ? 'success' : 'warning'} sx={{ py: 0.5 }}>
+                  {nacionalDownloadStatus.prontoParaBaixar
+                    ? 'Download habilitado — conexão e certificado OK'
+                    : 'Download com pendências'}
+                </Alert>
+
+                {(nacionalDownloadStatus.pendenciasDownload || []).length > 0 && (
+                  <Alert severity="error">
+                    <Stack spacing={0.25}>
+                      <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                        Bloqueiam download:
+                      </Typography>
+                      {(nacionalDownloadStatus.pendenciasDownload || []).map((p) => (
+                        <Typography key={p} variant="body2">
+                          • {p}
+                        </Typography>
+                      ))}
+                    </Stack>
+                  </Alert>
+                )}
+
+                <Alert
+                  severity={
+                    nacionalDownloadStatus?.certificado &&
+                    !nacionalDownloadStatus.certificado.expirado &&
+                    nacionalDownloadStatus?.conexao?.mtlsOk
+                      ? 'success'
+                      : 'warning'
+                  }
+                  sx={{ py: 0.5 }}
+                >
+                  <Stack spacing={0.25}>
+                    {nacionalDownloadStatus.certificado ? (
+                      <Typography variant="body2">
+                        Certificado: {nacionalDownloadStatus.certificado.nome} — válido até{' '}
+                        {new Date(nacionalDownloadStatus.certificado.validTo).toLocaleDateString('pt-BR')}
+                        {nacionalDownloadStatus.certificado.expirado ? ' (EXPIRADO)' : ''}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2">
+                        Nenhum certificado digital A1 ativo encontrado.
+                      </Typography>
+                    )}
+                    {nacionalDownloadStatus.conexao && (
+                      <Typography variant="body2">
+                        Conexão Sefin:{' '}
+                        {nacionalDownloadStatus.conexao.mtlsOk ? 'mTLS OK' : 'falha mTLS'}
+                        {nacionalDownloadStatus.conexao.erro
+                          ? ` · ${nacionalDownloadStatus.conexao.erro}`
+                          : ''}
+                      </Typography>
+                    )}
+                  </Stack>
+                </Alert>
+              </Stack>
             </Grid>
           )}
         </Grid>
       )}
 
-      <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3 }} />
 
-      <Typography variant="h6" sx={{ mb: 1 }}>Integração Sieg</Typography>
-      <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Importa automaticamente as notas fiscais (NF-e, NFS-e, CT-e, etc.) disponibilizadas pela
-        Sieg para o CNPJ do cliente.
-      </Typography>
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>Integração Sieg</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Importa automaticamente as notas fiscais (NF-e, NFS-e, CT-e, etc.) disponibilizadas pela
+            Sieg para o CNPJ do cliente.
+          </Typography>
       <Controller
         name="importarNotasSieg"
         control={control}
@@ -1539,23 +1758,17 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         )}
       />
 
-      <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3 }} />
 
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        alignItems={{ sm: 'center' }}
-        justifyContent="space-between"
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Box>
-          <Typography variant="h6">Busca de NF-e na SEFAZ (Produto, modelo 55)</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Importa automaticamente as NF-e do CNPJ do cliente direto da SEFAZ (Ambiente Nacional).
-            Requer CNPJ cadastrado e certificado digital A1 ativo.
-          </Typography>
-        </Box>
-      </Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mb: 2 }}>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>Busca de NF-e na SEFAZ (Produto, modelo 55)</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Importa automaticamente as NF-e do CNPJ do cliente direto da SEFAZ (Ambiente Nacional).
+                Requer CNPJ cadastrado e certificado digital A1 ativo.
+              </Typography>
+            </Box>
+          </Stack>
 
       <Grid container spacing={2}>
         <Grid xs={12} md={6}>
@@ -1615,10 +1828,28 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
             </FormControl>
           </Grid>
 
-          <Grid xs={12} md={8} sx={{ display: 'flex', alignItems: 'center' }}>
-            <Alert severity="info" sx={{ width: '100%' }}>
-              Usa automaticamente o certificado digital A1 ativo do cliente.
-            </Alert>
+          <Grid xs={12} md={8}>
+            <FormControl fullWidth>
+              <InputLabel id="nfe-cert-label">Certificado Digital (NF-e)</InputLabel>
+              <Select
+                labelId="nfe-cert-label"
+                label="Certificado Digital (NF-e)"
+                value={localState.nfe.idCertificado || ''}
+                onChange={handleNfeChange('idCertificado')}
+              >
+                <MenuItem value="">
+                  <em>Usar certificado A1 ativo automaticamente</em>
+                </MenuItem>
+                {certificados.map((cert) => (
+                  <MenuItem key={cert._id || cert.id} value={cert._id || cert.id}>
+                    {cert.nome}{cert.status !== 'ativo' ? ` (${cert.status})` : ''} — válido até {formatarDataCertificado(cert.validTo)}
+                  </MenuItem>
+                ))}
+              </Select>
+              <FormHelperText>
+                Usado para mTLS com a SEFAZ. Deixe em branco para usar o certificado ativo automaticamente.
+              </FormHelperText>
+            </FormControl>
           </Grid>
 
           <Grid xs={12} md={4}>
@@ -1720,24 +1951,24 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         </Grid>
       )}
 
-      <Divider sx={{ my: 3 }} />
+          <Divider sx={{ my: 3 }} />
 
-      {/* NF-e PR — consulta direta por chave via SEFAZ-PR. Usa cert/ambiente de nfeConfig. */}
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        alignItems={{ sm: 'center' }}
-        justifyContent="space-between"
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Box>
-          <Typography variant="h6">NF-e por chave (SEFAZ-PR)</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Consulta/importação de NF-e (modelo 55) diretamente no SEFAZ-PR por chave de acesso.
-            Complementar ao Ambiente Nacional — não precisa de NSU. Usa o certificado e ambiente
-            configurados na seção NF-e acima.
-          </Typography>
-        </Box>
+          {/* NF-e PR — consulta direta por chave via SEFAZ-PR. Usa cert/ambiente de nfeConfig. */}
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+            spacing={2}
+            sx={{ mb: 2 }}
+          >
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>NF-e por chave (SEFAZ-PR)</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Consulta/importação de NF-e (modelo 55) diretamente no SEFAZ-PR por chave de acesso.
+                Complementar ao Ambiente Nacional — não precisa de NSU. Usa o certificado e ambiente
+                configurados na seção NF-e acima.
+              </Typography>
+            </Box>
         <Stack direction="row" spacing={1}>
           <LoadingButton
             variant="outlined"
@@ -1791,8 +2022,15 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         </Grid>
       )}
 
-      <Divider sx={{ my: 3 }} />
+        </CardContent>
+      </Card>
 
+      {/* NFC-e (modelo 65) — desabilitado por enquanto */}
+      {false && (
+      <Card>
+        <CardHeader title="NFC-e (modelo 65) — SEFAZ-PR" titleTypographyProps={{ variant: 'h6' }} sx={{ pb: 0 }} />
+        <Divider sx={{ mt: 2 }} />
+        <CardContent>
       {/* NFC-e PR — emissão direta no SEFAZ-PR */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -1974,9 +2212,20 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         </Grid>
       )}
 
-      <Divider sx={{ my: 3 }} />
+        </CardContent>
+      </Card>
+      )} {/* fim NFC-e desabilitado */}
 
-      <Typography variant="h6" sx={{ mb: 2 }}>Certificados Digitais</Typography>
+      {/* ── Certificados Digitais ── */}
+      <Card>
+        <CardHeader
+          title="Certificados Digitais"
+          titleTypographyProps={{ variant: 'h6' }}
+          subheader="Gerencie os certificados A1 usados para emissão e download de documentos fiscais"
+          sx={{ pb: 0 }}
+        />
+        <Divider sx={{ mt: 2 }} />
+        <CardContent>
       <Stack spacing={2}>
         <Box>
           <input
@@ -2356,12 +2605,15 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
         </DialogActions>
       </Dialog>
 
+        </CardContent>
+      </Card>
+
       {settingsLoading && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+        <Typography variant="body2" color="text.secondary">
           Carregando configurações...
         </Typography>
       )}
-    </Box>
+    </Stack>
   );
 });
 

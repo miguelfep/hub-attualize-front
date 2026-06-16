@@ -1,7 +1,7 @@
 import useSWR from 'swr';
 import { useMemo } from 'react';
 
-import axios, { fetcher, endpoints } from 'src/utils/axios';
+import axios, { baseUrl, fetcher, endpoints } from 'src/utils/axios';
 
 const swrOptions = {
   revalidateIfStale: false,
@@ -70,4 +70,25 @@ export function useCheckFuncionalidade(clienteId, funcionalidade) {
   return memoizedValue;
 }
 
+// ----------------------------------------------------------------------
+// Attualize — configuração da empresa própria (NFSe/eNotas)
+// ----------------------------------------------------------------------
 
+/**
+ * Passo 1: salva os dados da empresa Attualize (CNPJ, razão social, endereço,
+ * alíquota ISS, configuração NFSe, provedorNFSe, nfseNacionalConfig, etc.).
+ * Quando o payload incluir nfseNacionalConfig.idCertificado com provedorNFSe 'enotas',
+ * o backend vincula o certificado automaticamente.
+ * @param {object} payload
+ */
+export async function configurarAttualize(payload) {
+  return axios.post(`${baseUrl}attualize-config/configurar`, payload);
+}
+
+/**
+ * Passo 2: usa os dados já salvos pelo passo 1, registra a empresa no eNotas
+ * e persiste o idEnotas retornado na configuração. Sem body.
+ */
+export async function criarEmpresaEnotasAttualize() {
+  return axios.post(`${baseUrl}attualize-config/criar-empresa-enotas`);
+}

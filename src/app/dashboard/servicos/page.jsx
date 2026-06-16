@@ -26,6 +26,7 @@ import { paths } from 'src/routes/paths';
 
 import { fCurrency } from 'src/utils/format-number';
 
+import { useGetSettings } from 'src/actions/settings';
 import { useGetAllClientes } from 'src/actions/clientes';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { useServicosAdmin } from 'src/actions/servicos-admin';
@@ -40,14 +41,15 @@ const TABLE_HEAD = [
   { id: 'nome', label: 'Serviço' },
   { id: 'categoria', label: 'Categoria', width: 160 },
   { id: 'valor', label: 'Valor', width: 120 },
-  { id: 'unidade', label: 'Unid.', width: 100 },
+  { id: 'unidade', label: 'Unid.', width: 80 },
+  { id: 'aliquotaIss', label: 'Alíquota ISS', width: 140 },
   { id: 'status', label: 'Status', width: 100 },
   { id: '', width: 88 },
 ];
 
 // ----------------------------------------------------------------------
 
-function ServicoTableRow({ row, onEdit, onToggle }) {
+function ServicoTableRow({ row, onEdit, onToggle, aliquotaGeralEmpresa }) {
   const isActive = row.status === true || row.status === 'true' || row.status === 1;
   const popover = usePopover();
 
@@ -76,6 +78,21 @@ function ServicoTableRow({ row, onEdit, onToggle }) {
       </td>
       <td style={{ padding: 16 }}>
         <Typography variant="body2">{row.unidade || 'UN'}</Typography>
+      </td>
+      <td style={{ padding: 16 }}>
+        {row.aliquotaIss != null ? (
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Typography variant="body2">{row.aliquotaIss}%</Typography>
+            <Typography variant="caption" color="success.main">(específica)</Typography>
+          </Stack>
+        ) : aliquotaGeralEmpresa != null ? (
+          <Stack direction="row" spacing={0.5} alignItems="center">
+            <Typography variant="body2">{aliquotaGeralEmpresa}%</Typography>
+            <Typography variant="caption" color="text.secondary">(geral)</Typography>
+          </Stack>
+        ) : (
+          <Typography variant="body2" color="text.secondary">-</Typography>
+        )}
       </td>
       <td style={{ padding: 16 }}>
         <Box
@@ -133,6 +150,8 @@ export default function ServicosAdminPage() {
     clienteSelecionado?._id || null,
     filters
   );
+  const { settings: clienteSettings } = useGetSettings(clienteSelecionado?._id || null);
+  const aliquotaGeralEmpresa = clienteSettings?.eNotasConfig?.configuracaoNFSe?.aliquotaIss ?? null;
 
   const handleClienteChange = useCallback(
     (newValue) => {
@@ -314,6 +333,7 @@ export default function ServicosAdminPage() {
                         key={row._id}
                         row={row}
                         onEdit={() => handleEditServico(row._id)}
+                        aliquotaGeralEmpresa={aliquotaGeralEmpresa}
                       />
                     ))}
                   {isNotFound && <TableNoData notFound={isNotFound} />}
