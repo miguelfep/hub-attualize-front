@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import { Box, Button, TextField, Container, Typography, CircularProgress } from '@mui/material';
 
+import { getUtmPayload } from 'src/utils/utm';
 import { normalizePhoneToE164, toPayloadLegacyDigits } from 'src/utils/phone-e164';
 
 import { PhoneInput } from 'src/components/phone-input';
@@ -31,6 +32,7 @@ export function LeadCapture() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          ...getUtmPayload(),
           ...formData,
           telefone: toPayloadLegacyDigits(formData.telefone ?? ''),
         }),

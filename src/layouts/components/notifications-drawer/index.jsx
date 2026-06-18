@@ -41,6 +41,10 @@ import { NotificationItem } from './notification-item';
 function resolverLink(notification) {
   const tarefaId = notification?.tarefa?._id || notification?.tarefa;
   if (tarefaId) return `${paths.dashboard.tarefas.minhas}?tarefa=${tarefaId}`;
+
+  const leadId = notification?.lead?._id || notification?.lead;
+  if (leadId) return paths.dashboard.comercial.leadDetails(leadId);
+
   return null;
 }
 

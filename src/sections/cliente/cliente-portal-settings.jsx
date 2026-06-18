@@ -74,6 +74,8 @@ import {
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
+import { ClienteDominioIntegracao } from './cliente-dominio-integracao';
+
 const MESES = [
   { value: 1, label: 'Janeiro' },
   { value: 2, label: 'Fevereiro' },
@@ -89,7 +91,7 @@ const MESES = [
   { value: 12, label: 'Dezembro' },
 ];
 
-export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) => {
+export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, control }, ref) => {
   const { settings, settingsLoading, refetchSettings } = useGetSettings(clienteId);
 
   const [saving, setSaving] = useState(false);
@@ -1555,6 +1557,11 @@ export const ClientePortalSettings = forwardRef(({ clienteId, control }, ref) =>
           )}
           </CardContent>
         </Card>
+      )}
+
+      {/* ── Integração Domínio (envio de XML à contabilidade) ── */}
+      {localState.funcionalidades.emissaoNFSe && (
+        <ClienteDominioIntegracao clienteId={clienteId} clienteCnpj={clienteCnpj} />
       )}
 
       {/* ── Download e Busca de Documentos — sempre visível ── */}

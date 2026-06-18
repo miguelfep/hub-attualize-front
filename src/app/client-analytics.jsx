@@ -3,11 +3,16 @@
 import { useEffect } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
 
+import { persistUtmFirstTouch } from 'src/utils/utm';
+
 export default function ClientAnalytics() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   useEffect(() => {
+    // Captura UTMs da URL (first-touch) a cada navegação.
+    persistUtmFirstTouch();
+
     const url = `${pathname}${searchParams ? `?${searchParams.toString()}` : ''}`;
     if (window.gtag) {
       window.gtag('config', 'G-L5BFBLV0Z4', {

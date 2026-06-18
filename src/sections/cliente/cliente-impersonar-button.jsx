@@ -40,7 +40,7 @@ const OPCAO_VIRTUAL = '__virtual__';
  * impersonação, trata o 409 (vários usuários do portal) com um diálogo de
  * escolha e, em sucesso, navega para o portal já como o cliente.
  */
-export function ClienteImpersonarButton({ cliente }) {
+export function ClienteImpersonarButton({ cliente, variant = 'icon' }) {
   const { user } = useAuthContext();
 
   const [loading, setLoading] = useState(false);
@@ -108,13 +108,25 @@ export function ClienteImpersonarButton({ cliente }) {
 
   return (
     <>
-      <Tooltip title="Logar como cliente">
-        <span>
-          <IconButton color="primary" onClick={handleClick} disabled={loading}>
-            <Iconify icon="solar:login-3-bold-duotone" />
-          </IconButton>
-        </span>
-      </Tooltip>
+      {variant === 'button' ? (
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleClick}
+          disabled={loading}
+          startIcon={<Iconify icon="solar:login-3-bold-duotone" />}
+        >
+          Logar como cliente
+        </Button>
+      ) : (
+        <Tooltip title="Logar como cliente">
+          <span>
+            <IconButton color="primary" onClick={handleClick} disabled={loading}>
+              <Iconify icon="solar:login-3-bold-duotone" />
+            </IconButton>
+          </span>
+        </Tooltip>
+      )}
 
       <Dialog open={!!candidatos} onClose={() => setCandidatos(null)} fullWidth maxWidth="xs">
         <DialogTitle>Selecionar usuário do portal</DialogTitle>

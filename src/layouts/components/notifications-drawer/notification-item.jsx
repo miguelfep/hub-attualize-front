@@ -19,6 +19,11 @@ const ICONE_POR_TIPO = {
   tarefa_atribuicao: 'solar:clipboard-check-bold',
   tarefa_prazo: 'solar:clock-circle-bold',
   tarefa_prazo_digest: 'solar:clock-circle-bold',
+  // Leads
+  lead_responsavel_mudou: 'solar:user-check-bold',
+  lead_atribuicao: 'solar:user-check-bold',
+  lead_prazo_vencimento: 'solar:clock-circle-bold',
+  lead_prazo_digest: 'solar:clock-circle-bold',
 };
 
 /** Ícone correspondente ao tipo de notificação (reusado fora do drawer). */
