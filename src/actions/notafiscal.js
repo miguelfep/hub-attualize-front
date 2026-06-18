@@ -342,6 +342,167 @@ export async function baixarXmlNfcePr(nota) {
   window.URL.revokeObjectURL(url);
 }
 
+// ----------------------------------------------------------------------
+// Integração Domínio Sistemas (Onvio / Thomson Reuters) — envio de XML de
+// NFS-e emitidas ao escritório de contabilidade. Tudo passa pelo hub; o front
+// nunca chama a API Domínio diretamente.
+// ----------------------------------------------------------------------
+
+/**
+ * Valida a chave do contador na API Domínio (activation/info) ANTES de ativar.
+ * Retorna os dados do escritório/cliente para conferência (inclui clienteCnpj).
+ * @param {string} clienteId
+ * @param {string} chaveContador
+ */
+export async function validarChaveDominio(clienteId, chaveContador) {
+  return axios.get(`${baseUrl}nota-fiscal/${clienteId}/dominio/info`, {
+    params: { chaveContador },
+  });
+}
+
+/**
+ * Ativa a integração Domínio: gera e persiste a integrationKey (criptografada).
+ * Após ativar, a integração fica com `habilitado: false` até ligar o toggle.
+ * @param {string} clienteId
+ * @param {string} chaveContador
+ */
+export async function ativarDominio(clienteId, chaveContador) {
+  return axios.post(`${baseUrl}nota-fiscal/${clienteId}/dominio/ativar`, { chaveContador });
+}
+
+/**
+ * Envia em lote as NFS-e de saída ainda não enviadas ao Domínio (máx. 200/chamada).
+ * Sem filtro: usa todas as elegíveis. Com `notaFiscalIds`, ignora as datas.
+ * Exige `dominioConfig.habilitado === true`.
+ * @param {string} clienteId
+ * @param {{ dataInicio?: string, dataFim?: string, notaFiscalIds?: string[] }} [body]
+ */
+export async function enviarLoteDominio(clienteId, body = {}) {
+  return axios.post(`${baseUrl}nota-fiscal/${clienteId}/dominio/enviar`, body);
+}
+
+/**
+ * Força o reenvio de uma NFS-e específica ao Domínio. Idempotente: se já está
+ * `enviado`, o backend retorna 200 sem reenviar.
+ * @param {string} notaFiscalId
+ */
+export async function reenviarNotaDominio(notaFiscalId) {
+  return axios.post(`${baseUrl}nota-fiscal/${notaFiscalId}/dominio/reenviar`);
+}
+
+/**
+ * Força o reenvio do evento de cancelamento (e101101) de uma NFS-e nacional ao
+ * Domínio. Use quando `dominioEnvioCancelamento.status === 'erro'`. Escopo atual:
+ * apenas notas `origem: 'nacional'` (temos o XML assinado do evento).
+ * @param {string} notaFiscalId
+ */
+export async function reenviarCancelamentoDominio(notaFiscalId) {
+  return axios.post(`${baseUrl}nota-fiscal/${notaFiscalId}/dominio/reenviar-cancelamento`);
+}
+
+/**
+ * Resumo/dashboard de envios ao Domínio do cliente (config + contagem por status).
+ * @param {string} clienteId
+ * @param {{ dataInicio?: string, dataFim?: string }} [options]
+ */
+export async function getDominioStatus(clienteId, { dataInicio, dataFim } = {}) {
+  const params = {};
+  if (dataInicio) params.dataInicio = dataInicio;
+  if (dataFim) params.dataFim = dataFim;
+  return axios.get(`${baseUrl}nota-fiscal/${clienteId}/dominio/status`, { params });
+}
+
+/** Remove tudo que não for dígito (para comparar CNPJs com/sem máscara). */
+export function normalizarCnpj(cnpj) {
+  return String(cnpj ?? '').replace(/\D/g, '');
+}
+
+/**
+ * Rótulo/cor do status de envio ao Domínio de uma nota. Sem `dominioEnvio`
+ * significa que ainda não houve tentativa (integração off ou nota anterior).
+ * @param {{ status?: string }} [dominioEnvio]
+ * @param {boolean} [integracaoHabilitada]
+ * @returns {{ label: string, color: 'default'|'warning'|'success'|'error' }}
+ */
+export function labelStatusDominio(dominioEnvio, integracaoHabilitada) {
+  if (!integracaoHabilitada) return { label: 'Integração off', color: 'default' };
+  if (!dominioEnvio?.status) return { label: 'Não enviado', color: 'default' };
+  const map = {
+    pendente: { label: 'Pendente', color: 'default' },
+    enviando: { label: 'Enviando...', color: 'warning' },
+    processando: { label: 'Processando', color: 'warning' },
+    enviado: { label: 'Enviado ao Domínio', color: 'success' },
+    erro: { label: 'Erro no envio', color: 'error' },
+  };
+  return map[dominioEnvio.status] || { label: 'Não enviado', color: 'default' };
+}
+
+/**
+ * Extrai uma mensagem legível do campo `erro` de um envio ao Domínio. O backend
+ * pode mandar uma string OU um objeto (ex.: resposta bruta da API Domínio, com
+ * `message`/`error`/`mensagem`/array de erros), que sem tratamento vira
+ * "[object Object]" na UI.
+ * @param {string|object} erro
+ * @returns {string}
+ */
+export function mensagemErroDominio(erro) {
+  if (!erro) return '';
+  if (typeof erro === 'string') return erro;
+  if (Array.isArray(erro)) {
+    return erro.map((e) => mensagemErroDominio(e)).filter(Boolean).join(' · ');
+  }
+  if (typeof erro === 'object') {
+    const direta =
+      erro.message ||
+      erro.mensagem ||
+      erro.error ||
+      erro.erro ||
+      erro.detail ||
+      erro.descricao ||
+      erro.description;
+    if (direta) return mensagemErroDominio(direta);
+    // Domínio às vezes devolve { errors: [...] } ou { motivos: [...] }
+    if (Array.isArray(erro.errors)) return mensagemErroDominio(erro.errors);
+    if (Array.isArray(erro.motivos)) return mensagemErroDominio(erro.motivos);
+    try {
+      return JSON.stringify(erro);
+    } catch {
+      return 'Erro no envio';
+    }
+  }
+  return String(erro);
+}
+
+/** True quando a nota pode ser reenviada manualmente ao Domínio (erro/pendente/sem tentativa). */
+export function podeReenviarDominio(dominioEnvio) {
+  if (!dominioEnvio) return true;
+  return dominioEnvio.status === 'erro' || dominioEnvio.status === 'pendente';
+}
+
+/**
+ * True quando o evento de cancelamento de uma nota pode ser reenviado ao Domínio.
+ * Só faz sentido para NFS-e nacional cancelada com tentativa de envio em erro/pendente.
+ * @param {{ status?: string, origem?: string }} nota
+ */
+export function podeReenviarCancelamentoDominio(nota) {
+  if (!nota) return false;
+  const cancelada = String(nota.status || '').toLowerCase() === 'cancelada';
+  const nacional = nota.origem === 'nacional';
+  const env = nota.dominioEnvioCancelamento;
+  if (!cancelada || !nacional || !env) return false;
+  return env.status === 'erro' || env.status === 'pendente';
+}
+
+/** True quando a nota é elegível para envio ao Domínio (NFS-e de saída emitida via enotas/nacional). */
+export function isNotaElegivelDominio(nota) {
+  if (!nota) return false;
+  const origemOk = nota.origem === 'enotas' || nota.origem === 'nacional' || !nota.origem;
+  const tipoOk = !nota.tipoNota || nota.tipoNota === 'nfse';
+  const saida = tipoMovimentoNota(nota) !== 'entrada';
+  const emitida = String(nota.status || '').toLowerCase() === 'emitida';
+  return origemOk && tipoOk && saida && emitida;
+}
+
 /**
  * Abre o PDF (DANFSe) da nota. Notas nacionais exigem download autenticado
  * (linkNota é caminho relativo da API), as demais abrem o link externo direto.

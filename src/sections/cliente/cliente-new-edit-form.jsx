@@ -1294,6 +1294,7 @@ export function ClienteNewEditForm({ currentCliente }) {
               <ClientePortalSettings
                 ref={portalSettingsRef}
                 clienteId={currentCliente?._id}
+                clienteCnpj={currentCliente?.cnpj}
                 control={control}
               />
             </Card>

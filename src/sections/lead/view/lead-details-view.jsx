@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, isValidElement } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
-import Tab from '@mui/material/Tab';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
-import Tabs from '@mui/material/Tabs';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Switch from '@mui/material/Switch';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -16,51 +15,88 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import { alpha, useTheme } from '@mui/material/styles';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { fDateTime } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
-import { fDate, fDateTime } from 'src/utils/format-time';
 
+import { getUsersInternos } from 'src/actions/users';
 import { DashboardContent } from 'src/layouts/dashboard';
 import { getInvoicesByLeadId } from 'src/actions/invoices';
-import { getLeadById, addLeadContact, getLeadContacts, updateLeadStatus } from 'src/actions/lead';
+import {
+  getLeadById,
+  addLeadContact,
+  getLeadContacts,
+  updateLeadStatus,
+  saveLeadProgress,
+} from 'src/actions/lead';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
-import { getUser } from 'src/auth/context/jwt';
+import { useAuthContext } from 'src/auth/hooks';
+
+import { LeadResponsavelField } from '../components/lead-responsavel-field';
+import { getStatusLabel, getStatusColor, LEAD_STATUS_OPTIONS } from '../lead-status';
 
 // ----------------------------------------------------------------------
 
 export function LeadDetailsView({ id }) {
   const theme = useTheme();
   const router = useRouter();
-  const user = getUser();
+  const { user } = useAuthContext();
+
   const [loading, setLoading] = useState(true);
   const [lead, setLead] = useState(null);
   const [contatos, setContatos] = useState([]);
   const [orcamentos, setOrcamentos] = useState([]);
-  const [currentTab, setCurrentTab] = useState('geral');
+  const [usuarios, setUsuarios] = useState([]);
+  const [pegando, setPegando] = useState(false);
 
-  // Form de adicionar contato
-  const [novoContato, setNovoContato] = useState({
-    channel: 'whatsapp',
-    notes: '',
-    outcome: '',
-  });
-  const [adding, setAdding] = useState(false);
-
-  // Form de atualizar CRM
-  const [crmForm, setCrmForm] = useState({
+  // ---- Formulários de edição (inline) ----
+  const [infoForm, setInfoForm] = useState({
+    nome: '',
+    email: '',
+    telefone: '',
     statusLead: '',
-    owner: user?.name || '',
+    owner: '',
+    ownerId: '',
     nextFollowUpAt: '',
   });
-  const [updating, setUpdating] = useState(false);
+  const [obsForm, setObsForm] = useState('');
+  const [empresaForm, setEmpresaForm] = useState({
+    nomeEmpresa: '',
+    faturamentoMensal: '',
+    numeroSocios: '',
+    formaAtuacao: '',
+    atividadePrincipal: '',
+    descricaoAtividade: '',
+    possuiFuncionarios: false,
+    numeroFuncionarios: '',
+  });
+  const [enderecoForm, setEnderecoForm] = useState({
+    cep: '',
+    rua: '',
+    numero: '',
+    complemento: '',
+    bairro: '',
+    cidade: '',
+    estado: '',
+  });
+
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [savingObs, setSavingObs] = useState(false);
+  const [savingEmpresa, setSavingEmpresa] = useState(false);
+  const [savingEndereco, setSavingEndereco] = useState(false);
+
+  // Form de adicionar contato
+  const [novoContato, setNovoContato] = useState({ channel: 'whatsapp', notes: '', outcome: '' });
+  const [adding, setAdding] = useState(false);
 
   const carregarDados = useCallback(async () => {
     setLoading(true);
@@ -71,17 +107,41 @@ export function LeadDetailsView({ id }) {
         getInvoicesByLeadId(id),
       ]);
 
-      // Ajustar para lidar com diferentes formatos de resposta
       const leadData = leadResult?.lead || leadResult?.data || leadResult;
-      
+
       if (leadData && !leadResult?.message && !leadResult?.response) {
         setLead(leadData);
-        setCrmForm({
-          statusLead: leadData.statusLead || '',
-          owner: leadData.owner || user?.name || '',
-          nextFollowUpAt: leadData.nextFollowUpAt
-            ? leadData.nextFollowUpAt.split('T')[0]
-            : '',
+        const add = leadData.additionalInfo || {};
+        const end = leadData.endereco || add.endereco || {};
+
+        setInfoForm({
+          nome: leadData.nome || '',
+          email: leadData.email || '',
+          telefone: leadData.telefone || '',
+          statusLead: leadData.statusLead || 'novo',
+          owner: leadData.owner || '',
+          ownerId: leadData.ownerId || '',
+          nextFollowUpAt: leadData.nextFollowUpAt ? leadData.nextFollowUpAt.split('T')[0] : '',
+        });
+        setObsForm(leadData.observacoes || '');
+        setEmpresaForm({
+          nomeEmpresa: add.nomeEmpresa || '',
+          faturamentoMensal: add.faturamentoMensal ?? '',
+          numeroSocios: add.numeroSocios ?? '',
+          formaAtuacao: add.formaAtuacao || '',
+          atividadePrincipal: add.atividades?.atividadePrincipal || '',
+          descricaoAtividade: add.atividades?.descricaoAtividade || '',
+          possuiFuncionarios: !!add.atividades?.possuiFuncionarios,
+          numeroFuncionarios: add.atividades?.numeroFuncionarios ?? '',
+        });
+        setEnderecoForm({
+          cep: end.cep || '',
+          rua: end.rua || end.endereco || '',
+          numero: end.numero || '',
+          complemento: end.complemento || '',
+          bairro: end.bairro || '',
+          cidade: end.cidade || leadData.cidade || '',
+          estado: end.estado || leadData.estado || '',
         });
       } else {
         toast.error('Lead não encontrado');
@@ -104,27 +164,169 @@ export function LeadDetailsView({ id }) {
     } finally {
       setLoading(false);
     }
-  }, [id, user?.name]);
+  }, [id]);
 
   useEffect(() => {
-    if (id) {
-      carregarDados();
-    }
+    if (id) carregarDados();
   }, [id, carregarDados]);
+
+  // Carrega todos os usuários internos para o select de responsável.
+  useEffect(() => {
+    getUsersInternos()
+      .then((res) => {
+        const data = res?.data?.data || res?.data || [];
+        setUsuarios(Array.isArray(data) ? data : []);
+      })
+      .catch(() => setUsuarios([]));
+  }, []);
+
+  // Mescla um patch ao additionalInfo atual, preservando o que já existe.
+  const mergeAdditionalInfo = (patch) => ({ ...(lead?.additionalInfo || {}), ...patch });
+
+  const handleSalvarInfo = async () => {
+    setSavingInfo(true);
+    try {
+      const [statusRes, dadosRes] = await Promise.all([
+        updateLeadStatus(id, {
+          statusLead: infoForm.statusLead,
+          owner: infoForm.owner,
+          ownerId: infoForm.ownerId || null,
+          nextFollowUpAt: infoForm.nextFollowUpAt || null,
+        }),
+        saveLeadProgress({
+          id,
+          nome: infoForm.nome,
+          email: infoForm.email,
+          telefone: infoForm.telefone,
+        }),
+      ]);
+
+      if (statusRes?.success && dadosRes?.success) {
+        toast.success('Informações salvas!');
+        await carregarDados();
+      } else {
+        toast.error(statusRes?.error || dadosRes?.error || 'Erro ao salvar informações');
+      }
+    } catch (error) {
+      toast.error('Erro ao salvar informações');
+    }
+    setSavingInfo(false);
+  };
+
+  // Comercial "pega" o lead: atribui a si mesmo e persiste imediatamente.
+  const handlePegarLead = async () => {
+    setPegando(true);
+    try {
+      const res = await updateLeadStatus(id, {
+        statusLead: infoForm.statusLead || lead?.statusLead || 'novo',
+        owner: user?.name,
+        ownerId: user?._id || user?.id || null,
+        nextFollowUpAt: infoForm.nextFollowUpAt || lead?.nextFollowUpAt || null,
+      });
+      if (res?.success) {
+        toast.success('Lead atribuído a você!');
+        await carregarDados();
+      } else {
+        toast.error(res?.error || 'Erro ao pegar o lead');
+      }
+    } catch (error) {
+      toast.error('Erro ao pegar o lead');
+    }
+    setPegando(false);
+  };
+
+  const handleSalvarObs = async () => {
+    setSavingObs(true);
+    try {
+      const res = await saveLeadProgress({ id, observacoes: obsForm });
+      if (res?.success) {
+        toast.success('Observações salvas!');
+        await carregarDados();
+      } else {
+        toast.error(res?.error || 'Erro ao salvar observações');
+      }
+    } catch (error) {
+      toast.error('Erro ao salvar observações');
+    }
+    setSavingObs(false);
+  };
+
+  const handleSalvarEmpresa = async () => {
+    setSavingEmpresa(true);
+    try {
+      const additionalInfo = mergeAdditionalInfo({
+        nomeEmpresa: empresaForm.nomeEmpresa,
+        faturamentoMensal: empresaForm.faturamentoMensal === '' ? null : Number(empresaForm.faturamentoMensal),
+        numeroSocios: empresaForm.numeroSocios === '' ? null : Number(empresaForm.numeroSocios),
+        formaAtuacao: empresaForm.formaAtuacao,
+        atividades: {
+          ...(lead?.additionalInfo?.atividades || {}),
+          atividadePrincipal: empresaForm.atividadePrincipal,
+          descricaoAtividade: empresaForm.descricaoAtividade,
+          possuiFuncionarios: empresaForm.possuiFuncionarios,
+          numeroFuncionarios:
+            empresaForm.numeroFuncionarios === '' ? null : Number(empresaForm.numeroFuncionarios),
+        },
+      });
+
+      const res = await saveLeadProgress({ id, additionalInfo });
+      if (res?.success) {
+        toast.success('Dados da empresa salvos!');
+        await carregarDados();
+      } else {
+        toast.error(res?.error || 'Erro ao salvar dados da empresa');
+      }
+    } catch (error) {
+      toast.error('Erro ao salvar dados da empresa');
+    }
+    setSavingEmpresa(false);
+  };
+
+  const handleSalvarEndereco = async () => {
+    setSavingEndereco(true);
+    try {
+      const additionalInfo = mergeAdditionalInfo({
+        endereco: {
+          ...(lead?.additionalInfo?.endereco || {}),
+          cep: enderecoForm.cep,
+          rua: enderecoForm.rua,
+          numero: enderecoForm.numero,
+          complemento: enderecoForm.complemento,
+          bairro: enderecoForm.bairro,
+          cidade: enderecoForm.cidade,
+          estado: enderecoForm.estado,
+        },
+      });
+
+      const res = await saveLeadProgress({
+        id,
+        additionalInfo,
+        cidade: enderecoForm.cidade,
+        estado: enderecoForm.estado,
+      });
+      if (res?.success) {
+        toast.success('Endereço salvo!');
+        await carregarDados();
+      } else {
+        toast.error(res?.error || 'Erro ao salvar endereço');
+      }
+    } catch (error) {
+      toast.error('Erro ao salvar endereço');
+    }
+    setSavingEndereco(false);
+  };
 
   const handleAdicionarContato = async () => {
     if (!novoContato.notes.trim()) {
       toast.warning('Adicione uma observação sobre o contato');
       return;
     }
-
     setAdding(true);
     try {
       const result = await addLeadContact(id, {
         ...novoContato,
         agent: user?.name || lead?.owner || 'sistema',
       });
-
       if (result.success) {
         toast.success('Contato adicionado com sucesso!');
         setNovoContato({ channel: 'whatsapp', notes: '', outcome: '' });
@@ -138,25 +340,18 @@ export function LeadDetailsView({ id }) {
     setAdding(false);
   };
 
-  const handleAtualizarCRM = async () => {
-    setUpdating(true);
-    try {
-      const result = await updateLeadStatus(id, crmForm);
+  const handleVoltar = () => router.push(paths.dashboard.comercial.leads);
 
-      if (result.success) {
-        toast.success('Informações atualizadas com sucesso!');
-        await carregarDados();
-      } else {
-        toast.error(result.error || 'Erro ao atualizar');
-      }
-    } catch (error) {
-      toast.error('Erro ao atualizar informações');
+  const handleWhatsApp = () => {
+    const telefone = lead?.telefone?.replace(/\D/g, '');
+    if (telefone) {
+      window.open(
+        `https://wa.me/55${telefone}?text=${encodeURIComponent(
+          `Olá ${lead.nome}, vi que você se interessou pela Attualize. Como posso ajudar?`
+        )}`,
+        '_blank'
+      );
     }
-    setUpdating(false);
-  };
-
-  const handleVoltar = () => {
-    router.push(paths.dashboard.comercial.leads);
   };
 
   if (loading) {
@@ -182,15 +377,18 @@ export function LeadDetailsView({ id }) {
     );
   }
 
-  const TABS = [
-    { value: 'geral', label: 'Informações Gerais', icon: 'solar:user-bold-duotone' },
-    { value: 'crm', label: 'CRM & Contatos', icon: 'solar:chat-round-bold-duotone' },
-  ];
+  const usarEnderecoFiscal = lead.additionalInfo?.endereco?.usarEnderecoFiscal;
 
   return (
     <DashboardContent>
       {/* Header */}
-      <Stack direction="row" alignItems="center" justifyContent="space-between" mb={3}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems={{ sm: 'center' }}
+        justifyContent="space-between"
+        spacing={2}
+        mb={3}
+      >
         <Stack direction="row" alignItems="center" spacing={2}>
           <Button
             variant="outlined"
@@ -205,12 +403,12 @@ export function LeadDetailsView({ id }) {
               {lead.nome}
             </Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              {lead.email} • {lead.telefone}
+              {lead.email} {lead.telefone ? `• ${lead.telefone}` : ''}
             </Typography>
           </Box>
         </Stack>
 
-        <Stack direction="row" spacing={2}>
+        <Stack direction="row" spacing={2} alignItems="center">
           {lead.statusLead && (
             <Chip
               label={getStatusLabel(lead.statusLead)}
@@ -222,212 +420,310 @@ export function LeadDetailsView({ id }) {
             variant="soft"
             color="success"
             startIcon={<Iconify icon="logos:whatsapp-icon" />}
-            onClick={() => {
-              const telefone = lead.telefone?.replace(/\D/g, '');
-              if (telefone) {
-                window.open(
-                  `https://wa.me/55${telefone}?text=${encodeURIComponent(
-                    `Olá ${lead.nome}, vi que você se interessou pela Attualize. Como posso ajudar?`
-                  )}`,
-                  '_blank'
-                );
-              }
-            }}
+            onClick={handleWhatsApp}
           >
             WhatsApp
           </Button>
         </Stack>
       </Stack>
 
-      {/* Tabs */}
-      <Tabs value={currentTab} onChange={(e, value) => setCurrentTab(value)} sx={{ mb: 3 }}>
-        {TABS.map((tab) => (
-          <Tab
-            key={tab.value}
-            value={tab.value}
-            icon={<Iconify icon={tab.icon} width={24} />}
-            iconPosition="start"
-            label={tab.label}
-          />
-        ))}
-      </Tabs>
+      <Grid container spacing={3}>
+        {/* ---- Coluna principal (editável) ---- */}
+        <Grid xs={12} md={8}>
+          <Stack spacing={3}>
+            {/* Informações principais */}
+            <SectionCard
+              title="Informações Principais"
+              icon="solar:user-bold-duotone"
+              onSave={handleSalvarInfo}
+              saving={savingInfo}
+            >
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Nome"
+                    value={infoForm.nome}
+                    onChange={(e) => setInfoForm((p) => ({ ...p, nome: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Telefone"
+                    value={infoForm.telefone}
+                    onChange={(e) => setInfoForm((p) => ({ ...p, telefone: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="E-mail"
+                    value={infoForm.email}
+                    onChange={(e) => setInfoForm((p) => ({ ...p, email: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    select
+                    fullWidth
+                    label="Status"
+                    value={infoForm.statusLead}
+                    onChange={(e) => setInfoForm((p) => ({ ...p, statusLead: e.target.value }))}
+                  >
+                    {LEAD_STATUS_OPTIONS.map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    label="Próximo Follow-up"
+                    value={infoForm.nextFollowUpAt}
+                    onChange={(e) => setInfoForm((p) => ({ ...p, nextFollowUpAt: e.target.value }))}
+                    InputLabelProps={{ shrink: true }}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block', mb: 1 }}>
+                    Responsável
+                  </Typography>
+                  <LeadResponsavelField
+                    usuarios={usuarios}
+                    user={user}
+                    lead={lead}
+                    owner={infoForm.owner}
+                    ownerId={infoForm.ownerId}
+                    pegando={pegando}
+                    onPegar={handlePegarLead}
+                    onSelect={(u) =>
+                      setInfoForm((p) => ({
+                        ...p,
+                        owner: u?.name || '',
+                        ownerId: u?._id || '',
+                      }))
+                    }
+                  />
+                </Grid>
+              </Grid>
+            </SectionCard>
 
-      {/* Tab Geral */}
-      {currentTab === 'geral' && (
-        <Grid container spacing={3}>
-          {/* Informações Básicas */}
-          <Grid xs={12} md={6}>
-            <InfoCard title="📋 Informações Básicas" icon="solar:user-bold-duotone">
-              <InfoRow label="Nome" value={lead.nome} />
-              <InfoRow label="Email" value={lead.email} />
-              <InfoRow label="Telefone" value={lead.telefone} />
-              <InfoRow label="Data de Nascimento" value={lead.additionalInfo?.dataNascimento ? fDate(lead.additionalInfo.dataNascimento) : '-'} />
-              <InfoRow label="Segmento" value={lead.segment || '-'} />
-              <InfoRow label="Origem" value={lead.origem || '-'} />
-              <InfoRow label="Criado em" value={lead.createdAt ? fDateTime(lead.createdAt) : '-'} />
-              <InfoRow label="Última Atualização" value={lead.additionalInfo?.ultimaAtualizacao ? fDateTime(lead.additionalInfo.ultimaAtualizacao) : '-'} />
-            </InfoCard>
-          </Grid>
-
-          {/* Dados da Empresa */}
-          <Grid xs={12} md={6}>
-            <InfoCard title="🏢 Dados da Empresa" icon="solar:buildings-bold-duotone">
-              <InfoRow label="Nome da Empresa" value={lead.additionalInfo?.nomeEmpresa || '-'} />
-              <InfoRow
-                label="Faturamento Mensal"
-                value={lead.additionalInfo?.faturamentoMensal ? fCurrency(lead.additionalInfo.faturamentoMensal) : '-'}
+            {/* Observações */}
+            <SectionCard
+              title="Observações"
+              icon="solar:notes-bold-duotone"
+              onSave={handleSalvarObs}
+              saving={savingObs}
+            >
+              <TextField
+                fullWidth
+                multiline
+                rows={4}
+                placeholder="Anote aqui informações relevantes sobre o lead..."
+                value={obsForm}
+                onChange={(e) => setObsForm(e.target.value)}
               />
-              <InfoRow label="Número de Sócios" value={lead.additionalInfo?.numeroSocios || '-'} />
-              <InfoRow label="Etapa" value={lead.additionalInfo?.etapa || '-'} />
-            </InfoCard>
-          </Grid>
+            </SectionCard>
 
-          {/* Endereço */}
-          <Grid xs={12} md={6}>
-            <InfoCard title="📍 Endereço" icon="solar:map-point-bold-duotone">
-              {lead.additionalInfo?.endereco?.usarEnderecoFiscal ? (
+            {/* Dados da Empresa / Orçamento */}
+            <SectionCard
+              title="Dados da Empresa"
+              icon="solar:buildings-bold-duotone"
+              onSave={handleSalvarEmpresa}
+              saving={savingEmpresa}
+            >
+              <Grid container spacing={2}>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Nome da Empresa"
+                    value={empresaForm.nomeEmpresa}
+                    onChange={(e) => setEmpresaForm((p) => ({ ...p, nomeEmpresa: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Faturamento Mensal (R$)"
+                    value={empresaForm.faturamentoMensal}
+                    onChange={(e) => setEmpresaForm((p) => ({ ...p, faturamentoMensal: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Número de Sócios"
+                    value={empresaForm.numeroSocios}
+                    onChange={(e) => setEmpresaForm((p) => ({ ...p, numeroSocios: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Forma de Atuação"
+                    value={empresaForm.formaAtuacao}
+                    onChange={(e) => setEmpresaForm((p) => ({ ...p, formaAtuacao: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Atividade Principal"
+                    value={empresaForm.atividadePrincipal}
+                    onChange={(e) => setEmpresaForm((p) => ({ ...p, atividadePrincipal: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    type="number"
+                    label="Número de Funcionários"
+                    value={empresaForm.numeroFuncionarios}
+                    onChange={(e) => setEmpresaForm((p) => ({ ...p, numeroFuncionarios: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={2}
+                    label="Descrição da Atividade"
+                    value={empresaForm.descricaoAtividade}
+                    onChange={(e) => setEmpresaForm((p) => ({ ...p, descricaoAtividade: e.target.value }))}
+                  />
+                </Grid>
+                <Grid xs={12}>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={empresaForm.possuiFuncionarios}
+                        onChange={(e) =>
+                          setEmpresaForm((p) => ({ ...p, possuiFuncionarios: e.target.checked }))
+                        }
+                      />
+                    }
+                    label="Possui funcionários"
+                  />
+                </Grid>
+              </Grid>
+
+              {/* Orçamento atual (somente leitura) */}
+              {lead.additionalInfo?.orcamento && (
+                <Box sx={{ mt: 1, p: 2, borderRadius: 1.5, bgcolor: alpha(theme.palette.grey[500], 0.08) }}>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    💰 Orçamento atual
+                  </Typography>
+                  <Stack direction="row" spacing={3} flexWrap="wrap" useFlexGap>
+                    <ReadField
+                      label="Plano"
+                      value={lead.additionalInfo.orcamento.plano || '-'}
+                    />
+                    <ReadField
+                      label="Valor Mensal"
+                      value={
+                        lead.additionalInfo.orcamento.valor
+                          ? fCurrency(lead.additionalInfo.orcamento.valor)
+                          : '-'
+                      }
+                    />
+                    <ReadField
+                      label="Abertura Gratuita"
+                      value={lead.additionalInfo.orcamento.temAberturaGratuita ? 'Sim' : 'Não'}
+                    />
+                  </Stack>
+                </Box>
+              )}
+            </SectionCard>
+
+            {/* Endereço */}
+            <SectionCard
+              title="Endereço"
+              icon="solar:map-point-bold-duotone"
+              onSave={handleSalvarEndereco}
+              saving={savingEndereco}
+              hideSave={usarEnderecoFiscal}
+            >
+              {usarEnderecoFiscal ? (
                 <Box sx={{ p: 2, bgcolor: alpha('#0096D9', 0.08), borderRadius: 1 }}>
                   <Typography variant="subtitle2" sx={{ color: '#0096D9', fontWeight: 600 }}>
                     ✅ Usando Endereço Fiscal Attualize
                   </Typography>
                 </Box>
               ) : (
-                <>
-                  <InfoRow
-                    label="CEP"
-                    value={lead.endereco?.cep || lead.additionalInfo?.endereco?.cep || lead.cep || '-'}
-                  />
-                  <InfoRow
-                    label="Endereço"
-                    value={lead.endereco?.rua || lead.additionalInfo?.endereco?.endereco || '-'}
-                  />
-                  <InfoRow
-                    label="Número"
-                    value={lead.endereco?.numero || lead.additionalInfo?.endereco?.numero || '-'}
-                  />
-                  <InfoRow
-                    label="Complemento"
-                    value={lead.endereco?.complemento || lead.additionalInfo?.endereco?.complemento || '-'}
-                  />
-                  <InfoRow
-                    label="Bairro"
-                    value={lead.endereco?.bairro || lead.additionalInfo?.endereco?.bairro || '-'}
-                  />
-                  <InfoRow
-                    label="Cidade"
-                    value={lead.endereco?.cidade || lead.cidade || '-'}
-                  />
-                  <InfoRow
-                    label="Estado"
-                    value={lead.endereco?.estado || lead.estado || '-'}
-                  />
-                </>
+                <Grid container spacing={2}>
+                  <Grid xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      label="CEP"
+                      value={enderecoForm.cep}
+                      onChange={(e) => setEnderecoForm((p) => ({ ...p, cep: e.target.value }))}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={8}>
+                    <TextField
+                      fullWidth
+                      label="Endereço"
+                      value={enderecoForm.rua}
+                      onChange={(e) => setEnderecoForm((p) => ({ ...p, rua: e.target.value }))}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      label="Número"
+                      value={enderecoForm.numero}
+                      onChange={(e) => setEnderecoForm((p) => ({ ...p, numero: e.target.value }))}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={8}>
+                    <TextField
+                      fullWidth
+                      label="Complemento"
+                      value={enderecoForm.complemento}
+                      onChange={(e) => setEnderecoForm((p) => ({ ...p, complemento: e.target.value }))}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={4}>
+                    <TextField
+                      fullWidth
+                      label="Bairro"
+                      value={enderecoForm.bairro}
+                      onChange={(e) => setEnderecoForm((p) => ({ ...p, bairro: e.target.value }))}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={5}>
+                    <TextField
+                      fullWidth
+                      label="Cidade"
+                      value={enderecoForm.cidade}
+                      onChange={(e) => setEnderecoForm((p) => ({ ...p, cidade: e.target.value }))}
+                    />
+                  </Grid>
+                  <Grid xs={12} sm={3}>
+                    <TextField
+                      fullWidth
+                      label="Estado"
+                      value={enderecoForm.estado}
+                      onChange={(e) => setEnderecoForm((p) => ({ ...p, estado: e.target.value }))}
+                    />
+                  </Grid>
+                </Grid>
               )}
-            </InfoCard>
-          </Grid>
+            </SectionCard>
 
-          {/* Atividades */}
-          <Grid xs={12} md={6}>
-            <InfoCard title="💼 Atividades" icon="solar:case-bold-duotone">
-              <InfoRow label="Atividade Principal" value={lead.additionalInfo?.atividades?.atividadePrincipal || '-'} />
-              <InfoRow label="Descrição" value={lead.additionalInfo?.atividades?.descricaoAtividade || '-'} />
-              <InfoRow
-                label="Possui Funcionários"
-                value={lead.additionalInfo?.atividades?.possuiFuncionarios ? 'Sim' : 'Não'}
-              />
-              <InfoRow label="Número de Funcionários" value={lead.additionalInfo?.atividades?.numeroFuncionarios || '0'} />
-              <InfoRow label="Forma de Atuação" value={lead.additionalInfo?.formaAtuacao || '-'} />
-            </InfoCard>
-          </Grid>
+            {/* Origem & Campanha (UTM) — somente leitura */}
+            <LeadUtmCard lead={lead} />
 
-          {/* Orçamento */}
-          <Grid xs={12} md={6}>
-            <InfoCard title="💰 Orçamento" icon="solar:bill-list-bold-duotone">
-              <InfoRow
-                label="Plano"
-                value={
-                  <Chip
-                    label={lead.additionalInfo?.orcamento?.plano || '-'}
-                    color={lead.additionalInfo?.orcamento?.plano === 'ANÁLISE_COMERCIAL' ? 'warning' : 'primary'}
-                    size="small"
-                  />
-                }
-              />
-              <InfoRow
-                label="Valor Mensal"
-                value={lead.additionalInfo?.orcamento?.valor ? fCurrency(lead.additionalInfo.orcamento.valor) : '-'}
-              />
-              <InfoRow
-                label="Valor Base"
-                value={lead.additionalInfo?.orcamento?.detalhes?.valorBase ? fCurrency(lead.additionalInfo.orcamento.detalhes.valorBase) : '-'}
-              />
-              <InfoRow
-                label="Adicional Funcionários"
-                value={lead.additionalInfo?.orcamento?.detalhes?.adicionalFuncionarios ? fCurrency(lead.additionalInfo.orcamento.detalhes.adicionalFuncionarios) : '-'}
-              />
-              <InfoRow
-                label="Adicional Endereço Fiscal"
-                value={lead.additionalInfo?.orcamento?.detalhes?.adicionalEnderecoFiscal ? fCurrency(lead.additionalInfo.orcamento.detalhes.adicionalEnderecoFiscal) : '-'}
-              />
-              <InfoRow
-                label="Abertura Gratuita"
-                value={lead.additionalInfo?.orcamento?.temAberturaGratuita ? '✅ Sim' : '❌ Não'}
-              />
-            </InfoCard>
-          </Grid>
-
-          {/* Pagamento */}
-          <Grid xs={12} md={6}>
-            <InfoCard title="💳 Pagamento" icon="solar:card-bold-duotone">
-              {lead.additionalInfo?.pagamento ? (
-                <>
-                  <InfoRow label="Periodicidade" value={lead.additionalInfo.pagamento.periodicidade || '-'} />
-                  <InfoRow label="Método" value={lead.additionalInfo.pagamento.metodoPagamento || '-'} />
-                  <InfoRow
-                    label="Valor Mensal"
-                    value={lead.additionalInfo.pagamento.valorMensal ? fCurrency(lead.additionalInfo.pagamento.valorMensal) : '-'}
-                  />
-                  <InfoRow
-                    label="Valor Total"
-                    value={lead.additionalInfo.pagamento.valorTotal ? fCurrency(lead.additionalInfo.pagamento.valorTotal) : '-'}
-                  />
-                  <InfoRow
-                    label="Custo Abertura"
-                    value={lead.additionalInfo.pagamento.custoAbertura ? fCurrency(lead.additionalInfo.pagamento.custoAbertura) : '-'}
-                  />
-                  <InfoRow
-                    label="Valor Total + Abertura"
-                    value={lead.additionalInfo.pagamento.valorTotalComAbertura ? fCurrency(lead.additionalInfo.pagamento.valorTotalComAbertura) : '-'}
-                  />
-                  <InfoRow label="Tipo" value={lead.additionalInfo.pagamento.tipo || '-'} />
-                  <InfoRow
-                    label="Status"
-                    value={
-                      <Chip
-                        label={lead.additionalInfo.pagamento.status || '-'}
-                        size="small"
-                        color="warning"
-                      />
-                    }
-                  />
-                  <InfoRow
-                    label="Finalizado em"
-                    value={lead.additionalInfo.pagamento.finalizadoEm ? fDateTime(lead.additionalInfo.pagamento.finalizadoEm) : '-'}
-                  />
-                </>
-              ) : (
-                <Typography variant="body2" color="text.secondary">
-                  Sem informações de pagamento
-                </Typography>
-              )}
-            </InfoCard>
-          </Grid>
-
-          {/* Análise Comercial */}
-          {lead.additionalInfo?.analiseComercial && (
-            <Grid xs={12}>
+            {/* Análise Comercial (somente leitura) */}
+            {lead.additionalInfo?.analiseComercial && (
               <Card sx={{ p: 3, bgcolor: alpha('#FF9800', 0.08), borderLeft: `4px solid #FF9800` }}>
-                <Stack spacing={2}>
+                <Stack spacing={1.5}>
                   <Stack direction="row" alignItems="center" spacing={1}>
                     <Iconify icon="solar:user-speak-rounded-bold-duotone" width={28} sx={{ color: '#FF9800' }} />
                     <Typography variant="h6" sx={{ fontWeight: 700, color: '#FF9800' }}>
@@ -435,41 +731,22 @@ export function LeadDetailsView({ id }) {
                     </Typography>
                   </Stack>
                   <Divider />
-                  <InfoRow label="Motivo" value={lead.additionalInfo.analiseComercial.motivo || '-'} />
-                  <InfoRow label="Plano Detectado" value={lead.additionalInfo.analiseComercial.planoDetectado || '-'} />
-                  <InfoRow label="Solicitado em" value={lead.additionalInfo.analiseComercial.solicitadoEm ? fDateTime(lead.additionalInfo.analiseComercial.solicitadoEm) : '-'} />
-                  <InfoRow
-                    label="Status"
+                  <ReadRow label="Motivo" value={lead.additionalInfo.analiseComercial.motivo || '-'} />
+                  <ReadRow label="Plano Detectado" value={lead.additionalInfo.analiseComercial.planoDetectado || '-'} />
+                  <ReadRow
+                    label="Solicitado em"
                     value={
-                      <Chip
-                        label={lead.additionalInfo.analiseComercial.status || '-'}
-                        color="warning"
-                        size="small"
-                      />
+                      lead.additionalInfo.analiseComercial.solicitadoEm
+                        ? fDateTime(lead.additionalInfo.analiseComercial.solicitadoEm)
+                        : '-'
                     }
                   />
                 </Stack>
               </Card>
-            </Grid>
-          )}
+            )}
 
-          {/* Observações */}
-          {lead.observacoes && (
-            <Grid xs={12}>
-              <Card sx={{ p: 3 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                  📝 Observações
-                </Typography>
-                <Typography variant="body2" sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}>
-                  {lead.observacoes}
-                </Typography>
-              </Card>
-            </Grid>
-          )}
-
-          {/* Páginas Visitadas */}
-          {lead.paginasVisitadas && lead.paginasVisitadas.length > 0 && (
-            <Grid xs={12}>
+            {/* Páginas Visitadas (somente leitura) */}
+            {lead.paginasVisitadas && lead.paginasVisitadas.length > 0 && (
               <Card sx={{ p: 3 }}>
                 <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 600 }}>
                   🔍 Páginas Visitadas ({lead.paginasVisitadas.length})
@@ -478,11 +755,7 @@ export function LeadDetailsView({ id }) {
                   {lead.paginasVisitadas.map((pagina, index) => (
                     <Box
                       key={index}
-                      sx={{
-                        p: 1.5,
-                        bgcolor: alpha(theme.palette.grey[500], 0.08),
-                        borderRadius: 1,
-                      }}
+                      sx={{ p: 1.5, bgcolor: alpha(theme.palette.grey[500], 0.08), borderRadius: 1 }}
                     >
                       <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
                         {index + 1}. {pagina}
@@ -491,88 +764,33 @@ export function LeadDetailsView({ id }) {
                   ))}
                 </Stack>
               </Card>
-            </Grid>
-          )}
+            )}
+          </Stack>
         </Grid>
-      )}
 
-      {/* Tab CRM & Contatos */}
-      {currentTab === 'crm' && (
-        <Grid container spacing={3}>
-          {/* Atualizar CRM */}
-          <Grid xs={12} md={6}>
+        {/* ---- Coluna lateral (atividade) ---- */}
+        <Grid xs={12} md={4}>
+          <Stack spacing={3}>
+            {/* Adicionar Contato */}
             <Card sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
-                ⚙️ Atualizar Status do Lead
-              </Typography>
-
-              <Stack spacing={2.5}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Status"
-                  value={crmForm.statusLead}
-                  onChange={(e) => setCrmForm(prev => ({ ...prev, statusLead: e.target.value }))}
-                >
-                  <MenuItem value="novo">Novo</MenuItem>
-                  <MenuItem value="contatado">Contatado</MenuItem>
-                  <MenuItem value="qualificado">Qualificado</MenuItem>
-                  <MenuItem value="proposta-enviada">Proposta Enviada</MenuItem>
-                  <MenuItem value="negociacao">Em Negociação</MenuItem>
-                  <MenuItem value="convertido">Convertido</MenuItem>
-                  <MenuItem value="perdido">Perdido</MenuItem>
-                </TextField>
-
-                <TextField
-                  fullWidth
-                  label="Responsável"
-                  value={crmForm.owner}
-                  onChange={(e) => setCrmForm(prev => ({ ...prev, owner: e.target.value }))}
-                />
-
-                <TextField
-                  fullWidth
-                  type="date"
-                  label="Próximo Follow-up"
-                  value={crmForm.nextFollowUpAt}
-                  onChange={(e) => setCrmForm(prev => ({ ...prev, nextFollowUpAt: e.target.value }))}
-                  InputLabelProps={{ shrink: true }}
-                />
-
-                <LoadingButton
-                  fullWidth
-                  variant="contained"
-                  loading={updating}
-                  onClick={handleAtualizarCRM}
-                  sx={{ bgcolor: '#0096D9' }}
-                >
-                  Atualizar Informações
-                </LoadingButton>
-              </Stack>
-            </Card>
-          </Grid>
-
-          {/* Adicionar Contato */}
-          <Grid xs={12} md={6}>
-            <Card sx={{ p: 3 }}>
-              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
+              <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
                 <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  ➕ Adicionar Contato
+                  ➕ Registrar Contato
                 </Typography>
                 <Chip
-                  label={`Você: ${user?.name || 'Sistema'}`}
+                  label={user?.name || 'Sistema'}
                   size="small"
                   sx={{ bgcolor: alpha('#0096D9', 0.1), color: '#0096D9', fontWeight: 600 }}
                 />
               </Stack>
 
-              <Stack spacing={2.5}>
+              <Stack spacing={2}>
                 <TextField
                   select
                   fullWidth
                   label="Canal"
                   value={novoContato.channel}
-                  onChange={(e) => setNovoContato(prev => ({ ...prev, channel: e.target.value }))}
+                  onChange={(e) => setNovoContato((p) => ({ ...p, channel: e.target.value }))}
                 >
                   <MenuItem value="whatsapp">WhatsApp</MenuItem>
                   <MenuItem value="ligacao">Ligação</MenuItem>
@@ -587,7 +805,7 @@ export function LeadDetailsView({ id }) {
                   rows={3}
                   label="Observações"
                   value={novoContato.notes}
-                  onChange={(e) => setNovoContato(prev => ({ ...prev, notes: e.target.value }))}
+                  onChange={(e) => setNovoContato((p) => ({ ...p, notes: e.target.value }))}
                   placeholder="Descreva o que foi tratado neste contato..."
                 />
 
@@ -596,7 +814,7 @@ export function LeadDetailsView({ id }) {
                   fullWidth
                   label="Resultado"
                   value={novoContato.outcome}
-                  onChange={(e) => setNovoContato(prev => ({ ...prev, outcome: e.target.value }))}
+                  onChange={(e) => setNovoContato((p) => ({ ...p, outcome: e.target.value }))}
                 >
                   <MenuItem value="">Sem resultado definido</MenuItem>
                   <MenuItem value="interessado">Interessado</MenuItem>
@@ -618,22 +836,16 @@ export function LeadDetailsView({ id }) {
                 </LoadingButton>
               </Stack>
             </Card>
-          </Grid>
 
-          {/* Histórico de Contatos */}
-          <Grid xs={12}>
+            {/* Histórico de Contatos */}
             <Card sx={{ p: 3 }}>
-              <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
+              <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 700 }}>
                 📋 Histórico de Contatos ({contatos.length})
               </Typography>
 
               {contatos.length === 0 ? (
-                <Box sx={{ textAlign: 'center', py: 5 }}>
-                  <Iconify
-                    icon="solar:chat-line-bold-duotone"
-                    width={64}
-                    sx={{ color: 'text.disabled', mb: 2 }}
-                  />
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Iconify icon="solar:chat-line-bold-duotone" width={56} sx={{ color: 'text.disabled', mb: 1 }} />
                   <Typography variant="body2" color="text.secondary">
                     Nenhum contato registrado ainda
                   </Typography>
@@ -641,13 +853,13 @@ export function LeadDetailsView({ id }) {
               ) : (
                 <Stack spacing={2}>
                   {contatos.map((contato, index) => (
-                    <Card key={index} variant="outlined" sx={{ p: 2.5 }}>
-                      <Stack spacing={1.5}>
+                    <Card key={index} variant="outlined" sx={{ p: 2 }}>
+                      <Stack spacing={1}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
                           <Stack direction="row" spacing={1} alignItems="center">
                             <Iconify
                               icon={getChannelIcon(contato.channel)}
-                              width={24}
+                              width={22}
                               sx={{ color: getChannelColor(contato.channel) }}
                             />
                             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
@@ -665,18 +877,15 @@ export function LeadDetailsView({ id }) {
                           {contato.notes}
                         </Typography>
 
-                        <Stack direction="row" spacing={1} alignItems="center">
+                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                           <Iconify icon="solar:user-bold" width={16} sx={{ color: 'text.disabled' }} />
                           <Typography variant="caption" color="text.secondary">
                             Por: {contato.agent}
                           </Typography>
                           {contato.outcome && (
-                            <>
-                              <Divider orientation="vertical" flexItem />
-                              <Label size="small" color={getOutcomeColor(contato.outcome)}>
-                                {getOutcomeLabel(contato.outcome)}
-                              </Label>
-                            </>
+                            <Label size="small" color={getOutcomeColor(contato.outcome)}>
+                              {getOutcomeLabel(contato.outcome)}
+                            </Label>
                           )}
                         </Stack>
                       </Stack>
@@ -685,108 +894,38 @@ export function LeadDetailsView({ id }) {
                 </Stack>
               )}
             </Card>
-          </Grid>
 
-          {/* Histórico de Orçamentos */}
-          {orcamentos.length > 0 && (
-            <Grid xs={12}>
+            {/* Histórico de Orçamentos */}
+            {orcamentos.length > 0 && (
               <Card sx={{ p: 3 }}>
-                <Typography variant="h6" sx={{ mb: 3, fontWeight: 700 }}>
-                  💰 Histórico de Orçamentos ({orcamentos.length})
+                <Typography variant="h6" sx={{ mb: 2.5, fontWeight: 700 }}>
+                  💰 Orçamentos ({orcamentos.length})
                 </Typography>
-
                 <Stack spacing={2}>
                   {orcamentos.map((orcamento) => (
-                    <Card key={orcamento._id} variant="outlined" sx={{ p: 2.5 }}>
-                      <Stack spacing={1.5}>
+                    <Card key={orcamento._id} variant="outlined" sx={{ p: 2 }}>
+                      <Stack spacing={1}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                          <Stack direction="row" spacing={1} alignItems="center">
-                            <Iconify
-                              icon="solar:document-text-bold-duotone"
-                              width={24}
-                              sx={{ color: getOrcamentoColor(orcamento.status) }}
-                            />
-                            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                              Orçamento #{orcamento.invoiceNumber}
-                            </Typography>
-                            <Chip
-                              label={getOrcamentoLabel(orcamento.status)}
-                              color={getOrcamentoChipColor(orcamento.status)}
-                              size="small"
-                            />
-                          </Stack>
-                          <Typography variant="caption" color="text.secondary">
-                            {orcamento.createdAt ? fDateTime(orcamento.createdAt) : '-'}
+                          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                            #{orcamento.invoiceNumber}
                           </Typography>
+                          <Chip
+                            label={getOrcamentoLabel(orcamento.status)}
+                            color={getOrcamentoChipColor(orcamento.status)}
+                            size="small"
+                          />
                         </Stack>
-
-                        <Divider />
-
-                        <Stack direction="row" spacing={3} flexWrap="wrap">
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Valor Total
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
-                              {orcamento.total != null ? fCurrency(orcamento.total) : '-'}
-                            </Typography>
-                          </Box>
-
-                          <Box>
-                            <Typography variant="caption" color="text.secondary">
-                              Itens
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                              {orcamento.items?.length || 0} {orcamento.items?.length === 1 ? 'item' : 'itens'}
-                            </Typography>
-                          </Box>
-
-                          {orcamento.desconto > 0 && (
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Desconto
-                              </Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 500, color: 'error.main' }}>
-                                - {orcamento.desconto != null ? fCurrency(orcamento.desconto) : '-'}
-                              </Typography>
-                            </Box>
-                          )}
-
-                          {orcamento.formaPagamento && (
-                            <Box>
-                              <Typography variant="caption" color="text.secondary">
-                                Pagamento
-                              </Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 500, textTransform: 'capitalize' }}>
-                                {orcamento.formaPagamento}
-                              </Typography>
-                            </Box>
-                          )}
-                        </Stack>
-
-                        {/* Footer */}
-                        <Stack direction="row" spacing={1} alignItems="center">
-                          <Iconify icon="solar:user-bold" width={16} sx={{ color: 'text.disabled' }} />
-                          <Typography variant="caption" color="text.secondary">
-                            Responsável: {orcamento.proprietarioVenda || '-'}
+                        <Stack direction="row" justifyContent="space-between" alignItems="center">
+                          <Typography variant="body2" sx={{ fontWeight: 600, color: 'success.main' }}>
+                            {orcamento.total != null ? fCurrency(orcamento.total) : '-'}
                           </Typography>
-                          {orcamento.cobrancas && orcamento.cobrancas.length > 0 && (
-                            <>
-                              <Divider orientation="vertical" flexItem />
-                              <Label size="small" color={getCobrancaChipColor(orcamento.cobrancas[0].status)}>
-                                {getCobrancaLabel(orcamento.cobrancas[0].status)}
-                              </Label>
-                            </>
-                          )}
-                          <Box sx={{ flex: 1 }} />
                           <Button
                             size="small"
                             variant="text"
                             endIcon={<Iconify icon="solar:arrow-right-bold" />}
                             onClick={() => router.push(paths.dashboard.invoice.details(orcamento._id))}
-                            sx={{ minWidth: 'auto' }}
                           >
-                            Ver detalhes
+                            Detalhes
                           </Button>
                         </Stack>
                       </Stack>
@@ -794,10 +933,10 @@ export function LeadDetailsView({ id }) {
                   ))}
                 </Stack>
               </Card>
-            </Grid>
-          )}
+            )}
+          </Stack>
         </Grid>
-      )}
+      </Grid>
     </DashboardContent>
   );
 }
@@ -806,111 +945,124 @@ export function LeadDetailsView({ id }) {
 // Helper Components
 // ----------------------------------------------------------------------
 
-function InfoCard({ title, icon, children }) {
+const UTM_FIELDS = [
+  { key: 'source', label: 'Source' },
+  { key: 'medium', label: 'Medium' },
+  { key: 'campaign', label: 'Campaign' },
+  { key: 'term', label: 'Term' },
+  { key: 'content', label: 'Content' },
+  { key: 'gclid', label: 'gclid (Google Ads)' },
+  { key: 'fbclid', label: 'fbclid (Meta Ads)' },
+  { key: 'referrer', label: 'Referrer' },
+  { key: 'landingPage', label: 'Landing page' },
+];
+
+function LeadUtmCard({ lead }) {
+  const utm = lead.utm || {};
+  const preenchidos = UTM_FIELDS.filter((f) => utm[f.key]);
+  const semUtm = preenchidos.length === 0;
+
   return (
-    <Card sx={{ p: 3, height: '100%' }}>
-      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
+    <Card sx={{ p: 3 }}>
+      <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2.5 }}>
+        <Iconify icon="solar:graph-up-bold-duotone" width={24} sx={{ color: 'primary.main' }} />
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {title}
+          Origem &amp; Campanha
         </Typography>
       </Stack>
-      <Divider sx={{ mb: 2 }} />
+      <Divider sx={{ mb: 2.5 }} />
+
       <Stack spacing={1.5}>
-        {children}
+        <ReadRow label="Origem" value={lead.origem || '-'} />
+        {semUtm ? (
+          <Typography variant="body2" color="text.secondary">
+            Sem dados de campanha (UTM) para este lead.
+          </Typography>
+        ) : (
+          preenchidos.map((f) => (
+            <ReadRow
+              key={f.key}
+              label={f.label}
+              value={
+                f.key === 'landingPage' || f.key === 'referrer' ? (
+                  <Box
+                    component="a"
+                    href={utm[f.key]}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    sx={{ wordBreak: 'break-all', color: 'primary.main' }}
+                  >
+                    {utm[f.key]}
+                  </Box>
+                ) : (
+                  utm[f.key]
+                )
+              }
+            />
+          ))
+        )}
       </Stack>
     </Card>
   );
 }
 
-function InfoRow({ label, value }) {
-  // Verifica se o value é um elemento React de forma segura
-  let isReactElement = false;
-  let isPrimitive = true;
-  let displayValue = value ?? '-';
-  
-  try {
-    // Verifica se é um valor primitivo
-    if (value === null || value === undefined) {
-      isPrimitive = true;
-      displayValue = '-';
-    } else if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-      isPrimitive = true;
-      displayValue = value;
-    } else {
-      // Pode ser um elemento React
-      isPrimitive = false;
-      try {
-        isReactElement = isValidElement(value);
-        if (!isReactElement && typeof value === 'object') {
-          // Verifica propriedades comuns de elementos React
-          isReactElement = 'type' in value || '$$typeof' in value || 'props' in value;
-        }
-      } catch (e) {
-        // Se houver erro ao verificar, trata como primitivo
-        isPrimitive = true;
-        isReactElement = false;
-        displayValue = String(value);
-      }
-    }
-  } catch (error) {
-    // Em caso de erro, trata como primitivo
-    isPrimitive = true;
-    isReactElement = false;
-    displayValue = value != null ? String(value) : '-';
-  }
-  
+function SectionCard({ title, icon, children, onSave, saving, hideSave }) {
+  return (
+    <Card sx={{ p: 3 }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2.5 }}>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Iconify icon={icon} width={24} sx={{ color: 'primary.main' }} />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            {title}
+          </Typography>
+        </Stack>
+        {!hideSave && (
+          <LoadingButton
+            variant="contained"
+            size="small"
+            loading={saving}
+            onClick={onSave}
+            startIcon={<Iconify icon="solar:diskette-bold" />}
+          >
+            Salvar
+          </LoadingButton>
+        )}
+      </Stack>
+      <Divider sx={{ mb: 2.5 }} />
+      {children}
+    </Card>
+  );
+}
+
+function ReadField({ label, value }) {
+  return (
+    <Box>
+      <Typography variant="caption" color="text.secondary">
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+        {value}
+      </Typography>
+    </Box>
+  );
+}
+
+function ReadRow({ label, value }) {
   return (
     <Stack direction="row" justifyContent="space-between" alignItems="center">
-      <Typography variant="body2" sx={{ color: 'text.secondary', minWidth: 140 }}>
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {label}:
       </Typography>
-      <Box 
-        component="div"
-        sx={{ 
-          textAlign: 'right', 
-          flex: 1, 
-          display: 'flex', 
-          justifyContent: 'flex-end', 
-          alignItems: 'center',
-          fontWeight: isPrimitive ? 500 : 'normal',
-          fontSize: isPrimitive ? '0.875rem' : 'inherit',
-        }}
-      >
-        {isReactElement ? value : displayValue}
-      </Box>
+      <Typography variant="body2" sx={{ fontWeight: 500, textAlign: 'right' }}>
+        {value}
+      </Typography>
     </Stack>
   );
 }
 
 // ----------------------------------------------------------------------
-// Helper Functions
+// Helper Functions (canais / resultados / orçamentos)
 // ----------------------------------------------------------------------
-
-function getStatusLabel(status) {
-  const labels = {
-    'novo': 'Novo',
-    'contatado': 'Contatado',
-    'qualificado': 'Qualificado',
-    'proposta-enviada': 'Proposta Enviada',
-    'negociacao': 'Em Negociação',
-    'convertido': 'Convertido',
-    'perdido': 'Perdido',
-  };
-  return labels[status] || status;
-}
-
-function getStatusColor(status) {
-  const colors = {
-    'novo': 'info',
-    'contatado': 'primary',
-    'qualificado': 'success',
-    'proposta-enviada': 'warning',
-    'negociacao': 'warning',
-    'convertido': 'success',
-    'perdido': 'error',
-  };
-  return colors[status] || 'default';
-}
 
 function getChannelIcon(channel) {
   const icons = {
@@ -969,65 +1121,26 @@ function getOutcomeColor(outcome) {
   return colors[outcome] || 'default';
 }
 
-// ----------------------------------------------------------------------
-// Helper Functions para Orçamentos
-// ----------------------------------------------------------------------
-
 function getOrcamentoLabel(status) {
   const labels = {
-    'orcamento': 'Orçamento',
-    'pendente': 'Pendente',
-    'aprovada': 'Aprovado',
-    'pago': 'Pago',
-    'perdida': 'Perdido',
-    'cancelado': 'Cancelado',
+    orcamento: 'Orçamento',
+    pendente: 'Pendente',
+    aprovada: 'Aprovado',
+    pago: 'Pago',
+    perdida: 'Perdido',
+    cancelado: 'Cancelado',
   };
   return labels[status] || status;
-}
-
-function getOrcamentoColor(status) {
-  const colors = {
-    'orcamento': '#FFA726',
-    'pendente': '#FFA726',
-    'aprovada': '#66BB6A',
-    'pago': '#4CAF50',
-    'perdida': '#EF5350',
-    'cancelado': '#9E9E9E',
-  };
-  return colors[status] || '#9E9E9E';
 }
 
 function getOrcamentoChipColor(status) {
   const colors = {
-    'orcamento': 'warning',
-    'pendente': 'warning',
-    'aprovada': 'success',
-    'pago': 'success',
-    'perdida': 'error',
-    'cancelado': 'default',
+    orcamento: 'warning',
+    pendente: 'warning',
+    aprovada: 'success',
+    pago: 'success',
+    perdida: 'error',
+    cancelado: 'default',
   };
   return colors[status] || 'default';
 }
-
-function getCobrancaLabel(status) {
-  const labels = {
-    'EMABERTO': 'Em Aberto',
-    'VENCIDO': 'Vencido',
-    'RECEBIDO': 'Recebido',
-    'CANCELADO': 'Cancelado',
-    'PAGO': 'Pago',
-  };
-  return labels[status] || status;
-}
-
-function getCobrancaChipColor(status) {
-  const colors = {
-    'EMABERTO': 'warning',
-    'VENCIDO': 'error',
-    'RECEBIDO': 'success',
-    'CANCELADO': 'default',
-    'PAGO': 'success',
-  };
-  return colors[status] || 'default';
-}
-

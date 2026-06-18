@@ -106,11 +106,6 @@ export const navData = [
             path: paths.dashboard.comercial.leads,
           },
           {
-            title: 'Funil',
-            roles: ['admin', 'financeiro', 'comercial', 'operacional', 'gerencial'],
-            path: paths.dashboard.comercial.funil,
-          },
-          {
             title: 'Vendas',
             roles: ['admin', 'financeiro', 'comercial', 'operacional', 'gerencial'],
             path: paths.dashboard.invoice.root,

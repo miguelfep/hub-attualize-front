@@ -2,6 +2,7 @@
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Stack from '@mui/material/Stack';
 import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
@@ -13,6 +14,7 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { ClienteNewEditForm } from '../cliente-new-edit-form';
+import { ClienteImpersonarButton } from '../cliente-impersonar-button';
 
 // ----------------------------------------------------------------------
 
@@ -45,12 +47,25 @@ export function ClienteEditView({ cliente: currentCliente }) {
             borderBottom: (t) => `1px solid ${t.palette.divider}`,
           }}
         >
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Editar cliente
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-            {currentCliente?.nome ? `Alterar dados de ${currentCliente.nome}` : 'Altere os dados do cliente.'}
-          </Typography>
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            alignItems={{ sm: 'center' }}
+            justifyContent="space-between"
+            spacing={2}
+          >
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                Editar cliente
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                {currentCliente?.nome
+                  ? `Alterar dados de ${currentCliente.nome}`
+                  : 'Altere os dados do cliente.'}
+              </Typography>
+            </Box>
+
+            <ClienteImpersonarButton cliente={currentCliente} variant="button" />
+          </Stack>
         </Box>
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <ClienteNewEditForm currentCliente={currentCliente} />

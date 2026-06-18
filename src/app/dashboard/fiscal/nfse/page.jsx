@@ -47,8 +47,15 @@ import {
   dadosEmitenteNota,
   tipoMovimentoNota,
   cancelarNotaFiscal,
+  labelStatusDominio,
+  podeReenviarDominio,
+  mensagemErroDominio,
   sincronizarUnificado,
+  reenviarNotaDominio,
   cancelarNotaNoProvedor,
+  isNotaElegivelDominio,
+  reenviarCancelamentoDominio,
+  podeReenviarCancelamentoDominio,
   sincronizarTodosNfeSefaz,
   listarNotasFiscaisPorCliente,
   reprocessarRetencoesNacional,
@@ -227,6 +234,10 @@ export default function DashboardFiscalPage() {
   const nfeBuscaHabilitada = Boolean(clienteSettings?.nfeConfig?.buscaHabilitada);
   const nfeBloqueadoAte = clienteSettings?.nfeConfig?.bloqueadoAte || null;
   const nfeBloqueado = !!nfeBloqueadoAte && new Date(nfeBloqueadoAte).getTime() > Date.now();
+  // Domínio: envio de XML de NFS-e à contabilidade
+  const dominioHabilitado = Boolean(clienteSettings?.dominioConfig?.habilitado);
+  const [reenviandoDominioId, setReenviandoDominioId] = useState(null);
+  const [reenviandoCancelamentoId, setReenviandoCancelamentoId] = useState(null);
   const [syncingTodosNfe, setSyncingTodosNfe] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [baixandoLote, setBaixandoLote] = useState(false);
@@ -396,6 +407,38 @@ export default function DashboardFiscalPage() {
       });
     } catch (error) {
       toast.error(error?.message || 'Erro ao consultar a NFC-e no SEFAZ-PR');
+    }
+  };
+
+  // Reenvia o XML de uma NFS-e ao Domínio (contabilidade).
+  const handleReenviarDominio = async (nota) => {
+    const id = nota._id || nota.id;
+    try {
+      setReenviandoDominioId(id);
+      await reenviarNotaDominio(id);
+      toast.success('Nota reenviada ao Domínio');
+      await fetchNotas();
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || 'Falha ao reenviar ao Domínio';
+      toast.error(msg);
+    } finally {
+      setReenviandoDominioId(null);
+    }
+  };
+
+  // Reenvia o evento de cancelamento (e101101) de uma NFS-e nacional ao Domínio.
+  const handleReenviarCancelamentoDominio = async (nota) => {
+    const id = nota._id || nota.id;
+    try {
+      setReenviandoCancelamentoId(id);
+      await reenviarCancelamentoDominio(id);
+      toast.success('Cancelamento reenviado ao Domínio');
+      await fetchNotas();
+    } catch (error) {
+      const msg = error?.response?.data?.message || error?.message || 'Falha ao reenviar cancelamento ao Domínio';
+      toast.error(msg);
+    } finally {
+      setReenviandoCancelamentoId(null);
     }
   };
 
@@ -996,6 +1039,40 @@ export default function DashboardFiscalPage() {
                       {isEnotas && (
                         <Label color={colorEnotas} variant="soft">eNotas: {eNotasLabel}</Label>
                       )}
+                      {isNotaElegivelDominio(n) && (n.dominioEnvio || dominioHabilitado) && (() => {
+                        const dom = labelStatusDominio(n.dominioEnvio, dominioHabilitado);
+                        const env = n.dominioEnvio;
+                        const tip =
+                          env?.status === 'enviado'
+                            ? `Enviado em ${env.enviadoEm ? dayjs(env.enviadoEm).format('DD/MM/YYYY HH:mm') : '-'}${env.processadoEm ? ` · Confirmado em ${dayjs(env.processadoEm).format('DD/MM/YYYY HH:mm')}` : ''}${env.batchId ? ` · Lote ${env.batchId}` : ''}`
+                            : env?.status === 'erro'
+                              ? `${mensagemErroDominio(env.erro) || 'Erro no envio'}${env.tentativas ? ` (tentativa ${env.tentativas}/5)` : ''}`
+                              : 'Envio de XML à contabilidade (Domínio)';
+                        return (
+                          <Tooltip title={tip}>
+                            <Label color={dom.color} variant="soft" startIcon={<Iconify icon="solar:buildings-3-bold" />}>
+                              Domínio: {dom.label}
+                            </Label>
+                          </Tooltip>
+                        );
+                      })()}
+                      {s === 'cancelada' && n.dominioEnvioCancelamento && (() => {
+                        const cancEnv = n.dominioEnvioCancelamento;
+                        const canc = labelStatusDominio(cancEnv, true);
+                        const tipCanc =
+                          cancEnv.status === 'enviado'
+                            ? `Cancelamento enviado em ${cancEnv.enviadoEm ? dayjs(cancEnv.enviadoEm).format('DD/MM/YYYY HH:mm') : '-'}${cancEnv.processadoEm ? ` · Confirmado em ${dayjs(cancEnv.processadoEm).format('DD/MM/YYYY HH:mm')}` : ''}${cancEnv.batchId ? ` · Lote ${cancEnv.batchId}` : ''}`
+                            : cancEnv.status === 'erro'
+                              ? `${mensagemErroDominio(cancEnv.erro) || 'Erro no envio do cancelamento'}${cancEnv.tentativas ? ` (tentativa ${cancEnv.tentativas}/5)` : ''}`
+                              : 'Envio do evento de cancelamento à contabilidade (Domínio)';
+                        return (
+                          <Tooltip title={tipCanc}>
+                            <Label color={canc.color} variant="soft" startIcon={<Iconify icon="solar:close-circle-bold" />}>
+                              Cancelamento → Domínio: {canc.label}
+                            </Label>
+                          </Tooltip>
+                        );
+                      })()}
                     </Stack>
                     <Typography variant="caption" color="text.secondary">{dataEmissao ? dayjs(dataEmissao).format('DD/MM/YYYY HH:mm') : '-'}</Typography>
                   </Stack>
@@ -1219,6 +1296,30 @@ export default function DashboardFiscalPage() {
                       >
                         XML Sieg
                       </Button>
+                    )}
+                    {dominioHabilitado && isNotaElegivelDominio(n) && podeReenviarDominio(n.dominioEnvio) && (
+                      <LoadingButton
+                        size="small"
+                        variant="outlined"
+                        color="info"
+                        loading={reenviandoDominioId === (n._id || n.id)}
+                        startIcon={<Iconify icon="solar:buildings-3-bold" />}
+                        onClick={() => handleReenviarDominio(n)}
+                      >
+                        Reenviar Domínio
+                      </LoadingButton>
+                    )}
+                    {dominioHabilitado && podeReenviarCancelamentoDominio(n) && (
+                      <LoadingButton
+                        size="small"
+                        variant="outlined"
+                        color="warning"
+                        loading={reenviandoCancelamentoId === (n._id || n.id)}
+                        startIcon={<Iconify icon="solar:close-circle-bold" />}
+                        onClick={() => handleReenviarCancelamentoDominio(n)}
+                      >
+                        Reenviar cancelamento
+                      </LoadingButton>
                     )}
                     {s !== 'cancelada' && s !== 'rejeitada' && s !== 'emitindo' && (
                       <Button

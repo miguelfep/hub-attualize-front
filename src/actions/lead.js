@@ -1,3 +1,4 @@
+import { getUtmPayload } from 'src/utils/utm';
 import axios, { endpoints } from 'src/utils/axios';
 
 // ----------------------------------------------------------------------
@@ -5,7 +6,8 @@ import axios, { endpoints } from 'src/utils/axios';
 // ----------------------------------------------------------------------
 
 export async function criarLead(leadData) {
-  const res = await axios.post(endpoints.marketing.create, leadData);
+  // Anexa UTMs (first-touch) capturadas da landing à captação do lead.
+  const res = await axios.post(endpoints.marketing.create, { ...getUtmPayload(), ...leadData });
   return res.data;
 }
 
@@ -156,6 +158,8 @@ export async function saveLeadProgress(leadData) {
  */
 export async function createLead(dadosIniciais) {
   const leadData = {
+    // UTMs (first-touch) capturadas da landing.
+    ...getUtmPayload(),
     nome: dadosIniciais.nome,
     email: dadosIniciais.email,
     telefone: dadosIniciais.telefone,
