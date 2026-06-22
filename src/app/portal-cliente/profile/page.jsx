@@ -13,10 +13,14 @@ import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import CardContent from '@mui/material/CardContent';
 import { alpha, useTheme } from '@mui/material/styles';
+import InputAdornment from '@mui/material/InputAdornment';
+
+import { useBoolean } from 'src/hooks/use-boolean';
 
 import axios from 'src/utils/axios';
 
@@ -62,6 +66,10 @@ export default function PortalClienteProfileView() {
   const [clienteData, setClienteData] = useState(null);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
+  const showCurrentPassword = useBoolean();
+  const showNewPassword = useBoolean();
+  const showConfirmPassword = useBoolean();
+
   const methods = useForm({
     resolver: zodResolver(ProfileSchema),
     defaultValues: {
@@ -93,8 +101,8 @@ export default function PortalClienteProfileView() {
   useEffect(() => {
     const fetchClienteData = async () => {
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dados/${  user.userId}`);
-        const {data} = response;
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dados/${user.userId}`);
+        const { data } = response;
         setClienteData(data);
 
         // Atualiza os valores do formulário
@@ -116,10 +124,10 @@ export default function PortalClienteProfileView() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       setLoading(true);
-      
+
       // Atualiza dados do usuário
       await axios.put(`${process.env.NEXT_PUBLIC_API_URL}users/cliente/profile`, data);
-      
+
       // Atualiza dados do cliente
       await axios.put(`${process.env.NEXT_PUBLIC_API_URL}cliente-portal/dados`, {
         nome: data.name,
@@ -141,7 +149,7 @@ export default function PortalClienteProfileView() {
   const handlePasswordChange = handlePasswordSubmit(async (data) => {
     try {
       setPasswordLoading(true);
-      
+
       await axios.put(`${process.env.NEXT_PUBLIC_API_URL}users/cliente/password`, {
         currentPassword: data.currentPassword,
         newPassword: data.newPassword,
@@ -151,13 +159,13 @@ export default function PortalClienteProfileView() {
       passwordMethods.reset();
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
-      toast.error('Erro ao alterar senha');
+      toast.error(error?.message || 'Erro ao alterar senha');
     } finally {
       setPasswordLoading(false);
     }
   });
 
-return (
+  return (
     <LazyMotion features={domAnimation}>
       <m.div initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}>
         <Card sx={{ borderRadius: 3 }}>
@@ -167,7 +175,7 @@ return (
           </Box>
 
           <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-            <Grid container spacing={4}>
+            <Grid container spacing={4} sx={{ mb: 3, '& > *': { p: 2.5 } }}>
               <Grid xs={12} md={4}>
                 <ProfileCover user={user} />
               </Grid>
@@ -177,7 +185,7 @@ return (
                   <Box>
                     <SectionHeader icon="solar:user-id-bold-duotone" title="Informações Pessoais" />
                     <Form methods={methods} onSubmit={onSubmit}>
-                      <Grid container spacing={2}>
+                      <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2.5 } }}>
                         <Grid xs={12} sm={6}>
                           <Field.Text name="name" label="Nome Completo" fullWidth />
                         </Grid>
@@ -191,21 +199,63 @@ return (
                       </Stack>
                     </Form>
                   </Box>
-                  
+
                   <Divider sx={{ my: 4, borderStyle: 'dashed' }} />
 
                   <Box>
                     <SectionHeader icon="solar:lock-password-bold-duotone" title="Alterar Senha" />
                     <Form methods={passwordMethods} onSubmit={handlePasswordChange}>
-                      <Grid container spacing={2}>
+                      <Grid container spacing={2} sx={{ mb: 3, '& > *': { p: 2 } }}>
                         <Grid xs={12} sm={6}>
-                          <Field.Text name="currentPassword" label="Senha Atual" type="password" fullWidth />
+                          <Field.Text
+                            name="currentPassword"
+                            label="Senha Atual"
+                            type={showCurrentPassword.value ? 'text' : 'password'}
+                            fullWidth
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton onClick={showCurrentPassword.onToggle} edge="end">
+                                    <Iconify icon={showCurrentPassword.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
                         </Grid>
                         <Grid xs={12} sm={6}>
-                          <Field.Text name="newPassword" label="Nova Senha" type="password" fullWidth />
+                          <Field.Text
+                            name="newPassword"
+                            label="Nova Senha"
+                            type={showNewPassword.value ? 'text' : 'password'}
+                            fullWidth
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton onClick={showNewPassword.onToggle} edge="end">
+                                    <Iconify icon={showNewPassword.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
                         </Grid>
                         <Grid xs={12} sm={6}>
-                          <Field.Text name="confirmPassword" label="Confirmar Nova Senha" type="password" fullWidth />
+                          <Field.Text
+                            name="confirmPassword"
+                            label="Confirmar Nova Senha"
+                            type={showConfirmPassword.value ? 'text' : 'password'}
+                            fullWidth
+                            InputProps={{
+                              endAdornment: (
+                                <InputAdornment position="end">
+                                  <IconButton onClick={showConfirmPassword.onToggle} edge="end">
+                                    <Iconify icon={showConfirmPassword.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                                  </IconButton>
+                                </InputAdornment>
+                              ),
+                            }}
+                          />
                         </Grid>
                       </Grid>
                       <Stack direction="row" spacing={2} sx={{ mt: 3 }} justifyContent="flex-end">
