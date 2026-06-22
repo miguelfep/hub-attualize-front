@@ -976,7 +976,7 @@ export default function PortalClienteSettingsView() {
                           </Typography>
                         </Box>
 
-                        <Grid container columnSpacing={{ xs: 3, md: 4 }} rowSpacing={{ xs: 3, md: 3.5 }}>
+                        <Grid container spacing={2} sx={{ '& > *': { p: 2.5 } }}>
                           <Grid xs={12} md={6}>
                             <Paper
                               variant="outlined"
