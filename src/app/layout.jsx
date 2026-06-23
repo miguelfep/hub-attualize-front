@@ -47,7 +47,7 @@ export const viewport = {
 export const preferredRegion = 'gru1';
 
 export const metadata = {
-  metadataBase: new URL('https://attualize.com.br'),
+  metadataBase: new URL('https://www.attualize.com.br'),
   title: {
     default: 'Attualize HUB - Contabilidade Digital Especializada',
     template: `%s | ${CONFIG.site.name}`,
@@ -74,7 +74,7 @@ export const metadata = {
   openGraph: {
     type: 'website',
     locale: 'pt_BR',
-    url: 'https://attualize.com.br',
+    url: 'https://www.attualize.com.br/',
     siteName: CONFIG.site.name,
     title: 'Attualize HUB - Contabilidade Digital Especializada',
     description:

@@ -4,7 +4,7 @@ import { HomeView } from 'src/sections/home/view';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: 'Attualize Contábil: Especializada em Beleza, Saúde e Bem-Estar',

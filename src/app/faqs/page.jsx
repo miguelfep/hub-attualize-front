@@ -3,7 +3,7 @@ import { FaqsView } from 'src/sections/faqs/view';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: 'Perguntas Frequentes (FAQ) - Attualize Contábil',

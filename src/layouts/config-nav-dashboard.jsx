@@ -42,6 +42,41 @@ export const ICON_KEYS = Object.keys(ICONS);
 
 // ----------------------------------------------------------------------
 
+/**
+ * Calcula as roles que podem acessar a rota atual, com base na navData.
+ * Percorre a árvore acumulando as roles de cada nível (a rota só é acessível
+ * se a role estiver presente em TODOS os níveis que definem `roles`).
+ * Retorna a interseção das roles exigidas, ou `undefined` quando a rota não
+ * impõe restrição (libera o acesso).
+ */
+export function getRouteAccessRoles(pathname, data = navData) {
+  const candidates = [];
+
+  const walk = (items, inheritedSets) => {
+    items?.forEach((item) => {
+      const sets = item.roles ? [...inheritedSets, item.roles] : inheritedSets;
+      if (item.path) candidates.push({ path: item.path, sets });
+      if (item.children) walk(item.children, sets);
+    });
+  };
+
+  data.forEach((group) => walk(group.items, []));
+
+  const matches = candidates.filter(
+    (c) => pathname === c.path || pathname.startsWith(`${c.path}/`)
+  );
+
+  if (!matches.length) return undefined;
+
+  // rota mais específica (path mais longo) que casa com o pathname
+  const best = matches.reduce((a, b) => (b.path.length > a.path.length ? b : a));
+
+  if (!best.sets.length) return undefined;
+
+  // interseção das roles exigidas em toda a cadeia de níveis
+  return best.sets.reduce((acc, set) => acc.filter((r) => set.includes(r)));
+}
+
 export const navData = [
   /**
    * Overview

@@ -6,6 +6,8 @@ import Alert from '@mui/material/Alert';
 import { useTheme } from '@mui/material/styles';
 import { iconButtonClasses } from '@mui/material/IconButton';
 
+import { usePathname } from 'src/routes/hooks';
+
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { allLangs } from 'src/locales';
@@ -14,6 +16,9 @@ import { varAlpha, stylesMode } from 'src/theme/styles';
 
 import { bulletColor } from 'src/components/nav-section';
 import { useSettingsContext } from 'src/components/settings';
+
+import { getUser } from 'src/auth/context/jwt';
+import { RoleBasedGuard } from 'src/auth/guard';
 
 import { Main } from './main';
 import { NavMobile } from './nav-mobile';
@@ -24,7 +29,7 @@ import { _account } from '../config-nav-account';
 import { HeaderBase } from '../core/header-base';
 import { _workspaces } from '../config-nav-workspace';
 import { LayoutSection } from '../core/layout-section';
-import { navData as dashboardNavData } from '../config-nav-dashboard';
+import { getRouteAccessRoles, navData as dashboardNavData } from '../config-nav-dashboard';
 
 // ----------------------------------------------------------------------
 
@@ -40,6 +45,14 @@ export function DashboardLayout({ sx, children, data }) {
   const layoutQuery = 'lg';
 
   const navData = data?.nav ?? dashboardNavData;
+
+  const pathname = usePathname();
+
+  const currentRole = getUser()?.role || 'cliente';
+
+  // admin tem acesso total; demais roles respeitam as restrições da navData
+  const acceptRoles =
+    currentRole === 'admin' ? undefined : getRouteAccessRoles(pathname, navData);
 
   const isNavMini = settings.navLayout === 'mini';
 
@@ -185,7 +198,11 @@ export function DashboardLayout({ sx, children, data }) {
           ...sx,
         }}
       >
-        <Main isNavHorizontal={isNavHorizontal}>{children}</Main>
+        <Main isNavHorizontal={isNavHorizontal}>
+          <RoleBasedGuard hasContent currentRole={currentRole} acceptRoles={acceptRoles}>
+            {children}
+          </RoleBasedGuard>
+        </Main>
       </LayoutSection>
     </>
   );

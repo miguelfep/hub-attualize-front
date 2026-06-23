@@ -3,7 +3,7 @@ import { PsychologistLandingView } from 'src/sections/psychologist/view';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: 'Contabilidade para Psicólogos - Attualize Contábil',

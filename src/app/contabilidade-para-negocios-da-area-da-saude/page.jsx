@@ -3,7 +3,7 @@ import { FAQS_SAUDE } from 'src/sections/saude/saude-utils';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 const PAGE_PATH = '/contabilidade-para-negocios-da-area-da-saude';
 

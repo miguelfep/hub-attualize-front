@@ -25,6 +25,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { SearchNotFound } from 'src/components/search-not-found';
 
+import { getUser } from 'src/auth/context/jwt';
+
 import { ResultItem } from './result-item';
 import { groupItems, applyFilter, getAllItems } from './utils';
 
@@ -38,6 +40,8 @@ export function Searchbar({ data: navItems = [], sx, ...other }) {
   const search = useBoolean();
 
   const [searchQuery, setSearchQuery] = useState('');
+
+  const currentRole = getUser()?.role || 'cliente';
 
   const handleClose = useCallback(() => {
     search.onFalse();
@@ -70,7 +74,7 @@ export function Searchbar({ data: navItems = [], sx, ...other }) {
   }, []);
 
   const dataFiltered = applyFilter({
-    inputData: getAllItems({ data: navItems }),
+    inputData: getAllItems({ data: navItems, currentRole }),
     query: searchQuery,
   });
 

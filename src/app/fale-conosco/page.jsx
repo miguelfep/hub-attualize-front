@@ -3,7 +3,7 @@ import { ContactView } from 'src/sections/contact/view';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: 'Fale Conosco - Entre em Contato com a Attualize',
