@@ -4,7 +4,7 @@ import { PoliticaPrivacidadeAppView } from 'src/sections/legal/politica-privacid
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: `Política de Privacidade do app Hub Attualize - ${CONFIG.site.name}`,

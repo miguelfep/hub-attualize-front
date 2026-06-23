@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 
 // ----------------------------------------------------------------------
 
-// const SITE_URL = 'https://attualize.com.br';
+// const SITE_URL = 'https://www.attualize.com.br';
 
 // export const metadata = {
 //   title: 'Declaração de Imposto de Renda 2026 - Attualize Contábil',

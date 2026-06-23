@@ -7,7 +7,7 @@ import { PostListHomeView } from 'src/sections/blog/view';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: 'Blog - Artigos sobre Contabilidade, Gestão e Negócios',

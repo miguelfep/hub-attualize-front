@@ -7,7 +7,7 @@ import { FAQS_ESTETICA } from 'src/sections/estetica-home/estetica-utils';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: 'Contabilidade para Clínicas de Estética - Attualize Contábil',

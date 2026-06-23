@@ -96,7 +96,7 @@ export function ContratoCobrancas({ contratoId, contrato }) {
   const handleSendWhatsApp = async (cobranca) => {
     try {
       const { cliente } = contrato;
-      const linkDownload = `https://attualize.com.br/fatura/${cobranca._id}`; // Gera o link de acordo com o ID da cobrança
+      const linkDownload = `https://www.attualize.com.br/fatura/${cobranca._id}`; // Gera o link de acordo com o ID da cobrança
       const mensagem =
         `Olá ${cliente.nome}, aqui está o link do seu boleto referente a: ${cobranca.observacoes}.\n\n` +
         `Link para acessar: ${linkDownload}`;
@@ -464,7 +464,7 @@ export function ContratoCobrancas({ contratoId, contrato }) {
                       {/* MenuItem para ver a fatura na frente */}
                       <MenuItem
                         onClick={() => {
-                          window.open(`https://attualize.com.br/fatura/${cobranca._id}`, '_blank');
+                          window.open(`https://www.attualize.com.br/fatura/${cobranca._id}`, '_blank');
                           handleClosePopover();
                         }}
                       >

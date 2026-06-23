@@ -2,7 +2,7 @@
 // Helpers de SEO (metadata + JSON-LD) para as landing pages de segmentos
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export function buildSegmentMetadata(segment) {
   const url = `${SITE_URL}/${segment.slug}`;

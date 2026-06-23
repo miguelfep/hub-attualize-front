@@ -304,7 +304,7 @@ export function HomeFooter({ sx }) {
         <Box sx={{ mt: 1, typography: 'caption' }}>
           © Todos os direitos reservados
           <br /> Feito por
-          <Link href="https://attualize.com.br/"> Attualize TECH </Link>
+          <Link href="https://www.attualize.com.br/"> Attualize TECH </Link>
         </Box>
       </Container>
     </Box>

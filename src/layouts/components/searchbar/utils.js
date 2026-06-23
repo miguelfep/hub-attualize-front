@@ -2,8 +2,21 @@ import { flattenArray } from 'src/utils/helper';
 
 // ----------------------------------------------------------------------
 
-export function getAllItems({ data }) {
-  const reduceItems = data.map((list) => handleLoop(list.items, list.subheader)).flat();
+function filterItemsByRole(items, currentRole) {
+  if (!items) return items;
+
+  return items
+    .filter((item) => !item.roles || !currentRole || item.roles.includes(currentRole))
+    .map((item) => ({
+      ...item,
+      ...(item.children && { children: filterItemsByRole(item.children, currentRole) }),
+    }));
+}
+
+export function getAllItems({ data, currentRole }) {
+  const reduceItems = data
+    .map((list) => handleLoop(filterItemsByRole(list.items, currentRole), list.subheader))
+    .flat();
 
   const items = flattenArray(reduceItems).map((option) => {
     const group = splitPath(reduceItems, option.path);

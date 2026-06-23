@@ -3,7 +3,7 @@ import { AboutView } from 'src/sections/about/view';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: 'Sobre a Attualize - Nossa História e Missão',

@@ -2,7 +2,7 @@ import { getServerSideSitemap } from 'next-sitemap';
 
 import { getBlogPostsSitemapMeta } from 'src/actions/blog-ssr';
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 /** Sitemap precisa de várias chamadas ao WP; planos Vercel Pro+ permitem até 60s. */
 export const maxDuration = 60;
@@ -56,7 +56,7 @@ export async function GET() {
 
     // Criar URLs dos posts
     const postFields = allPosts.map((post) => ({
-      loc: `${SITE_URL}/blog/${post.slug}`,
+      loc: `${SITE_URL}/blog/${post.slug}/`,
       lastmod: normalizeDate(post.modified || post.date),
       changefreq: 'weekly',
       priority: 0.8,
@@ -71,61 +71,61 @@ export async function GET() {
         priority: 1.0,
       },
       {
-        loc: `${SITE_URL}/blog`,
+        loc: `${SITE_URL}/blog/`,
         lastmod: new Date().toISOString(),
         changefreq: 'daily',
         priority: 0.9,
       },
       {
-        loc: `${SITE_URL}/sobre`,
+        loc: `${SITE_URL}/sobre/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.7,
       },
       {
-        loc: `${SITE_URL}/fale-conosco`,
+        loc: `${SITE_URL}/fale-conosco/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.7,
       },
       {
-        loc: `${SITE_URL}/faqs`,
+        loc: `${SITE_URL}/faqs/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.6,
       },
       {
-        loc: `${SITE_URL}/termos-de-uso-app`,
+        loc: `${SITE_URL}/termos-de-uso-app/`,
         lastmod: new Date().toISOString(),
         changefreq: 'yearly',
         priority: 0.4,
       },
       {
-        loc: `${SITE_URL}/contabilidade-para-psicologos`,
+        loc: `${SITE_URL}/contabilidade-para-psicologos/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.8,
       },
       {
-        loc: `${SITE_URL}/contabilidade-para-clinicas-de-estetica`,
+        loc: `${SITE_URL}/contabilidade-para-clinicas-de-estetica/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.8,
       },
       {
-        loc: `${SITE_URL}/abertura`,
+        loc: `${SITE_URL}/abertura/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.7,
       },
       {
-        loc: `${SITE_URL}/abertura-cnpj-psicologo`,
+        loc: `${SITE_URL}/abertura-cnpj-psicologo/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.7,
       },
       {
-        loc: `${SITE_URL}/jornada-defina`,
+        loc: `${SITE_URL}/jornada-defina/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.6,

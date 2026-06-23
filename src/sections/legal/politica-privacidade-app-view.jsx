@@ -29,7 +29,7 @@ const EMPRESA_TELEFONE_TEL = '+554130681800';
 const EMPRESA_EMAIL = 'adm@attualizecontabil.com.br';
 const DATA_ATUALIZACAO = '30 de abril de 2026';
 
-const SITE_PUBLICO = 'https://attualize.com.br';
+const SITE_PUBLICO = 'https://www.attualize.com.br';
 
 const LEGAL = {
   header: '#374151',

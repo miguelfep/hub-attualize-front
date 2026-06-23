@@ -9,8 +9,8 @@ Disallow: /_next/
 Disallow: /error/
 
 # Host (padrão: apenas domínio, sem protocolo)
-Host: attualize.com.br
+Host: www.attualize.com.br
 
 # Sitemaps
-Sitemap: https://attualize.com.br/sitemap.xml
-Sitemap: https://attualize.com.br/server-sitemap.xml
+Sitemap: https://www.attualize.com.br/sitemap.xml
+Sitemap: https://www.attualize.com.br/server-sitemap.xml

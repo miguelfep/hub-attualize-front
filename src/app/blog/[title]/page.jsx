@@ -7,7 +7,9 @@ import { PostDetailsHomeView } from 'src/sections/blog/view';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
+
+const getBlogPostUrl = (slug) => `${SITE_URL}/blog/${slug}/`;
 
 export async function generateMetadata({ params }) {
   try {
@@ -23,7 +25,7 @@ export async function generateMetadata({ params }) {
     const post = await getBlogPostBySlug(title);
 
     if (post) {
-      const postUrl = post.canonicalUrl || `${SITE_URL}/blog/${post.slug}`;
+      const postUrl = post.canonicalUrl || getBlogPostUrl(post.slug);
       const postTitle = post.seoTitle || post.title;
       const postDescription = post.metaDescription || post.excerpt || 'Descrição da postagem';
       const postImage = post.ogImage || post.imageUrl || `${SITE_URL}/logo/attualize.png`;
@@ -91,7 +93,7 @@ export default async function Page({ params }) {
 
     // JSON-LD: a API já entrega `jsonLd` pronto (Article + FAQPage). Usamos quando disponível;
     // caso contrário, montamos BlogPosting + BreadcrumbList como fallback.
-    const postUrl = post.canonicalUrl || `${SITE_URL}/blog/${post.slug}`;
+    const postUrl = post.canonicalUrl || getBlogPostUrl(post.slug);
 
     let structuredData = [];
 
@@ -139,8 +141,8 @@ export default async function Page({ params }) {
       '@context': 'https://schema.org',
       '@type': 'BreadcrumbList',
       itemListElement: [
-        { '@type': 'ListItem', position: 1, name: 'Início', item: SITE_URL },
-        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE_URL}/blog` },
+        { '@type': 'ListItem', position: 1, name: 'Início', item: `${SITE_URL}/` },
+        { '@type': 'ListItem', position: 2, name: 'Blog', item: `${SITE_URL}/blog/` },
         { '@type': 'ListItem', position: 3, name: post.title, item: postUrl },
       ],
     });

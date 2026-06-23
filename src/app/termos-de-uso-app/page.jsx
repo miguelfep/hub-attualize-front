@@ -4,7 +4,7 @@ import { TermosUsoAppView } from 'src/sections/legal/termos-uso-app-view';
 
 // ----------------------------------------------------------------------
 
-const SITE_URL = 'https://attualize.com.br';
+const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
   title: `Licença de uso e termos do app Hub Attualize - ${CONFIG.site.name}`,

@@ -39,7 +39,7 @@ import { SimplePaper } from 'src/components/paper/SimplePaper';
 
 import { InvoicePDF } from '../invoice/invoice-pdf';
 
-const baseUrl = process.env.NEXT_PUBLIC_FRONT_URL || 'https://attualize.com.br/';
+const baseUrl = process.env.NEXT_PUBLIC_FRONT_URL || 'https://www.attualize.com.br/';
 
 const formatarEventoTimeline = (eventoApi) => {
   const { id, status, invoiceNumber, total, motivoPerda } = eventoApi;
