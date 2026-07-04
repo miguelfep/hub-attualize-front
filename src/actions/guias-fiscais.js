@@ -151,6 +151,23 @@ export async function deleteGuiaFiscal(id) {
 
 // ----------------------------------------------------------------------
 
+// ----------------------------------------------------------------------
+
+const MIME_POR_EXT = {
+  pdf: 'application/pdf',
+  ofx: 'application/x-ofx',
+  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  xls: 'application/vnd.ms-excel',
+};
+
+function mimeFromFileName(nomeArquivo) {
+  const ext = String(nomeArquivo || '')
+    .split('.')
+    .pop()
+    ?.toLowerCase();
+  return (ext && MIME_POR_EXT[ext]) || 'application/octet-stream';
+}
+
 /**
  * Download de guia fiscal
  * @param {string} id - ID da guia
@@ -162,11 +179,11 @@ export async function downloadGuiaFiscal(id, nomeArquivo) {
     responseType: 'blob',
   });
 
-  // Criar link para download
-  const url = window.URL.createObjectURL(new Blob([res.data]));
+  const fileName = nomeArquivo || 'guia-fiscal.pdf';
+  const url = window.URL.createObjectURL(new Blob([res.data], { type: mimeFromFileName(fileName) }));
   const link = document.createElement('a');
   link.href = url;
-  link.setAttribute('download', nomeArquivo || 'guia-fiscal.pdf');
+  link.setAttribute('download', fileName);
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -247,5 +264,66 @@ export async function uploadManualPastaAdmin(folderId, files, { clienteId, dataV
 
 export async function moveGuiaParaPastaAdmin(guiaId, folderId) {
   const res = await axios.patch(endpoints.guiasFiscais.moveToPasta(guiaId), { folderId });
+  return res.data;
+}
+
+// ----------------------------------------------------------------------
+// Serpro — DAS emitida
+// ----------------------------------------------------------------------
+
+/**
+ * Detecta DAS existente no slot (cliente + pasta + competência).
+ * @returns {{ existe: boolean, guia: Object|null }}
+ */
+export async function getDasExistenteNoSlot(clienteId, folderId, competencia) {
+  const res = await axios.get(endpoints.guiasFiscais.list, {
+    params: {
+      clienteId,
+      folderId,
+      categoria: 'GUIA_FISCAL',
+      tipoGuia: 'DAS',
+      limit: 100,
+    },
+  });
+  const guias = res?.data?.data?.guias || [];
+  const encontrada = guias.find(
+    (g) => g.competencia === competencia || g?.dadosExtraidos?.competencia === competencia
+  );
+  return { existe: !!encontrada, guia: encontrada || null };
+}
+
+/**
+ * Substitui arquivo de uma DAS existente (preserva _id).
+ */
+export async function substituirArquivoGuia(id, file, { serproId, dataVencimento } = {}) {
+  const formData = new FormData();
+  formData.append('file', file);
+  if (serproId) formData.append('serproId', serproId);
+  if (dataVencimento) formData.append('dataVencimento', dataVencimento);
+
+  const res = await axios.put(endpoints.guiasFiscais.substituirArquivo(id), formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+}
+
+/**
+ * Cria nova GuiaFiscal via modal DAS (com metadados SerPro preenchidos).
+ */
+export async function criarGuiaSerpro(
+  file,
+  { clienteId, folderId, serproId, dataVencimento, competencia } = {}
+) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('clienteId', clienteId);
+  formData.append('folderId', folderId);
+  if (serproId) formData.append('serproId', serproId);
+  if (dataVencimento) formData.append('dataVencimento', dataVencimento);
+  if (competencia) formData.append('competencia', competencia);
+
+  const res = await axios.post(endpoints.guiasFiscais.criarSerpro, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
   return res.data;
 }

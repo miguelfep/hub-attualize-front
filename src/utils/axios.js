@@ -509,6 +509,8 @@ export const endpoints = {
     delete: (id) => `${baseUrl}guias-fiscais/${id}`,
     batch: `${baseUrl}guias-fiscais/batch`,
     download: (id) => `${baseUrl}guias-fiscais/${id}/download`,
+    substituirArquivo: (id) => `${baseUrl}guias-fiscais/${id}/arquivo`,
+    criarSerpro: `${baseUrl}guias-fiscais/serpro-guia`,
     portal: {
       list: `${baseUrl}portal/guias-fiscais`,
       pastas: `${baseUrl}portal/guias-fiscais/pastas`,
@@ -519,7 +521,19 @@ export const endpoints = {
       get: (id) => `${baseUrl}portal/guias-fiscais/${id}`,
       download: (id) => `${baseUrl}portal/guias-fiscais/${id}/download`,
       solicitarAtualizacao: (id) => `${baseUrl}portal/guias-fiscais/${id}/solicitar-atualizacao`,
+      confirmarPagamentoDas: `${baseUrl}portal/guias-fiscais/das/confirmar-pagamento`,
     },
+  },
+  caixaPostal: {
+    mensagens: (clienteId) => `${baseUrl}caixa-postal/${clienteId}/mensagens`,
+    mensagem: (clienteId, isn) => `${baseUrl}caixa-postal/${clienteId}/mensagens/${isn}`,
+    sincronizar: (clienteId) => `${baseUrl}caixa-postal/${clienteId}/sincronizar`,
+  },
+  // Banners
+  banners: {
+    root: `${baseUrl}banners`,
+    publicos: `${baseUrl}banners/publicos`,
+    details: (id) => `${baseUrl}banners/${id}`,
   },
   // Indicação
   indicacao: {
@@ -694,5 +708,15 @@ export const endpoints = {
       update: (id) => `${baseUrl}comunidade/tags/${id}`,
       delete: (id) => `${baseUrl}comunidade/tags/${id}`,
     },
+  },
+  serproEmissao: {
+    das2via: `${baseUrl}portal/guias-fiscais/das`,
+    das2viaStatus: `${baseUrl}portal/guias-fiscais/das/status`,
+    serproDetalhe: (id) => `${baseUrl}audit/serpro/${id}`,
+    caixaPostalDetalhe: (id) => `${baseUrl}audit/caixa-postal/${id}`,
+  },
+  integraContadorRelatorio: {
+    stats: `${baseUrl}relatorios/integra-contador/stats`,
+    logs: `${baseUrl}relatorios/integra-contador/logs`,
   },
 };

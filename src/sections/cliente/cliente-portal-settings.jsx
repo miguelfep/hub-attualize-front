@@ -104,6 +104,8 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
       vendas: Boolean(settings?.funcionalidades?.vendas),
       cobrancaInterPortal: Boolean(settings?.funcionalidades?.cobrancaInterPortal),
       agendamentos: Boolean(settings?.funcionalidades?.agendamentos),
+      // Default ligado: emissão de 2ª via DAS fica disponível no portal para clientes Simples.
+      emissaoDas2Via: settings?.funcionalidades?.emissaoDas2Via ?? true,
     }),
     [settings]
   );
@@ -113,6 +115,8 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
       limiteClientes: settings?.configuracoes?.limiteClientes ?? '',
       limiteServicos: settings?.configuracoes?.limiteServicos ?? '',
       limiteOrcamentos: settings?.configuracoes?.limiteOrcamentos ?? '',
+      // Default 1: comportamento histórico (1 emissão/mês) quando não configurado.
+      limiteEmissaoDasMensal: settings?.configuracoes?.limiteEmissaoDasMensal ?? 1,
     }),
     [settings]
   );
@@ -1072,6 +1076,15 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
               />
             </>
           )}
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localState.funcionalidades.emissaoDas2Via}
+                onChange={handleToggle('emissaoDas2Via')}
+              />
+            }
+            label="Emissão de 2ª via DAS (portal)"
+          />
         </Grid>
 
         <Grid xs={12} md={6}>
@@ -1098,6 +1111,17 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
             label="Limite de Orçamentos"
             value={localState.configuracoes.limiteOrcamentos}
             onChange={handleConfigChange('limiteOrcamentos')}
+            sx={{ mb: 2 }}
+          />
+          <TextField
+            fullWidth
+            type="number"
+            label="Limite de emissões DAS por mês"
+            value={localState.configuracoes.limiteEmissaoDasMensal}
+            onChange={handleConfigChange('limiteEmissaoDasMensal')}
+            inputProps={{ min: 1, step: 1 }}
+            helperText="Quantidade de 2ªs vias da Guia DAS que o cliente pode emitir pelo portal a cada mês. Padrão: 1."
+            sx={{ mb: 0 }}
           />
         </Grid>
       </Grid>
@@ -1559,10 +1583,8 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
         </Card>
       )}
 
-      {/* ── Integração Domínio (envio de XML à contabilidade) ── */}
-      {localState.funcionalidades.emissaoNFSe && (
-        <ClienteDominioIntegracao clienteId={clienteId} clienteCnpj={clienteCnpj} />
-      )}
+      {/* ── Integração Domínio (envio de XML à contabilidade) — sempre visível ── */}
+      <ClienteDominioIntegracao clienteId={clienteId} clienteCnpj={clienteCnpj} />
 
       {/* ── Download e Busca de Documentos — sempre visível ── */}
       <Card>

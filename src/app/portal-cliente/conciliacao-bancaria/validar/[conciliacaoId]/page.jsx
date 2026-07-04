@@ -625,9 +625,11 @@ export default function ValidacaoConciliacaoPage() {
             const temStatusConfirmado =
               t.status === 'confirmada' ||
               t.status === 'conciliada' ||
+              t.conciliada === true ||
               (t.transacaoImportada &&
                 (t.transacaoImportada.status === 'confirmada' ||
-                  t.transacaoImportada.status === 'conciliada'));
+                  t.transacaoImportada.status === 'conciliada' ||
+                  t.transacaoImportada.conciliada === true));
 
             return temContaId || temStatusConfirmado;
           });

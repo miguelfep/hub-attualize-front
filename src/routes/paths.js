@@ -138,8 +138,14 @@ export const paths = {
     status: {
       root: `${ROOTS.DASHBOARD}/status`,
     },
+    banners: {
+      root: `${ROOTS.DASHBOARD}/banners`,
+    },
     fiscal: {
-      root: `${ROOTS.DASHBOARD}/fiscal/nfse`,
+      root: `${ROOTS.DASHBOARD}/fiscal`,
+      nfse: `${ROOTS.DASHBOARD}/fiscal/nfse`,
+      impostos: `${ROOTS.DASHBOARD}/fiscal/impostos`,
+      caixaPostal: `${ROOTS.DASHBOARD}/fiscal/caixa-postal`,
     },
     contabil: {
       root: `${ROOTS.DASHBOARD}/contabil/conciliacoes`,
@@ -317,6 +323,7 @@ export const paths = {
     relatorios: {
       comercial: `${ROOTS.DASHBOARD}/relatorios/comercial`,
       financeiro: `${ROOTS.DASHBOARD}/relatorios/financeiro`,
+      integraContador: `${ROOTS.DASHBOARD}/relatorios/integra-contador`,
     },
     avaliacoes: {
       root: `${ROOTS.DASHBOARD}/avaliacoes`,

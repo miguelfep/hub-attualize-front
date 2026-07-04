@@ -311,6 +311,12 @@ export function useUploadExtrato() {
         errorMessage =
           errors.length > 0 ? errors[0] : (errorObj.solucao || errorObj.mensagem || 'Tente enviar o extrato em OFX.');
         console.log('✅ Detectado BANCO_SEM_PARSER_PDF');
+      } else if (errorObj?.tipo === 'CNPJ_DIVERGENTE' || errorObj?.code === 'CNPJ_DIVERGENTE') {
+        errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'O CNPJ do extrato não corresponde ao CNPJ da empresa.');
+        console.log('✅ Detectado CNPJ_DIVERGENTE');
+      } else if (err?.response?.status === 403 || errorObj?.code === 403) {
+        errorMessage = errorObj?.mensagem || errorObj?.error || 'Você não tem permissão para enviar extratos para esta empresa.';
+        console.log('✅ Detectado erro 403 (autorização)');
       } else if (errorObj?.code === 'LIMIT_FILE_SIZE') {
         // Erro de arquivo muito grande (nova estrutura)
         errorMessage = errors.length > 0 ? errors[0] : (errorObj.mensagem || 'Arquivo muito grande');

@@ -1,21 +1,28 @@
 'use client';
 
+import dayjs from 'dayjs';
 import dynamic from 'next/dynamic';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
 import FormControl from '@mui/material/FormControl';
 
+import { paths } from 'src/routes/paths';
+import { RouterLink } from 'src/routes/components';
+
 import { useEmpresa } from 'src/hooks/use-empresa';
 
 import axios from 'src/utils/axios';
 
+import { useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
 import { useBancosCliente } from 'src/app/portal-cliente/conciliacao-bancaria/hooks/use-bancos-cliente';
 
+import { Iconify } from 'src/components/iconify';
 import { formatToCurrency } from 'src/components/animate';
 
 import { useAuthContext } from 'src/auth/hooks';
@@ -38,44 +45,29 @@ import {
 } from './skeletons';
 
 // ✅ Componentes lazy (pesados - charts e modais)
-const ExpensePieChartLazy = dynamic(
-  () => import('./components/ExpensePieChart'),
-  {
-    ssr: false,
-    loading: () => <ExpensePieChartSkeleton />,
-  }
-);
+const ExpensePieChartLazy = dynamic(() => import('./components/ExpensePieChart'), {
+  ssr: false,
+  loading: () => <ExpensePieChartSkeleton />,
+});
 
-const BudgetOverviewChartLazy = dynamic(
-  () => import('./components/BudgetOverviewChart'),
-  {
-    ssr: false,
-    loading: () => <BudgetOverviewChartSkeleton />,
-  }
-);
+const BudgetOverviewChartLazy = dynamic(() => import('./components/BudgetOverviewChart'), {
+  ssr: false,
+  loading: () => <BudgetOverviewChartSkeleton />,
+});
 
-const TaxCalendarWidgetLazy = dynamic(
-  () => import('./components/TaxCalendarWidget'),
-  {
-    ssr: false,
-    loading: () => <TaxCalendarWidgetSkeleton sx={{ boxShadow: 'none' }} />,
-  }
-);
+const TaxCalendarWidgetLazy = dynamic(() => import('./components/TaxCalendarWidget'), {
+  ssr: false,
+  loading: () => <TaxCalendarWidgetSkeleton sx={{ boxShadow: 'none' }} />,
+});
 
-const AccountsPayableListLazy = dynamic(
-  () => import('./components/AccountsPayableList'),
-  {
-    ssr: false,
-    loading: () => <AccountsPayableListSkeleton />,
-  }
-);
+const AccountsPayableListLazy = dynamic(() => import('./components/AccountsPayableList'), {
+  ssr: false,
+  loading: () => <AccountsPayableListSkeleton />,
+});
 
-const DetalhesMensalModalLazy = dynamic(
-  () => import('./components/DetalhesMensalModalArea'),
-  {
-    ssr: false,
-  }
-);
+const DetalhesMensalModalLazy = dynamic(() => import('./components/DetalhesMensalModalArea'), {
+  ssr: false,
+});
 
 export default function PortalClienteDash2View() {
   const { user } = useAuthContext();
@@ -110,10 +102,8 @@ export default function PortalClienteDash2View() {
     error: errorExpenseData,
   } = useExpenseData(clienteId, selectedBankId, mesAnoAtual);
 
-  const {
-    status: reconciliationStatus,
-    loading: loadingReconciliationStatus,
-  } = useReconciliationStatus(clienteId, selectedBankId, mesAnoAtual);
+  const { status: reconciliationStatus, loading: loadingReconciliationStatus } =
+    useReconciliationStatus(clienteId, selectedBankId, mesAnoAtual);
 
   const {
     entrada: kpiEntrada,
@@ -123,13 +113,30 @@ export default function PortalClienteDash2View() {
     loading: loadingKPIs,
   } = useKPIMetrics(clienteId, selectedBankId, mesAnoAtual);
 
-  const {
-    transacoes: transacoesConta,
-    loading: loadingTransacoesConta,
-  } = useTransacoesConta(clienteId, selectedCategory, selectedBankId, mesAnoAtual);
-
+  const { transacoes: transacoesConta, loading: loadingTransacoesConta } = useTransacoesConta(
+    clienteId,
+    selectedCategory,
+    selectedBankId,
+    mesAnoAtual
+  );
 
   // 🎯 Buscar dados do dashboard da API (para vendas) — mesAno atualiza Vendas quando o backend suportar
+
+  // 🎯 Alerta de DAS vencida no mês corrente
+  const { data: guiasData } = useGetGuiasFiscaisPortal({ page: 1, limit: 200 });
+  const currentMonthCompetence = dayjs().format('MM/YYYY');
+  const hasDasVencida = useMemo(() => {
+    const guias = guiasData?.guias || [];
+    const today = dayjs();
+    return guias.some(
+      (g) =>
+        g.tipoGuia === 'DAS' &&
+        g.competencia === currentMonthCompetence &&
+        g.statusPagamento !== 'pago' &&
+        dayjs(g.dataVencimento).isBefore(today)
+    );
+  }, [guiasData, currentMonthCompetence]);
+
   useEffect(() => {
     if (!userId) return;
     const fetchDashboardData = async () => {
@@ -169,13 +176,17 @@ export default function PortalClienteDash2View() {
   }, []);
 
   // 🎯 Handler para seleção de conta contábil
-  const handleCategorySelect = useCallback((contaContabilId) => {
-    setSelectedCategory(contaContabilId === selectedCategory ? null : contaContabilId);
-  }, [selectedCategory]);
+  const handleCategorySelect = useCallback(
+    (contaContabilId) => {
+      setSelectedCategory(contaContabilId === selectedCategory ? null : contaContabilId);
+    },
+    [selectedCategory]
+  );
 
   // 🎯 Label do período para os chips (todos os cards usam o mesmo mês selecionado)
   const chipPeriodo = useMemo(() => {
-    const label = mesesDisponiveis.find((m) => m.value === mesAnoAtual)?.labelCurto || 'Mês Anterior';
+    const label =
+      mesesDisponiveis.find((m) => m.value === mesAnoAtual)?.labelCurto || 'Mês Anterior';
     return label;
   }, [mesAnoAtual, mesesDisponiveis]);
 
@@ -191,7 +202,8 @@ export default function PortalClienteDash2View() {
   }, [dashboardData, mesAnoAtual]);
 
   // 🎯 Calcular KPIs dinamicamente
-  const metrics = useMemo(() => [
+  const metrics = useMemo(
+    () => [
       {
         label: 'Vendas',
         value: formatToCurrency(vendasDoPeriodo || 0),
@@ -226,31 +238,43 @@ export default function PortalClienteDash2View() {
         chipLabel: chipPeriodo,
         loading: loadingKPIs,
       },
-    ], [vendasDoPeriodo, kpiEntrada, kpiSaida, kpiTemExtrato, loadingKPIs, selectedMonth, chipPeriodo]);
+    ],
+    [vendasDoPeriodo, kpiEntrada, kpiSaida, kpiTemExtrato, loadingKPIs, selectedMonth, chipPeriodo]
+  );
 
   // Transformar dados da API para o formato do gráfico
   const chartData = useMemo(() => {
     if (!dashboardData?.visaoGeralAnual) return [];
 
     const meses = [
-      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+      'Janeiro',
+      'Fevereiro',
+      'Março',
+      'Abril',
+      'Maio',
+      'Junho',
+      'Julho',
+      'Agosto',
+      'Setembro',
+      'Outubro',
+      'Novembro',
+      'Dezembro',
     ];
 
-    return dashboardData.visaoGeralAnual.map(item => ({
+    return dashboardData.visaoGeralAnual.map((item) => ({
       label: item.label,
       orcamentos: item.orcamentos,
       vendas: item.vendas,
       ano: item.ano,
       mes: item.mes,
-      mesNome: meses[item.mes - 1]
+      mesNome: meses[item.mes - 1],
     }));
   }, [dashboardData]);
 
   // Nome da conta contábil selecionada
   const contaContabilNome = useMemo(() => {
     if (!selectedCategory || !expenseData || expenseData.length === 0) return null;
-    const categoria = expenseData.find(c => c.contaContabilId === selectedCategory);
+    const categoria = expenseData.find((c) => c.contaContabilId === selectedCategory);
     return categoria?.contaContabilNome || null;
   }, [selectedCategory, expenseData]);
 
@@ -261,11 +285,11 @@ export default function PortalClienteDash2View() {
       setSelectedMonthForModal({
         ano: monthData.ano,
         mes: monthData.mes,
-        label: monthData.label
+        label: monthData.label,
       });
       setIsModalOpen(true);
     } else {
-      console.warn("Dados do mês inválidos:", monthData);
+      console.warn('Dados do mês inválidos:', monthData);
     }
   };
 
@@ -274,10 +298,13 @@ export default function PortalClienteDash2View() {
     setSelectedMonthForModal(null);
   };
 
-  const handleMonthSelectChange = useCallback((event) => {
-    const mesAno = event.target.value;
-    handleMonthChange(mesAno || null);
-  }, [handleMonthChange]);
+  const handleMonthSelectChange = useCallback(
+    (event) => {
+      const mesAno = event.target.value;
+      handleMonthChange(mesAno || null);
+    },
+    [handleMonthChange]
+  );
 
   return (
     <Box
@@ -292,6 +319,50 @@ export default function PortalClienteDash2View() {
         pb: { xs: 1.5, sm: 2 },
       }}
     >
+      {/* Alerta: DAS do mês corrente vencida */}
+      {hasDasVencida && (
+        <Box
+          sx={{
+            mb: 1.5,
+            flexShrink: 0,
+            borderRadius: 2,
+            bgcolor: 'error.main',
+            color: 'error.contrastText',
+            px: { xs: 2, sm: 3 },
+            py: 1.25,
+            ...ANIMATION_FADE_IN_UP,
+          }}
+        >
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={1.25}
+            alignItems={{ xs: 'flex-start', md: 'center' }}
+            justifyContent="space-between"
+          >
+            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+              Sua Guia DAS de {currentMonthCompetence} está vencida. Emita a 2ª via para evitar
+              multas.
+            </Typography>
+            <Button
+              component={RouterLink}
+              href={paths.cliente.guiasEDocumentos.list}
+              variant="contained"
+              color="inherit"
+              size="small"
+              startIcon={<Iconify icon="solar:document-text-bold-duotone" />}
+              sx={{
+                color: 'error.main',
+                bgcolor: 'common.white',
+                fontWeight: 700,
+                '&:hover': { bgcolor: 'grey.100' },
+              }}
+            >
+              Emitir 2ª via
+            </Button>
+          </Stack>
+        </Box>
+      )}
+
       {/* Select Mês/Ano global — atualiza Vendas, Saída e Entrada */}
       <Box sx={{ mb: 1.5, flexShrink: 0, ...ANIMATION_FADE_IN_UP }}>
         <Stack direction="row" alignItems="center" spacing={1.5}>
@@ -303,7 +374,12 @@ export default function PortalClienteDash2View() {
               value={mesAnoAtual}
               onChange={handleMonthSelectChange}
               displayEmpty
-              sx={{ fontSize: '0.875rem', fontWeight: 600, height: 36, bgcolor: 'background.paper' }}
+              sx={{
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                height: 36,
+                bgcolor: 'background.paper',
+              }}
             >
               {mesesDisponiveis.map((mes) => (
                 <MenuItem key={mes.value} value={mes.value}>
@@ -325,15 +401,11 @@ export default function PortalClienteDash2View() {
           ...ANIMATION_FADE_IN_UP,
         }}
       >
-        {loadingDashboard || loadingKPIs ? (
-          Array.from({ length: 3 }).map((_, idx) => (
+        {loadingDashboard || loadingKPIs
+          ? Array.from({ length: 3 }).map((_, idx) => (
             <MetricCardSkeleton key={`skeleton-${idx}`} />
           ))
-        ) : (
-          metrics.map((metric, idx) => (
-            <MetricCard key={idx} metric={metric} index={idx} />
-          ))
-        )}
+          : metrics.map((metric, idx) => <MetricCard key={idx} metric={metric} index={idx} />)}
       </Box>
 
       {/* 2. Grid Principal (72% | 28%) */}
@@ -351,7 +423,16 @@ export default function PortalClienteDash2View() {
           animationFillMode: 'backwards',
         }}
       >
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            minHeight: 0,
+            minWidth: 0,
+            overflow: 'hidden',
+          }}
+        >
           <Box sx={{ flex: 1.1, minHeight: 0, minWidth: 0, overflow: 'hidden' }}>
             {loadingExpenseData || loadingReconciliationStatus ? (
               <ExpensePieChartSkeleton />
@@ -377,10 +458,7 @@ export default function PortalClienteDash2View() {
             {loadingDashboard || !chartData || chartData.length === 0 ? (
               <BudgetOverviewChartSkeleton />
             ) : (
-              <BudgetOverviewChartLazy 
-                data={chartData} 
-                onMonthClick={handleMonthClick} 
-              />
+              <BudgetOverviewChartLazy data={chartData} onMonthClick={handleMonthClick} />
             )}
           </Box>
 
@@ -394,7 +472,18 @@ export default function PortalClienteDash2View() {
           )}
         </Box>
 
-        <Box sx={{ minHeight: 0, minWidth: 0, maxWidth: '100%', height: '100%', display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
+        <Box
+          sx={{
+            minHeight: 0,
+            minWidth: 0,
+            maxWidth: '100%',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 2,
+            overflow: 'hidden',
+          }}
+        >
           <Box sx={{ flex: 1.5, minHeight: 0, minWidth: 0, maxWidth: '100%', overflow: 'hidden' }}>
             {loadingTransacoesConta ? (
               <AccountsPayableListSkeleton />
@@ -408,10 +497,10 @@ export default function PortalClienteDash2View() {
             )}
           </Box>
 
-          <Box sx={{ flexShrink: 0, minHeight: 440, maxHeight: 540, minWidth: 0, maxWidth: '100%' }}>
-              <TaxCalendarWidgetLazy
-                sx={{ boxShadow: 'none' }}
-              />
+          <Box
+            sx={{ flexShrink: 0, minHeight: 440, maxHeight: 540, minWidth: 0, maxWidth: '100%' }}
+          >
+            <TaxCalendarWidgetLazy sx={{ boxShadow: 'none' }} />
           </Box>
         </Box>
       </Box>

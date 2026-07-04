@@ -510,22 +510,24 @@ export function DriveFileCardList({
             <GuiaFiscalPortalReadEye guia={file} showInlineSummary iconWidth={18} />
           </Box>
 
-          <Tooltip title="Baixar">
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDownload(e);
-              }}
-              sx={{
-                opacity: 0,
-                transition: 'opacity 0.2s',
-                '.drive-list-row:hover &': { opacity: 1 }
-              }}
-            >
-              <Iconify icon="eva:download-outline" width={18} color="text.secondary" />
-            </IconButton>
-          </Tooltip>
+          {onDownload ? (
+            <Tooltip title="Baixar">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDownload(e);
+                }}
+                sx={{
+                  opacity: 0,
+                  transition: 'opacity 0.2s',
+                  '.drive-list-row:hover &': { opacity: 1 }
+                }}
+              >
+                <Iconify icon="eva:download-outline" width={18} color="text.secondary" />
+              </IconButton>
+            </Tooltip>
+          ) : null}
 
           <Tooltip title="Mais ações">
             <IconButton
@@ -689,15 +691,17 @@ export function DriveFileCardGridPortal({ file, fileMetaLines, isNovo, onDownloa
           </Box>
         </Stack>
 
-        <Button
-          size="small"
-          variant="outlined"
-          startIcon={<Iconify icon="eva:download-outline" width={18} />}
-          onClick={onDownload}
-          sx={{ alignSelf: 'flex-start', borderRadius: DRIVE_SURFACE_RADIUS }}
-        >
-          Baixar
-        </Button>
+        {onDownload ? (
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<Iconify icon="eva:download-outline" width={18} />}
+            onClick={onDownload}
+            sx={{ alignSelf: 'flex-start', borderRadius: DRIVE_SURFACE_RADIUS }}
+          >
+            Baixar
+          </Button>
+        ) : null}
       </Stack>
     </Card>
   );
@@ -753,20 +757,22 @@ export function DriveFileCardListPortal({ file, fileMetaLines, isNovo, onDownloa
           </Box>
         </Stack>
 
-        <Tooltip title="Baixar">
-          <IconButton
-            size="small"
-            onClick={onDownload}
-            sx={{
-              flexShrink: 0,
-              opacity: 0,
-              transition: 'opacity 0.2s',
-              '.drive-list-row-portal:hover &': { opacity: 1 },
-            }}
-          >
-            <Iconify icon="eva:download-outline" width={18} color="text.secondary" />
-          </IconButton>
-        </Tooltip>
+        {onDownload ? (
+          <Tooltip title="Baixar">
+            <IconButton
+              size="small"
+              onClick={onDownload}
+              sx={{
+                flexShrink: 0,
+                opacity: 0,
+                transition: 'opacity 0.2s',
+                '.drive-list-row-portal:hover &': { opacity: 1 },
+              }}
+            >
+              <Iconify icon="eva:download-outline" width={18} color="text.secondary" />
+            </IconButton>
+          </Tooltip>
+        ) : null}
       </Stack>
     </Card>
   );

@@ -88,6 +88,7 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
     statusProcessamento,
     statusPagamento,
     dadosExtraidos,
+    semArquivo,
   } = guia;
 
   const competencia = getCompetencia(guia);
@@ -190,7 +191,8 @@ export function GuiaFiscalPortalCard({ guia, onView, onDownload, onSolicitarAtua
             )}
             <IconButton
               size="small"
-              onClick={() => onDownload(_id, nomeArquivo)}
+              disabled={semArquivo}
+              onClick={() => !semArquivo && onDownload(_id, nomeArquivo)}
               sx={{ color: 'primary.main' }}
             >
               <Iconify icon="solar:download-bold" />

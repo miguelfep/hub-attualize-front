@@ -1408,6 +1408,61 @@ export default function UploadExtratoPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* 🔥 MODAL DE ERRO - CNPJ DIVERGENTE OU AUTORIZAÇÃO (403) */}
+      <Dialog
+        open={
+          modalErroAberto &&
+          (tipoErro === 'CNPJ_DIVERGENTE' || tipoErro === '403' || tipoErro === 403)
+        }
+        onClose={() => {
+          setModalErroAberto(false);
+          setArquivo(null);
+          reset();
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          <Stack direction="row" alignItems="center" spacing={2}>
+            <Iconify icon="eva:alert-triangle-fill" width={32} color="error.main" />
+            <Box>
+              <Typography variant="h5" color="error.main">
+                {tipoErro === 'CNPJ_DIVERGENTE' ? 'CNPJ Divergente' : 'Acesso Negado'}
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogTitle>
+        <DialogContent>
+          <Stack spacing={2}>
+            <Alert severity="error" sx={{ border: 2, borderColor: 'error.main' }}>
+              <Typography variant="body1" fontWeight="medium">
+                {mensagemErro || 'Erro ao processar arquivo.'}
+              </Typography>
+            </Alert>
+            <Alert severity="info" icon={<Iconify icon="eva:bulb-outline" />}>
+              <Typography variant="body2">
+                {tipoErro === 'CNPJ_DIVERGENTE'
+                  ? 'Verifique se o arquivo do extrato pertence à empresa correta antes de tentar novamente.'
+                  : 'Você só pode enviar extratos para a sua própria empresa. Se precisa gerenciar outra empresa, contate o suporte.'}
+              </Typography>
+            </Alert>
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 2 }}>
+          <Button
+            variant="contained"
+            color="error"
+            onClick={() => {
+              setModalErroAberto(false);
+              setArquivo(null);
+              reset();
+            }}
+          >
+            Entendido
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }

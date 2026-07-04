@@ -1,25 +1,36 @@
 'use client';
 
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import CardContent from '@mui/material/CardContent';
 import { alpha, useTheme } from '@mui/material/styles';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { useBoolean } from 'src/hooks/use-boolean';
+
 import { fDate } from 'src/utils/format-time';
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
-import { useGetPastasGuiasPortal, useGetGuiasFiscaisPortal } from 'src/actions/cliente-portal-guias-api';
+import { getStatusEmissaoDas } from 'src/actions/serpro-portal';
+import {
+  useGetPastasGuiasPortal,
+  useGetGuiasFiscaisPortal,
+  revalidarCachesListagemGuiasPortal,
+} from 'src/actions/cliente-portal-guias-api';
 
 import { toast } from 'src/components/snackbar';
+import { Iconify } from 'src/components/iconify';
 
-import { getCompetencia, findPastaNodeById, formatCompetencia } from '../utils';
+import { getCompetencia, findPastaNodeById, formatCompetencia, resolveNomeDownloadGuia } from '../utils';
 import { isDocumentoNovoParaClientePortal } from '../guia-documento-visualizacao';
 import { GuiaFiscalDrivePortalToolbar } from '../components/guia-fiscal-drive-portal-toolbar';
+import { GuiaFiscalEmitirDasPortalDialog } from '../components/guia-fiscal-emitir-das-portal-dialog';
 import {
   DRIVE_SHADOW_SOFT,
   DRIVE_BORDER_COLOR,
@@ -75,7 +86,7 @@ function apiErr(err) {
 function FileMetaLines({ file }) {
   const comp = getCompetencia(file);
   const showVenc = Boolean(file?.dataVencimento);
-  if (!comp && !showVenc) return null;
+  if (!comp && !showVenc && !file?.semArquivo) return null;
   return (
     <Stack spacing={0.15}>
       {comp ? (
@@ -88,6 +99,11 @@ function FileMetaLines({ file }) {
           Vencimento: {fDate(file.dataVencimento)}
         </Typography>
       ) : null}
+      {file?.semArquivo ? (
+        <Typography variant="caption" color="warning.main" sx={{ lineHeight: 1.35 }} noWrap>
+          Sem PDF (sincronizado via PGDAS)
+        </Typography>
+      ) : null}
     </Stack>
   );
 }
@@ -96,6 +112,30 @@ export function GuiaFiscalDrivePortalView() {
   const theme = useTheme();
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [filesViewMode, setFilesViewMode] = useState('grid');
+
+  const emitDas = useBoolean();
+  const [statusEmissao, setStatusEmissao] = useState({ podeEmitir: true, motivo: '' });
+
+  useEffect(() => {
+    let cancelado = false;
+    getStatusEmissaoDas()
+      .then((result) => {
+        if (!cancelado) setStatusEmissao(result);
+      })
+      .catch(() => {
+        // best-effort: se falhar, botão fica habilitado (backend valida)
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  const handleEmitSuccess = useCallback(() => {
+    revalidarCachesListagemGuiasPortal();
+    getStatusEmissaoDas()
+      .then(setStatusEmissao)
+      .catch(() => { });
+  }, []);
 
   const { folders, isLoading: loadingFolders } = useGetPastasGuiasPortal();
   const { data, isLoading: loadingFiles } = useGetGuiasFiscaisPortal({
@@ -134,9 +174,9 @@ export function GuiaFiscalDrivePortalView() {
     setCurrentFolderId(parent !== undefined ? parent : null);
   }, [folders, currentFolderId]);
 
-  const handleDownload = useCallback(async (id, nomeArquivo) => {
+  const handleDownload = useCallback(async (file) => {
     try {
-      await downloadGuiaFiscalPortal(id, nomeArquivo);
+      await downloadGuiaFiscalPortal(file._id, resolveNomeDownloadGuia(file));
     } catch (error) {
       toast.error(apiErr(error));
     }
@@ -152,12 +192,36 @@ export function GuiaFiscalDrivePortalView() {
             background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.1)})`,
           }}
         >
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
-            Meus Documentos
-          </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-            Navegue pelas pastas e acesse seus arquivos.
-          </Typography>
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            flexWrap="wrap"
+            spacing={2}
+          >
+            <Box>
+              <Typography variant="h4" component="h1" sx={{ fontWeight: 700 }}>
+                Meus Documentos
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                Navegue pelas pastas e acesse seus arquivos.
+              </Typography>
+            </Box>
+
+            <Tooltip title={statusEmissao.podeEmitir ? '' : statusEmissao.motivo}>
+              <span>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<Iconify icon="solar:document-add-bold-duotone" />}
+                  onClick={emitDas.onTrue}
+                  disabled={!statusEmissao.podeEmitir}
+                >
+                  Emitir 2ª Via
+                </Button>
+              </span>
+            </Tooltip>
+          </Stack>
         </Box>
 
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
@@ -272,7 +336,11 @@ export function GuiaFiscalDrivePortalView() {
                                         file={file}
                                         fileMetaLines={<FileMetaLines file={file} />}
                                         isNovo={isDocumentoNovoParaClientePortal(file)}
-                                        onDownload={() => handleDownload(file._id, file.nomeArquivo)}
+                                        onDownload={
+                                          file.semArquivo
+                                            ? undefined
+                                            : () => handleDownload(file)
+                                        }
                                       />
                                     ))}
                                   </Box>
@@ -284,7 +352,11 @@ export function GuiaFiscalDrivePortalView() {
                                         file={file}
                                         fileMetaLines={<FileMetaLines file={file} />}
                                         isNovo={isDocumentoNovoParaClientePortal(file)}
-                                        onDownload={() => handleDownload(file._id, file.nomeArquivo)}
+                                        onDownload={
+                                          file.semArquivo
+                                            ? undefined
+                                            : () => handleDownload(file)
+                                        }
                                       />
                                     ))}
                                   </Stack>
@@ -306,6 +378,12 @@ export function GuiaFiscalDrivePortalView() {
           </Card>
         </CardContent>
       </Card>
+
+      <GuiaFiscalEmitirDasPortalDialog
+        open={emitDas.value}
+        onClose={emitDas.onFalse}
+        onSuccess={handleEmitSuccess}
+      />
     </Box>
   );
 }
