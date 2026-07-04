@@ -1,5 +1,6 @@
 'use client';
 
+import { useSWRConfig } from 'swr';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -27,6 +28,8 @@ import { RouterLink } from 'src/routes/components';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { endpoints } from 'src/utils/axios';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import { useGetAllClientes } from 'src/actions/clientes';
 import { getGuiasFiscais, uploadGuiasFiscais } from 'src/actions/guias-fiscais';
@@ -38,15 +41,22 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 // ----------------------------------------------------------------------
 
+function resolveClienteIdRedirect(data) {
+  const guias = data?.guias || [];
+  const ids = [...new Set(guias.map((g) => g.clienteId).filter(Boolean))];
+  return ids.length === 1 ? ids[0] : null;
+}
+
 export function GuiaFiscalUploadView() {
   const router = useRouter();
+  const { mutate: mutateGlobal } = useSWRConfig();
 
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [uploadResult, setUploadResult] = useState(null);
   const [filesWithClientes, setFilesWithClientes] = useState([]); // Arquivos com cliente selecionado
   const [loadingGuias, setLoadingGuias] = useState(false);
-  
+
   const dialogClientesNaoEncontrados = useBoolean();
 
   // Buscar clientes ativos
@@ -74,7 +84,7 @@ export function GuiaFiscalUploadView() {
   const handleDrop = useCallback((acceptedFiles) => {
     // Filtrar apenas PDFs
     const pdfFiles = acceptedFiles.filter((file) => file.type === 'application/pdf');
-    
+
     if (pdfFiles.length !== acceptedFiles.length) {
       toast.error('Apenas arquivos PDF são aceitos');
     }
@@ -89,7 +99,7 @@ export function GuiaFiscalUploadView() {
         clienteNome: null,
       };
     });
-    
+
     setFiles((prev) => [...prev, ...pdfFiles]);
     setFilesWithClientes((prev) => [...prev, ...newFilesWithClientes]);
   }, []);
@@ -98,7 +108,7 @@ export function GuiaFiscalUploadView() {
     const fileToRemove = files[index];
     setFiles((prev) => prev.filter((_, i) => i !== index));
     // Remover pelo nome e tamanho para garantir sincronização
-    setFilesWithClientes((prev) => 
+    setFilesWithClientes((prev) =>
       prev.filter((item) => item.file.name !== fileToRemove.name || item.file.size !== fileToRemove.size)
     );
   }, [files]);
@@ -111,16 +121,16 @@ export function GuiaFiscalUploadView() {
   // Handler para selecionar cliente para um arquivo
   const handleSelectCliente = useCallback(async (fileId, clienteId) => {
     const cliente = clientes.find((c) => c._id === clienteId || c.id === clienteId);
-    
-    setFilesWithClientes((prev) => prev.map((item) => 
-        item.id === fileId
-          ? {
-              ...item,
-              clienteId,
-              clienteNome: cliente?.name || cliente?.razaoSocial || '',
-            }
-          : item
-      ));
+
+    setFilesWithClientes((prev) => prev.map((item) =>
+      item.id === fileId
+        ? {
+          ...item,
+          clienteId,
+          clienteNome: cliente?.name || cliente?.razaoSocial || '',
+        }
+        : item
+    ));
 
     // Fazer GET com o clienteId para buscar guias desse cliente
     try {
@@ -134,6 +144,24 @@ export function GuiaFiscalUploadView() {
     }
   }, [clientes]);
 
+  const irParaDocumentos = useCallback(async (data) => {
+    await mutateGlobal(
+      (key) =>
+        typeof key === 'string' &&
+        (key.startsWith(endpoints.guiasFiscais.list) ||
+          key.startsWith(endpoints.guiasFiscais.pastas)),
+      undefined,
+      { revalidate: true }
+    );
+
+    const params = new URLSearchParams();
+    const clienteId = resolveClienteIdRedirect(data);
+    if (clienteId) params.set('clienteId', clienteId);
+
+    const qs = params.toString();
+    router.push(qs ? `${paths.dashboard.guiasEDocumentos.list}?${qs}` : paths.dashboard.guiasEDocumentos.list);
+  }, [mutateGlobal, router]);
+
   const handleUpload = useCallback(async () => {
     if (files.length === 0) {
       toast.error('Selecione pelo menos um arquivo PDF');
@@ -144,25 +172,25 @@ export function GuiaFiscalUploadView() {
       setLoading(true);
       console.log('📤 Iniciando upload de', files.length, 'arquivo(s)');
       console.log('📄 Arquivos:', files.map((f) => ({ name: f.name, size: f.size })));
-      
+
       const response = await uploadGuiasFiscais(files);
-      
+
       console.log('✅ Resposta do upload:', response);
 
       if (response.success) {
         setUploadResult(response.data);
-        
+
         // 🔥 NOVA ESTRUTURA: Verificar warnings (não bloqueiam, mas informam)
         if (response.warnings && response.warnings.length > 0) {
           response.warnings.forEach((warning) => {
             toast.warning(warning, { duration: 5000 });
           });
         }
-        
+
         // Mostrar resumo
         const { processadas, erros, duplicatas, substituidas, resumo, clientesNaoEncontrados, errosDetalhados } =
           response.data;
-        
+
         console.log('📊 Resumo do processamento:', {
           processadas,
           substituidas,
@@ -172,7 +200,7 @@ export function GuiaFiscalUploadView() {
           clientesNaoEncontrados: clientesNaoEncontrados?.length || 0,
           errosDetalhados: errosDetalhados?.length || 0,
         });
-        
+
         let mensagem = `${processadas} documento(s) processado(s) com sucesso!`;
         if (substituidas > 0) {
           mensagem += ` ${substituidas} guia(s) vencida(s) atualizada(s).`;
@@ -180,9 +208,9 @@ export function GuiaFiscalUploadView() {
         if (duplicatas > 0) {
           mensagem += ` ${duplicatas} documento(s) duplicado(s) foram ignorados.`;
         }
-        
+
         toast.success(mensagem);
-        
+
         if (substituidas > 0) {
           toast.info(`${substituidas} guia(s) vencida(s) foram substituídas pela versão mais recente.`);
         }
@@ -191,16 +219,15 @@ export function GuiaFiscalUploadView() {
         if (duplicatas > 0) {
           toast.warning(`${duplicatas} documento(s) duplicado(s) foram ignorados.`);
         }
-        
+
         // Verificar se há clientes não encontrados
         if (clientesNaoEncontrados && clientesNaoEncontrados.length > 0) {
           dialogClientesNaoEncontrados.onTrue();
         } else if (erros > 0 && duplicatas === 0) {
           toast.warning(`${erros} documento(s) com erro. Verifique os detalhes.`);
         } else {
-          // Redirecionar para a lista com parâmetro refresh para forçar atualização
           setTimeout(() => {
-            router.push(`${paths.dashboard.guiasEDocumentos.list}?refresh=${Date.now()}`);
+            irParaDocumentos(response.data);
           }, 1500);
         }
       } else {
@@ -208,10 +235,10 @@ export function GuiaFiscalUploadView() {
         const errorMessage = response.errors && response.errors.length > 0
           ? response.errors[0]
           : (response.message || 'Erro ao processar documentos');
-        
+
         console.error('❌ Erro no upload:', response);
         toast.error(errorMessage);
-        
+
         // Exibir warnings mesmo em caso de erro
         if (response.warnings && response.warnings.length > 0) {
           response.warnings.forEach((warning) => {
@@ -221,14 +248,14 @@ export function GuiaFiscalUploadView() {
       }
     } catch (error) {
       console.error('❌ Erro ao fazer upload:', error);
-      
+
       // 🔥 NOVA ESTRUTURA: Tratar errors, warnings e codes
       let errorMessage = 'Erro ao fazer upload dos documentos';
       let warnings = [];
-      
+
       if (error?.response?.data) {
         const errorData = error.response.data;
-        
+
         // Verificar se é nova estrutura
         if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
           errorMessage = errorData.errors[0];
@@ -237,12 +264,12 @@ export function GuiaFiscalUploadView() {
         } else if (errorData.error) {
           errorMessage = errorData.error;
         }
-        
+
         // Capturar warnings
         if (errorData.warnings && Array.isArray(errorData.warnings)) {
           ({ warnings } = errorData);
         }
-        
+
         // Tratamento específico por código
         if (errorData.code === 'LIMIT_FILE_SIZE') {
           errorMessage = errorData.message || 'Arquivo muito grande. Verifique o tamanho máximo permitido.';
@@ -252,9 +279,9 @@ export function GuiaFiscalUploadView() {
       } else if (error?.message) {
         errorMessage = error.message;
       }
-      
+
       toast.error(errorMessage);
-      
+
       // Exibir warnings
       warnings.forEach((warning) => {
         toast.warning(warning, { duration: 5000 });
@@ -262,7 +289,7 @@ export function GuiaFiscalUploadView() {
     } finally {
       setLoading(false);
     }
-  }, [files, router, dialogClientesNaoEncontrados]);
+  }, [files, irParaDocumentos, dialogClientesNaoEncontrados]);
 
   return (
     <DashboardContent>
@@ -448,7 +475,7 @@ export function GuiaFiscalUploadView() {
             variant="contained"
             onClick={() => {
               dialogClientesNaoEncontrados.onFalse();
-              router.push(paths.dashboard.guiasEDocumentos.list);
+              irParaDocumentos(uploadResult);
             }}
           >
             Ver Lista

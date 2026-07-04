@@ -38,6 +38,7 @@ const TIPO_GUIA_OPTIONS = [
   { value: 'INSS', label: 'INSS' },
   { value: 'HOLERITE', label: 'Holerite' },
   { value: 'DARF', label: 'DARF' },
+  { value: 'CSRF', label: 'CSRF' },
   { value: 'ICMS', label: 'ICMS' },
   { value: 'ISS', label: 'ISS' },
   { value: 'FGTS', label: 'FGTS' },
@@ -124,9 +125,13 @@ export function GuiaFiscalEditView({ id }) {
         const competencia = data.competencia?.trim() || undefined;
 
         await updateGuiaFiscal(id, {
-          ...data,
+          nomeArquivo: data.nomeArquivo,
+          tipoGuia: data.tipoGuia,
+          cnpj: data.cnpj?.trim() || undefined,
           dataVencimento: dataVencimento || undefined,
-          competencia, // Enviar competência (undefined se vazio)
+          competencia,
+          observacoes: data.observacoes,
+          statusProcessamento: data.status,
         });
 
         const listBase = endpoints.guiasFiscais.list;

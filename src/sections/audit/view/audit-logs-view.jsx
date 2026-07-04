@@ -34,11 +34,12 @@ import { fDateTime } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
 import { getAuditLogs, getEntityHistory } from 'src/actions/audit';
+import { getCaixaPostalDetalhe, getSerproEmissaoDetalhe } from 'src/actions/serpro-portal';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { TableNoData , TableHeadCustom } from 'src/components/table';
+import { TableNoData, TableHeadCustom } from 'src/components/table';
 import { AuditLogTableRowSkeleton } from 'src/components/skeleton/AuditLogTableRowSkeleton';
 
 // ----------------------------------------------------------------------
@@ -61,6 +62,8 @@ const ENTITY_TYPES = [
   { value: 'Contrato', label: 'Contrato' },
   { value: 'Cobranca', label: 'Cobrança' },
   { value: 'ContratoReajuste', label: 'Reajuste de Contrato' },
+  { value: 'SerproEmissao', label: 'Emissão DAS (SerPro)' },
+  { value: 'CaixaPostal', label: 'Caixa Postal (SerPro)' },
 ];
 
 // Mapa de rótulos amigáveis para exibir o entityType na tabela/detalhes.
@@ -87,36 +90,43 @@ export function AuditLogsView() {
   const [rowsPerPage, setRowsPerPage] = useState(25);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  
+
   // Filtros
   const [filtroEntityType, setFiltroEntityType] = useState('');
   const [filtroAction, setFiltroAction] = useState('');
   const [filtroUserEmail, setFiltroUserEmail] = useState('');
   const [filtroInicio, setFiltroInicio] = useState(dayjs().subtract(30, 'days'));
   const [filtroFim, setFiltroFim] = useState(dayjs());
-  
+
   // Dialog de detalhes
   const [dialogDetalhes, setDialogDetalhes] = useState({ open: false, log: null });
-  const [dialogHistorico, setDialogHistorico] = useState({ open: false, entityType: null, entityId: null, historico: [] });
+  const [dialogHistorico, setDialogHistorico] = useState({
+    open: false,
+    entityType: null,
+    entityId: null,
+    historico: [],
+  });
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [serproPayload, setSerproPayload] = useState(null);
+  const [loadingSerproPayload, setLoadingSerproPayload] = useState(false);
 
   const fetchLogs = useCallback(async () => {
     try {
       setLoading(true);
-      
+
       const params = {
         pagina: page + 1,
         limite: rowsPerPage,
       };
-      
+
       if (filtroEntityType) params.entityType = filtroEntityType;
       if (filtroAction) params.action = filtroAction;
       if (filtroUserEmail) params.userEmail = filtroUserEmail;
       if (filtroInicio) params.inicio = filtroInicio.toISOString();
       if (filtroFim) params.fim = filtroFim.endOf('day').toISOString();
-      
+
       const response = await getAuditLogs(params);
-      
+
       if (response.logs) {
         setLogs(response.logs);
         setTotal(response.paginacao?.total || 0);
@@ -140,17 +150,49 @@ export function AuditLogsView() {
 
   const handleViewDetails = (log) => {
     setDialogDetalhes({ open: true, log });
+    setSerproPayload(null);
+  };
+
+  const handleVerPayloadSerpro = async (serproEmissaoLogId) => {
+    try {
+      setLoadingSerproPayload(true);
+      const detalhe = await getSerproEmissaoDetalhe(serproEmissaoLogId);
+      setSerproPayload(detalhe);
+    } catch (error) {
+      toast.error('Erro ao carregar o payload da emissão SerPro.');
+    } finally {
+      setLoadingSerproPayload(false);
+    }
+  };
+
+  const handleVerPayloadCaixaPostal = async (log) => {
+    try {
+      setLoadingSerproPayload(true);
+      const caixaPostalLogId = String(log.entityId?._id || log.entityId || '');
+      const detalhe = await getCaixaPostalDetalhe(caixaPostalLogId);
+      setSerproPayload({
+        ...detalhe,
+        _origemHttp: {
+          endpoint: log.metadata?.endpoint,
+          method: log.metadata?.method,
+        },
+      });
+    } catch (error) {
+      toast.error('Erro ao carregar a origem do log da Caixa Postal.');
+    } finally {
+      setLoadingSerproPayload(false);
+    }
   };
 
   const handleViewHistory = async (entityType, entityId) => {
     try {
       setLoadingHistorico(true);
       setDialogHistorico({ open: true, entityType, entityId, historico: [] });
-      
+
       const response = await getEntityHistory(entityType, entityId);
-      
+
       if (response.historico) {
-        setDialogHistorico(prev => ({ ...prev, historico: response.historico }));
+        setDialogHistorico((prev) => ({ ...prev, historico: response.historico }));
       }
     } catch (error) {
       console.error('Erro ao buscar histórico:', error);
@@ -324,86 +366,89 @@ export function AuditLogsView() {
                     <TableNoData notFound />
                   ) : (
                     logs.map((log) => (
-                        <TableRow key={log._id} hover>
-                          <TableCell>
-                            <Typography variant="body2">
-                              {fDateTime(log.createdAt, 'DD/MM/YYYY HH:mm')}
+                      <TableRow key={log._id} hover>
+                        <TableCell>
+                          <Typography variant="body2">
+                            {fDateTime(log.createdAt, 'DD/MM/YYYY HH:mm')}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={getActionLabel(log.action)}
+                            color={getActionColor(log.action)}
+                            size="small"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{getEntityLabel(log.entityType)}</Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{log.userEmail}</Typography>
+                          {log.userId?.name && (
+                            <Typography variant="caption" color="text.secondary">
+                              {log.userId.name}
                             </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Chip
-                              label={getActionLabel(log.action)}
-                              color={getActionColor(log.action)}
-                              size="small"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">{getEntityLabel(log.entityType)}</Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2">{log.userEmail}</Typography>
-                            {log.userId?.name && (
-                              <Typography variant="caption" color="text.secondary">
-                                {log.userId.name}
-                              </Typography>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ maxWidth: 180 }} title={log.clienteRazaoSocial || undefined}>
-                              {log.clienteRazaoSocial || '—'}
-                            </Typography>
-                          </TableCell>
-                          <TableCell>
-                            <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                              {formatResumo(log)}
-                            </Typography>
-                          </TableCell>
-                          <TableCell align="right">
-                            <Stack direction="row" spacing={1} justifyContent="flex-end">
-                              <Tooltip title="Ver Detalhes">
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Typography
+                            variant="body2"
+                            sx={{ maxWidth: 180 }}
+                            title={log.clienteRazaoSocial || undefined}
+                          >
+                            {log.clienteRazaoSocial || '—'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ maxWidth: 200 }}>
+                            {formatResumo(log)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Stack direction="row" spacing={1} justifyContent="flex-end">
+                            <Tooltip title="Ver Detalhes">
+                              <IconButton size="small" onClick={() => handleViewDetails(log)}>
+                                <Iconify icon="eva:eye-fill" />
+                              </IconButton>
+                            </Tooltip>
+                            {log.entityType && log.entityId && (
+                              <Tooltip title="Ver Histórico">
                                 <IconButton
                                   size="small"
-                                  onClick={() => handleViewDetails(log)}
+                                  onClick={() => handleViewHistory(log.entityType, log.entityId)}
                                 >
-                                  <Iconify icon="eva:eye-fill" />
+                                  <Iconify icon="eva:clock-fill" />
                                 </IconButton>
                               </Tooltip>
-                              {log.entityType && log.entityId && (
-                                <Tooltip title="Ver Histórico">
-                                  <IconButton
-                                    size="small"
-                                    onClick={() => handleViewHistory(log.entityType, log.entityId)}
-                                  >
-                                    <Iconify icon="eva:clock-fill" />
-                                  </IconButton>
-                                </Tooltip>
-                              )}
-                            </Stack>
-                          </TableCell>
-                        </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </Scrollbar>
-            </TableContainer>
+                            )}
+                          </Stack>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </Scrollbar>
+          </TableContainer>
 
-            {/* Paginação */}
-            <TablePagination
-              component="div"
-              count={total}
-              page={page}
-              rowsPerPage={rowsPerPage}
-              onPageChange={(event, newPage) => setPage(newPage)}
-              onRowsPerPageChange={(event) => {
-                setRowsPerPage(parseInt(event.target.value, 10));
-                setPage(0);
-              }}
-              rowsPerPageOptions={[10, 25, 50, 100]}
-              labelRowsPerPage="Itens por página:"
-              labelDisplayedRows={({ from, to, count }) => `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`}
-            />
-          </Card>
+          {/* Paginação */}
+          <TablePagination
+            component="div"
+            count={total}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            onPageChange={(event, newPage) => setPage(newPage)}
+            onRowsPerPageChange={(event) => {
+              setRowsPerPage(parseInt(event.target.value, 10));
+              setPage(0);
+            }}
+            rowsPerPageOptions={[10, 25, 50, 100]}
+            labelRowsPerPage="Itens por página:"
+            labelDisplayedRows={({ from, to, count }) =>
+              `${from}-${to} de ${count !== -1 ? count : `mais de ${to}`}`
+            }
+          />
+        </Card>
       </Stack>
 
       {/* Dialog de Detalhes */}
@@ -428,11 +473,17 @@ export function AuditLogsView() {
                 </Typography>
                 <Stack spacing={1}>
                   <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">Data/Hora:</Typography>
-                    <Typography variant="body2">{fDateTime(dialogDetalhes.log.createdAt)}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Data/Hora:
+                    </Typography>
+                    <Typography variant="body2">
+                      {fDateTime(dialogDetalhes.log.createdAt)}
+                    </Typography>
                   </Stack>
                   <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">Ação:</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Ação:
+                    </Typography>
                     <Chip
                       label={getActionLabel(dialogDetalhes.log.action)}
                       color={getActionColor(dialogDetalhes.log.action)}
@@ -440,28 +491,42 @@ export function AuditLogsView() {
                     />
                   </Stack>
                   <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">Entidade:</Typography>
-                    <Typography variant="body2">{getEntityLabel(dialogDetalhes.log.entityType)}</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Entidade:
+                    </Typography>
+                    <Typography variant="body2">
+                      {getEntityLabel(dialogDetalhes.log.entityType)}
+                    </Typography>
                   </Stack>
                   <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">ID da Entidade:</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      ID da Entidade:
+                    </Typography>
                     <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                       {dialogDetalhes.log.entityId}
                     </Typography>
                   </Stack>
                   <Stack direction="row" justifyContent="space-between">
-                    <Typography variant="body2" color="text.secondary">Usuário:</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Usuário:
+                    </Typography>
                     <Typography variant="body2">{dialogDetalhes.log.userEmail}</Typography>
                   </Stack>
                   {(dialogDetalhes.log.clienteRazaoSocial ?? '') !== '' && (
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">Cliente:</Typography>
-                      <Typography variant="body2">{dialogDetalhes.log.clienteRazaoSocial}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Cliente:
+                      </Typography>
+                      <Typography variant="body2">
+                        {dialogDetalhes.log.clienteRazaoSocial}
+                      </Typography>
                     </Stack>
                   )}
                   {dialogDetalhes.log.userId?.name && (
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">Nome:</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Nome:
+                      </Typography>
                       <Typography variant="body2">{dialogDetalhes.log.userId.name}</Typography>
                     </Stack>
                   )}
@@ -476,39 +541,396 @@ export function AuditLogsView() {
                   <Stack spacing={1}>
                     {dialogDetalhes.log.newData.tituloContrato && (
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="body2" color="text.secondary">Contrato:</Typography>
-                        <Typography variant="body2">{dialogDetalhes.log.newData.tituloContrato}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Contrato:
+                        </Typography>
+                        <Typography variant="body2">
+                          {dialogDetalhes.log.newData.tituloContrato}
+                        </Typography>
                       </Stack>
                     )}
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">Percentual aplicado:</Typography>
-                      <Typography variant="body2">{dialogDetalhes.log.newData.percentualAplicado}%</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Percentual aplicado:
+                      </Typography>
+                      <Typography variant="body2">
+                        {dialogDetalhes.log.newData.percentualAplicado}%
+                      </Typography>
                     </Stack>
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">Valor antes:</Typography>
-                      <Typography variant="body2">{fCurrency(dialogDetalhes.log.newData.valorAntes)}</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Valor antes:
+                      </Typography>
+                      <Typography variant="body2">
+                        {fCurrency(dialogDetalhes.log.newData.valorAntes)}
+                      </Typography>
                     </Stack>
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">Valor depois:</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Valor depois:
+                      </Typography>
                       <Typography variant="body2" fontWeight="bold">
                         {fCurrency(dialogDetalhes.log.newData.valorDepois)}
                       </Typography>
                     </Stack>
                     {dialogDetalhes.log.newData.origem && (
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="body2" color="text.secondary">Origem:</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Origem:
+                        </Typography>
                         <Typography variant="body2">{dialogDetalhes.log.newData.origem}</Typography>
                       </Stack>
                     )}
                     {dialogDetalhes.log.newData.aplicadoEm && (
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="body2" color="text.secondary">Aplicado em:</Typography>
-                        <Typography variant="body2">{fDateTime(dialogDetalhes.log.newData.aplicadoEm)}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Aplicado em:
+                        </Typography>
+                        <Typography variant="body2">
+                          {fDateTime(dialogDetalhes.log.newData.aplicadoEm)}
+                        </Typography>
                       </Stack>
                     )}
                   </Stack>
                 </Box>
               )}
+
+              {dialogDetalhes.log?.entityType === 'SerproEmissao' &&
+                dialogDetalhes.log?.newData && (
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Emissão DAS (SerPro)
+                    </Typography>
+                    <Stack spacing={1}>
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">
+                          Operação:
+                        </Typography>
+                        <Typography variant="body2">
+                          {dialogDetalhes.log.newData.operacao === 'GERARDAS12'
+                            ? 'Geração DAS'
+                            : dialogDetalhes.log.newData.operacao === 'CONSDECLARACAO13'
+                              ? 'Consulta Declarações'
+                              : dialogDetalhes.log.newData.operacao}
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">
+                          Origem:
+                        </Typography>
+                        <Typography variant="body2">
+                          {dialogDetalhes.log.newData.origem === 'contabil'
+                            ? 'Contador'
+                            : dialogDetalhes.log.newData.origem === 'portal_2via'
+                              ? 'Portal do Cliente'
+                              : dialogDetalhes.log.newData.origem}
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="body2" color="text.secondary">
+                          Status:
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={dialogDetalhes.log.newData.status}
+                          color={
+                            dialogDetalhes.log.newData.status === 'SUCESSO'
+                              ? 'success'
+                              : dialogDetalhes.log.newData.status === 'ERRO'
+                                ? 'error'
+                                : 'warning'
+                          }
+                        />
+                      </Stack>
+                      {dialogDetalhes.log.newData.competencia && (
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" color="text.secondary">
+                            Competência:
+                          </Typography>
+                          <Typography variant="body2">
+                            {dialogDetalhes.log.newData.competencia}
+                          </Typography>
+                        </Stack>
+                      )}
+                      {dialogDetalhes.log.newData.serproId && (
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" color="text.secondary">
+                            SerPro ID:
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                            {dialogDetalhes.log.newData.serproId}
+                          </Typography>
+                        </Stack>
+                      )}
+                      {dialogDetalhes.log.newData.guiaFiscalId && (
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" color="text.secondary">
+                            Guia Fiscal ID:
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                            {dialogDetalhes.log.newData.guiaFiscalId}
+                          </Typography>
+                        </Stack>
+                      )}
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="body2" color="text.secondary">
+                          Payload:
+                        </Typography>
+                        <Button
+                          size="small"
+                          startIcon={<Iconify icon="solar:document-text-bold-duotone" />}
+                          onClick={() =>
+                            handleVerPayloadSerpro(dialogDetalhes.log.newData.serproEmissaoLogId)
+                          }
+                          disabled={loadingSerproPayload}
+                        >
+                          {loadingSerproPayload ? 'Carregando...' : 'Ver payload completo'}
+                        </Button>
+                      </Stack>
+                      {serproPayload && (
+                        <Box sx={{ mt: 1 }}>
+                          {serproPayload.dadosEntrada && (
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                Dados de Entrada:
+                              </Typography>
+                              <Box
+                                component="pre"
+                                sx={{
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  overflow: 'auto',
+                                  p: 1.5,
+                                  bgcolor: 'background.neutral',
+                                  borderRadius: 1,
+                                  maxHeight: 240,
+                                }}
+                              >
+                                {JSON.stringify(serproPayload.dadosEntrada, null, 2)}
+                              </Box>
+                            </Box>
+                          )}
+                          {serproPayload.dadosSaida && (
+                            <Box>
+                              <Typography variant="caption" color="text.secondary">
+                                Dados de Saída:
+                              </Typography>
+                              <Box
+                                component="pre"
+                                sx={{
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  overflow: 'auto',
+                                  p: 1.5,
+                                  bgcolor: 'background.neutral',
+                                  borderRadius: 1,
+                                  maxHeight: 240,
+                                }}
+                              >
+                                {JSON.stringify(serproPayload.dadosSaida, null, 2)}
+                              </Box>
+                            </Box>
+                          )}
+                          {serproPayload.tempoResposta != null && (
+                            <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                Tempo de resposta:
+                              </Typography>
+                              <Typography variant="body2">
+                                {serproPayload.tempoResposta} ms
+                              </Typography>
+                            </Stack>
+                          )}
+                        </Box>
+                      )}
+                    </Stack>
+                  </Box>
+                )}
+
+              {dialogDetalhes.log?.entityType === 'CaixaPostal' &&
+                dialogDetalhes.log?.newData && (
+                  <Box>
+                    <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                      Caixa Postal (SerPro)
+                    </Typography>
+                    <Stack spacing={1}>
+                      <Stack direction="row" justifyContent="space-between">
+                        <Typography variant="body2" color="text.secondary">
+                          Operação:
+                        </Typography>
+                        <Typography variant="body2">
+                          {dialogDetalhes.log.newData.operacao === 'MSGCONTRIBUINTE61'
+                            ? 'Lista de Mensagens'
+                            : dialogDetalhes.log.newData.operacao === 'MSGDETALHAMENTO62'
+                              ? 'Detalhe de Mensagem'
+                              : dialogDetalhes.log.newData.operacao === 'INNOVAMSG63'
+                                ? 'Indicador de Novas'
+                                : dialogDetalhes.log.newData.operacao}
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="body2" color="text.secondary">
+                          Status:
+                        </Typography>
+                        <Chip
+                          size="small"
+                          label={dialogDetalhes.log.newData.status}
+                          color={
+                            dialogDetalhes.log.newData.status === 'SUCESSO'
+                              ? 'success'
+                              : dialogDetalhes.log.newData.status === 'ERRO'
+                                ? 'error'
+                                : 'warning'
+                          }
+                        />
+                      </Stack>
+                      {dialogDetalhes.log.newData.quantidadeMensagens != null && (
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" color="text.secondary">
+                            Qtd. Mensagens:
+                          </Typography>
+                          <Typography variant="body2">
+                            {dialogDetalhes.log.newData.quantidadeMensagens}
+                          </Typography>
+                        </Stack>
+                      )}
+                      {dialogDetalhes.log.newData.isn && (
+                        <Stack direction="row" justifyContent="space-between">
+                          <Typography variant="body2" color="text.secondary">
+                            ISN:
+                          </Typography>
+                          <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                            {dialogDetalhes.log.newData.isn}
+                          </Typography>
+                        </Stack>
+                      )}
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="body2" color="text.secondary">
+                          Origem:
+                        </Typography>
+                        <Button
+                          size="small"
+                          startIcon={<Iconify icon="solar:document-text-bold-duotone" />}
+                          onClick={() => handleVerPayloadCaixaPostal(dialogDetalhes.log)}
+                          disabled={loadingSerproPayload}
+                        >
+                          {loadingSerproPayload ? 'Carregando...' : 'Ver origem do log'}
+                        </Button>
+                      </Stack>
+                      {serproPayload && (
+                        <Box sx={{ mt: 1 }}>
+                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                            Histórico gravado no banco — sem nova chamada à SerPro.
+                          </Typography>
+                          {(serproPayload._origemHttp?.endpoint ||
+                            serproPayload._origemHttp?.method ||
+                            serproPayload.operacao) && (
+                            <Box sx={{ mb: 1.5, p: 1.5, bgcolor: 'background.neutral', borderRadius: 1 }}>
+                              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                                De onde saiu este log
+                              </Typography>
+                              {serproPayload._origemHttp?.method && (
+                                <Stack direction="row" justifyContent="space-between">
+                                  <Typography variant="body2" color="text.secondary">
+                                    Método HTTP:
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                    {serproPayload._origemHttp.method}
+                                  </Typography>
+                                </Stack>
+                              )}
+                              {serproPayload._origemHttp?.endpoint && (
+                                <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Rota HTTP:
+                                  </Typography>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{ fontFamily: 'monospace', textAlign: 'right', maxWidth: '70%' }}
+                                  >
+                                    {serproPayload._origemHttp.endpoint}
+                                  </Typography>
+                                </Stack>
+                              )}
+                              {serproPayload.operacao && (
+                                <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Serviço SerPro:
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                    {serproPayload.operacao}
+                                  </Typography>
+                                </Stack>
+                              )}
+                              {serproPayload.isn && (
+                                <Stack direction="row" justifyContent="space-between" sx={{ mt: 0.5 }}>
+                                  <Typography variant="body2" color="text.secondary">
+                                    ISN:
+                                  </Typography>
+                                  <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                                    {serproPayload.isn}
+                                  </Typography>
+                                </Stack>
+                              )}
+                            </Box>
+                          )}
+                          {serproPayload.dadosEntrada && (
+                            <Box sx={{ mb: 1 }}>
+                              <Typography variant="caption" color="text.secondary">
+                                Dados de Entrada:
+                              </Typography>
+                              <Box
+                                component="pre"
+                                sx={{
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  overflow: 'auto',
+                                  p: 1.5,
+                                  bgcolor: 'background.neutral',
+                                  borderRadius: 1,
+                                  maxHeight: 240,
+                                }}
+                              >
+                                {JSON.stringify(serproPayload.dadosEntrada, null, 2)}
+                              </Box>
+                            </Box>
+                          )}
+                          {serproPayload.dadosSaida && (
+                            <Box>
+                              <Typography variant="caption" color="text.secondary">
+                                Dados de Saída:
+                              </Typography>
+                              <Box
+                                component="pre"
+                                sx={{
+                                  fontFamily: 'monospace',
+                                  fontSize: 12,
+                                  overflow: 'auto',
+                                  p: 1.5,
+                                  bgcolor: 'background.neutral',
+                                  borderRadius: 1,
+                                  maxHeight: 240,
+                                }}
+                              >
+                                {JSON.stringify(serproPayload.dadosSaida, null, 2)}
+                              </Box>
+                            </Box>
+                          )}
+                          {serproPayload.tempoResposta != null && (
+                            <Stack direction="row" justifyContent="space-between" sx={{ mt: 1 }}>
+                              <Typography variant="body2" color="text.secondary">
+                                Tempo de resposta:
+                              </Typography>
+                              <Typography variant="body2">
+                                {serproPayload.tempoResposta} ms
+                              </Typography>
+                            </Stack>
+                          )}
+                        </Box>
+                      )}
+                    </Stack>
+                  </Box>
+                )}
 
               {dialogDetalhes.log.changes && Object.keys(dialogDetalhes.log.changes).length > 0 && (
                 <Box>
@@ -552,14 +974,18 @@ export function AuditLogsView() {
                   </Typography>
                   <Stack spacing={1}>
                     <Stack direction="row" justifyContent="space-between">
-                      <Typography variant="body2" color="text.secondary">IP:</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        IP:
+                      </Typography>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                         {dialogDetalhes.log.ipAddress}
                       </Typography>
                     </Stack>
                     {dialogDetalhes.log.metadata?.endpoint && (
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="body2" color="text.secondary">Endpoint:</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Endpoint:
+                        </Typography>
                         <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
                           {dialogDetalhes.log.metadata.endpoint}
                         </Typography>
@@ -567,8 +993,12 @@ export function AuditLogsView() {
                     )}
                     {dialogDetalhes.log.metadata?.method && (
                       <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="body2" color="text.secondary">Método:</Typography>
-                        <Typography variant="body2">{dialogDetalhes.log.metadata.method}</Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Método:
+                        </Typography>
+                        <Typography variant="body2">
+                          {dialogDetalhes.log.metadata.method}
+                        </Typography>
                       </Stack>
                     )}
                   </Stack>
@@ -578,25 +1008,23 @@ export function AuditLogsView() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogDetalhes({ open: false, log: null })}>
-            Fechar
-          </Button>
+          <Button onClick={() => setDialogDetalhes({ open: false, log: null })}>Fechar</Button>
         </DialogActions>
       </Dialog>
 
       {/* Dialog de Histórico */}
       <Dialog
         open={dialogHistorico.open}
-        onClose={() => setDialogHistorico({ open: false, entityType: null, entityId: null, historico: [] })}
+        onClose={() =>
+          setDialogHistorico({ open: false, entityType: null, entityId: null, historico: [] })
+        }
         maxWidth="lg"
         fullWidth
       >
         <DialogTitle>
           <Stack direction="row" alignItems="center" spacing={2}>
             <Iconify icon="eva:clock-fill" width={24} />
-            <Typography variant="h6">
-              Histórico - {dialogHistorico.entityType}
-            </Typography>
+            <Typography variant="h6">Histórico - {dialogHistorico.entityType}</Typography>
           </Stack>
         </DialogTitle>
         <DialogContent>
@@ -641,7 +1069,11 @@ export function AuditLogsView() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogHistorico({ open: false, entityType: null, entityId: null, historico: [] })}>
+          <Button
+            onClick={() =>
+              setDialogHistorico({ open: false, entityType: null, entityId: null, historico: [] })
+            }
+          >
             Fechar
           </Button>
         </DialogActions>

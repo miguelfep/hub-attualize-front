@@ -36,6 +36,7 @@ export const ICONS = {
   dashboard: icon('ic-dashboard'),
   parameter: icon('ic-parameter'),
   tax: icon('ic-tax'),
+  settings: icon('ic-settings'),
 };
 
 export const ICON_KEYS = Object.keys(ICONS);
@@ -200,6 +201,23 @@ export const navData = [
         path: paths.dashboard.fiscal.root,
         icon: ICONS.tax,
         roles: ['admin', 'financeiro', 'operacional', 'gerencial'],
+        children: [
+          {
+            title: 'Nota Fiscal',
+            path: paths.dashboard.fiscal.nfse,
+            roles: ['admin', 'financeiro', 'operacional', 'gerencial'],
+          },
+          {
+            title: 'Impostos',
+            path: paths.dashboard.fiscal.impostos,
+            roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
+          },
+          {
+            title: 'Caixa Postal',
+            path: paths.dashboard.fiscal.caixaPostal,
+            roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
+          },
+        ],
       },
       {
         title: 'Departamento Pessoal',
@@ -397,6 +415,24 @@ export const navData = [
             title: 'Comercial',
             roles: ['admin'],
             path: paths.dashboard.relatorios.comercial,
+          },
+          {
+            title: 'Integra Contador',
+            roles: ['admin'],
+            path: paths.dashboard.relatorios.integraContador,
+          },
+        ],
+      },
+      {
+        title: 'Configurações',
+        path: paths.dashboard.banners.root,
+        icon: ICONS.settings,
+        roles: ['admin'],
+        children: [
+          {
+            title: 'Banners',
+            path: paths.dashboard.banners.root,
+            roles: ['admin'],
           },
         ],
       },

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
@@ -34,6 +35,7 @@ import {
   formatCompetencia,
   isExtratoBancario,
   getFormatoExtratoLabel,
+  resolveNomeDownloadGuia,
 } from '../utils';
 
 // ----------------------------------------------------------------------
@@ -69,7 +71,7 @@ export function GuiaFiscalPortalDetailsView({ id }) {
 
   const handleDownload = async () => {
     try {
-      await downloadGuiaFiscalPortal(id, guia?.nomeArquivo || 'guia-fiscal.pdf');
+      await downloadGuiaFiscalPortal(id, resolveNomeDownloadGuia(guia));
     } catch (downloadError) {
       console.error('Erro ao fazer download:', downloadError);
       const msg =
@@ -116,13 +118,17 @@ export function GuiaFiscalPortalDetailsView({ id }) {
           { name: 'Detalhes' },
         ]}
         action={
-          <Button
-            variant="contained"
-            startIcon={<Iconify icon="solar:download-bold" />}
-            onClick={handleDownload}
-          >
-            Download
-          </Button>
+          !guia?.semArquivo ? (
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="solar:download-bold" />}
+              onClick={handleDownload}
+            >
+              Download
+            </Button>
+          ) : (
+            <Chip size="small" label="Sem PDF" color="warning" variant="soft" />
+          )
         }
         sx={{ mb: { xs: 3, md: 5 } }}
       />

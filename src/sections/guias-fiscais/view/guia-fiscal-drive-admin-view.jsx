@@ -7,23 +7,28 @@ import Card from '@mui/material/Card';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import Autocomplete from '@mui/material/Autocomplete';
+import DialogTitle from '@mui/material/DialogTitle';
 import ListItemIcon from '@mui/material/ListItemIcon';
+import Autocomplete from '@mui/material/Autocomplete';
 import ListItemText from '@mui/material/ListItemText';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+import { useRouter, useSearchParams } from 'src/routes/hooks';
 
 import { fDate } from 'src/utils/format-time';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { useGetAllClientes } from 'src/actions/clientes';
 import {
+  updateGuiaFiscal,
   deleteGuiaFiscal,
   downloadGuiaFiscal,
   useGetGuiasFiscais,
@@ -42,7 +47,7 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { GuiaFiscalMovePastaDialog } from '../components/guia-fiscal-move-pasta-dialog';
 import { GuiaFiscalPastaUploadDialog } from '../components/guia-fiscal-pasta-upload-dialog';
 import { GuiaFiscalDriveAdminToolbar } from '../components/guia-fiscal-drive-admin-toolbar';
-import { getCompetencia, SLUG_PASTA_REGEX, findPastaNodeById, formatCompetencia, suggestSlugFromNome } from '../utils';
+import { getCompetencia, SLUG_PASTA_REGEX, findPastaNodeById, formatCompetencia, suggestSlugFromNome, resolveNomeDownloadGuia } from '../utils';
 import {
   DriveFileCardGrid,
   DriveFileCardList,
@@ -115,7 +120,7 @@ function getClienteLabel(cliente) {
 function FileMetaLines({ file }) {
   const comp = getCompetencia(file);
   const showVenc = Boolean(file?.dataVencimento);
-  if (!comp && !showVenc) return null;
+  if (!comp && !showVenc && !file?.semArquivo) return null;
   return (
     <Stack spacing={0.15}>
       {comp ? (
@@ -128,12 +133,18 @@ function FileMetaLines({ file }) {
           Vencimento: {fDate(file.dataVencimento)}
         </Typography>
       ) : null}
+      {file?.semArquivo ? (
+        <Typography variant="caption" color="warning.main" sx={{ lineHeight: 1.35 }} noWrap>
+          Sem PDF (sincronizado via PGDAS)
+        </Typography>
+      ) : null}
     </Stack>
   );
 }
 
 export function GuiaFiscalDriveAdminView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [clienteId, setClienteId] = useState('');
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -159,6 +170,11 @@ export function GuiaFiscalDriveAdminView() {
   const [deleteFileOpen, setDeleteFileOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState(null);
   const [deletingFile, setDeletingFile] = useState(false);
+
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [fileToRename, setFileToRename] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [renaming, setRenaming] = useState(false);
 
   const [selectedFileIds, setSelectedFileIds] = useState([]);
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
@@ -212,6 +228,15 @@ export function GuiaFiscalDriveAdminView() {
   const showFilesLoadingPlaceholder = Boolean(loadingFiles && !hasFolderOrFiles);
 
   useEffect(() => {
+    const fromQuery = searchParams.get('clienteId');
+    if (!fromQuery) return;
+
+    setClienteId(fromQuery);
+    setCurrentFolderId(null);
+    router.replace(paths.dashboard.guiasEDocumentos.list);
+  }, [searchParams, router]);
+
+  useEffect(() => {
     setSelectedFileIds([]);
   }, [clienteId, currentFolderId]);
 
@@ -241,6 +266,38 @@ export function GuiaFiscalDriveAdminView() {
     },
     [closeFileMenu]
   );
+
+  const openRenameFileDialog = useCallback(
+    (file) => {
+      if (!file?._id) return;
+      setFileToRename(file);
+      setRenameValue(file.nomeArquivo || '');
+      setRenameOpen(true);
+      closeFileMenu();
+    },
+    [closeFileMenu]
+  );
+
+  const handleConfirmRenameFile = useCallback(async () => {
+    const nome = renameValue?.trim();
+    if (!fileToRename?._id || !nome) {
+      toast.error('Informe um nome para o documento.');
+      return;
+    }
+    try {
+      setRenaming(true);
+      await updateGuiaFiscal(fileToRename._id, { nomeArquivo: nome });
+      toast.success('Nome do documento atualizado.');
+      setRenameOpen(false);
+      setFileToRename(null);
+      setRenameValue('');
+      await mutateFiles();
+    } catch (err) {
+      toast.error(apiErrMsg(err));
+    } finally {
+      setRenaming(false);
+    }
+  }, [fileToRename, mutateFiles, renameValue]);
 
   const handleConfirmDeleteFile = useCallback(async () => {
     if (!fileToDelete?._id) return;
@@ -310,8 +367,8 @@ export function GuiaFiscalDriveAdminView() {
 
     for (let i = 0; i < filesToDownload.length; i += 1) {
       const file = filesToDownload[i];
-      if (file?._id && file.nomeArquivo) {
-        downloadGuiaFiscal(file._id, file.nomeArquivo);
+      if (file?._id && file.nomeArquivo && !file.semArquivo) {
+        downloadGuiaFiscal(file._id, resolveNomeDownloadGuia(file));
       }
 
       if (i < filesToDownload.length - 1) {
@@ -965,7 +1022,11 @@ export function GuiaFiscalDriveAdminView() {
                                         e.stopPropagation();
                                         setFileMenuState({ type: 'icon', anchorEl: e.currentTarget, file });
                                       }}
-                                      onDownload={() => downloadGuiaFiscal(file._id, file.nomeArquivo)}
+                                      onDownload={
+                                        file.semArquivo
+                                          ? undefined
+                                          : () => downloadGuiaFiscal(file._id, resolveNomeDownloadGuia(file))
+                                      }
                                     />
                                   ))}
                                 </Box>
@@ -984,7 +1045,11 @@ export function GuiaFiscalDriveAdminView() {
                                         e.stopPropagation();
                                         setFileMenuState({ type: 'icon', anchorEl: e.currentTarget, file });
                                       }}
-                                      onDownload={() => downloadGuiaFiscal(file._id, file.nomeArquivo)}
+                                      onDownload={
+                                        file.semArquivo
+                                          ? undefined
+                                          : () => downloadGuiaFiscal(file._id, resolveNomeDownloadGuia(file))
+                                      }
                                     />
                                   ))}
                                 </Stack>
@@ -1173,9 +1238,10 @@ export function GuiaFiscalDriveAdminView() {
             <ListItemText primary="Ver detalhes" />
           </MenuItem>
           <MenuItem
+            disabled={fileMenuState?.file?.semArquivo}
             onClick={() => {
               const f = fileMenuState?.file;
-              if (f) downloadGuiaFiscal(f._id, f.nomeArquivo);
+              if (f && !f.semArquivo) downloadGuiaFiscal(f._id, resolveNomeDownloadGuia(f));
               closeFileMenu();
             }}
           >
@@ -1183,6 +1249,21 @@ export function GuiaFiscalDriveAdminView() {
               <Iconify icon="solar:download-bold" width={20} />
             </ListItemIcon>
             <ListItemText primary="Baixar" />
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              const f = fileMenuState?.file;
+              if (f) openRenameFileDialog(f);
+            }}
+          >
+            <ListItemIcon>
+              <Iconify icon="solar:pen-bold" width={20} />
+            </ListItemIcon>
+            <ListItemText
+              primary="Renomear"
+              secondary="Altera o nome exibido no download"
+              secondaryTypographyProps={{ variant: 'caption' }}
+            />
           </MenuItem>
           <MenuItem
             disabled={!clienteId}
@@ -1224,6 +1305,42 @@ export function GuiaFiscalDriveAdminView() {
             </Button>
           }
         />
+
+        <Dialog
+          open={renameOpen}
+          onClose={() => !renaming && setRenameOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Renomear documento</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              Altera apenas o nome exibido no drive e no download. O arquivo físico no servidor não é modificado.
+            </Typography>
+            <TextField
+              autoFocus
+              fullWidth
+              label="Nome do documento"
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              disabled={renaming}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleConfirmRenameFile();
+                }
+              }}
+            />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setRenameOpen(false)} disabled={renaming}>
+              Cancelar
+            </Button>
+            <Button variant="contained" onClick={handleConfirmRenameFile} disabled={renaming || !renameValue?.trim()}>
+              {renaming ? 'Salvando…' : 'Salvar'}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         <ConfirmDialog
           maxWidth="sm"

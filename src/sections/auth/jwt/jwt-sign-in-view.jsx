@@ -40,8 +40,8 @@ export const SignInSchema = zod.object({
     .email({ message: 'Email deve ser um email valido!' }),
   password: zod
     .string()
-    .min(1, { message: 'Password is required!' })
-    .min(6, { message: 'Password must be at least 6 characters!' }),
+    .min(1, { message: 'Senha é obrigatória!' })
+    .min(6, { message: 'Senha deve ter pelo menos 6 caracteres!' }),
 });
 
 // ----------------------------------------------------------------------
@@ -258,7 +258,7 @@ export function JwtSignInView() {
         <Field.Text
           name="password"
           label="Senha"
-          placeholder="digite sua senha"
+          placeholder="Digite sua senha"
           type={password.value ? 'text' : 'password'}
           InputLabelProps={{ shrink: true }}
           InputProps={{

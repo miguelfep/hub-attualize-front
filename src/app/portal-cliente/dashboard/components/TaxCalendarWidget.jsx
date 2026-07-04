@@ -17,6 +17,8 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { formatToCurrency } from 'src/components/animate';
 
+import { resolveNomeDownloadGuia } from 'src/sections/guias-fiscais/utils';
+
 import { CARD, CARD_HEADER } from './dash-tokens';
 
 const DAYS_PER_WEEK = 7;
@@ -115,7 +117,7 @@ export default function TaxCalendarWidget({ sx, ...other }) {
 
   const handleDownload = async (guia) => {
     try {
-      await downloadGuiaFiscalPortal(guia._id, guia.nomeArquivo);
+      await downloadGuiaFiscalPortal(guia._id, resolveNomeDownloadGuia(guia));
     } catch (error) {
       console.error('Erro ao baixar guia:', error);
     }

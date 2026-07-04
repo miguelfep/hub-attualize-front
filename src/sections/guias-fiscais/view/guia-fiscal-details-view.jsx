@@ -3,6 +3,7 @@
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
+import Chip from '@mui/material/Chip';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
@@ -27,7 +28,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import { isGuia, getCompetencia, getTipoGuiaLabel, formatCompetencia, isExtratoBancario, getFormatoExtratoLabel } from '../utils';
+import { isGuia, getCompetencia, getTipoGuiaLabel, formatCompetencia, isExtratoBancario, getFormatoExtratoLabel, resolveNomeDownloadGuia } from '../utils';
 import {
   getClienteVisualizouEm,
   getLeiturasPortalItensAdmin,
@@ -84,7 +85,7 @@ export function GuiaFiscalDetailsView({ id }) {
 
   const handleDownload = async () => {
     try {
-      await downloadGuiaFiscal(id, guia?.nomeArquivo || 'guia-fiscal.pdf');
+      await downloadGuiaFiscal(id, resolveNomeDownloadGuia(guia));
     } catch (downloadError) {
       console.error('Erro ao fazer download:', downloadError);
     }
@@ -144,13 +145,17 @@ export function GuiaFiscalDetailsView({ id }) {
         ]}
         action={
           <Stack direction="row" spacing={2}>
-            <Button
-              variant="outlined"
-              startIcon={<Iconify icon="solar:download-bold" />}
-              onClick={handleDownload}
-            >
-              Download
-            </Button>
+            {!guia?.semArquivo ? (
+              <Button
+                variant="outlined"
+                startIcon={<Iconify icon="solar:download-bold" />}
+                onClick={handleDownload}
+              >
+                Download
+              </Button>
+            ) : (
+              <Chip size="small" label="Sem PDF" color="warning" variant="soft" />
+            )}
             <Button
               variant="contained"
               component={RouterLink}

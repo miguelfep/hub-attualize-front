@@ -141,6 +141,14 @@ export async function solicitarAtualizacaoGuiaPortal(id) {
 }
 
 /**
+ * Cliente declara que já pagou a DAS em aberto do mês atual (banner automático).
+ */
+export async function confirmarPagamentoDasPortal() {
+  const res = await axios.post(endpoints.guiasFiscais.portal.confirmarPagamentoDas);
+  return res.data;
+}
+
+/**
  * Árvore de pastas do cliente (Portal) — uma única requisição.
  */
 export async function getPastasGuiasPortalTree() {
