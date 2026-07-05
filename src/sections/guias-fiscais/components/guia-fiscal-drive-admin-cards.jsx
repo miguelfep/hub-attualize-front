@@ -638,7 +638,7 @@ export function DriveFolderEmptyPortal() {
   );
 }
 
-export function DriveFileCardGridPortal({ file, fileMetaLines, isNovo, onDownload }) {
+export function DriveFileCardGridPortal({ file, fileMetaLines, isNovo, onDownload, onPreview }) {
   return (
     <Card
       variant="outlined"
@@ -691,23 +691,38 @@ export function DriveFileCardGridPortal({ file, fileMetaLines, isNovo, onDownloa
           </Box>
         </Stack>
 
-        {onDownload ? (
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<Iconify icon="eva:download-outline" width={18} />}
-            onClick={onDownload}
-            sx={{ alignSelf: 'flex-start', borderRadius: DRIVE_SURFACE_RADIUS }}
-          >
-            Baixar
-          </Button>
+        {onDownload || onPreview ? (
+          <Stack direction="row" spacing={1}>
+            {onPreview ? (
+              <Button
+                size="small"
+                variant="text"
+                startIcon={<Iconify icon="solar:eye-bold" width={18} />}
+                onClick={onPreview}
+                sx={{ borderRadius: DRIVE_SURFACE_RADIUS }}
+              >
+                Visualizar
+              </Button>
+            ) : null}
+            {onDownload ? (
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<Iconify icon="eva:download-outline" width={18} />}
+                onClick={onDownload}
+                sx={{ borderRadius: DRIVE_SURFACE_RADIUS }}
+              >
+                Baixar
+              </Button>
+            ) : null}
+          </Stack>
         ) : null}
       </Stack>
     </Card>
   );
 }
 
-export function DriveFileCardListPortal({ file, fileMetaLines, isNovo, onDownload }) {
+export function DriveFileCardListPortal({ file, fileMetaLines, isNovo, onDownload, onPreview }) {
   return (
     <Card
       variant="outlined"
@@ -757,6 +772,22 @@ export function DriveFileCardListPortal({ file, fileMetaLines, isNovo, onDownloa
           </Box>
         </Stack>
 
+        {onPreview ? (
+          <Tooltip title="Visualizar">
+            <IconButton
+              size="small"
+              onClick={onPreview}
+              sx={{
+                flexShrink: 0,
+                opacity: 0,
+                transition: 'opacity 0.2s',
+                '.drive-list-row-portal:hover &': { opacity: 1 },
+              }}
+            >
+              <Iconify icon="solar:eye-bold" width={18} color="text.secondary" />
+            </IconButton>
+          </Tooltip>
+        ) : null}
         {onDownload ? (
           <Tooltip title="Baixar">
             <IconButton
