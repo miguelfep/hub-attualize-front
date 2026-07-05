@@ -498,6 +498,8 @@ export const endpoints = {
   // Guias Fiscais
   guiasFiscais: {
     upload: `${baseUrl}guias-fiscais/upload`,
+    uploadAsync: `${baseUrl}guias-fiscais/upload/async`,
+    uploadLote: (loteId) => `${baseUrl}guias-fiscais/upload/lotes/${loteId}`,
     list: `${baseUrl}guias-fiscais`,
     pastas: `${baseUrl}guias-fiscais/pastas`,
     pastasSubpasta: (parentId) => `${baseUrl}guias-fiscais/pastas/${parentId}/subpastas`,

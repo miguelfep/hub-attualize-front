@@ -15,7 +15,11 @@ import CircularProgress from '@mui/material/CircularProgress';
 import { useBoolean } from 'src/hooks/use-boolean';
 
 import { fDate } from 'src/utils/format-time';
-import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
+import {
+  downloadGuiaFiscalPortal,
+  visualizarGuiaFiscalPortal,
+  isGuiaVisualizavelNoNavegador,
+} from 'src/utils/portal-guia-download';
 
 import { getStatusEmissaoDas } from 'src/actions/serpro-portal';
 import {
@@ -27,10 +31,10 @@ import {
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
-import { getCompetencia, findPastaNodeById, formatCompetencia, resolveNomeDownloadGuia } from '../utils';
 import { isDocumentoNovoParaClientePortal } from '../guia-documento-visualizacao';
 import { GuiaFiscalDrivePortalToolbar } from '../components/guia-fiscal-drive-portal-toolbar';
 import { GuiaFiscalEmitirDasPortalDialog } from '../components/guia-fiscal-emitir-das-portal-dialog';
+import { getCompetencia, findPastaNodeById, formatCompetencia, resolveNomeDownloadGuia } from '../utils';
 import {
   DRIVE_SHADOW_SOFT,
   DRIVE_BORDER_COLOR,
@@ -177,6 +181,14 @@ export function GuiaFiscalDrivePortalView() {
   const handleDownload = useCallback(async (file) => {
     try {
       await downloadGuiaFiscalPortal(file._id, resolveNomeDownloadGuia(file));
+    } catch (error) {
+      toast.error(apiErr(error));
+    }
+  }, []);
+
+  const handlePreview = useCallback(async (file) => {
+    try {
+      await visualizarGuiaFiscalPortal(file._id, resolveNomeDownloadGuia(file));
     } catch (error) {
       toast.error(apiErr(error));
     }
@@ -341,6 +353,12 @@ export function GuiaFiscalDrivePortalView() {
                                             ? undefined
                                             : () => handleDownload(file)
                                         }
+                                        onPreview={
+                                          file.semArquivo ||
+                                          !isGuiaVisualizavelNoNavegador(resolveNomeDownloadGuia(file))
+                                            ? undefined
+                                            : () => handlePreview(file)
+                                        }
                                       />
                                     ))}
                                   </Box>
@@ -356,6 +374,12 @@ export function GuiaFiscalDrivePortalView() {
                                           file.semArquivo
                                             ? undefined
                                             : () => handleDownload(file)
+                                        }
+                                        onPreview={
+                                          file.semArquivo ||
+                                          !isGuiaVisualizavelNoNavegador(resolveNomeDownloadGuia(file))
+                                            ? undefined
+                                            : () => handlePreview(file)
                                         }
                                       />
                                     ))}

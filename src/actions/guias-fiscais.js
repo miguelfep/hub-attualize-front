@@ -33,6 +33,63 @@ export async function uploadGuiasFiscais(files) {
 // ----------------------------------------------------------------------
 
 /**
+ * Upload ASSÍNCRONO de guias (fluxo novo): o backend enfileira o lote e
+ * responde 202 com `loteId`. Acompanhar via useGetLoteUpload(loteId).
+ * @param {File[]} files
+ * @returns {Promise<{ loteId: string, status: string, totalArquivos: number }>}
+ */
+export async function uploadGuiasFiscaisAsync(files) {
+  const formData = new FormData();
+  files.forEach((file) => {
+    formData.append('files', file);
+  });
+
+  const res = await axios.post(endpoints.guiasFiscais.uploadAsync, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+
+  return res.data;
+}
+
+export const LOTE_UPLOAD_EM_ANDAMENTO = ['aguardando', 'processando'];
+
+/**
+ * Polling do lote assíncrono: revalida a cada 2,5s até o status ser terminal
+ * (concluido/erro). IMPORTANTE: enquanto não há dados (primeira consulta ainda
+ * carregando ou falhou), o polling CONTINUA — retornar 0 nesse caso travaria a
+ * tela em "processando" para sempre. `data.resumo` é parcial e cresce a cada arquivo.
+ * @param {string|null} loteId
+ */
+export function useGetLoteUpload(loteId) {
+  const { data, isLoading, error, mutate } = useSWR(
+    loteId ? endpoints.guiasFiscais.uploadLote(loteId) : null,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      refreshInterval: (latest) => {
+        const status = latest?.data?.status;
+        if (!status) return 2500; // sem dados ainda (ou erro transitório) → continua tentando
+        return LOTE_UPLOAD_EM_ANDAMENTO.includes(status) ? 2500 : 0;
+      },
+    }
+  );
+
+  return useMemo(
+    () => ({
+      lote: data?.data || null,
+      isLoading,
+      error,
+      mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+}
+
+// ----------------------------------------------------------------------
+
+/**
  * Listar guias fiscais
  * @param {Object} params - Parâmetros de filtro
  * @returns {Promise}
@@ -188,6 +245,35 @@ export async function downloadGuiaFiscal(id, nomeArquivo) {
   link.click();
   link.remove();
   window.URL.revokeObjectURL(url);
+
+  return res.data;
+}
+
+/**
+ * Visualizar guia em NOVA ABA (blob autenticado) — o arquivo é protegido no
+ * backend, nunca abrir `arquivoUrl` direto. Usado na revisão manual.
+ */
+export async function visualizarGuiaFiscal(id, nomeArquivo) {
+  const res = await axios.get(endpoints.guiasFiscais.download(id), {
+    responseType: 'blob',
+  });
+
+  const fileName = nomeArquivo || 'guia-fiscal.pdf';
+  const url = window.URL.createObjectURL(
+    new Blob([res.data], { type: mimeFromFileName(fileName) })
+  );
+
+  const aba = window.open(url, '_blank', 'noopener');
+  if (!aba) {
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', fileName);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  }
+
+  setTimeout(() => window.URL.revokeObjectURL(url), 60_000);
 
   return res.data;
 }

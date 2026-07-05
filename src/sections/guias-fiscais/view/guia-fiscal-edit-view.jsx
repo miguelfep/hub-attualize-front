@@ -52,6 +52,7 @@ const STATUS_OPTIONS = [
   { value: 'pendente', label: 'Pendente' },
   { value: 'processado', label: 'Processado' },
   { value: 'erro', label: 'Erro' },
+  { value: 'revisao', label: 'Em revisão' },
 ];
 
 const schema = zod.object({

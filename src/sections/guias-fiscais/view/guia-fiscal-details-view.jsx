@@ -43,6 +43,7 @@ const getStatusColor = (status) => {
     pendente: 'warning',
     processado: 'success',
     erro: 'error',
+    revisao: 'warning',
   };
   return statusMap[status] || 'default';
 };
@@ -52,6 +53,7 @@ const getStatusLabel = (status) => {
     pendente: 'Pendente',
     processado: 'Processado',
     erro: 'Erro',
+    revisao: 'Em revisão',
   };
   return labelMap[status] || status;
 };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useSWRConfig } from 'swr';
-import { useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -10,16 +10,13 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
 import ListItem from '@mui/material/ListItem';
-import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
-import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
 import ListItemText from '@mui/material/ListItemText';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { paths } from 'src/routes/paths';
@@ -31,20 +28,78 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { endpoints } from 'src/utils/axios';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { useGetAllClientes } from 'src/actions/clientes';
-import { getGuiasFiscais, uploadGuiasFiscais } from 'src/actions/guias-fiscais';
+import {
+  useGetLoteUpload,
+  uploadGuiasFiscaisAsync,
+  LOTE_UPLOAD_EM_ANDAMENTO,
+} from 'src/actions/guias-fiscais';
 
+import { Label } from 'src/components/label';
 import { Upload } from 'src/components/upload';
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
+import { GuiaFiscalRevisaoPanel } from '../components/guia-fiscal-revisao-panel';
+
+// ----------------------------------------------------------------------
+// Upload em lote ASSÍNCRONO: POST /upload/async responde 202 com loteId;
+// o progresso vem por polling (useGetLoteUpload). Arquivos que o sistema
+// não classificar caem na fila de revisão manual (painel abaixo).
 // ----------------------------------------------------------------------
 
-function resolveClienteIdRedirect(data) {
-  const guias = data?.guias || [];
+function resolveClienteIdRedirect(resumo) {
+  const guias = resumo?.guias || [];
   const ids = [...new Set(guias.map((g) => g.clienteId).filter(Boolean))];
   return ids.length === 1 ? ids[0] : null;
+}
+
+function ResumoLote({ resumo }) {
+  if (!resumo) return null;
+
+  return (
+    <Stack spacing={1}>
+      <Typography variant="body2">✅ Processados: {resumo.processadas}</Typography>
+      {resumo.substituidas > 0 && (
+        <Typography variant="body2" color="info.main">
+          🔄 Guias vencidas atualizadas: {resumo.substituidas}
+        </Typography>
+      )}
+      {resumo.emRevisao > 0 && (
+        <Typography variant="body2" color="warning.main">
+          🕵️ Aguardando revisão manual: {resumo.emRevisao} (não visíveis no portal — classifique
+          no painel abaixo)
+        </Typography>
+      )}
+      {resumo.duplicatas > 0 && (
+        <Typography variant="body2" color="warning.main">
+          ⚠️ Duplicatas ignoradas: {resumo.duplicatas}
+        </Typography>
+      )}
+      {resumo.erros > 0 && (
+        <Typography variant="body2" color="error">
+          ❌ Erros: {resumo.erros}
+        </Typography>
+      )}
+      {resumo.errosDetalhados?.length > 0 && (
+        <Box sx={{ mt: 1 }}>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            Detalhes dos erros:
+          </Typography>
+          {resumo.errosDetalhados.map((erro, index) => (
+            <Typography
+              key={index}
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block' }}
+            >
+              • {erro.arquivo}: {erro.erro}
+            </Typography>
+          ))}
+        </Box>
+      )}
+    </Stack>
+  );
 }
 
 export function GuiaFiscalUploadView() {
@@ -52,115 +107,76 @@ export function GuiaFiscalUploadView() {
   const { mutate: mutateGlobal } = useSWRConfig();
 
   const [files, setFiles] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [uploadResult, setUploadResult] = useState(null);
-  const [filesWithClientes, setFilesWithClientes] = useState([]); // Arquivos com cliente selecionado
-  const [loadingGuias, setLoadingGuias] = useState(false);
+  const [enviando, setEnviando] = useState(false);
+  const [loteId, setLoteId] = useState(null);
+  const [loteFinalizadoId, setLoteFinalizadoId] = useState(null);
 
   const dialogClientesNaoEncontrados = useBoolean();
 
-  // Buscar clientes ativos
-  const { data: clientes, isLoading: loadingClientes } = useGetAllClientes({ status: true });
+  const { lote, error: erroConsultaLote } = useGetLoteUpload(loteId);
 
-  // Buscar todas as guias ao entrar na página
+  const emAndamento = enviando || LOTE_UPLOAD_EM_ANDAMENTO.includes(lote?.status);
+  const resumo = lote?.resumo || null;
+  const progresso =
+    lote?.totalArquivos > 0 ? Math.round((lote.processados / lote.totalArquivos) * 100) : 0;
+
+  const revalidarListagens = useCallback(
+    () =>
+      mutateGlobal(
+        (key) =>
+          typeof key === 'string' &&
+          (key.startsWith(endpoints.guiasFiscais.list) ||
+            key.startsWith(endpoints.guiasFiscais.pastas)),
+        undefined,
+        { revalidate: true }
+      ),
+    [mutateGlobal]
+  );
+
+  // Reage à conclusão do lote (polling): toasts + revalidação, uma vez por lote
   useEffect(() => {
-    const fetchAllGuias = async () => {
-      try {
-        setLoadingGuias(true);
-        const response = await getGuiasFiscais({ limit: 1000 });
-        console.log('Guias carregadas:', response);
-        // Você pode usar essas guias conforme necessário
-      } catch (error) {
-        console.error('Erro ao buscar guias:', error);
-        toast.error('Erro ao carregar guias fiscais');
-      } finally {
-        setLoadingGuias(false);
-      }
-    };
+    if (!lote || !loteId || loteFinalizadoId === loteId) return;
+    if (LOTE_UPLOAD_EM_ANDAMENTO.includes(lote.status)) return;
 
-    fetchAllGuias();
-  }, []);
+    setLoteFinalizadoId(loteId);
+    revalidarListagens();
+
+    if (lote.status === 'erro') {
+      toast.error(lote.erroGeral || 'O processamento do lote falhou. Tente novamente.');
+      return;
+    }
+
+    const r = lote.resumo || {};
+    toast.success(
+      `${r.processadas || 0} documento(s) processado(s)${ 
+        r.substituidas ? ` • ${r.substituidas} substituído(s)` : '' 
+        }${r.duplicatas ? ` • ${r.duplicatas} duplicado(s) ignorado(s)` : ''}`
+    );
+    if (r.emRevisao > 0) {
+      toast.warning(
+        `${r.emRevisao} documento(s) aguardando revisão manual — classifique no painel abaixo.`
+      );
+    }
+    if (r.clientesNaoEncontrados?.length > 0) {
+      dialogClientesNaoEncontrados.onTrue();
+    }
+  }, [lote, loteId, loteFinalizadoId, revalidarListagens, dialogClientesNaoEncontrados]);
 
   const handleDrop = useCallback((acceptedFiles) => {
-    // Filtrar apenas PDFs
     const pdfFiles = acceptedFiles.filter((file) => file.type === 'application/pdf');
-
     if (pdfFiles.length !== acceptedFiles.length) {
       toast.error('Apenas arquivos PDF são aceitos');
     }
-
-    // Adicionar os PDFs aos arquivos já selecionados com ID único
-    const newFilesWithClientes = pdfFiles.map((file) => {
-      const fileId = `${file.name}-${file.size}-${Date.now()}-${Math.random()}`;
-      return {
-        id: fileId,
-        file,
-        clienteId: null,
-        clienteNome: null,
-      };
-    });
-
     setFiles((prev) => [...prev, ...pdfFiles]);
-    setFilesWithClientes((prev) => [...prev, ...newFilesWithClientes]);
   }, []);
 
   const handleRemoveFile = useCallback((index) => {
-    const fileToRemove = files[index];
     setFiles((prev) => prev.filter((_, i) => i !== index));
-    // Remover pelo nome e tamanho para garantir sincronização
-    setFilesWithClientes((prev) =>
-      prev.filter((item) => item.file.name !== fileToRemove.name || item.file.size !== fileToRemove.size)
-    );
-  }, [files]);
+  }, []);
 
   const handleRemoveAll = useCallback(() => {
     setFiles([]);
-    setFilesWithClientes([]);
   }, []);
-
-  // Handler para selecionar cliente para um arquivo
-  const handleSelectCliente = useCallback(async (fileId, clienteId) => {
-    const cliente = clientes.find((c) => c._id === clienteId || c.id === clienteId);
-
-    setFilesWithClientes((prev) => prev.map((item) =>
-      item.id === fileId
-        ? {
-          ...item,
-          clienteId,
-          clienteNome: cliente?.name || cliente?.razaoSocial || '',
-        }
-        : item
-    ));
-
-    // Fazer GET com o clienteId para buscar guias desse cliente
-    try {
-      const response = await getGuiasFiscais({ clienteId, limit: 1000 });
-      console.log(`Guias do cliente ${clienteId}:`, response);
-      const total = response?.data?.total || response?.total || 0;
-      toast.success(`Guias do cliente carregadas: ${total} encontradas`);
-    } catch (error) {
-      console.error('Erro ao buscar guias do cliente:', error);
-      toast.error('Erro ao buscar guias do cliente');
-    }
-  }, [clientes]);
-
-  const irParaDocumentos = useCallback(async (data) => {
-    await mutateGlobal(
-      (key) =>
-        typeof key === 'string' &&
-        (key.startsWith(endpoints.guiasFiscais.list) ||
-          key.startsWith(endpoints.guiasFiscais.pastas)),
-      undefined,
-      { revalidate: true }
-    );
-
-    const params = new URLSearchParams();
-    const clienteId = resolveClienteIdRedirect(data);
-    if (clienteId) params.set('clienteId', clienteId);
-
-    const qs = params.toString();
-    router.push(qs ? `${paths.dashboard.guiasEDocumentos.list}?${qs}` : paths.dashboard.guiasEDocumentos.list);
-  }, [mutateGlobal, router]);
 
   const handleUpload = useCallback(async () => {
     if (files.length === 0) {
@@ -169,127 +185,59 @@ export function GuiaFiscalUploadView() {
     }
 
     try {
-      setLoading(true);
-      console.log('📤 Iniciando upload de', files.length, 'arquivo(s)');
-      console.log('📄 Arquivos:', files.map((f) => ({ name: f.name, size: f.size })));
+      setEnviando(true);
+      setLoteId(null);
+      setLoteFinalizadoId(null);
 
-      const response = await uploadGuiasFiscais(files);
+      const response = await uploadGuiasFiscaisAsync(files);
 
-      console.log('✅ Resposta do upload:', response);
-
-      if (response.success) {
-        setUploadResult(response.data);
-
-        // 🔥 NOVA ESTRUTURA: Verificar warnings (não bloqueiam, mas informam)
-        if (response.warnings && response.warnings.length > 0) {
-          response.warnings.forEach((warning) => {
-            toast.warning(warning, { duration: 5000 });
-          });
-        }
-
-        // Mostrar resumo
-        const { processadas, erros, duplicatas, substituidas, resumo, clientesNaoEncontrados, errosDetalhados } =
-          response.data;
-
-        console.log('📊 Resumo do processamento:', {
-          processadas,
-          substituidas,
-          erros,
-          duplicatas,
-          resumo,
-          clientesNaoEncontrados: clientesNaoEncontrados?.length || 0,
-          errosDetalhados: errosDetalhados?.length || 0,
-        });
-
-        let mensagem = `${processadas} documento(s) processado(s) com sucesso!`;
-        if (substituidas > 0) {
-          mensagem += ` ${substituidas} guia(s) vencida(s) atualizada(s).`;
-        }
-        if (duplicatas > 0) {
-          mensagem += ` ${duplicatas} documento(s) duplicado(s) foram ignorados.`;
-        }
-
-        toast.success(mensagem);
-
-        if (substituidas > 0) {
-          toast.info(`${substituidas} guia(s) vencida(s) foram substituídas pela versão mais recente.`);
-        }
-
-        // Mostrar aviso sobre duplicatas
-        if (duplicatas > 0) {
-          toast.warning(`${duplicatas} documento(s) duplicado(s) foram ignorados.`);
-        }
-
-        // Verificar se há clientes não encontrados
-        if (clientesNaoEncontrados && clientesNaoEncontrados.length > 0) {
-          dialogClientesNaoEncontrados.onTrue();
-        } else if (erros > 0 && duplicatas === 0) {
-          toast.warning(`${erros} documento(s) com erro. Verifique os detalhes.`);
-        } else {
-          setTimeout(() => {
-            irParaDocumentos(response.data);
-          }, 1500);
-        }
+      if (response?.success && response?.data?.loteId) {
+        setLoteId(response.data.loteId);
+        setFiles([]);
+        toast.info(
+          `Lote com ${response.data.totalArquivos} arquivo(s) enviado — processando em segundo plano.`
+        );
       } else {
-        // 🔥 NOVA ESTRUTURA: Tratar errors e warnings
-        const errorMessage = response.errors && response.errors.length > 0
-          ? response.errors[0]
-          : (response.message || 'Erro ao processar documentos');
-
-        console.error('❌ Erro no upload:', response);
-        toast.error(errorMessage);
-
-        // Exibir warnings mesmo em caso de erro
-        if (response.warnings && response.warnings.length > 0) {
-          response.warnings.forEach((warning) => {
-            toast.warning(warning, { duration: 5000 });
-          });
-        }
+        toast.error(response?.message || 'Erro ao enviar o lote');
       }
     } catch (error) {
-      console.error('❌ Erro ao fazer upload:', error);
-
-      // 🔥 NOVA ESTRUTURA: Tratar errors, warnings e codes
-      let errorMessage = 'Erro ao fazer upload dos documentos';
-      let warnings = [];
-
-      if (error?.response?.data) {
-        const errorData = error.response.data;
-
-        // Verificar se é nova estrutura
-        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
-          errorMessage = errorData.errors[0];
-        } else if (errorData.message) {
-          errorMessage = errorData.message;
-        } else if (errorData.error) {
-          errorMessage = errorData.error;
-        }
-
-        // Capturar warnings
-        if (errorData.warnings && Array.isArray(errorData.warnings)) {
-          ({ warnings } = errorData);
-        }
-
-        // Tratamento específico por código
-        if (errorData.code === 'LIMIT_FILE_SIZE') {
-          errorMessage = errorData.message || 'Arquivo muito grande. Verifique o tamanho máximo permitido.';
-        } else if (errorData.code === 'LIMIT_FILE_COUNT') {
-          errorMessage = errorData.message || 'Muitos arquivos enviados. Verifique o limite permitido.';
-        }
-      } else if (error?.message) {
-        errorMessage = error.message;
+      const data = error?.response?.data;
+      let msg = data?.message || error?.message || 'Erro ao fazer upload dos documentos';
+      if (data?.code === 'LIMIT_FILE_SIZE') {
+        msg = data.message || 'Arquivo muito grande. Verifique o tamanho máximo permitido.';
+      } else if (data?.code === 'LIMIT_FILE_COUNT') {
+        msg = data.message || 'Muitos arquivos enviados. Verifique o limite permitido.';
       }
-
-      toast.error(errorMessage);
-
-      // Exibir warnings
-      warnings.forEach((warning) => {
-        toast.warning(warning, { duration: 5000 });
-      });
+      if (data?.arquivosInvalidos?.length) {
+        msg += ` (${data.arquivosInvalidos.join(', ')})`;
+      }
+      toast.error(msg);
     } finally {
-      setLoading(false);
+      setEnviando(false);
     }
-  }, [files, irParaDocumentos, dialogClientesNaoEncontrados]);
+  }, [files]);
+
+  const irParaDocumentos = useCallback(async () => {
+    await revalidarListagens();
+    const params = new URLSearchParams();
+    const clienteId = resolveClienteIdRedirect(resumo);
+    if (clienteId) params.set('clienteId', clienteId);
+    const qs = params.toString();
+    router.push(
+      qs ? `${paths.dashboard.guiasEDocumentos.list}?${qs}` : paths.dashboard.guiasEDocumentos.list
+    );
+  }, [revalidarListagens, resumo, router]);
+
+  const statusLote = useMemo(() => {
+    if (!lote) return null;
+    const map = {
+      aguardando: { label: 'Na fila', color: 'default' },
+      processando: { label: 'Processando', color: 'info' },
+      concluido: { label: 'Concluído', color: 'success' },
+      erro: { label: 'Erro', color: 'error' },
+    };
+    return map[lote.status] || { label: lote.status, color: 'default' };
+  }, [lote]);
 
   return (
     <DashboardContent>
@@ -304,10 +252,12 @@ export function GuiaFiscalUploadView() {
       />
 
       <Stack spacing={3}>
-        <Alert severity="info" sx={{ mb: 2 }}>
+        <Alert severity="info">
           <Typography variant="body2">
-            O sistema identifica automaticamente o cliente pelo CNPJ extraído de cada PDF.
-            Você pode fazer upload de quantos arquivos quiser.
+            O sistema identifica automaticamente o cliente pelo CNPJ e classifica o tipo do
+            documento (com apoio de IA, inclusive PDFs escaneados). O processamento acontece em
+            segundo plano — acompanhe o progresso aqui. O que não for identificado com segurança
+            cai na <strong>revisão manual</strong> abaixo, sem aparecer para o cliente.
           </Typography>
         </Alert>
 
@@ -322,125 +272,88 @@ export function GuiaFiscalUploadView() {
               accept={{
                 'application/pdf': ['.pdf'],
               }}
-              helperText="Arraste arquivos PDF aqui ou clique para selecionar. Você pode adicionar quantos arquivos quiser. O sistema identificará automaticamente o cliente pelo CNPJ."
+              helperText="Arraste arquivos PDF aqui ou clique para selecionar (até 100 por lote, 20 MB cada)."
             />
-
-            {/* Select de clientes para arquivos sem identificação */}
-            {filesWithClientes.length > 0 && (
-              <Stack spacing={2}>
-                <Typography variant="subtitle2">
-                  Selecione o cliente para arquivos sem identificação automática:
-                </Typography>
-                {filesWithClientes.map((fileWithCliente) => (
-                  <Card key={fileWithCliente.id} variant="outlined" sx={{ p: 2 }}>
-                    <Stack direction="row" spacing={2} alignItems="center">
-                      <Box sx={{ flex: 1 }}>
-                        <Typography variant="body2" color="text.secondary">
-                          {fileWithCliente.file.name}
-                        </Typography>
-                        {fileWithCliente.clienteNome && (
-                          <Typography variant="caption" color="success.main">
-                            Cliente: {fileWithCliente.clienteNome}
-                          </Typography>
-                        )}
-                      </Box>
-                      <FormControl sx={{ minWidth: 250 }} size="small">
-                        <InputLabel>Selecionar Cliente</InputLabel>
-                        <Select
-                          value={fileWithCliente.clienteId || ''}
-                          label="Selecionar Cliente"
-                          onChange={(e) => handleSelectCliente(fileWithCliente.id, e.target.value)}
-                          disabled={loadingClientes}
-                        >
-                          <MenuItem value="">
-                            <em>Nenhum</em>
-                          </MenuItem>
-                          {clientes.map((cliente) => (
-                            <MenuItem key={cliente._id || cliente.id} value={cliente._id || cliente.id}>
-                              {cliente.name || cliente.razaoSocial || cliente.nome}
-                            </MenuItem>
-                          ))}
-                        </Select>
-                      </FormControl>
-                    </Stack>
-                  </Card>
-                ))}
-              </Stack>
-            )}
-
-            {uploadResult && (
-              <Card variant="outlined" sx={{ p: 2, bgcolor: 'background.neutral' }}>
-                <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                  Resumo do Processamento
-                </Typography>
-                <Stack spacing={1}>
-                  <Typography variant="body2">
-                    ✅ Processados: {uploadResult.processadas}
-                  </Typography>
-                  {uploadResult.resumo && (
-                    <>
-                      <Typography variant="body2" color="text.secondary">
-                        • {uploadResult.resumo.guiasFiscais || 0} Guias Fiscais
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        • {uploadResult.resumo.guiasDP || 0} Guias de DP
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        • {uploadResult.resumo.documentosDP || 0} Documentos de DP
-                      </Typography>
-                    </>
-                  )}
-                  {uploadResult.substituidas > 0 && (
-                    <Typography variant="body2" color="info.main">
-                      🔄 Guias vencidas atualizadas: {uploadResult.substituidas}
-                    </Typography>
-                  )}
-                  {uploadResult.duplicatas > 0 && (
-                    <Typography variant="body2" color="warning.main">
-                      ⚠️ Duplicatas ignoradas: {uploadResult.duplicatas}
-                    </Typography>
-                  )}
-                  {uploadResult.erros > 0 && (
-                    <Typography variant="body2" color="error">
-                      ❌ Erros: {uploadResult.erros}
-                    </Typography>
-                  )}
-                  {uploadResult.errosDetalhados && uploadResult.errosDetalhados.length > 0 && (
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-                        Detalhes dos erros:
-                      </Typography>
-                      {uploadResult.errosDetalhados.map((erro, index) => (
-                        <Typography key={index} variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                          • {erro.arquivo}: {erro.erro}
-                        </Typography>
-                      ))}
-                    </Box>
-                  )}
-                </Stack>
-              </Card>
-            )}
 
             <Stack direction="row" spacing={2} justifyContent="flex-end">
               <Button
                 variant="outlined"
                 component={RouterLink}
                 href={paths.dashboard.guiasEDocumentos.list}
-                disabled={loading}
+                disabled={enviando}
               >
-                Cancelar
+                Voltar
               </Button>
               <Button
                 variant="contained"
                 onClick={handleUpload}
-                disabled={loading || files.length === 0}
-                startIcon={loading ? <CircularProgress size={20} /> : <Iconify icon="eva:cloud-upload-fill" />}
+                disabled={enviando || files.length === 0}
+                startIcon={
+                  enviando ? <CircularProgress size={20} /> : <Iconify icon="eva:cloud-upload-fill" />
+                }
               >
-                {loading ? 'Enviando...' : 'Enviar Documentos'}
+                {enviando ? 'Enviando...' : 'Enviar Documentos'}
               </Button>
             </Stack>
           </Stack>
         </Card>
+
+        {loteId && (
+          <Card sx={{ p: 3 }}>
+            <Stack spacing={2}>
+              <Stack direction="row" alignItems="center" justifyContent="space-between">
+                <Stack direction="row" alignItems="center" spacing={1.5}>
+                  <Typography variant="h6">Processamento do lote</Typography>
+                  {statusLote ? (
+                    <Label color={statusLote.color}>{statusLote.label}</Label>
+                  ) : (
+                    <Label color="default">Consultando...</Label>
+                  )}
+                </Stack>
+                {lote && (
+                  <Typography variant="body2" color="text.secondary">
+                    {lote.processados}/{lote.totalArquivos} arquivo(s)
+                  </Typography>
+                )}
+              </Stack>
+
+              {(!lote || emAndamento) && (
+                <LinearProgress
+                  variant={lote?.processados > 0 ? 'determinate' : 'indeterminate'}
+                  value={progresso}
+                />
+              )}
+
+              {erroConsultaLote && !lote && (
+                <Alert severity="warning">
+                  Não foi possível consultar o status do lote — tentando novamente...
+                </Alert>
+              )}
+
+              {lote?.status === 'erro' && (
+                <Alert severity="error">
+                  {lote.erroGeral || 'O processamento do lote falhou. Tente novamente.'}
+                </Alert>
+              )}
+
+              <ResumoLote resumo={resumo} />
+
+              {lote?.status === 'concluido' && (
+                <Stack direction="row" justifyContent="flex-end">
+                  <Button
+                    variant="outlined"
+                    onClick={irParaDocumentos}
+                    endIcon={<Iconify icon="eva:arrow-forward-fill" />}
+                  >
+                    Ver documentos
+                  </Button>
+                </Stack>
+              )}
+            </Stack>
+          </Card>
+        )}
+
+        <GuiaFiscalRevisaoPanel />
       </Stack>
 
       {/* Dialog para clientes não encontrados */}
@@ -456,30 +369,19 @@ export function GuiaFiscalUploadView() {
             Os seguintes arquivos contêm CNPJs que não foram encontrados no sistema:
           </Alert>
           <List>
-            {uploadResult?.clientesNaoEncontrados?.map((item, index) => (
+            {resumo?.clientesNaoEncontrados?.map((item, index) => (
               <ListItem key={index}>
-                <ListItemText
-                  primary={item.arquivo}
-                  secondary={`CNPJ: ${item.cnpj}`}
-                />
+                <ListItemText primary={item.arquivo} secondary={`CNPJ: ${item.cnpj}`} />
               </ListItem>
             ))}
           </List>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Estes documentos não foram processados. Verifique se os clientes estão cadastrados no sistema.
+            Estes documentos não foram processados. Verifique se os clientes estão cadastrados no
+            sistema e envie novamente.
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={dialogClientesNaoEncontrados.onFalse}>Fechar</Button>
-          <Button
-            variant="contained"
-            onClick={() => {
-              dialogClientesNaoEncontrados.onFalse();
-              irParaDocumentos(uploadResult);
-            }}
-          >
-            Ver Lista
-          </Button>
         </DialogActions>
       </Dialog>
     </DashboardContent>

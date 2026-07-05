@@ -67,14 +67,51 @@ const TIPO_GUIA_LABELS = {
   IRPJ: 'IRPJ',
   CSLL: 'CSLL',
   CSRF: 'CSRF',
+  PARCELAMENTO: 'Parcelamento',
   INSS: 'INSS',
   FGTS: 'FGTS',
   HOLERITE: 'Holerite',
   EXTRATO_FOLHA_PAGAMENTO: 'Extrato Folha',
   OUTROS: 'Outros',
+  NAO_IDENTIFICADO: 'Não identificado',
 };
 
 export const getTipoGuiaLabel = (tipo) => TIPO_GUIA_LABELS[tipo] || tipo || '-';
+
+/** Documento aguardando classificação manual no hub (não aparece no portal). */
+export const STATUS_PROCESSAMENTO_REVISAO = 'revisao';
+
+export const isGuiaEmRevisao = (guia) =>
+  guia?.statusProcessamento === STATUS_PROCESSAMENTO_REVISAO;
+
+/** Opções de tipo por categoria — usado no formulário de classificação da revisão. */
+export const TIPOS_POR_CATEGORIA = {
+  GUIA_FISCAL: [
+    'DAS',
+    'EXTRATO_PGDAS',
+    'DARF',
+    'ICMS',
+    'ISS',
+    'PIS',
+    'COFINS',
+    'IRPJ',
+    'CSLL',
+    'CSRF',
+    'PARCELAMENTO',
+  ],
+  GUIA_DP: ['INSS', 'FGTS'],
+  DOCUMENTO_DP: ['HOLERITE', 'EXTRATO_FOLHA_PAGAMENTO'],
+};
+
+export const CATEGORIA_LABELS_REVISAO = {
+  GUIA_FISCAL: 'Guia fiscal',
+  GUIA_DP: 'Guia DP',
+  DOCUMENTO_DP: 'Documento DP',
+};
+
+/** Sugestão de competência salva pelo backend quando o documento entra em revisão. */
+export const getCompetenciaSugerida = (guia) =>
+  guia?.dadosExtraidos?.competenciaSugerida || getCompetencia(guia) || '';
 
 const FORMATO_EXTRATO_LABELS = {
   pdf: 'PDF',

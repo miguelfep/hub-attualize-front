@@ -15,7 +15,11 @@ import { paths } from 'src/routes/paths';
 
 import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
-import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
+import {
+  downloadGuiaFiscalPortal,
+  visualizarGuiaFiscalPortal,
+  isGuiaVisualizavelNoNavegador,
+} from 'src/utils/portal-guia-download';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
@@ -82,6 +86,19 @@ export function GuiaFiscalPortalDetailsView({ id }) {
     }
   };
 
+  const handleVisualizar = async () => {
+    try {
+      await visualizarGuiaFiscalPortal(id, resolveNomeDownloadGuia(guia));
+    } catch (viewError) {
+      console.error('Erro ao visualizar:', viewError);
+      const msg =
+        typeof viewError === 'string'
+          ? viewError
+          : viewError?.message || 'Não foi possível abrir o arquivo.';
+      toast.error(msg);
+    }
+  };
+
   if (isLoading) {
     return (
       <DashboardContent>
@@ -119,13 +136,24 @@ export function GuiaFiscalPortalDetailsView({ id }) {
         ]}
         action={
           !guia?.semArquivo ? (
-            <Button
-              variant="contained"
-              startIcon={<Iconify icon="solar:download-bold" />}
-              onClick={handleDownload}
-            >
-              Download
-            </Button>
+            <Stack direction="row" spacing={1}>
+              {isGuiaVisualizavelNoNavegador(resolveNomeDownloadGuia(guia)) && (
+                <Button
+                  variant="outlined"
+                  startIcon={<Iconify icon="solar:eye-bold" />}
+                  onClick={handleVisualizar}
+                >
+                  Visualizar
+                </Button>
+              )}
+              <Button
+                variant="contained"
+                startIcon={<Iconify icon="solar:download-bold" />}
+                onClick={handleDownload}
+              >
+                Download
+              </Button>
+            </Stack>
           ) : (
             <Chip size="small" label="Sem PDF" color="warning" variant="soft" />
           )
