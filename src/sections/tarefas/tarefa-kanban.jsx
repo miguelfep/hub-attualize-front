@@ -25,6 +25,11 @@ import {
 // ----------------------------------------------------------------------
 
 function KanbanCard({ tarefa, setores, onClick }) {
+  const totalItens = tarefa.checklist?.length || 0;
+  const itensConcluidos = totalItens
+    ? tarefa.checklist.filter((i) => i.concluido).length
+    : 0;
+
   return (
     <Card
       onClick={() => onClick(tarefa)}
@@ -57,6 +62,19 @@ function KanbanCard({ tarefa, setores, onClick }) {
       <Stack direction="row" alignItems="center" spacing={0.5} sx={{ color: 'text.disabled' }}>
         <Iconify icon="solar:calendar-mark-bold" width={14} />
         <Typography variant="caption">{fDate(tarefa.prazo)}</Typography>
+        {totalItens > 0 && (
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={0.25}
+            sx={{ ml: 0.75, color: itensConcluidos === totalItens ? 'success.main' : 'text.disabled' }}
+          >
+            <Iconify icon="eva:checkmark-square-2-outline" width={14} />
+            <Typography variant="caption">
+              {itensConcluidos}/{totalItens}
+            </Typography>
+          </Stack>
+        )}
         {tarefa.responsavel?.name && (
           <Typography variant="caption" sx={{ ml: 'auto' }} noWrap>
             {tarefa.responsavel.name}

@@ -187,6 +187,7 @@ export const endpoints = {
     anexoView: (id, anexoId) => `${baseUrl}tarefas/${id}/anexos/${anexoId}/view`,
     anexoDownload: (id, anexoId) => `${baseUrl}tarefas/${id}/anexos/${anexoId}/download`,
     anexoThumbnail: (id, anexoId) => `${baseUrl}tarefas/${id}/anexos/${anexoId}/thumbnail`,
+    checklistConcluir: (id, itemId) => `${baseUrl}tarefas/${id}/checklist/${itemId}/concluir`,
     historico: (id) => `${baseUrl}tarefas/${id}/historico`,
     templates: `${baseUrl}tarefas/templates`,
     template: (id) => `${baseUrl}tarefas/templates/${id}`,
@@ -201,6 +202,14 @@ export const endpoints = {
   setores: {
     root: `${baseUrl}setores`,
     details: (id) => `${baseUrl}setores/${id}`,
+  },
+  queues: {
+    stats: `${baseUrl}queues/stats`,
+    ui: `${baseUrl}queues/ui`,
+  },
+  pops: {
+    root: `${baseUrl}pops`,
+    details: (id) => `${baseUrl}pops/${id}`,
   },
   calendar: '/api/calendar',
   auth: {

@@ -261,6 +261,9 @@ export const paths = {
     setores: {
       root: `${ROOTS.DASHBOARD}/setores`,
     },
+    pops: {
+      root: `${ROOTS.DASHBOARD}/pops`,
+    },
     notificacoes: {
       root: `${ROOTS.DASHBOARD}/notificacoes`,
     },

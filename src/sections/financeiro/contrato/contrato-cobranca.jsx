@@ -1,8 +1,10 @@
 import { toast } from 'sonner';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import LoadingButton from '@mui/lab/LoadingButton';
 import {
+  Tab,
+  Tabs,
   Stack,
   Table,
   Paper,
@@ -17,6 +19,7 @@ import {
   TableHead,
   TextField,
   IconButton,
+  Typography,
   DialogTitle,
   DialogActions,
   DialogContent,
@@ -54,6 +57,35 @@ export function ContratoCobrancas({ contratoId, contrato }) {
   const [notaToCancel, setNotaToCancel] = useState(null);
   const [cancelReason, setCancelReason] = useState('');
   const [cancelingNota, setCancelingNota] = useState(false);
+  const [anoFiltro, setAnoFiltro] = useState(null); // null = padrão (ano atual ou mais recente)
+
+  // Anos disponíveis (mais recente primeiro) e contagem de cobranças por ano
+  const { anosDisponiveis, contagemPorAno } = useMemo(() => {
+    const contagem = {};
+    cobrancas.forEach((c) => {
+      const ano = new Date(c.dataVencimento).getFullYear();
+      contagem[ano] = (contagem[ano] || 0) + 1;
+    });
+    return {
+      anosDisponiveis: Object.keys(contagem)
+        .map(Number)
+        .sort((a, b) => b - a),
+      contagemPorAno: contagem,
+    };
+  }, [cobrancas]);
+
+  const anoCorrente = new Date().getFullYear();
+  const anoSelecionado =
+    anoFiltro ?? (anosDisponiveis.includes(anoCorrente) ? anoCorrente : anosDisponiveis[0] ?? 'todos');
+
+  // Cobranças do ano selecionado, ordenadas por vencimento
+  const cobrancasFiltradas = useMemo(() => {
+    const lista =
+      anoSelecionado === 'todos'
+        ? cobrancas
+        : cobrancas.filter((c) => new Date(c.dataVencimento).getFullYear() === anoSelecionado);
+    return [...lista].sort((a, b) => new Date(a.dataVencimento) - new Date(b.dataVencimento));
+  }, [cobrancas, anoSelecionado]);
 
   const cobrancaStatusTexts = {
     EMABERTO: 'Aguardando pagamento',
@@ -357,6 +389,23 @@ export function ContratoCobrancas({ contratoId, contrato }) {
         cobrancaAtual={cobrancaAtual}
       />
 
+      {/* Filtro por ano */}
+      {anosDisponiveis.length > 0 && (
+        <Tabs
+          value={anoSelecionado}
+          onChange={(event, novoAno) => setAnoFiltro(novoAno)}
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
+          sx={{ mt: 2, borderBottom: (theme) => `1px solid ${theme.palette.divider}` }}
+        >
+          {anosDisponiveis.map((ano) => (
+            <Tab key={ano} value={ano} label={`${ano} (${contagemPorAno[ano]})`} />
+          ))}
+          <Tab value="todos" label={`Todas (${cobrancas.length})`} />
+        </Tabs>
+      )}
+
       <TableContainer component={Paper} sx={{ mt: 2 }}>
         <Table aria-label="cobranças do contrato">
           <TableHead>
@@ -370,7 +419,17 @@ export function ContratoCobrancas({ contratoId, contrato }) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {cobrancas.map((cobranca, index) => (
+            {cobrancasFiltradas.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 6 }}>
+                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                    Nenhuma cobrança encontrada
+                    {anoSelecionado !== 'todos' ? ` em ${anoSelecionado}` : ''}.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            )}
+            {cobrancasFiltradas.map((cobranca, index) => (
               <TableRow key={cobranca._id}>
                 <TableCell>{new Date(cobranca.dataVencimento).toLocaleDateString()}</TableCell>
                 <TableCell>R$ {cobranca.valor.toFixed(2)}</TableCell>
