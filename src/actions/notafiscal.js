@@ -518,6 +518,20 @@ export async function abrirPdfNota(nota) {
   const res = await axios.get(`${baseUrl}nota-fiscal/${id}/nacional/pdf`, {
     responseType: 'blob',
   });
+
+  // 202 = gov.br ainda gerando o DANFSe (corpo é JSON, não PDF) — não é erro definitivo
+  if (res.status === 202) {
+    let message =
+      'O PDF da nota está sendo gerado pelo gov.br. Tente novamente em alguns instantes.';
+    try {
+      const parsed = JSON.parse(await res.data.text());
+      if (parsed?.message) message = parsed.message;
+    } catch {
+      // mantém a mensagem padrão
+    }
+    throw new Error(message);
+  }
+
   const blob = new Blob([res.data], { type: 'application/pdf' });
   const url = window.URL.createObjectURL(blob);
   window.open(url, '_blank', 'noopener,noreferrer');

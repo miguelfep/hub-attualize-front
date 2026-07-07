@@ -138,6 +138,9 @@ export const paths = {
     status: {
       root: `${ROOTS.DASHBOARD}/status`,
     },
+    attualizeConfig: {
+      root: `${ROOTS.DASHBOARD}/attualize-config`,
+    },
     banners: {
       root: `${ROOTS.DASHBOARD}/banners`,
     },

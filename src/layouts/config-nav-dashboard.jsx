@@ -425,10 +425,15 @@ export const navData = [
       },
       {
         title: 'Configurações',
-        path: paths.dashboard.banners.root,
+        path: paths.dashboard.attualizeConfig.root,
         icon: ICONS.settings,
         roles: ['admin'],
         children: [
+          {
+            title: 'Emissão Attualize',
+            path: paths.dashboard.attualizeConfig.root,
+            roles: ['admin'],
+          },
           {
             title: 'Banners',
             path: paths.dashboard.banners.root,
