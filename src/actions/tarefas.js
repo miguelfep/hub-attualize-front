@@ -71,6 +71,15 @@ export async function atualizarTarefa(id, payload) {
 }
 
 /**
+ * Exclui a tarefa definitivamente (somente admin/gerencial). Remove também
+ * comentários, anexos e checklist embutidos.
+ */
+export async function deletarTarefa(id) {
+  const res = await axios.delete(endpoints.tarefas.details(id));
+  return res.data;
+}
+
+/**
  * Reatribui a tarefa para outro responsável.
  */
 export async function reatribuirTarefa(id, responsavel) {
@@ -113,6 +122,23 @@ export async function adicionarComentario(id, texto, mencionados = []) {
  */
 export async function removerComentario(id, comentarioId) {
   const res = await axios.delete(endpoints.tarefas.comentario(id, comentarioId));
+  return res.data;
+}
+
+// ----------------------------------------------------------------------
+// Checklist — a composição dos itens é definida na criação da tarefa (ou vem
+// do template recorrente) e não muda depois; aqui só marca/desmarca.
+// ----------------------------------------------------------------------
+
+/**
+ * Marca/desmarca um item do checklist. O backend grava quem concluiu e quando.
+ * Itens obrigatórios pendentes impedem finalizar a tarefa.
+ * @param {string} id
+ * @param {string} itemId
+ * @param {boolean} concluido
+ */
+export async function alternarChecklistItem(id, itemId, concluido) {
+  const res = await axios.patch(endpoints.tarefas.checklistConcluir(id, itemId), { concluido });
   return res.data;
 }
 

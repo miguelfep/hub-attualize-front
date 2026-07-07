@@ -16,9 +16,11 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
+import { getPops } from 'src/actions/pops';
 import { criarTemplate, atualizarTemplate } from 'src/actions/tarefas';
 
 import { setorNome, PRIORIDADE_OPTIONS } from '../utils';
+import { ChecklistEditor, checklistParaPayload } from '../checklist-editor';
 
 // ----------------------------------------------------------------------
 
@@ -32,11 +34,31 @@ const VAZIO = {
   setores: [],
   tipoEmpresa: [],
   planoEmpresa: [],
-  flowId: '',
-  stepOrder: '',
-  nextTemplateId: null,
   ativo: true,
+  pop: null,
+  checklist: [],
 };
+
+// Mesmos valores usados no cadastro de clientes (Cliente.regimeTributario / planoEmpresa).
+export const TIPO_EMPRESA_OPTIONS = [
+  { value: 'simples', label: 'Simples Nacional' },
+  { value: 'simei', label: 'SIMEI' },
+  { value: 'presumido', label: 'Lucro presumido' },
+  { value: 'real', label: 'Lucro real' },
+  { value: 'pf', label: 'Pessoa física' },
+];
+
+export const PLANO_EMPRESA_OPTIONS = [
+  { value: 'carneleao', label: 'Carnê-Leão' },
+  { value: 'mei', label: 'MEI' },
+  { value: 'start', label: 'Start' },
+  { value: 'pleno', label: 'Pleno' },
+  { value: 'premium', label: 'Premium' },
+  { value: 'plus', label: 'Plus' },
+];
+
+export const labelDeOpcao = (options, value) =>
+  options.find((o) => o.value === value)?.label ?? value;
 
 function idDe(valor) {
   return valor?._id ?? valor ?? null;
@@ -52,7 +74,6 @@ function idDe(valor) {
  * @param {() => void} props.onClose
  * @param {object=}  props.template     template a editar (undefined → criação)
  * @param {Array}    props.usuarios     internos p/ responsável padrão
- * @param {Array}    props.templates    outros templates p/ próxima etapa
  * @param {Array}    props.setores      setores ativos ({ _id, nome, slug })
  * @param {() => void} props.onSuccess
  */
@@ -61,13 +82,20 @@ export function TemplateFormDialog({
   onClose,
   template,
   usuarios = [],
-  templates = [],
   setores = [],
   onSuccess,
 }) {
   const editando = Boolean(template?._id);
   const [salvando, setSalvando] = useState(false);
   const [form, setForm] = useState(VAZIO);
+  const [pops, setPops] = useState([]);
+
+  useEffect(() => {
+    if (!open) return;
+    getPops({ ativo: 'true' })
+      .then(setPops)
+      .catch(() => setPops([]));
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -82,10 +110,18 @@ export function TemplateFormDialog({
         setores: Array.isArray(template.setores) ? template.setores : [],
         tipoEmpresa: template.tipoEmpresa || [],
         planoEmpresa: template.planoEmpresa || [],
-        flowId: template.flowId || '',
-        stepOrder: template.stepOrder ?? '',
-        nextTemplateId: idDe(template.nextTemplateId),
         ativo: template.ativo ?? true,
+        pop: idDe(template.pop),
+        checklist: Array.isArray(template.checklist)
+          ? template.checklist
+              .slice()
+              .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
+              .map((i) => ({
+                titulo: i.titulo || '',
+                descricao: i.descricao || '',
+                obrigatorio: Boolean(i.obrigatorio),
+              }))
+          : [],
       });
     } else {
       setForm(VAZIO);
@@ -97,9 +133,9 @@ export function TemplateFormDialog({
     [usuarios, form.responsavelPadrao]
   );
 
-  const nextSelecionado = useMemo(
-    () => templates.find((t) => t._id === form.nextTemplateId) ?? null,
-    [templates, form.nextTemplateId]
+  const popSelecionado = useMemo(
+    () => pops.find((p) => p._id === form.pop) ?? null,
+    [pops, form.pop]
   );
 
   const set = (campo, valor) => setForm((p) => ({ ...p, [campo]: valor }));
@@ -129,10 +165,9 @@ export function TemplateFormDialog({
       setores: form.setores,
       tipoEmpresa: form.tipoEmpresa,
       planoEmpresa: form.planoEmpresa,
-      flowId: form.flowId.trim() || undefined,
-      stepOrder: form.stepOrder === '' ? undefined : Number(form.stepOrder),
-      nextTemplateId: form.nextTemplateId || undefined,
       ativo: form.ativo,
+      pop: form.pop || (editando ? null : undefined),
+      checklist: checklistParaPayload(form.checklist),
     };
 
     setSalvando(true);
@@ -154,7 +189,7 @@ export function TemplateFormDialog({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>{editando ? 'Editar template' : 'Novo template recorrente'}</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
@@ -235,67 +270,59 @@ export function TemplateFormDialog({
             </TextField>
           </Stack>
 
-          <Autocomplete
-            multiple
-            freeSolo
-            options={[]}
-            value={form.tipoEmpresa}
-            onChange={(_, value) => set('tipoEmpresa', value)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Tipo de empresa (regime)"
-                helperText="Casa com Cliente.regimeTributario. Enter para adicionar. Vazio = todos."
-              />
-            )}
-          />
-
-          <Autocomplete
-            multiple
-            freeSolo
-            options={[]}
-            value={form.planoEmpresa}
-            onChange={(_, value) => set('planoEmpresa', value)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Plano da empresa"
-                helperText="Casa com Cliente.planoEmpresa. Enter para adicionar. Vazio = todos."
-              />
-            )}
-          />
-
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
-              label="Fluxo (flowId)"
-              value={form.flowId}
-              onChange={(e) => set('flowId', e.target.value)}
+            <Autocomplete
+              multiple
               fullWidth
-              helperText="Opcional — encadeia etapas."
+              options={TIPO_EMPRESA_OPTIONS.map((o) => o.value)}
+              value={form.tipoEmpresa}
+              getOptionLabel={(v) => labelDeOpcao(TIPO_EMPRESA_OPTIONS, v)}
+              onChange={(_, value) => set('tipoEmpresa', value)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Tipo de empresa (regime)"
+                  helperText="Vazio = todos os regimes."
+                />
+              )}
             />
-            <TextField
-              label="Ordem da etapa"
-              type="number"
-              value={form.stepOrder}
-              onChange={(e) => set('stepOrder', e.target.value)}
+
+            <Autocomplete
+              multiple
               fullWidth
-              inputProps={{ min: 1, step: 1 }}
+              options={PLANO_EMPRESA_OPTIONS.map((o) => o.value)}
+              value={form.planoEmpresa}
+              getOptionLabel={(v) => labelDeOpcao(PLANO_EMPRESA_OPTIONS, v)}
+              onChange={(_, value) => set('planoEmpresa', value)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Plano da empresa"
+                  helperText="Vazio = todos os planos."
+                />
+              )}
             />
           </Stack>
 
           <Autocomplete
-            options={templates.filter((t) => t._id !== template?._id)}
-            value={nextSelecionado}
-            getOptionLabel={(o) => o?.nome || o?.titulo || ''}
+            options={pops}
+            value={popSelecionado}
+            getOptionLabel={(o) => o?.titulo || ''}
             isOptionEqualToValue={(o, v) => o._id === v._id}
-            onChange={(_, value) => set('nextTemplateId', value?._id ?? null)}
+            onChange={(_, value) => set('pop', value?._id ?? null)}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Próxima etapa (template)"
-                helperText="Gerada ao concluir a tarefa desta etapa."
+                label="POP (opcional)"
+                helperText="Procedimento herdado por todas as tarefas geradas deste template."
               />
             )}
+          />
+
+          <ChecklistEditor
+            itens={form.checklist}
+            onChange={(itens) => set('checklist', itens)}
+            helperText="Cada tarefa gerada já nasce com estes passos para o responsável seguir."
           />
 
           <FormControlLabel

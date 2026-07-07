@@ -27,9 +27,14 @@ import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import { TemplateFormDialog } from '../template-form-dialog';
 import { GerarRecorrentesDialog } from '../gerar-recorrentes-dialog';
 import { setorNome, prioridadeColor, prioridadeLabel } from '../../utils';
+import {
+  labelDeOpcao,
+  TemplateFormDialog,
+  TIPO_EMPRESA_OPTIONS,
+  PLANO_EMPRESA_OPTIONS,
+} from '../template-form-dialog';
 
 // ----------------------------------------------------------------------
 
@@ -41,7 +46,10 @@ function nomeResponsavel(template, usuarios) {
 }
 
 function TemplateRow({ row, usuarios, setores, onEditar }) {
-  const tags = [...(row.tipoEmpresa || []), ...(row.planoEmpresa || [])];
+  const tags = [
+    ...(row.tipoEmpresa || []).map((v) => labelDeOpcao(TIPO_EMPRESA_OPTIONS, v)),
+    ...(row.planoEmpresa || []).map((v) => labelDeOpcao(PLANO_EMPRESA_OPTIONS, v)),
+  ];
   return (
     <TableRow hover>
       <TableCell>
@@ -86,9 +94,6 @@ function TemplateRow({ row, usuarios, setores, onEditar }) {
             —
           </Typography>
         )}
-      </TableCell>
-      <TableCell>
-        {row.flowId ? `${row.flowId} (#${row.stepOrder ?? '?'})` : '—'}
       </TableCell>
       <TableCell>
         <Label variant="soft" color={row.ativo ? 'success' : 'default'}>
@@ -196,7 +201,6 @@ export function TemplatesListView() {
                 <TableCell>Prioridade</TableCell>
                 <TableCell>Segmentação</TableCell>
                 <TableCell>Setores</TableCell>
-                <TableCell>Fluxo</TableCell>
                 <TableCell>Situação</TableCell>
                 <TableCell align="right">Ações</TableCell>
               </TableRow>
@@ -204,7 +208,7 @@ export function TemplatesListView() {
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={9}>
+                  <TableCell colSpan={8}>
                     <Box sx={{ py: 4, textAlign: 'center' }}>
                       <Typography color="text.secondary">Carregando...</Typography>
                     </Box>
@@ -212,7 +216,7 @@ export function TemplatesListView() {
                 </TableRow>
               ) : lista.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9}>
+                  <TableCell colSpan={8}>
                     <Box sx={{ py: 4, textAlign: 'center' }}>
                       <Typography color="text.secondary">Nenhum template cadastrado.</Typography>
                     </Box>
@@ -239,7 +243,6 @@ export function TemplatesListView() {
         onClose={() => setFormOpen(false)}
         template={editando}
         usuarios={usuarios}
-        templates={lista}
         setores={setores}
         onSuccess={carregar}
       />

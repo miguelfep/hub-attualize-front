@@ -14,9 +14,11 @@ import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 
+import { getPops } from 'src/actions/pops';
 import { criarTarefa, atualizarTarefa } from 'src/actions/tarefas';
 
 import { setorNome, clienteLabel, PRIORIDADE_OPTIONS } from './utils';
+import { ChecklistEditor, checklistParaPayload } from './checklist-editor';
 
 // ----------------------------------------------------------------------
 
@@ -45,6 +47,8 @@ const VAZIO = {
   prazo: '',
   competencia: '',
   prioridade: 'media',
+  pop: null,
+  checklist: [],
 };
 
 // ----------------------------------------------------------------------
@@ -73,6 +77,7 @@ export function TarefaFormDialog({
   const editando = Boolean(tarefa?._id);
   const [salvando, setSalvando] = useState(false);
   const [form, setForm] = useState(VAZIO);
+  const [pops, setPops] = useState([]);
 
   useEffect(() => {
     if (!open) return;
@@ -86,11 +91,20 @@ export function TarefaFormDialog({
         prazo: isoParaInputDate(tarefa.prazo),
         competencia: tarefa.competencia || '',
         prioridade: tarefa.prioridade || 'media',
+        pop: tarefa.pop?._id ?? tarefa.pop ?? null,
+        checklist: [],
       });
     } else {
       setForm(VAZIO);
     }
   }, [open, editando, tarefa]);
+
+  useEffect(() => {
+    if (!open) return;
+    getPops({ ativo: 'true' })
+      .then(setPops)
+      .catch(() => setPops([]));
+  }, [open]);
 
   const usuarioSelecionado = useMemo(
     () => usuarios.find((u) => u._id === form.responsavel) ?? null,
@@ -100,6 +114,11 @@ export function TarefaFormDialog({
   const clienteSelecionado = useMemo(
     () => clientes.find((c) => c._id === form.cliente) ?? null,
     [clientes, form.cliente]
+  );
+
+  const popSelecionado = useMemo(
+    () => pops.find((p) => p._id === form.pop) ?? null,
+    [pops, form.pop]
   );
 
   const handleSalvar = async () => {
@@ -128,6 +147,7 @@ export function TarefaFormDialog({
           prazo: inputDateParaIso(form.prazo),
           competencia: form.competencia || undefined,
           prioridade: form.prioridade,
+          pop: form.pop || null,
         };
         await atualizarTarefa(tarefa._id, payload);
         toast.success('Tarefa atualizada.');
@@ -141,6 +161,8 @@ export function TarefaFormDialog({
           prazo: inputDateParaIso(form.prazo),
           competencia: form.competencia || undefined,
           prioridade: form.prioridade,
+          pop: form.pop || undefined,
+          checklist: checklistParaPayload(form.checklist),
         };
         await criarTarefa(payload);
         toast.success('Tarefa criada.');
@@ -259,6 +281,37 @@ export function TarefaFormDialog({
               </MenuItem>
             ))}
           </TextField>
+
+          <Autocomplete
+            options={pops}
+            value={popSelecionado}
+            getOptionLabel={(o) => o?.titulo || ''}
+            isOptionEqualToValue={(o, v) => o._id === v._id}
+            onChange={(_, value) => setForm((p) => ({ ...p, pop: value?._id ?? null }))}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="POP (opcional)"
+                helperText="Procedimento Operacional Padrão exibido na tarefa como guia de execução."
+              />
+            )}
+          />
+
+          {editando ? (
+            <TextField
+              label="Checklist"
+              value="O checklist é definido na criação da tarefa e não pode ser alterado depois."
+              disabled
+              fullWidth
+              size="small"
+            />
+          ) : (
+            <ChecklistEditor
+              itens={form.checklist}
+              onChange={(itens) => setForm((p) => ({ ...p, checklist: itens }))}
+              helperText="Definido apenas na criação. Itens marcados como obrigatórios impedem finalizar a tarefa enquanto não forem concluídos."
+            />
+          )}
         </Stack>
       </DialogContent>
       <DialogActions>

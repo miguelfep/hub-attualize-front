@@ -1,33 +1,18 @@
 'use client';
 
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-
-import { RouterLink } from 'src/routes/components';
-
-import { Iconify } from 'src/components/iconify';
-import { EmptyContent } from 'src/components/empty-content';
+import { PublicLinkErrorView } from 'src/sections/error/public-link-error-view';
 
 // ----------------------------------------------------------------------
 
 export default function Error({ error, reset }) {
   return (
-    <Container sx={{ my: 5 }}>
-      <EmptyContent
-        filled
-        title="Fatura não encontrada!"
-        action={
-          <Button
-            component={RouterLink}
-            href="/"
-            startIcon={<Iconify width={16} icon="eva:arrow-ios-back-fill" />}
-            sx={{ mt: 3 }}
-          >
-            Voltar para home
-          </Button>
-        }
-        sx={{ py: 10 }}
-      />
-    </Container>
+    <PublicLinkErrorView
+      headerSubtitle="Fatura de honorários"
+      icon="solar:bill-cross-bold"
+      title="Fatura não encontrada"
+      description="O link pode estar incompleto, a fatura pode ter sido substituída ou já foi removida. Confira o link recebido ou fale com a gente — resolvemos rapidinho."
+      whatsappMessage="Olá! Tentei acessar o link de uma fatura, mas ela não foi encontrada. Podem me ajudar?"
+      onRetry={reset}
+    />
   );
 }

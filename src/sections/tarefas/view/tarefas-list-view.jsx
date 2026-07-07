@@ -19,6 +19,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import ToggleButton from '@mui/material/ToggleButton';
 import InputAdornment from '@mui/material/InputAdornment';
+import LinearProgress from '@mui/material/LinearProgress';
 import TablePagination from '@mui/material/TablePagination';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
@@ -34,6 +35,7 @@ import { getUsersInternos } from 'src/actions/users';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
   getTarefas,
+  deletarTarefa,
   atualizarTarefa,
   reatribuirTarefa,
   getMinhasTarefas,
@@ -87,6 +89,10 @@ function fimDoDiaIso(date) {
 // ----------------------------------------------------------------------
 
 function TarefaRow({ row, setores, selecionavel, selecionado, onToggle, onClick }) {
+  const totalItens = row.checklist?.length || 0;
+  const itensConcluidos = totalItens ? row.checklist.filter((i) => i.concluido).length : 0;
+  const checklistCompleto = totalItens > 0 && itensConcluidos === totalItens;
+
   return (
     <TableRow hover selected={selecionado} sx={{ cursor: 'pointer' }} onClick={() => onClick(row)}>
       {selecionavel && (
@@ -114,6 +120,31 @@ function TarefaRow({ row, setores, selecionavel, selecionado, onToggle, onClick 
                 {setorNome(s, setores)}
               </Label>
             ))}
+          </Stack>
+        ) : (
+          <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+            —
+          </Typography>
+        )}
+      </TableCell>
+      <TableCell>
+        {totalItens > 0 ? (
+          <Stack spacing={0.5} sx={{ minWidth: 72 }}>
+            <Typography
+              variant="caption"
+              sx={{
+                fontWeight: 'fontWeightSemiBold',
+                color: checklistCompleto ? 'success.main' : 'text.secondary',
+              }}
+            >
+              {itensConcluidos}/{totalItens}
+            </Typography>
+            <LinearProgress
+              variant="determinate"
+              color={checklistCompleto ? 'success' : 'primary'}
+              value={(itensConcluidos / totalItens) * 100}
+              sx={{ height: 5, borderRadius: 1 }}
+            />
           </Stack>
         ) : (
           <Typography variant="caption" sx={{ color: 'text.disabled' }}>
@@ -343,20 +374,25 @@ export function TarefasListView({ minhas = false }) {
       return next;
     });
 
-  const handleAcoesMassa = async ({ responsavelId, setores: novosSetores }) => {
+  const handleAcoesMassa = async ({ responsavelId, setores: novosSetores, excluir }) => {
     const ids = [...selecionados];
     setReatribuindo(true);
     try {
       const results = await Promise.allSettled(
         ids.map(async (id) => {
-          // Setores via PATCH /:id (edição); responsável via PATCH /:id/responsavel.
+          // Exclusão é exclusiva; senão, setores via PATCH /:id e responsável
+          // via PATCH /:id/responsavel.
+          if (excluir) {
+            await deletarTarefa(id);
+            return;
+          }
           if (novosSetores !== undefined) await atualizarTarefa(id, { setores: novosSetores });
           if (responsavelId) await reatribuirTarefa(id, responsavelId);
         })
       );
       const ok = results.filter((r) => r.status === 'fulfilled').length;
       const falhas = results.length - ok;
-      if (ok) toast.success(`${ok} tarefa(s) atualizada(s).`);
+      if (ok) toast.success(excluir ? `${ok} tarefa(s) excluída(s).` : `${ok} tarefa(s) atualizada(s).`);
       if (falhas) toast.error(`${falhas} falha(s) ao aplicar as ações.`);
       setMassaOpen(false);
       setSelecionados(new Set());
@@ -381,7 +417,7 @@ export function TarefasListView({ minhas = false }) {
     carregarResumo();
   };
 
-  const colCount = 7 + (podeSelecionar ? 1 : 0);
+  const colCount = 8 + (podeSelecionar ? 1 : 0);
 
   return (
     <DashboardContent maxWidth="xl">
@@ -607,6 +643,7 @@ export function TarefasListView({ minhas = false }) {
                   <TableCell>Responsável</TableCell>
                   <TableCell>Cliente</TableCell>
                   <TableCell>Setores</TableCell>
+                  <TableCell>Checklist</TableCell>
                   <TableCell>Prazo</TableCell>
                   <TableCell>Prioridade</TableCell>
                   <TableCell>Status</TableCell>

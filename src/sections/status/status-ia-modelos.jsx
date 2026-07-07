@@ -11,6 +11,7 @@ import {
   Stack,
   Alert,
   Divider,
+  MenuItem,
   TextField,
   Typography,
   CardContent,
@@ -84,6 +85,7 @@ export function StatusIaModelos() {
   const pollRef = useRef(null);
 
   const [descricaoTeste, setDescricaoTeste] = useState('');
+  const [tipoTeste, setTipoTeste] = useState('debito');
   const [valorTeste, setValorTeste] = useState('');
   const [testando, setTestando] = useState(false);
   const [sugestoes, setSugestoes] = useState(null);
@@ -160,13 +162,19 @@ export function StatusIaModelos() {
 
   const handleTestarSugestao = async () => {
     if (!clienteSelecionado?._id || !descricaoTeste.trim()) return;
+    // O modelo classifica débito e crédito separadamente: tipo e valor são obrigatórios.
+    if (valorTeste === '' || Number.isNaN(Number(valorTeste))) {
+      toast.error('Informe o valor da transação para testar.');
+      return;
+    }
     try {
       setTestando(true);
       setSugestoes(null);
-      const payload = { descricao: descricaoTeste.trim() };
-      if (valorTeste !== '' && !Number.isNaN(Number(valorTeste))) {
-        payload.valor = Number(valorTeste);
-      }
+      const payload = {
+        descricao: descricaoTeste.trim(),
+        tipo: tipoTeste,
+        valor: Number(valorTeste),
+      };
       const res = await testarSugestaoMl(clienteSelecionado._id, payload);
       setSugestoes(extrairSugestoes(res.data));
     } catch (error) {
@@ -292,7 +300,8 @@ export function StatusIaModelos() {
               Testar sugestão
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-              Digite a descrição de uma transação para ver as contas que o modelo sugere.
+              Digite a descrição, o tipo (débito/crédito) e o valor de uma transação para ver as
+              contas que o modelo sugere.
             </Typography>
 
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
@@ -304,8 +313,19 @@ export function StatusIaModelos() {
                 onChange={(e) => setDescricaoTeste(e.target.value)}
               />
               <TextField
+                select
+                label="Tipo"
+                value={tipoTeste}
+                onChange={(e) => setTipoTeste(e.target.value)}
+                sx={{ minWidth: 140 }}
+              >
+                <MenuItem value="debito">Débito (saída)</MenuItem>
+                <MenuItem value="credito">Crédito (entrada)</MenuItem>
+              </TextField>
+              <TextField
                 label="Valor (R$)"
                 type="number"
+                required
                 value={valorTeste}
                 onChange={(e) => setValorTeste(e.target.value)}
                 sx={{ minWidth: 160 }}
@@ -313,7 +333,7 @@ export function StatusIaModelos() {
               <LoadingButton
                 variant="contained"
                 loading={testando}
-                disabled={!descricaoTeste.trim() || mlStatus.status !== 'active'}
+                disabled={!descricaoTeste.trim() || valorTeste === '' || mlStatus.status !== 'active'}
                 onClick={handleTestarSugestao}
                 sx={{ minWidth: 160 }}
               >

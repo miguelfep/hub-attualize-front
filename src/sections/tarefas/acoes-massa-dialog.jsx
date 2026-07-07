@@ -20,9 +20,9 @@ import { setorNome } from './utils';
 // ----------------------------------------------------------------------
 
 /**
- * Diálogo de ações em massa nas tarefas selecionadas: reatribuir responsável
- * e/ou definir setores. Cada ação é opcional, mas ao menos uma deve ser marcada.
- * Os loops (uma chamada por tarefa) ficam no componente pai.
+ * Diálogo de ações em massa nas tarefas selecionadas: reatribuir responsável,
+ * definir setores ou excluir. A exclusão é exclusiva (não combina com as
+ * demais) e permanente. Os loops (uma chamada por tarefa) ficam no pai.
  *
  * @param {object}   props
  * @param {boolean}  props.open
@@ -31,7 +31,7 @@ import { setorNome } from './utils';
  * @param {Array}    props.usuarios    internos p/ novo responsável
  * @param {Array}    props.setores     setores ativos ({ _id, nome, slug })
  * @param {boolean}  props.salvando
- * @param {(acoes: { responsavelId?: string, setores?: string[] }) => void} props.onConfirm
+ * @param {(acoes: { responsavelId?: string, setores?: string[], excluir?: boolean }) => void} props.onConfirm
  */
 export function AcoesMassaDialog({
   open,
@@ -46,6 +46,7 @@ export function AcoesMassaDialog({
   const [responsavel, setResponsavel] = useState(null);
   const [aplicarSetores, setAplicarSetores] = useState(false);
   const [setoresSel, setSetoresSel] = useState([]);
+  const [aplicarExcluir, setAplicarExcluir] = useState(false);
 
   useEffect(() => {
     if (open) {
@@ -53,6 +54,7 @@ export function AcoesMassaDialog({
       setResponsavel(null);
       setAplicarSetores(false);
       setSetoresSel([]);
+      setAplicarExcluir(false);
     }
   }, [open]);
 
@@ -61,10 +63,26 @@ export function AcoesMassaDialog({
     onClose();
   };
 
+  // A exclusão é exclusiva: marcar desliga as demais ações.
+  const handleToggleExcluir = (checked) => {
+    setAplicarExcluir(checked);
+    if (checked) {
+      setAplicarResponsavel(false);
+      setResponsavel(null);
+      setAplicarSetores(false);
+      setSetoresSel([]);
+    }
+  };
+
   const responsavelOk = !aplicarResponsavel || Boolean(responsavel);
-  const podeConfirmar = (aplicarResponsavel || aplicarSetores) && responsavelOk;
+  const podeConfirmar =
+    aplicarExcluir || ((aplicarResponsavel || aplicarSetores) && responsavelOk);
 
   const handleConfirmar = () => {
+    if (aplicarExcluir) {
+      onConfirm({ excluir: true });
+      return;
+    }
     onConfirm({
       responsavelId: aplicarResponsavel ? responsavel?._id : undefined,
       setores: aplicarSetores ? setoresSel : undefined,
@@ -86,6 +104,7 @@ export function AcoesMassaDialog({
               control={
                 <Checkbox
                   checked={aplicarResponsavel}
+                  disabled={aplicarExcluir}
                   onChange={(e) => setAplicarResponsavel(e.target.checked)}
                 />
               }
@@ -108,6 +127,7 @@ export function AcoesMassaDialog({
               control={
                 <Checkbox
                   checked={aplicarSetores}
+                  disabled={aplicarExcluir}
                   onChange={(e) => setAplicarSetores(e.target.checked)}
                 />
               }
@@ -129,6 +149,26 @@ export function AcoesMassaDialog({
               )}
             />
           </Stack>
+
+          {/* Excluir (somente admin/gerencial — exclusão permanente) */}
+          <Stack spacing={1}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  color="error"
+                  checked={aplicarExcluir}
+                  onChange={(e) => handleToggleExcluir(e.target.checked)}
+                />
+              }
+              label="Excluir tarefas"
+            />
+            {aplicarExcluir && (
+              <Alert severity="error">
+                As {quantidade} tarefa(s) selecionada(s) serão excluídas permanentemente,
+                incluindo comentários, anexos e checklist. Essa ação não pode ser desfeita.
+              </Alert>
+            )}
+          </Stack>
         </Stack>
       </DialogContent>
       <DialogActions>
@@ -137,11 +177,12 @@ export function AcoesMassaDialog({
         </Button>
         <LoadingButton
           variant="contained"
+          color={aplicarExcluir ? 'error' : 'primary'}
           loading={salvando}
           disabled={!podeConfirmar}
           onClick={handleConfirmar}
         >
-          Aplicar
+          {aplicarExcluir ? `Excluir ${quantidade} tarefa(s)` : 'Aplicar'}
         </LoadingButton>
       </DialogActions>
     </Dialog>

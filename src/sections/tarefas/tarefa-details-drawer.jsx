@@ -11,11 +11,13 @@ import Avatar from '@mui/material/Avatar';
 import Drawer from '@mui/material/Drawer';
 import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
+import Checkbox from '@mui/material/Checkbox';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Autocomplete from '@mui/material/Autocomplete';
+import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { fDate, fToNow, fDateTime } from 'src/utils/format-time';
@@ -23,6 +25,7 @@ import { fDate, fToNow, fDateTime } from 'src/utils/format-time';
 import {
   baixarAnexo,
   removerAnexo,
+  deletarTarefa,
   getTarefaById,
   adicionarAnexo,
   getAnexoBlobUrl,
@@ -32,6 +35,7 @@ import {
   getHistoricoTarefa,
   adicionarComentario,
   alterarStatusTarefa,
+  alternarChecklistItem,
 } from 'src/actions/tarefas';
 
 import { Label } from 'src/components/label';
@@ -40,6 +44,8 @@ import { Lightbox } from 'src/components/lightbox';
 import { Scrollbar } from 'src/components/scrollbar';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 import { MentionText, MentionInput, getMentionedUserIds } from 'src/components/mention';
+
+import { PopViewDialog } from 'src/sections/pops/pop-view-dialog';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -149,6 +155,12 @@ export function TarefaDetailsDrawer({
   const [loadingHistorico, setLoadingHistorico] = useState(false);
   const [confirmRemover, setConfirmRemover] = useState({ open: false, tipo: null, id: null });
 
+  // Checklist (composição imutável — só o marcar/desmarcar acontece aqui)
+  const [alternandoItemId, setAlternandoItemId] = useState(null);
+
+  // POP vinculado
+  const [popOpen, setPopOpen] = useState(false);
+
   // Preview de imagem (lightbox de 1 slide). Busca o anexo (view) como blob.
   const [preview, setPreview] = useState({ open: false, src: '', nome: '' });
 
@@ -225,9 +237,23 @@ export function TarefaDetailsDrawer({
       setMotivoCancel('');
       notificarMudanca();
     } catch (e) {
-      toast.error(e?.message || e?.response?.data?.message || 'Erro ao alterar status.');
+      // A mensagem do backend explica o motivo (ex.: itens obrigatórios pendentes).
+      toast.error(e?.response?.data?.message || e?.message || 'Erro ao alterar status.');
     } finally {
       setSalvandoStatus(false);
+    }
+  };
+
+  // --- checklist ---
+  const handleAlternarItem = async (item) => {
+    setAlternandoItemId(item._id);
+    try {
+      await alternarChecklistItem(tarefa._id, item._id, !item.concluido);
+      notificarMudanca();
+    } catch (e) {
+      toast.error(e?.response?.data?.message || e?.message || 'Erro ao atualizar item.');
+    } finally {
+      setAlternandoItemId(null);
     }
   };
 
@@ -366,17 +392,25 @@ export function TarefaDetailsDrawer({
     }
   };
 
-  // --- remoção (comentário / anexo) ---
+  // --- remoção (comentário / anexo / tarefa) ---
   const executarRemocao = async () => {
     const { tipo, id } = confirmRemover;
     setConfirmRemover({ open: false, tipo: null, id: null });
     try {
+      if (tipo === 'tarefa') {
+        // Exclusão definitiva: fecha o drawer e recarrega a lista (sem re-fetch da tarefa).
+        await deletarTarefa(tarefa._id);
+        toast.success('Tarefa excluída.');
+        onChanged?.();
+        onClose();
+        return;
+      }
       if (tipo === 'comentario') await removerComentario(tarefa._id, id);
       if (tipo === 'anexo') await removerAnexo(tarefa._id, id);
       toast.success('Removido.');
       notificarMudanca();
     } catch (e) {
-      toast.error(e?.message || 'Erro ao remover.');
+      toast.error(e?.response?.data?.message || e?.message || 'Erro ao remover.');
     }
   };
 
@@ -400,6 +434,15 @@ export function TarefaDetailsDrawer({
             {gestor && tarefa && (
               <IconButton onClick={() => onEditar?.(tarefa)} title="Editar">
                 <Iconify icon="solar:pen-bold" />
+              </IconButton>
+            )}
+            {gestor && tarefa && (
+              <IconButton
+                color="error"
+                title="Excluir tarefa"
+                onClick={() => setConfirmRemover({ open: true, tipo: 'tarefa', id: tarefa._id })}
+              >
+                <Iconify icon="solar:trash-bin-trash-bold" />
               </IconButton>
             )}
             <IconButton onClick={onClose}>
@@ -477,6 +520,111 @@ export function TarefaDetailsDrawer({
                     <Typography variant="body2">{tarefa.motivoCancelamento}</Typography>
                   </Linha>
                 )}
+                {tarefa.pop && (
+                  <Linha label="POP">
+                    <Button
+                      size="small"
+                      variant="soft"
+                      color="info"
+                      startIcon={<Iconify icon="solar:document-text-bold" />}
+                      onClick={() => setPopOpen(true)}
+                    >
+                      {tarefa.pop.titulo || 'Ver procedimento'}
+                    </Button>
+                  </Linha>
+                )}
+              </Stack>
+
+              <Divider />
+
+              {/* Checklist */}
+              <Stack spacing={1.5}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between">
+                  <Typography variant="subtitle2">
+                    Checklist ({(tarefa.checklist || []).filter((i) => i.concluido).length}/
+                    {tarefa.checklist?.length || 0})
+                  </Typography>
+                </Stack>
+
+                {(tarefa.checklist || []).length > 0 && (
+                  <LinearProgress
+                    variant="determinate"
+                    color={
+                      tarefa.checklist.every((i) => i.concluido) ? 'success' : 'primary'
+                    }
+                    value={
+                      (tarefa.checklist.filter((i) => i.concluido).length /
+                        tarefa.checklist.length) *
+                      100
+                    }
+                    sx={{ height: 6, borderRadius: 1 }}
+                  />
+                )}
+
+                {(tarefa.checklist || []).length === 0 && (
+                  <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                    Esta tarefa não possui checklist. Os passos são definidos na criação da
+                    tarefa ou no template recorrente.
+                  </Typography>
+                )}
+
+                {[...(tarefa.checklist || [])]
+                  .sort((a, b) => (a.ordem || 0) - (b.ordem || 0))
+                  .map((item) => (
+                    <Stack
+                      key={item._id}
+                      direction="row"
+                      alignItems="flex-start"
+                      spacing={0.5}
+                      sx={{ p: 0.5, borderRadius: 1, '&:hover': { bgcolor: 'background.neutral' } }}
+                    >
+                      <Checkbox
+                        size="small"
+                        checked={Boolean(item.concluido)}
+                        disabled={alternandoItemId === item._id}
+                        onChange={() => handleAlternarItem(item)}
+                        sx={{ mt: -0.5 }}
+                      />
+                      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                        <Stack direction="row" spacing={0.75} alignItems="center" flexWrap="wrap">
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              ...(item.concluido && {
+                                color: 'text.disabled',
+                                textDecoration: 'line-through',
+                              }),
+                            }}
+                          >
+                            {item.titulo}
+                          </Typography>
+                          {item.obrigatorio && (
+                            <Label variant="soft" color="warning" sx={{ height: 18 }}>
+                              Obrigatório
+                            </Label>
+                          )}
+                        </Stack>
+                        {item.descricao && (
+                          <Typography
+                            variant="caption"
+                            sx={{ color: 'text.secondary', whiteSpace: 'pre-wrap' }}
+                          >
+                            {item.descricao}
+                          </Typography>
+                        )}
+                        {item.concluido && (item.concluidoPor?.name || item.dataConclusao) && (
+                          <Typography
+                            variant="caption"
+                            sx={{ display: 'block', color: 'text.disabled' }}
+                          >
+                            {[item.concluidoPor?.name, fDateTime(item.dataConclusao)]
+                              .filter(Boolean)
+                              .join(' • ')}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Stack>
+                  ))}
               </Stack>
 
               <Divider />
@@ -858,13 +1006,26 @@ export function TarefaDetailsDrawer({
       <ConfirmDialog
         open={confirmRemover.open}
         onClose={() => setConfirmRemover({ open: false, tipo: null, id: null })}
-        title="Remover?"
-        content={`Confirma a remoção d${confirmRemover.tipo === 'anexo' ? 'o anexo' : 'o comentário'}?`}
+        title={confirmRemover.tipo === 'tarefa' ? 'Excluir tarefa?' : 'Remover?'}
+        content={
+          {
+            tarefa:
+              'A exclusão é permanente: comentários, anexos e checklist da tarefa serão perdidos.',
+            anexo: 'Confirma a remoção do anexo?',
+            comentario: 'Confirma a remoção do comentário?',
+          }[confirmRemover.tipo] || 'Confirma a remoção?'
+        }
         action={
           <Button variant="contained" color="error" onClick={executarRemocao}>
-            Remover
+            {confirmRemover.tipo === 'tarefa' ? 'Excluir' : 'Remover'}
           </Button>
         }
+      />
+
+      <PopViewDialog
+        open={popOpen}
+        onClose={() => setPopOpen(false)}
+        popId={tarefa?.pop?._id}
       />
 
       <Lightbox
