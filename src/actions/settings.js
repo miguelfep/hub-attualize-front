@@ -92,3 +92,27 @@ export async function configurarAttualize(payload) {
 export async function criarEmpresaEnotasAttualize() {
   return axios.post(`${baseUrl}attualize-config/criar-empresa-enotas`);
 }
+
+/** Busca a configuração atual da Attualize (empresa, provedorNFSe, nfseNacionalConfig). */
+export async function buscarConfiguracaoAttualize() {
+  return axios.get(`${baseUrl}attualize-config/configuracao`);
+}
+
+/** Lista somente os certificados digitais da própria Attualize (filtrados por CNPJ no backend). */
+export async function listarCertificadosAttualize() {
+  return axios.get(`${baseUrl}attualize-config/certificados`);
+}
+
+/**
+ * Upload do certificado digital (A1) da própria Attualize.
+ * O backend resolve o cadastro pelo CNPJ da Attualize e, se ainda não houver
+ * certificado vinculado no Emissor Nacional, vincula o novo automaticamente.
+ * @param {File} certificate - Arquivo .pfx/.p12
+ * @param {string} password - Senha do certificado
+ */
+export async function uploadCertificadoAttualize(certificate, password) {
+  const formData = new FormData();
+  formData.append('certificate', certificate);
+  formData.append('password', String(password).trim());
+  return axios.post(`${baseUrl}attualize-config/certificados/upload`, formData);
+}
