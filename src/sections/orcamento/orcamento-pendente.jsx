@@ -1,204 +1,231 @@
 import React from 'react';
 
 import Box from '@mui/material/Box';
-import Card from '@mui/material/Card';
-import Grid from '@mui/material/Grid';
+import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import Table from '@mui/material/Table';
-import TableRow from '@mui/material/TableRow';
-import TableHead from '@mui/material/TableHead';
-import TableCell from '@mui/material/TableCell';
-import TableBody from '@mui/material/TableBody';
+import Paper from '@mui/material/Paper';
+import Divider from '@mui/material/Divider';
+import { alpha } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import CardContent from '@mui/material/CardContent';
 
 import { fDate } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
+import { Iconify } from 'src/components/iconify';
+
+// ----------------------------------------------------------------------
+
 const itensDoOrcamento = (invoice) =>
   Array.isArray(invoice?.items) ? invoice.items : Array.isArray(invoice?.itens) ? invoice.itens : [];
 
+const primeiroNome = (nomeCompleto) => (nomeCompleto || '').trim().split(/\s+/)[0] || '';
+
 export function OrcamentoPendente({ invoice }) {
   const itens = itensDoOrcamento(invoice);
-
-  const renderTotal = (
-    <>
-      <TableRow>
-        <TableCell colSpan={3} />
-        <TableCell sx={{ color: 'text.secondary' }}>Subtotal</TableCell>
-        <TableCell width={120} sx={{ typography: 'subtitle2' }}>
-          {fCurrency(invoice?.subTotal)}
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell colSpan={3} />
-        <TableCell sx={{ color: 'text.secondary' }}>Desconto</TableCell>
-        <TableCell width={120} sx={{ color: 'error.main', typography: 'body2' }}>
-          - {fCurrency(invoice?.desconto)}
-        </TableCell>
-      </TableRow>
-      <TableRow>
-        <TableCell colSpan={3} />
-        <TableCell sx={{ typography: 'subtitle1' }}>Total</TableCell>
-        <TableCell width={140} sx={{ typography: 'subtitle1' }}>
-          {fCurrency(invoice?.total)}
-        </TableCell>
-      </TableRow>
-    </>
-  );
-
-  const blockSx = {
-    p: 2.5,
-    borderRadius: 2,
-    bgcolor: 'background.neutral',
-    border: '1px solid',
-    borderColor: 'divider',
-    height: '100%',
-  };
+  const nomeCliente = invoice?.cliente?.nome || invoice?.lead?.nome || '';
+  const temDesconto = Number(invoice?.desconto) > 0;
 
   return (
-    <Box sx={{ my: 0 }}>
-      {/* Contratada, Contratante e Validade - blocos bem separados */}
-      <Grid container spacing={3} sx={{ mb: { xs: 4, md: 5 } }}>
-        <Grid xs={12} sm={6} md={4}>
-          <Box sx={blockSx}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-              Contratada
+    <Stack spacing={3}>
+      {/* Saudação + total em destaque */}
+      <Paper
+        variant="outlined"
+        sx={(theme) => ({
+          p: { xs: 2.5, sm: 4 },
+          borderRadius: 2,
+          background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.04)}, transparent 60%)`,
+        })}
+      >
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-start', sm: 'center' }}
+          spacing={2}
+        >
+          <Box>
+            <Typography variant="h4" sx={{ mb: 0.5 }}>
+              {nomeCliente ? `Olá, ${primeiroNome(nomeCliente)}!` : 'Olá!'}
             </Typography>
-            <Stack spacing={1.25}>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Attualize Contabil LTDA
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Avenida Senador Salgado Filho 1847 - Guabirotuba
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Curitiba - PR
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Telefone: (41) 9 9698-2267
+            <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+              Preparamos esta proposta especialmente para você. Revise os detalhes abaixo e aprove quando
+              estiver tudo certo.
+            </Typography>
+          </Box>
+          <Box
+            sx={{
+              textAlign: { xs: 'left', sm: 'right' },
+              flexShrink: 0,
+              width: { xs: '100%', sm: 'auto' },
+            }}
+          >
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              Valor total
+            </Typography>
+            <Typography variant="h3" sx={{ color: 'primary.main', lineHeight: 1.1 }}>
+              {fCurrency(invoice?.total)}
+            </Typography>
+            {invoice?.dataVencimento && (
+              <Chip
+                size="small"
+                variant="soft"
+                color="default"
+                icon={<Iconify width={14} icon="solar:calendar-bold" />}
+                label={`Válida até ${fDate(invoice.dataVencimento)}`}
+                sx={{ mt: 1 }}
+              />
+            )}
+          </Box>
+        </Stack>
+      </Paper>
+
+      {/* Itens da proposta */}
+      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <Box sx={{ px: { xs: 2.5, sm: 3 }, py: 2, bgcolor: 'background.neutral' }}>
+          <Typography variant="subtitle1">O que está incluído</Typography>
+        </Box>
+
+        <Stack divider={<Divider />}>
+          {itens.map((row, index) => (
+            <Stack
+              key={index}
+              direction="row"
+              spacing={2}
+              alignItems="flex-start"
+              sx={{ px: { xs: 2.5, sm: 3 }, py: 2 }}
+            >
+              <Iconify
+                icon="solar:check-circle-bold"
+                width={22}
+                sx={{ color: 'success.main', mt: 0.25, flexShrink: 0 }}
+              />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="subtitle2">{row.titulo}</Typography>
+                {row.descricao && (
+                  <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.25 }}>
+                    {row.descricao}
+                  </Typography>
+                )}
+                {Number(row.quantidade) > 1 && (
+                  <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+                    {row.quantidade}x {fCurrency(row.preco)}
+                  </Typography>
+                )}
+              </Box>
+              <Typography variant="subtitle2" sx={{ flexShrink: 0 }}>
+                {fCurrency((row.preco || 0) * (row.quantidade || 0))}
               </Typography>
             </Stack>
-          </Box>
-        </Grid>
-        <Grid xs={12} sm={6} md={4}>
-          <Box sx={blockSx}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-              Contratante
-            </Typography>
-            <Stack spacing={1.25}>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {invoice?.cliente?.nome || invoice?.lead?.nome || '—'}
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                {invoice?.cliente?.email || invoice?.lead?.email || '—'}
-              </Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                Telefone: {invoice?.cliente?.whatsapp || invoice?.lead?.telefone || '—'}
-              </Typography>
-            </Stack>
-          </Box>
-        </Grid>
-        <Grid xs={12} sm={6} md={4}>
-          <Box sx={blockSx}>
-            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1.5, display: 'block' }}>
-              Proposta válida até
-            </Typography>
-            <Typography variant="body1" sx={{ fontWeight: 600 }}>
-              {fDate(invoice?.dataVencimento)}
-            </Typography>
-          </Box>
-        </Grid>
-      </Grid>
+          ))}
+        </Stack>
 
-      {/* Itens: cards no mobile, tabela no desktop */}
-      <Box sx={{ mt: { xs: 3, md: 4 } }}>
-        <Typography variant="subtitle2" sx={{ mb: 1.5, color: 'text.secondary' }}>
-          Itens do orçamento
-        </Typography>
+        <Divider />
 
-        {/* Layout em cards para mobile */}
-        <Box sx={{ display: { xs: 'block', md: 'none' } }}>
-          <Stack spacing={2}>
-            {itens.map((row, index) => (
-              <Card key={index} variant="outlined" sx={{ overflow: 'hidden' }}>
-                <CardContent sx={{ py: 2, '&:last-child': { pb: 2 } }}>
-                  <Stack spacing={1}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
-                      <Typography variant="body2" sx={{ color: 'text.secondary', fontSize: '0.75rem' }}>
-                        #{index + 1}
-                      </Typography>
-                      <Typography variant="subtitle2">{fCurrency((row.preco || 0) * (row.quantidade || 0))}</Typography>
-                    </Stack>
-                    <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                      {row.titulo}
-                    </Typography>
-                    {row.descricao && (
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                        {row.descricao}
-                      </Typography>
-                    )}
-                    <Typography variant="caption" sx={{ color: 'text.disabled' }}>
-                      Qtd: {row.quantidade}
-                    </Typography>
-                  </Stack>
-                </CardContent>
-              </Card>
-            ))}
+        {/* Totais */}
+        <Stack spacing={1} sx={{ px: { xs: 2.5, sm: 3 }, py: 2.5, bgcolor: 'background.neutral' }}>
+          <Stack direction="row" justifyContent="space-between">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Subtotal
+            </Typography>
+            <Typography variant="body2">{fCurrency(invoice?.subTotal)}</Typography>
           </Stack>
-          <Box sx={{ mt: 2, p: 2, bgcolor: 'background.neutral', borderRadius: 1 }}>
-            <Stack spacing={1}>
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Subtotal</Typography>
-                <Typography variant="body2">{fCurrency(invoice?.subTotal)}</Typography>
-              </Stack>
-              <Stack direction="row" justifyContent="space-between">
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Desconto</Typography>
-                <Typography variant="body2" color="error.main">- {fCurrency(invoice?.desconto)}</Typography>
-              </Stack>
-              <Stack direction="row" justifyContent="space-between" sx={{ pt: 1 }}>
-                <Typography variant="subtitle1">Total</Typography>
-                <Typography variant="subtitle1">{fCurrency(invoice?.total)}</Typography>
-              </Stack>
+          {temDesconto && (
+            <Stack direction="row" justifyContent="space-between">
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                Desconto
+              </Typography>
+              <Typography variant="body2" sx={{ color: 'error.main' }}>
+                - {fCurrency(invoice?.desconto)}
+              </Typography>
             </Stack>
-          </Box>
-        </Box>
+          )}
+          <Divider sx={{ borderStyle: 'dashed', my: 0.5 }} />
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+            <Typography variant="subtitle1">Total</Typography>
+            <Typography variant="h5" sx={{ color: 'primary.main' }}>
+              {fCurrency(invoice?.total)}
+            </Typography>
+          </Stack>
+        </Stack>
+      </Paper>
 
-        {/* Tabela para desktop */}
-        <Box sx={{ display: { xs: 'none', md: 'block' }, overflowX: 'auto' }}>
-          <Table sx={{ minWidth: 560 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell>#</TableCell>
-                <TableCell sx={{ typography: 'subtitle2' }}>Título</TableCell>
-                <TableCell sx={{ typography: 'subtitle2' }}>Descrição</TableCell>
-                <TableCell>Qtd</TableCell>
-                <TableCell align="right">Total</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {itens.map((row, index) => (
-                <TableRow key={index}>
-                  <TableCell>{index + 1}</TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: 'text.primary' }}>
-                      {row.titulo}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>
-                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                      {row.descricao || '-'}
-                    </Typography>
-                  </TableCell>
-                  <TableCell>{row.quantidade}</TableCell>
-                  <TableCell align="right">{fCurrency((row.preco || 0) * (row.quantidade || 0))}</TableCell>
-                </TableRow>
-              ))}
-              {renderTotal}
-            </TableBody>
-          </Table>
-        </Box>
+      {/* Contratada / Contratante */}
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 2,
+          gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+        }}
+      >
+        <PartyCard
+          titulo="Contratada"
+          icone="solar:buildings-2-bold-duotone"
+          linhas={[
+            { texto: 'Attualize Contábil LTDA', destaque: true },
+            { texto: 'Av. Senador Salgado Filho, 1847 · Guabirotuba' },
+            { texto: 'Curitiba - PR' },
+            { texto: '(41) 9 9698-2267' },
+          ]}
+        />
+        <PartyCard
+          titulo="Contratante"
+          icone="solar:user-rounded-bold-duotone"
+          linhas={[
+            { texto: nomeCliente || '—', destaque: true },
+            { texto: invoice?.cliente?.email || invoice?.lead?.email || '—' },
+            { texto: invoice?.cliente?.whatsapp || invoice?.lead?.telefone || '—' },
+          ]}
+        />
       </Box>
-    </Box>
+
+      {/* Confiança */}
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={{ xs: 1, sm: 3 }}
+        justifyContent="center"
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        sx={{ px: 1 }}
+      >
+        <TrustItem icon="solar:shield-check-bold" texto="Pagamento 100% seguro" />
+        <TrustItem icon="solar:qr-code-bold" texto="PIX, boleto ou cartão em até 4x" />
+        <TrustItem icon="mdi:whatsapp" texto="Suporte via WhatsApp" />
+      </Stack>
+    </Stack>
+  );
+}
+
+// ----------------------------------------------------------------------
+
+function PartyCard({ titulo, icone, linhas }) {
+  return (
+    <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
+        <Iconify icon={icone} width={22} sx={{ color: 'primary.main' }} />
+        <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+          {titulo}
+        </Typography>
+      </Stack>
+      <Stack spacing={0.5}>
+        {linhas.map((linha, i) => (
+          <Typography
+            key={i}
+            variant="body2"
+            sx={{ color: linha.destaque ? 'text.primary' : 'text.secondary', fontWeight: linha.destaque ? 600 : 400 }}
+          >
+            {linha.texto}
+          </Typography>
+        ))}
+      </Stack>
+    </Paper>
+  );
+}
+
+function TrustItem({ icon, texto }) {
+  return (
+    <Stack direction="row" spacing={1} alignItems="center">
+      <Iconify icon={icon} width={18} sx={{ color: 'success.main' }} />
+      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+        {texto}
+      </Typography>
+    </Stack>
   );
 }

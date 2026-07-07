@@ -8,7 +8,6 @@ import { CardPayment } from '@mercadopago/sdk-react';
 
 import {
   Box,
-  Grid,
   Card,
   Chip,
   Radio,
@@ -199,8 +198,6 @@ export function OrcamentoAprovado({
           telefone: onlyDigits(formData.telefone),
         };
 
-        console.log('📤 Enviando dados do formulário para checkout:', dataInvoice);
-
         // Criar pedido e gerar PIX em uma única chamada
         // A API irá: atualizar cliente/lead com os dados do formulário e gerar o PIX
         await crirarPedidoOrcamento(invoice._id, dataInvoice);
@@ -262,7 +259,6 @@ export function OrcamentoAprovado({
         telefone: onlyDigits(formData.telefone),
       };
 
-      console.log("DADOS DA INVOICE PARA CRIAR PEDIDO", dataInvoice);
       await crirarPedidoOrcamento(invoice._id, dataInvoice);
 
       // Chamar a função de atualização da invoice
@@ -277,54 +273,52 @@ export function OrcamentoAprovado({
   };
 
   return (
-    <Box sx={{ pt: { xs: 2, sm: 4 }, pb: { xs: 8, md: 10 }, px: { xs: 2, sm: 3 } }}>
-      <Typography variant="h4" align="center" sx={{ mb: 1, fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
-        Pronto para simplificar sua contabilidade?
-      </Typography>
-      <Typography variant="h5" align="center" sx={{ mb: { xs: 3, md: 4 }, color: 'text.secondary', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-        Conclua seu orçamento agora!
-      </Typography>
+    <Box>
+      <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 4 } }}>
+        <Typography variant="h4" sx={{ mb: 0.5 }}>
+          Proposta aprovada! 🎉
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+          Agora é só escolher a forma de pagamento para concluir.
+        </Typography>
+      </Box>
 
       {/* Mobile: formulário primeiro, depois resumo. Desktop: form à esquerda, resumo à direita */}
-      <Grid container spacing={{ xs: 3, md: 4 }} alignItems="flex-start">
-        <Grid xs={12} md={8} sx={{ order: { xs: 1, md: 1 }, pr: { md: 3 } }}>
-          <Card
-            variant="outlined"
-            sx={{
-              p: { xs: 2.5, sm: 4, md: 5 },
-              borderRadius: 2,
-              minHeight: 320,
-            }}
-          >
-            <PaymentBillingAddress
-              formData={formData}
-              errors={errors}
-              handleCepChange={handleCepChange}
-              handleInputChange={handleInputChange}
-              handleTelefoneChange={handleTelefoneChange}
-              handleCpfCnpjChange={handleCpfCnpjChange}
-              loadingCep={loadingCep}
-              cepNotFound={cepNotFound}
-            />
-            <Box sx={{ mt: 4 }}>
-              <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
-            </Box>
-            {method === 'pix' && (
-              <Alert severity="info" sx={{ mt: 3 }}>
-                Clique em &quot;Finalizar pedido&quot; para gerar o QR Code PIX. O QR Code aparecerá na seção &quot;Detalhes da Cobrança&quot;.
-              </Alert>
-            )}
-            {method === 'credit_card' && (
-              <Alert severity="info" sx={{ mt: 3 }}>
-                Clique em &quot;Finalizar pedido&quot; e preencha os dados do cartão na próxima tela. Parcelamento em até 4x.
-              </Alert>
-            )}
-          </Card>
-        </Grid>
-        <Grid xs={12} md={4} sx={{ order: { xs: 2, md: 2 }, pl: { md: 2 } }}>
-          <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} gerandoPix={gerandoPix} method={method} />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          alignItems: 'flex-start',
+          gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 360px', lg: 'minmax(0, 1fr) 400px' },
+        }}
+      >
+        <Card variant="outlined" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 2 }}>
+          <PaymentBillingAddress
+            formData={formData}
+            errors={errors}
+            handleCepChange={handleCepChange}
+            handleInputChange={handleInputChange}
+            handleTelefoneChange={handleTelefoneChange}
+            handleCpfCnpjChange={handleCpfCnpjChange}
+            loadingCep={loadingCep}
+            cepNotFound={cepNotFound}
+          />
+          <Divider sx={{ my: 3, borderStyle: 'dashed' }} />
+          <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
+          {method === 'pix' && (
+            <Alert severity="info" sx={{ mt: 3 }}>
+              Clique em &quot;Finalizar pedido&quot; para gerar o QR Code PIX na hora.
+            </Alert>
+          )}
+          {method === 'credit_card' && (
+            <Alert severity="info" sx={{ mt: 3 }}>
+              Clique em &quot;Finalizar pedido&quot; e preencha os dados do cartão na próxima tela. Parcelamento em até 4x.
+            </Alert>
+          )}
+        </Card>
+
+        <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} gerandoPix={gerandoPix} method={method} />
+      </Box>
 
       {/* Dialog cartão de crédito — nova API ms-me POST /api/checkout/:id/pedido */}
       <OrcamentoCartaoDialog
@@ -342,11 +336,14 @@ export function OrcamentoAprovado({
   );
 }
 
-const fieldSxBase = { '& .MuiInputBase-root': { minHeight: 56 } };
-const rowSpacing = 5;
-const colGap = 4;
+// Grid de 12 colunas: larguras proporcionais ao conteúdo (CEP/Número/Estado estreitos, Endereço largo)
+const formGridSx = {
+  display: 'grid',
+  gap: 2,
+  gridTemplateColumns: { xs: '1fr', sm: 'repeat(12, 1fr)' },
+};
 
-const rowStackSx = { width: '100%', '& > *': { flex: 1, minWidth: 0 } };
+const span = (cols) => ({ gridColumn: { xs: 'auto', sm: `span ${cols}` } });
 
 function PaymentBillingAddress({
   formData,
@@ -362,157 +359,138 @@ function PaymentBillingAddress({
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 4, fontSize: { xs: '1rem', sm: '1.125rem' } }}>
+      <Typography variant="h6" sx={{ mb: 2.5, fontSize: { xs: '1rem', sm: '1.125rem' } }}>
         Dados para cobrança
       </Typography>
-      <Stack spacing={rowSpacing}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
-            fullWidth
-            label="Nome"
-            name="nome"
-            value={formData.nome}
-            onChange={handleInputChange}
-            error={!!errors.nome}
-            helperText={errors.nome}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="E-mail"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            error={!!errors.email}
-            helperText={errors.email}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <PhoneInput
-            fullWidth
-            country="BR"
-            label="Telefone"
-            name="telefone"
-            value={formData.telefone}
-            onChange={handleTelefoneChange}
-            error={!!errors.telefone}
-            helperText={errors.telefone}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="CPF/CNPJ"
-            name="cpfCnpj"
-            value={formData.cpfCnpj}
-            onChange={handleCpfCnpjChange}
-            error={!!errors.cpfCnpj}
-            helperText={errors.cpfCnpj}
-            inputProps={{ maxLength: 18 }}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
+      <Box sx={formGridSx}>
+        <TextField
+          size="small"
+          label="Nome"
+          name="nome"
+          value={formData.nome}
+          onChange={handleInputChange}
+          error={!!errors.nome}
+          helperText={errors.nome}
+          sx={span(6)}
+        />
+        <TextField
+          size="small"
+          label="E-mail"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          error={!!errors.email}
+          helperText={errors.email}
+          sx={span(6)}
+        />
+        <PhoneInput
+          size="small"
+          country="BR"
+          label="Telefone"
+          name="telefone"
+          value={formData.telefone}
+          onChange={handleTelefoneChange}
+          error={!!errors.telefone}
+          helperText={errors.telefone}
+          sx={span(6)}
+        />
+        <TextField
+          size="small"
+          label="CPF/CNPJ"
+          name="cpfCnpj"
+          value={formData.cpfCnpj}
+          onChange={handleCpfCnpjChange}
+          error={!!errors.cpfCnpj}
+          helperText={errors.cpfCnpj}
+          inputProps={{ maxLength: 18 }}
+          sx={span(6)}
+        />
 
-        <Typography variant="subtitle2" sx={{ pt: 1, pb: 0.5, color: 'text.secondary' }}>
+        <Typography variant="subtitle2" sx={{ color: 'text.secondary', mt: 1, gridColumn: '1 / -1' }}>
           Endereço
         </Typography>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
-            fullWidth
-            label="CEP"
-            name="cep"
-            value={formData.cep}
-            onChange={handleCepChange}
-            InputProps={{
-              endAdornment: loadingCep && <CircularProgress size={20} />,
-            }}
-            error={!!errors.cep}
-            helperText={errors.cep}
-            inputProps={{ maxLength: 9 }}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="Endereço"
-            name="endereco"
-            value={formData.endereco}
-            onChange={handleInputChange}
-            disabled={isFieldDisabled}
-            error={!!errors.endereco}
-            helperText={errors.endereco}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
-            fullWidth
-            label="Número"
-            name="numero"
-            value={formData.numero}
-            onChange={handleInputChange}
-            error={!!errors.numero}
-            helperText={errors.numero}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="Complemento"
-            name="complemento"
-            value={formData.complemento}
-            onChange={handleInputChange}
-            error={!!errors.complemento}
-            helperText={errors.complemento}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="Bairro"
-            name="bairro"
-            value={formData.bairro}
-            onChange={handleInputChange}
-            disabled={isFieldDisabled}
-            error={!!errors.bairro}
-            helperText={errors.bairro}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
-            fullWidth
-            label="Cidade"
-            name="cidade"
-            value={formData.cidade}
-            onChange={handleInputChange}
-            disabled={isFieldDisabled}
-            error={!!errors.cidade}
-            helperText={errors.cidade}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="Estado"
-            name="estado"
-            value={formData.estado}
-            onChange={handleInputChange}
-            disabled={isFieldDisabled}
-            error={!!errors.estado}
-            helperText={errors.estado}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
-      </Stack>
+
+        <TextField
+          size="small"
+          label="CEP"
+          name="cep"
+          value={formData.cep}
+          onChange={handleCepChange}
+          InputProps={{
+            endAdornment: loadingCep && <CircularProgress size={18} />,
+          }}
+          error={!!errors.cep}
+          helperText={errors.cep}
+          inputProps={{ maxLength: 9 }}
+          sx={span(4)}
+        />
+        <TextField
+          size="small"
+          label="Endereço"
+          name="endereco"
+          value={formData.endereco}
+          onChange={handleInputChange}
+          disabled={isFieldDisabled}
+          error={!!errors.endereco}
+          helperText={errors.endereco}
+          sx={span(8)}
+        />
+        <TextField
+          size="small"
+          label="Número"
+          name="numero"
+          value={formData.numero}
+          onChange={handleInputChange}
+          error={!!errors.numero}
+          helperText={errors.numero}
+          sx={span(3)}
+        />
+        <TextField
+          size="small"
+          label="Complemento"
+          name="complemento"
+          value={formData.complemento}
+          onChange={handleInputChange}
+          error={!!errors.complemento}
+          helperText={errors.complemento}
+          sx={span(5)}
+        />
+        <TextField
+          size="small"
+          label="Bairro"
+          name="bairro"
+          value={formData.bairro}
+          onChange={handleInputChange}
+          disabled={isFieldDisabled}
+          error={!!errors.bairro}
+          helperText={errors.bairro}
+          sx={span(4)}
+        />
+        <TextField
+          size="small"
+          label="Cidade"
+          name="cidade"
+          value={formData.cidade}
+          onChange={handleInputChange}
+          disabled={isFieldDisabled}
+          error={!!errors.cidade}
+          helperText={errors.cidade}
+          sx={span(8)}
+        />
+        <TextField
+          size="small"
+          label="Estado"
+          name="estado"
+          value={formData.estado}
+          onChange={handleInputChange}
+          disabled={isFieldDisabled}
+          error={!!errors.estado}
+          helperText={errors.estado}
+          inputProps={{ maxLength: 2, style: { textTransform: 'uppercase' } }}
+          sx={span(4)}
+        />
+      </Box>
     </Box>
   );
 }
@@ -734,10 +712,12 @@ function PaymentSummary({ invoice, handleFinalize, isCreating, gerandoPix, metho
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>Subtotal</Typography>
           <Typography variant="body2">{fCurrency(invoice?.subTotal)}</Typography>
         </Stack>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>Desconto</Typography>
-          <Typography variant="body2" color="error.main">- {fCurrency(invoice?.desconto)}</Typography>
-        </Stack>
+        {Number(invoice?.desconto) > 0 && (
+          <Stack direction="row" justifyContent="space-between">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>Desconto</Typography>
+            <Typography variant="body2" color="success.main">- {fCurrency(invoice?.desconto)}</Typography>
+          </Stack>
+        )}
         <Divider sx={{ borderStyle: 'dashed' }} />
         <Stack direction="row" justifyContent="space-between">
           <Typography variant="subtitle1">Total</Typography>
