@@ -26,22 +26,22 @@ import { formatClienteCodigoRazao } from 'src/utils/formatter';
 
 import { getClientes } from 'src/actions/clientes';
 import { DashboardContent } from 'src/layouts/dashboard';
-import { consultarDeclaracoes } from 'src/actions/serPro';
+import { consultarDeclaracoes, consultarDeclaracoesFromLog } from 'src/actions/serPro';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
 import { FiscalOperacaoRow } from 'src/sections/fiscal/components/fiscal-operacao-row';
-import {
-  FiscalSyncGuiasDialog,
-  formatSyncGuiasResumo,
-} from 'src/sections/fiscal/components/fiscal-sync-guias-dialog';
 import { GuiaFiscalEmitirDasDialog } from 'src/sections/guias-fiscais/components/guia-fiscal-emitir-das-dialog';
 import {
   groupOperacoesByPeriodo,
   parseSerproDeclaracoesPayload,
 } from 'src/sections/fiscal/utils/serpro-declaracoes';
+import {
+  FiscalSyncGuiasDialog,
+  formatSyncGuiasResumo,
+} from 'src/sections/fiscal/components/fiscal-sync-guias-dialog';
 import {
   formatCompetencia,
   MESES_COMPETENCIA_OPTIONS,
@@ -67,12 +67,14 @@ export function FiscalImpostosView() {
 
   const [clientes, setClientes] = useState([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
-  const [modoConsulta, setModoConsulta] = useState('competencia');
-  const [mes, setMes] = useState(String(new Date().getMonth() + 1).padStart(2, '0'));
+  const [modoConsulta, setModoConsulta] = useState('ano');
+  const [mes, setMes] = useState('');
   const [ano, setAno] = useState(String(new Date().getFullYear()));
   const [consultando, setConsultando] = useState(false);
   const [declaracoes, setDeclaracoes] = useState(null);
   const [consultError, setConsultError] = useState('');
+  const [cacheInfo, setCacheInfo] = useState(null);
+  const [carregandoCache, setCarregandoCache] = useState(false);
   const [emitDasOpen, setEmitDasOpen] = useState(false);
   const [emitDasPreset, setEmitDasPreset] = useState({ mes: '', ano: '' });
   const [syncGuiasOpen, setSyncGuiasOpen] = useState(false);
@@ -100,23 +102,73 @@ export function FiscalImpostosView() {
     [clientes, clienteParam]
   );
 
+  // Cache: ao selecionar cliente + ano (4 dígitos), carrega do último log CONSDECLARACAO13
+  // sem nova chamada à Serpro. Trocas de mês/modo não disparam reload — a filtragem
+  // client-side abaixo cuida da consistência visual.
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!clienteParam) {
+      setDeclaracoes(null);
+      setCacheInfo(null);
+      return () => { };
+    }
+    const anoDigits = String(ano).replace(/\D/g, '');
+    if (anoDigits.length !== 4) {
+      setDeclaracoes(null);
+      setCacheInfo(null);
+      return () => { };
+    }
+
+    setCarregandoCache(true);
+    (async () => {
+      try {
+        const res = await consultarDeclaracoesFromLog(clienteParam, { anoCalendario: anoDigits });
+        if (cancelled) return;
+        setDeclaracoes(res.data);
+        setCacheInfo({ consultadoEm: res.data?.consultadoEm || null });
+        setConsultError('');
+      } catch (err) {
+        if (cancelled) return;
+        // 404 = sem log salvo para o ano; mantém aviso existente.
+        setDeclaracoes(null);
+        setCacheInfo(null);
+      } finally {
+        if (!cancelled) setCarregandoCache(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [clienteParam, ano]);
+
   const competencia = useMemo(() => mesAnoToCompetenciaDisplay(mes, ano), [mes, ano]);
   const periodoApuracao = useMemo(() => buildPeriodoApuracaoSerpro(mes, ano), [mes, ano]);
 
   const operacoesRows = useMemo(() => {
     if (!declaracoes) return [];
-    return parseSerproDeclaracoesPayload(declaracoes);
+    return parseSerproDeclaracoesPayload(declaracoes, declaracoes?.ultimaEmissaoPorCompetencia);
   }, [declaracoes]);
 
-  const gruposPeriodo = useMemo(() => groupOperacoesByPeriodo(operacoesRows), [operacoesRows]);
+  // O cache do log devolve o ano inteiro; quando o modo selecionado é mês específico
+  // (competência OU ano+mês), filtramos client-side para exibir só o período correto.
+  const operacoesRowsFiltradas = useMemo(() => {
+    if (!operacoesRows.length) return operacoesRows;
+    const pa = modoConsulta === 'competencia' ? periodoApuracao : modoConsulta === 'ano' && mes ? buildPeriodoApuracaoSerpro(mes, ano) : '';
+    if (!pa) return operacoesRows;
+    return operacoesRows.filter((r) => r.periodoApuracao === pa);
+  }, [operacoesRows, modoConsulta, periodoApuracao, mes, ano]);
+
+  const gruposPeriodo = useMemo(() => groupOperacoesByPeriodo(operacoesRowsFiltradas), [operacoesRowsFiltradas]);
 
   const resumoConsulta = useMemo(() => {
-    if (!operacoesRows.length) return null;
-    const comDas = operacoesRows.filter((r) => r.isDas).length;
-    const pagos = operacoesRows.filter((r) => r.dasPago === true).length;
-    const abertos = operacoesRows.filter((r) => r.dasPago === false).length;
-    return { total: operacoesRows.length, comDas, pagos, abertos, periodos: gruposPeriodo.length };
-  }, [operacoesRows, gruposPeriodo.length]);
+    if (!operacoesRowsFiltradas.length) return null;
+
+    const comDas = operacoesRowsFiltradas.filter((r) => r.isDas).length;
+    const pagos = operacoesRowsFiltradas.filter((r) => r.dasPago === true).length;
+    const abertos = operacoesRowsFiltradas.filter((r) => r.dasPago === false).length;
+    return { total: operacoesRowsFiltradas.length, comDas, pagos, abertos, periodos: gruposPeriodo.length };
+  }, [operacoesRowsFiltradas, gruposPeriodo.length]);
 
   const handleClienteChange = useCallback(
     (_, value) => {
@@ -128,6 +180,7 @@ export function FiscalImpostosView() {
       router.replace(qs ? `${paths.dashboard.fiscal.impostos}?${qs}` : paths.dashboard.fiscal.impostos);
       setDeclaracoes(null);
       setConsultError('');
+      setCacheInfo(null);
     },
     [router, searchParams]
   );
@@ -185,6 +238,7 @@ export function FiscalImpostosView() {
 
       const res = await consultarDeclaracoes(clienteParam, params);
       setDeclaracoes(res.data);
+      setCacheInfo(null);
       const syncResumo = formatSyncGuiasResumo(res.data?.syncGuias);
       toast.success(
         syncResumo
@@ -288,13 +342,13 @@ export function FiscalImpostosView() {
                   },
                 }}
               >
-                <ToggleButton value="competencia">
-                  <Iconify icon="solar:calendar-bold-duotone" width={18} sx={{ mr: 0.75 }} />
-                  Por Competência
-                </ToggleButton>
                 <ToggleButton value="ano">
                   <Iconify icon="solar:calendar-minimalistic-bold-duotone" width={18} sx={{ mr: 0.75 }} />
                   Por Ano Calendário
+                </ToggleButton>
+                <ToggleButton value="competencia">
+                  <Iconify icon="solar:calendar-bold-duotone" width={18} sx={{ mr: 0.75 }} />
+                  Por Competência
                 </ToggleButton>
               </ToggleButtonGroup>
 
@@ -384,7 +438,7 @@ export function FiscalImpostosView() {
                   onClick={() => setSyncGuiasOpen(true)}
                   disabled={!clienteParam}
                   startIcon={<Iconify icon="solar:refresh-bold" />}
-                  sx={{ flex: 1, minWidth: 0 }}
+                  sx={{ flex: 1, minWidth: 0, whiteSpace: 'nowrap' }}
                 >
                   Atualizar guias
                 </Button>
@@ -433,14 +487,31 @@ export function FiscalImpostosView() {
           </Alert>
         ) : null}
 
-        {declaracoes && operacoesRows.length === 0 ? (
+        {declaracoes && !carregandoCache && operacoesRowsFiltradas.length === 0 ? (
           <Alert severity="warning" sx={{ borderRadius: 2 }}>
             Nenhuma operação listada para o filtro informado. Você ainda pode emitir a DAS se houver débito apurado.
           </Alert>
         ) : null}
 
-        {operacoesRows.length > 0 ? (
-          <Card sx={{ borderRadius: 2, boxShadow: theme.customShadows?.z1, overflow: 'hidden' }}>
+        {operacoesRowsFiltradas.length > 0 ? (
+          <Stack spacing={2}>
+            {cacheInfo?.consultadoEm ? (
+              <Alert
+                severity="warning"
+                icon={<Iconify icon="solar:history-bold-duotone" width={22} />}
+                sx={{ borderRadius: 2, '& .MuiAlert-message': { width: '100%' } }}
+              >
+                <AlertTitle sx={{ fontWeight: 700 }}>Dados do histórico em cache</AlertTitle>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  As informações abaixo foram recuperadas da última consulta registrada em{' '}
+                  <strong>{new Date(cacheInfo.consultadoEm).toLocaleString('pt-BR')}</strong>
+                  {' '}e podem não refletir a situação mais recente na Serpro. Clique em{' '}
+                  <strong>Consultar</strong> para buscar dados atualizados.
+                </Typography>
+              </Alert>
+            ) : null}
+
+            <Card sx={{ borderRadius: 2, boxShadow: theme.customShadows?.z1, overflow: 'hidden' }}>
             <Box
               sx={{
                 p: 3,
@@ -514,7 +585,7 @@ export function FiscalImpostosView() {
               </Stack>
             ) : (
               <Stack divider={<Divider flexItem sx={{ borderStyle: 'dashed' }} />}>
-                {operacoesRows.map((row) => (
+                {operacoesRowsFiltradas.map((row) => (
                   <FiscalOperacaoRow
                     key={row.id}
                     row={row}
@@ -525,6 +596,7 @@ export function FiscalImpostosView() {
               </Stack>
             )}
           </Card>
+          </Stack>
         ) : null}
       </Stack>
 

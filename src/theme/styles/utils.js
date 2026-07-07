@@ -97,3 +97,36 @@ export function varAlpha(color, opacity = 1) {
 
   return `rgba(${color} / ${opacity})`;
 }
+
+/**
+ * Aplica opacidade a cores hex, rgb/rgba ou canais do tema.
+ * Retorna branco semitransparente se a cor for inválida.
+ */
+export function safeAlpha(color, opacity = 1) {
+  try {
+    if (!color || typeof color !== 'string') throw new Error('invalid');
+
+    const trimmed = color.trim();
+
+    if (trimmed.startsWith('#')) {
+      let hex = trimmed.slice(1);
+      if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
+      if (!/^[0-9A-Fa-f]{6}$/.test(hex)) throw new Error('invalid hex');
+      const r = parseInt(hex.slice(0, 2), 16);
+      const g = parseInt(hex.slice(2, 4), 16);
+      const b = parseInt(hex.slice(4, 6), 16);
+      return `rgba(${r} ${g} ${b} / ${opacity})`;
+    }
+
+    const rgb = trimmed.match(/^rgba?\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)/);
+    if (rgb) return `rgba(${rgb[1]} ${rgb[2]} ${rgb[3]} / ${opacity})`;
+
+    if (trimmed.includes('Channel') || trimmed.includes('var(')) {
+      return `rgba(${trimmed} / ${opacity})`;
+    }
+
+    throw new Error('unsupported');
+  } catch {
+    return `rgba(255 255 255 / ${opacity})`;
+  }
+}

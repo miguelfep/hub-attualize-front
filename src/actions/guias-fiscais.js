@@ -381,9 +381,10 @@ export async function getDasExistenteNoSlot(clienteId, folderId, competencia) {
 /**
  * Substitui arquivo de uma DAS existente (preserva _id).
  */
-export async function substituirArquivoGuia(id, file, { serproId, dataVencimento } = {}) {
+export async function substituirArquivoGuia(id, file, { clienteId, serproId, dataVencimento } = {}) {
   const formData = new FormData();
   formData.append('file', file);
+  if (clienteId) formData.append('clienteId', clienteId);
   if (serproId) formData.append('serproId', serproId);
   if (dataVencimento) formData.append('dataVencimento', dataVencimento);
 

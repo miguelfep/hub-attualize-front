@@ -1,7 +1,7 @@
 'use client';
 
 import dayjs from 'dayjs';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
 import Grid from '@mui/material/Unstable_Grid2';
@@ -28,11 +28,15 @@ import {
   Autocomplete,
   DialogContent,
   DialogActions,
+  FormHelperText,
 } from '@mui/material';
+
+import { useDebounce } from 'src/hooks/use-debounce';
 
 import axios from 'src/utils/axios';
 import { formatClienteCodigoRazao } from 'src/utils/formatter';
 import { fCurrency, formatCPFOrCNPJ } from 'src/utils/format-number';
+import { formatCpfCnpj, removeFormatting } from 'src/utils/format-input';
 
 import { getClientes } from 'src/actions/clientes';
 import { useGetSettings } from 'src/actions/settings';
@@ -50,15 +54,15 @@ import {
   labelStatusDominio,
   podeReenviarDominio,
   mensagemErroDominio,
-  sincronizarUnificado,
   reenviarNotaDominio,
-  cancelarNotaNoProvedor,
+  sincronizarUnificado,
   isNotaElegivelDominio,
-  reenviarCancelamentoDominio,
-  podeReenviarCancelamentoDominio,
+  cancelarNotaNoProvedor,
   sincronizarTodosNfeSefaz,
+  reenviarCancelamentoDominio,
   listarNotasFiscaisPorCliente,
   reprocessarRetencoesNacional,
+  podeReenviarCancelamentoDominio,
 } from 'src/actions/notafiscal';
 
 import { Label } from 'src/components/label';
@@ -127,16 +131,33 @@ const notaInnerBoxSx = {
 function NotaFiscalCardSkeleton() {
   return (
     <Card variant="outlined" sx={{ p: 2 }} aria-hidden>
-      <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        justifyContent="space-between"
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        spacing={1}
+      >
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-          <Skeleton variant="rounded" animation="wave" width={52} height={26} sx={{ borderRadius: 1 }} />
+          <Skeleton
+            variant="rounded"
+            animation="wave"
+            width={52}
+            height={26}
+            sx={{ borderRadius: 1 }}
+          />
           <Skeleton variant="rounded" animation="wave" width={56} height={26} />
           <Skeleton variant="text" animation="wave" width={72} sx={{ transform: 'none' }} />
           <Skeleton variant="rounded" animation="wave" width={64} height={26} />
           <Skeleton variant="rounded" animation="wave" width={76} height={26} />
           <Skeleton variant="rounded" animation="wave" width={88} height={26} />
         </Stack>
-        <Skeleton variant="text" animation="wave" width={130} height={18} sx={{ transform: 'none' }} />
+        <Skeleton
+          variant="text"
+          animation="wave"
+          width={130}
+          height={18}
+          sx={{ transform: 'none' }}
+        />
       </Stack>
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 1.5 }}>
@@ -146,7 +167,12 @@ function NotaFiscalCardSkeleton() {
               <Skeleton variant="circular" animation="wave" width={18} height={18} />
               <Skeleton animation="wave" width={72} height={14} sx={{ transform: 'none' }} />
             </Stack>
-            <Skeleton animation="wave" width="100%" height={22} sx={{ transform: 'none', maxWidth: 280 }} />
+            <Skeleton
+              animation="wave"
+              width="100%"
+              height={22}
+              sx={{ transform: 'none', maxWidth: 280 }}
+            />
             <Skeleton animation="wave" width="55%" height={16} sx={{ transform: 'none' }} />
           </Stack>
         </Box>
@@ -172,7 +198,12 @@ function NotaFiscalCardSkeleton() {
           }}
         >
           <Stack spacing={0.75} alignItems={{ xs: 'flex-start', md: 'flex-end' }}>
-            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ width: '100%', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+            <Stack
+              direction="row"
+              alignItems="center"
+              spacing={0.75}
+              sx={{ width: '100%', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}
+            >
               <Skeleton variant="circular" animation="wave" width={18} height={18} />
               <Skeleton animation="wave" width={64} height={14} sx={{ transform: 'none' }} />
             </Stack>
@@ -202,6 +233,12 @@ export default function DashboardFiscalPage() {
   const [origem, setOrigem] = useState(''); // '' | 'enotas' | 'sieg' | 'nacional' | 'sefaz'
   const [tipoMovimento, setTipoMovimento] = useState('saida'); // '' | 'entrada' | 'saida' — query param tipoMovimento
   const [comRetencao, setComRetencao] = useState(''); // '' | 'com' | 'sem' — query param comRetencao
+  // Busca por número da nota (debounced) e CPF/CNPJ do tomador (prioridade sobre os demais filtros)
+  const [filtroNumeroNota, setFiltroNumeroNota] = useState('');
+  const numeroNotaDebounce = useDebounce(filtroNumeroNota, 500);
+  const [filtroCpfCnpj, setFiltroCpfCnpj] = useState('');
+  const [cpfCnpjAplicado, setCpfCnpjAplicado] = useState('');
+  const [cpfCnpjErro, setCpfCnpjErro] = useState('');
   const [loading, setLoading] = useState(false);
   const [clientes, setClientes] = useState([]);
   const [loadingClientes, setLoadingClientes] = useState(true);
@@ -275,16 +312,32 @@ export default function DashboardFiscalPage() {
     if (!selectedCliente) return;
     try {
       setLoading(true);
+      // Busca por número tem prioridade: desabilita período/status/tipo/origem/movimento/retenção
+      const numeroNota = numeroNotaDebounce || undefined;
+      const cpfCnpj =
+        !numeroNota && (cpfCnpjAplicado.length === 11 || cpfCnpjAplicado.length === 14)
+          ? cpfCnpjAplicado
+          : undefined;
+      const pageParam = numeroNota ? 1 : page;
+
       const res = await listarNotasFiscaisPorCliente({
         clienteId: selectedCliente,
-        status: status || undefined,
-        inicio: startDate || undefined,
-        fim: endDate || undefined,
-        tipoNota: tipoNota || undefined,
-        origem: origem || undefined,
-        tipoMovimento: tipoMovimento || undefined,
-        comRetencao: comRetencao === 'com' ? true : comRetencao === 'sem' ? false : undefined,
-        page,
+        numeroNota,
+        cpfCnpj,
+        status: numeroNota ? undefined : status || undefined,
+        inicio: numeroNota ? undefined : startDate || undefined,
+        fim: numeroNota ? undefined : endDate || undefined,
+        tipoNota: numeroNota ? undefined : tipoNota || undefined,
+        origem: numeroNota ? undefined : origem || undefined,
+        tipoMovimento: numeroNota ? undefined : tipoMovimento || undefined,
+        comRetencao: numeroNota
+          ? undefined
+          : comRetencao === 'com'
+            ? true
+            : comRetencao === 'sem'
+              ? false
+              : undefined,
+        page: pageParam,
         limit: 50,
       });
 
@@ -306,12 +359,35 @@ export default function DashboardFiscalPage() {
   // Resetar página ao mudar filtros
   useEffect(() => {
     setPage(1);
-  }, [selectedCliente, status, startDate, endDate, tipoNota, origem, tipoMovimento, comRetencao]);
+  }, [
+    selectedCliente,
+    status,
+    startDate,
+    endDate,
+    tipoNota,
+    origem,
+    tipoMovimento,
+    comRetencao,
+    numeroNotaDebounce,
+    cpfCnpjAplicado,
+  ]);
 
   useEffect(() => {
     fetchNotas();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedCliente, status, startDate, endDate, tipoNota, origem, tipoMovimento, comRetencao, page]);
+  }, [
+    selectedCliente,
+    status,
+    startDate,
+    endDate,
+    tipoNota,
+    origem,
+    tipoMovimento,
+    comRetencao,
+    numeroNotaDebounce,
+    cpfCnpjAplicado,
+    page,
+  ]);
 
   // Navegação mensal
   const handlePrevMonth = () => {
@@ -332,6 +408,49 @@ export default function DashboardFiscalPage() {
     setStartDate(dayjs().startOf('month').format('YYYY-MM-DD'));
     setEndDate(dayjs().format('YYYY-MM-DD'));
   };
+
+  // Aplicar filtro de CPF/CNPJ do tomador (apenas com documento completo)
+  const aplicarFiltroCpfCnpj = useCallback(() => {
+    const d = removeFormatting(filtroCpfCnpj);
+    if (!d) {
+      setCpfCnpjAplicado('');
+      setCpfCnpjErro('');
+      setPage(1);
+      return;
+    }
+    if (d.length !== 11 && d.length !== 14) {
+      setCpfCnpjErro('Informe CPF (11 dígitos) ou CNPJ (14 dígitos) completo para filtrar.');
+      return;
+    }
+    setCpfCnpjErro('');
+    setCpfCnpjAplicado(d);
+    setPage(1);
+  }, [filtroCpfCnpj]);
+
+  const handleCpfCnpjBlur = useCallback(() => {
+    const d = removeFormatting(filtroCpfCnpj);
+    if (!d) {
+      if (cpfCnpjAplicado) {
+        setCpfCnpjAplicado('');
+        setCpfCnpjErro('');
+        setPage(1);
+      }
+      return;
+    }
+    if (d.length === 11 || d.length === 14) {
+      setCpfCnpjErro('');
+      if (d !== cpfCnpjAplicado) {
+        setCpfCnpjAplicado(d);
+        setPage(1);
+      }
+      return;
+    }
+    if (cpfCnpjAplicado) {
+      setCpfCnpjAplicado('');
+      setCpfCnpjErro('');
+      setPage(1);
+    }
+  }, [filtroCpfCnpj, cpfCnpjAplicado]);
 
   const handleOpenCancelDialog = (nota) => {
     setNotaToCancel(nota);
@@ -375,7 +494,8 @@ export default function DashboardFiscalPage() {
       handleCloseCancelDialog();
       await fetchNotas(); // Recarrega a lista
     } catch (error) {
-      const msg = error?.response?.data?.message || error?.message || 'Erro ao cancelar nota fiscal';
+      const msg =
+        error?.response?.data?.message || error?.message || 'Erro ao cancelar nota fiscal';
       toast.error(msg);
     } finally {
       setCanceling(false);
@@ -419,7 +539,8 @@ export default function DashboardFiscalPage() {
       toast.success('Nota reenviada ao Domínio');
       await fetchNotas();
     } catch (error) {
-      const msg = error?.response?.data?.message || error?.message || 'Falha ao reenviar ao Domínio';
+      const msg =
+        error?.response?.data?.message || error?.message || 'Falha ao reenviar ao Domínio';
       toast.error(msg);
     } finally {
       setReenviandoDominioId(null);
@@ -435,7 +556,10 @@ export default function DashboardFiscalPage() {
       toast.success('Cancelamento reenviado ao Domínio');
       await fetchNotas();
     } catch (error) {
-      const msg = error?.response?.data?.message || error?.message || 'Falha ao reenviar cancelamento ao Domínio';
+      const msg =
+        error?.response?.data?.message ||
+        error?.message ||
+        'Falha ao reenviar cancelamento ao Domínio';
       toast.error(msg);
     } finally {
       setReenviandoCancelamentoId(null);
@@ -451,13 +575,16 @@ export default function DashboardFiscalPage() {
       const data = res.data || {};
 
       if (data.totalImportadas > 0 || data.totalAtualizadas > 0) {
-        toast.success(data.message || `${data.totalImportadas} importadas, ${data.totalAtualizadas} atualizadas`);
+        toast.success(
+          data.message || `${data.totalImportadas} importadas, ${data.totalAtualizadas} atualizadas`
+        );
       } else {
         toast.info(data.message || 'Sincronização concluída sem novas notas');
       }
 
       if (data.erros?.nfe) toast.warning(`NF-e SEFAZ: ${data.erros.nfe}`, { duration: 7000 });
-      if (data.erros?.nacional) toast.warning(`Emissor Nacional: ${data.erros.nacional}`, { duration: 7000 });
+      if (data.erros?.nacional)
+        toast.warning(`Emissor Nacional: ${data.erros.nacional}`, { duration: 7000 });
       if (data.erros?.sieg) toast.warning(`SIEG: ${data.erros.sieg}`, { duration: 7000 });
       if (data.resultados?.nfe?.bloqueadoAte) {
         toast.warning(
@@ -480,7 +607,9 @@ export default function DashboardFiscalPage() {
     try {
       setSyncingTodosNfe(true);
       const res = await sincronizarTodosNfeSefaz();
-      toast.success(res.data?.message || 'Sincronização de NF-e disparada para todos os clientes habilitados');
+      toast.success(
+        res.data?.message || 'Sincronização de NF-e disparada para todos os clientes habilitados'
+      );
     } catch (error) {
       toast.error(error?.message || 'Erro ao sincronizar NF-e de todos os clientes');
     } finally {
@@ -526,7 +655,11 @@ export default function DashboardFiscalPage() {
       const body =
         importModo === 'mes'
           ? { competencia: `${importAno}-${String(importMesInicio).padStart(2, '0')}` }
-          : { ano: Number(importAno), mesInicio: Number(importMesInicio), mesFim: Number(importMesFim) };
+          : {
+            ano: Number(importAno),
+            mesInicio: Number(importMesInicio),
+            mesFim: Number(importMesFim),
+          };
       const res = await sincronizarUnificado(selectedCliente, body);
       setImportResultado(res.data);
       toast.success(res.data?.message || 'Importação concluída');
@@ -696,9 +829,9 @@ export default function DashboardFiscalPage() {
       </Box>
 
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
-        {/* Linha 1: Cliente, Status e Tipo */}
+        {/* Linha 1: Cliente (primário/obrigatório), Status e Tipo de Nota */}
         <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid xs={12} md={4}>
+          <Grid xs={12} md={6}>
             <Autocomplete
               fullWidth
               options={clientes || []}
@@ -706,16 +839,26 @@ export default function DashboardFiscalPage() {
               getOptionLabel={(option) => formatClienteCodigoRazao(option)}
               isOptionEqualToValue={(opt, val) => (opt?._id || opt?.id) === (val?._id || val?.id)}
               value={(clientes || []).find((c) => c._id === selectedCliente) || null}
-              onChange={(_, newValue) => { setSelectedCliente(newValue?._id || ''); }}
+              onChange={(_, newValue) => {
+                setSelectedCliente(newValue?._id || '');
+              }}
+              disabled={!!filtroNumeroNota}
               renderInput={(params) => (
                 <TextField {...params} label="Cliente" placeholder="Digite para buscar" />
               )}
             />
           </Grid>
-          <Grid xs={12} md={3}>
+          <Grid xs={12} sm={6} md={3}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
-              <Select label="Status" value={status} onChange={(e) => { setStatus(e.target.value); }}>
+              <Select
+                label="Status"
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                }}
+                disabled={!!filtroNumeroNota}
+              >
                 <MenuItem value="">Todos</MenuItem>
                 <MenuItem value="emitida">Emitida</MenuItem>
                 <MenuItem value="autorizada">Autorizada</MenuItem>
@@ -724,7 +867,7 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={2}>
+          <Grid xs={12} sm={6} md={3}>
             <FormControl fullWidth>
               <InputLabel>Tipo de Nota</InputLabel>
               <Select
@@ -734,6 +877,7 @@ export default function DashboardFiscalPage() {
                   setTipoNota(e.target.value);
                   setPage(1);
                 }}
+                disabled={!!filtroNumeroNota}
               >
                 <MenuItem value="">Todas</MenuItem>
                 <MenuItem value="nfse">NFS-e (Serviço)</MenuItem>
@@ -744,10 +888,19 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={2}>
+        </Grid>
+
+        {/* Linha 2: Origem, Entrada/Saída e Retenção */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid xs={12} sm={4} md={4}>
             <FormControl fullWidth>
               <InputLabel>Origem</InputLabel>
-              <Select label="Origem" value={origem} onChange={(e) => setOrigem(e.target.value)}>
+              <Select
+                label="Origem"
+                value={origem}
+                onChange={(e) => setOrigem(e.target.value)}
+                disabled={!!filtroNumeroNota}
+              >
                 <MenuItem value="">Todas</MenuItem>
                 <MenuItem value="enotas">eNotas</MenuItem>
                 <MenuItem value="sieg">SIEG</MenuItem>
@@ -756,13 +909,14 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={1.5}>
+          <Grid xs={12} sm={4} md={4}>
             <FormControl fullWidth>
               <InputLabel>Entrada/Saída</InputLabel>
               <Select
                 label="Entrada/Saída"
                 value={tipoMovimento}
                 onChange={(e) => setTipoMovimento(e.target.value)}
+                disabled={!!filtroNumeroNota}
               >
                 <MenuItem value="">Todas</MenuItem>
                 <MenuItem value="entrada">Entrada</MenuItem>
@@ -770,13 +924,14 @@ export default function DashboardFiscalPage() {
               </Select>
             </FormControl>
           </Grid>
-          <Grid xs={12} md={1.5}>
+          <Grid xs={12} sm={4} md={4}>
             <FormControl fullWidth>
               <InputLabel>Retenção</InputLabel>
               <Select
                 label="Retenção"
                 value={comRetencao}
                 onChange={(e) => setComRetencao(e.target.value)}
+                disabled={!!filtroNumeroNota}
               >
                 <MenuItem value="">Todas</MenuItem>
                 <MenuItem value="com">Com retenção</MenuItem>
@@ -786,68 +941,102 @@ export default function DashboardFiscalPage() {
           </Grid>
         </Grid>
 
-        {/* Filtros Ativos */}
-        {(status || tipoNota || origem || tipoMovimento || comRetencao) && (
-          <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }} useFlexGap>
-            <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
-              Filtros ativos:
-            </Typography>
-            {status && (
-              <Chip
-                size="small"
-                label={`Status: ${status}`}
-                onDelete={() => setStatus('')}
-                color="default"
-                variant="soft"
-              />
-            )}
-            {tipoNota && (
-              <Chip
-                size="small"
-                label={`Tipo: ${formatTipoNota(tipoNota)}`}
-                onDelete={() => setTipoNota('')}
-                color="default"
-                variant="soft"
-              />
-            )}
-            {origem && (
-              <Chip
-                size="small"
-                label={`Origem: ${origem === 'sefaz' ? 'SEFAZ' : origem === 'sieg' ? 'SIEG' : origem === 'nacional' ? 'Nacional' : 'eNotas'}`}
-                onDelete={() => setOrigem('')}
-                color="default"
-                variant="soft"
-              />
-            )}
-            {tipoMovimento && (
-              <Chip
-                size="small"
-                label={tipoMovimento === 'entrada' ? 'Entrada' : 'Saída'}
-                onDelete={() => setTipoMovimento('')}
-                color="default"
-                variant="soft"
-              />
-            )}
-            {comRetencao && (
-              <Chip
-                size="small"
-                label={comRetencao === 'com' ? 'Com retenção' : 'Sem retenção'}
-                onDelete={() => setComRetencao('')}
-                color="default"
-                variant="soft"
-              />
-            )}
-          </Stack>
-        )}
+        {/* Linha 3: Busca por número da nota e CPF/CNPJ do tomador (número tem prioridade) */}
+        <Grid container spacing={2} sx={{ mb: 2 }}>
+          <Grid xs={12} sm={4} md={3}>
+            <TextField
+              label="Número da Nota"
+              type="number"
+              fullWidth
+              value={filtroNumeroNota}
+              onChange={(e) => setFiltroNumeroNota(e.target.value)}
+              InputLabelProps={{ shrink: true }}
+              placeholder="Digite para buscar..."
+              InputProps={{
+                endAdornment: <Iconify icon="eva:search-fill" sx={{ color: 'text.disabled' }} />,
+              }}
+            />
+          </Grid>
+          <Grid xs={12} sm={8} md={9}>
+            <Stack spacing={0}>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1}
+                alignItems={{ xs: 'stretch', sm: 'flex-end' }}
+              >
+                <TextField
+                  label="CPF ou CNPJ do Tomador"
+                  fullWidth
+                  value={filtroCpfCnpj}
+                  onChange={(e) => {
+                    setFiltroCpfCnpj(formatCpfCnpj(e.target.value));
+                    if (cpfCnpjErro) setCpfCnpjErro('');
+                  }}
+                  onBlur={handleCpfCnpjBlur}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      aplicarFiltroCpfCnpj();
+                    }
+                  }}
+                  InputLabelProps={{ shrink: true }}
+                  placeholder="000.000.000-00 ou 00.000.000/0000-00"
+                  disabled={!!filtroNumeroNota}
+                  error={!!cpfCnpjErro}
+                  inputProps={{ 'aria-describedby': 'dashboard-fiscal-cpf-cnpj-helper' }}
+                  InputProps={{
+                    endAdornment: (
+                      <Iconify icon="solar:user-id-bold" sx={{ color: 'text.disabled' }} />
+                    ),
+                  }}
+                />
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  onClick={aplicarFiltroCpfCnpj}
+                  disabled={!!filtroNumeroNota}
+                >
+                  Aplicar
+                </Button>
+              </Stack>
+              <FormHelperText
+                id="dashboard-fiscal-cpf-cnpj-helper"
+                error={!!cpfCnpjErro}
+                sx={{ mx: 0 }}
+              >
+                {filtroNumeroNota
+                  ? 'Indisponível enquanto buscar por número da nota'
+                  : cpfCnpjErro ||
+                  'Digite o documento e clique em Aplicar ou pressione Enter. A busca só ocorre com CPF ou CNPJ completo.'}
+              </FormHelperText>
+            </Stack>
+          </Grid>
+          {filtroNumeroNota && (
+            <Grid xs={12}>
+              <Typography variant="caption" color="text.secondary">
+                Busca por número ativa: os filtros de período, status, tipo, origem, movimento e
+                retenção estão desativados.
+              </Typography>
+            </Grid>
+          )}
+        </Grid>
 
-        {/* Linha 2: Navegação mensal e período */}
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+        {/* Linha 4: Navegação mensal e período */}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          alignItems="center"
+          justifyContent="space-between"
+          sx={{ mb: 2 }}
+        >
           <Box sx={{ display: 'flex', flex: 1, gap: 1.5, alignItems: 'center' }}>
             <Button
               variant="outlined"
               onClick={handlePrevMonth}
               startIcon={<Iconify icon="solar:alt-arrow-left-bold" />}
               sx={{ minWidth: 150 }}
+              disabled={!!filtroNumeroNota}
             >
               Mês Anterior
             </Button>
@@ -859,6 +1048,7 @@ export default function DashboardFiscalPage() {
               onChange={(e) => setStartDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
               sx={{ minWidth: 160 }}
+              disabled={!!filtroNumeroNota}
             />
             <TextField
               label="Fim"
@@ -868,12 +1058,14 @@ export default function DashboardFiscalPage() {
               onChange={(e) => setEndDate(e.target.value)}
               InputLabelProps={{ shrink: true }}
               sx={{ minWidth: 160 }}
+              disabled={!!filtroNumeroNota}
             />
             <Button
               variant="outlined"
               onClick={handleNextMonth}
               endIcon={<Iconify icon="solar:alt-arrow-right-bold" />}
               sx={{ minWidth: 150 }}
+              disabled={!!filtroNumeroNota}
             >
               Próximo Mês
             </Button>
@@ -896,36 +1088,134 @@ export default function DashboardFiscalPage() {
             )}
           </Box>
         </Stack>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', md: 'center' }} justifyContent="space-between" sx={{ mb: 2 }}>
+
+        {/* Filtros Ativos */}
+        {(filtroNumeroNota ||
+          cpfCnpjAplicado ||
+          status ||
+          tipoNota ||
+          origem ||
+          tipoMovimento ||
+          comRetencao) && (
+            <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }} useFlexGap>
+              <Typography variant="caption" color="text.secondary" sx={{ alignSelf: 'center' }}>
+                Filtros ativos:
+              </Typography>
+              {filtroNumeroNota && (
+                <Chip
+                  size="small"
+                  label={`Número: ${filtroNumeroNota}`}
+                  onDelete={() => setFiltroNumeroNota('')}
+                  color="default"
+                  variant="soft"
+                />
+              )}
+              {cpfCnpjAplicado && (
+                <Chip
+                  size="small"
+                  label={`CPF/CNPJ: ${formatCpfCnpj(cpfCnpjAplicado)}`}
+                  onDelete={() => {
+                    setFiltroCpfCnpj('');
+                    setCpfCnpjAplicado('');
+                    setCpfCnpjErro('');
+                  }}
+                  color="default"
+                  variant="soft"
+                />
+              )}
+              {status && (
+                <Chip
+                  size="small"
+                  label={`Status: ${status}`}
+                  onDelete={() => setStatus('')}
+                  color="default"
+                  variant="soft"
+                />
+              )}
+              {tipoNota && (
+                <Chip
+                  size="small"
+                  label={`Tipo: ${formatTipoNota(tipoNota)}`}
+                  onDelete={() => setTipoNota('')}
+                  color="default"
+                  variant="soft"
+                />
+              )}
+              {origem && (
+                <Chip
+                  size="small"
+                  label={`Origem: ${origem === 'sefaz' ? 'SEFAZ' : origem === 'sieg' ? 'SIEG' : origem === 'nacional' ? 'Nacional' : 'eNotas'}`}
+                  onDelete={() => setOrigem('')}
+                  color="default"
+                  variant="soft"
+                />
+              )}
+              {tipoMovimento && (
+                <Chip
+                  size="small"
+                  label={tipoMovimento === 'entrada' ? 'Entrada' : 'Saída'}
+                  onDelete={() => setTipoMovimento('')}
+                  color="default"
+                  variant="soft"
+                />
+              )}
+              {comRetencao && (
+                <Chip
+                  size="small"
+                  label={comRetencao === 'com' ? 'Com retenção' : 'Sem retenção'}
+                  onDelete={() => setComRetencao('')}
+                  color="default"
+                  variant="soft"
+                />
+              )}
+            </Stack>
+          )}
+
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={1.5}
+          alignItems={{ xs: 'flex-start', md: 'center' }}
+          justifyContent="space-between"
+          sx={{ mb: 2 }}
+        >
           <Stack spacing={0.5}>
             <Typography variant="subtitle2" color="text.secondary">
               {totalItems} nota(s) no total com os filtros atuais
-              {totalPages > 1
-                ? ` · Página ${page} de ${totalPages} (50 por página)`
-                : ''}
+              {totalPages > 1 ? ` · Página ${page} de ${totalPages} (50 por página)` : ''}
             </Typography>
             <Typography variant="caption" color="text.secondary">
-              Soma dos valores nesta página: {fCurrency(totalValorNotas)} • Total geral: {fCurrency(somaTotal)}
+              Soma dos valores nesta página: {fCurrency(totalValorNotas)} • Total geral:{' '}
+              {fCurrency(somaTotal)}
             </Typography>
           </Stack>
           <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-            {(status || tipoNota || origem || tipoMovimento || comRetencao) && (
-              <Button
-                size="small"
-                variant="outlined"
-                color="inherit"
-                startIcon={<Iconify icon="solar:refresh-linear" />}
-                onClick={() => {
-                  setStatus('');
-                  setTipoNota('');
-                  setOrigem('');
-                  setTipoMovimento('');
-                  setComRetencao('');
-                }}
-              >
-                Limpar Filtros
-              </Button>
-            )}
+            {(filtroNumeroNota ||
+              cpfCnpjAplicado ||
+              status ||
+              tipoNota ||
+              origem ||
+              tipoMovimento ||
+              comRetencao) && (
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="inherit"
+                  startIcon={<Iconify icon="solar:refresh-linear" />}
+                  onClick={() => {
+                    setFiltroNumeroNota('');
+                    setFiltroCpfCnpj('');
+                    setCpfCnpjAplicado('');
+                    setCpfCnpjErro('');
+                    setStatus('');
+                    setTipoNota('');
+                    setOrigem('');
+                    setTipoMovimento('');
+                    setComRetencao('');
+                  }}
+                >
+                  Limpar Filtros
+                </Button>
+              )}
             {selectedCliente && (
               <LoadingButton
                 size="small"
@@ -943,26 +1233,41 @@ export default function DashboardFiscalPage() {
 
         {nfeBuscaHabilitada && nfeBloqueado && (
           <Alert severity="warning" sx={{ mb: 2 }}>
-            A SEFAZ limitou temporariamente as consultas de NF-e deste cliente (consumo indevido).
-            A sincronização ficará disponível após{' '}
-            {new Date(nfeBloqueadoAte).toLocaleString('pt-BR')}.
+            A SEFAZ limitou temporariamente as consultas de NF-e deste cliente (consumo indevido). A
+            sincronização ficará disponível após {new Date(nfeBloqueadoAte).toLocaleString('pt-BR')}
+            .
           </Alert>
         )}
 
         <Stack spacing={1.5} aria-busy={loading && !!selectedCliente} aria-live="polite">
           {selectedCliente && loading
-            ? Array.from({ length: 5 }, (_, i) => <NotaFiscalCardSkeleton key={`nf-skeleton-${i}`} />)
+            ? Array.from({ length: 5 }, (_, i) => (
+              <NotaFiscalCardSkeleton key={`nf-skeleton-${i}`} />
+            ))
             : notas.map((n) => {
               const valor = n.valorServicos || n.valor || 0;
               const statusLabel = n.status || '-';
               const eNotasLabel = n.eNotasStatus || '-';
               const s = String(statusLabel || '').toLowerCase();
               const se = String(eNotasLabel || '').toLowerCase();
-              const color = s === 'emitida' ? 'success' : s === 'cancelada' || s === 'negada' ? 'error' : 'warning';
-              const colorEnotas = se === 'autorizada' ? 'success' : se === 'cancelada' || se === 'negada' ? 'error' : 'warning';
+              const color =
+                s === 'emitida'
+                  ? 'success'
+                  : s === 'cancelada' || s === 'negada'
+                    ? 'error'
+                    : 'warning';
+              const colorEnotas =
+                se === 'autorizada'
+                  ? 'success'
+                  : se === 'cancelada' || se === 'negada'
+                    ? 'error'
+                    : 'warning';
               const dataEmissao = n.dataEmissao || n.createdAt || n.data;
               const tomador = n.tomador || {};
-              const servicoDesc = Array.isArray(n.servicos) && n.servicos.length ? n.servicos[0]?.descricao : (n.descricao || n.discriminacao);
+              const servicoDesc =
+                Array.isArray(n.servicos) && n.servicos.length
+                  ? n.servicos[0]?.descricao
+                  : n.descricao || n.discriminacao;
               const isSieg = n.origem === 'sieg';
               const isNacional = n.origem === 'nacional';
               const isNfce = isNotaNfcePr(n); // NFC-e SEFAZ-PR (origem sefaz + tipoNota nfce)
@@ -980,28 +1285,37 @@ export default function DashboardFiscalPage() {
               const docRaw = emitente
                 ? emitente.cpfCnpj
                 : tomador?.cpfCnpj ||
-                  (isSieg
-                    ? n.siegCnpjEmitente
-                    : isNacional
-                      ? n.nacionalCnpjEmitente
-                      : isSefaz
-                        ? n.sefazCnpjEmitente
-                        : '');
+                (isSieg
+                  ? n.siegCnpjEmitente
+                  : isNacional
+                    ? n.nacionalCnpjEmitente
+                    : isSefaz
+                      ? n.sefazCnpjEmitente
+                      : '');
               const docFormatted = docRaw ? formatCPFOrCNPJ(String(docRaw)) : '';
 
               return (
                 <Card key={n._id || n.id} variant="outlined" sx={{ p: 2 }}>
-                  <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={1}>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: 'flex-start', sm: 'center' }}
+                    spacing={1}
+                  >
                     <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-                      <Label
-                        color={tipoNotaColor}
-                        variant="soft"
-                        sx={{ fontWeight: 600 }}
-                      >
+                      <Label color={tipoNotaColor} variant="soft" sx={{ fontWeight: 600 }}>
                         {tipoNotaLabel}
                       </Label>
                       <Label
-                        color={isNacional ? 'info' : isSefaz ? 'secondary' : isNfce ? 'secondary' : 'default'}
+                        color={
+                          isNacional
+                            ? 'info'
+                            : isSefaz
+                              ? 'secondary'
+                              : isNfce
+                                ? 'secondary'
+                                : 'default'
+                        }
                         variant="soft"
                       >
                         {isNacional
@@ -1022,12 +1336,20 @@ export default function DashboardFiscalPage() {
                         </Tooltip>
                       )}
                       <Typography variant="subtitle2">
-                        #{isSieg ? (n.siegNumero || n.numeroNota || '-') : (n.numeroNota || n.numero || '-')}
+                        #
+                        {isSieg
+                          ? n.siegNumero || n.numeroNota || '-'
+                          : n.numeroNota || n.numero || '-'}
                       </Typography>
                       {n.serie && (
-                        <Label variant="soft" color="default">Série {n.serie}</Label>
+                        <Label variant="soft" color="default">
+                          Série {n.serie}
+                        </Label>
                       )}
-                      <Label variant="soft" color={movimento === 'entrada' ? 'warning' : 'success'}>
+                      <Label
+                        variant="soft"
+                        color={movimento === 'entrada' ? 'warning' : 'success'}
+                      >
                         {movimento === 'entrada' ? 'Entrada' : 'Saída'}
                       </Label>
                       {temRetencao && (
@@ -1035,64 +1357,91 @@ export default function DashboardFiscalPage() {
                           Retenção
                         </Label>
                       )}
-                      <Label color={color} variant="soft">{statusLabel}</Label>
+                      <Label color={color} variant="soft">
+                        {statusLabel}
+                      </Label>
                       {isEnotas && (
-                        <Label color={colorEnotas} variant="soft">eNotas: {eNotasLabel}</Label>
+                        <Label color={colorEnotas} variant="soft">
+                          eNotas: {eNotasLabel}
+                        </Label>
                       )}
-                      {isNotaElegivelDominio(n) && (n.dominioEnvio || dominioHabilitado) && (() => {
-                        const dom = labelStatusDominio(n.dominioEnvio, dominioHabilitado);
-                        const env = n.dominioEnvio;
-                        const tip =
-                          env?.status === 'enviado'
-                            ? `Enviado em ${env.enviadoEm ? dayjs(env.enviadoEm).format('DD/MM/YYYY HH:mm') : '-'}${env.processadoEm ? ` · Confirmado em ${dayjs(env.processadoEm).format('DD/MM/YYYY HH:mm')}` : ''}${env.batchId ? ` · Lote ${env.batchId}` : ''}`
-                            : env?.status === 'erro'
-                              ? `${mensagemErroDominio(env.erro) || 'Erro no envio'}${env.tentativas ? ` (tentativa ${env.tentativas}/5)` : ''}`
-                              : 'Envio de XML à contabilidade (Domínio)';
-                        return (
-                          <Tooltip title={tip}>
-                            <Label color={dom.color} variant="soft" startIcon={<Iconify icon="solar:buildings-3-bold" />}>
-                              Domínio: {dom.label}
-                            </Label>
-                          </Tooltip>
-                        );
-                      })()}
-                      {s === 'cancelada' && n.dominioEnvioCancelamento && (() => {
-                        const cancEnv = n.dominioEnvioCancelamento;
-                        const canc = labelStatusDominio(cancEnv, true);
-                        const tipCanc =
-                          cancEnv.status === 'enviado'
-                            ? `Cancelamento enviado em ${cancEnv.enviadoEm ? dayjs(cancEnv.enviadoEm).format('DD/MM/YYYY HH:mm') : '-'}${cancEnv.processadoEm ? ` · Confirmado em ${dayjs(cancEnv.processadoEm).format('DD/MM/YYYY HH:mm')}` : ''}${cancEnv.batchId ? ` · Lote ${cancEnv.batchId}` : ''}`
-                            : cancEnv.status === 'erro'
-                              ? `${mensagemErroDominio(cancEnv.erro) || 'Erro no envio do cancelamento'}${cancEnv.tentativas ? ` (tentativa ${cancEnv.tentativas}/5)` : ''}`
-                              : 'Envio do evento de cancelamento à contabilidade (Domínio)';
-                        return (
-                          <Tooltip title={tipCanc}>
-                            <Label color={canc.color} variant="soft" startIcon={<Iconify icon="solar:close-circle-bold" />}>
-                              Cancelamento → Domínio: {canc.label}
-                            </Label>
-                          </Tooltip>
-                        );
-                      })()}
+                      {isNotaElegivelDominio(n) &&
+                        (n.dominioEnvio || dominioHabilitado) &&
+                        (() => {
+                          const dom = labelStatusDominio(n.dominioEnvio, dominioHabilitado);
+                          const env = n.dominioEnvio;
+                          const tip =
+                            env?.status === 'enviado'
+                              ? `Enviado em ${env.enviadoEm ? dayjs(env.enviadoEm).format('DD/MM/YYYY HH:mm') : '-'}${env.processadoEm ? ` · Confirmado em ${dayjs(env.processadoEm).format('DD/MM/YYYY HH:mm')}` : ''}${env.batchId ? ` · Lote ${env.batchId}` : ''}`
+                              : env?.status === 'erro'
+                                ? `${mensagemErroDominio(env.erro) || 'Erro no envio'}${env.tentativas ? ` (tentativa ${env.tentativas}/5)` : ''}`
+                                : 'Envio de XML à contabilidade (Domínio)';
+                          return (
+                            <Tooltip title={tip}>
+                              <Label
+                                color={dom.color}
+                                variant="soft"
+                                startIcon={<Iconify icon="solar:buildings-3-bold" />}
+                              >
+                                Domínio: {dom.label}
+                              </Label>
+                            </Tooltip>
+                          );
+                        })()}
+                      {s === 'cancelada' &&
+                        n.dominioEnvioCancelamento &&
+                        (() => {
+                          const cancEnv = n.dominioEnvioCancelamento;
+                          const canc = labelStatusDominio(cancEnv, true);
+                          const tipCanc =
+                            cancEnv.status === 'enviado'
+                              ? `Cancelamento enviado em ${cancEnv.enviadoEm ? dayjs(cancEnv.enviadoEm).format('DD/MM/YYYY HH:mm') : '-'}${cancEnv.processadoEm ? ` · Confirmado em ${dayjs(cancEnv.processadoEm).format('DD/MM/YYYY HH:mm')}` : ''}${cancEnv.batchId ? ` · Lote ${cancEnv.batchId}` : ''}`
+                              : cancEnv.status === 'erro'
+                                ? `${mensagemErroDominio(cancEnv.erro) || 'Erro no envio do cancelamento'}${cancEnv.tentativas ? ` (tentativa ${cancEnv.tentativas}/5)` : ''}`
+                                : 'Envio do evento de cancelamento à contabilidade (Domínio)';
+                          return (
+                            <Tooltip title={tipCanc}>
+                              <Label
+                                color={canc.color}
+                                variant="soft"
+                                startIcon={<Iconify icon="solar:close-circle-bold" />}
+                              >
+                                Cancelamento → Domínio: {canc.label}
+                              </Label>
+                            </Tooltip>
+                          );
+                        })()}
                     </Stack>
-                    <Typography variant="caption" color="text.secondary">{dataEmissao ? dayjs(dataEmissao).format('DD/MM/YYYY HH:mm') : '-'}</Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      {dataEmissao ? dayjs(dataEmissao).format('DD/MM/YYYY HH:mm') : '-'}
+                    </Typography>
                   </Stack>
 
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 1.5 }}>
-                    <Box
-                      flex={1}
-                      sx={notaInnerBoxSx}
-                    >
+                    <Box flex={1} sx={notaInnerBoxSx}>
                       <Stack spacing={1}>
                         <Stack direction="row" alignItems="center" spacing={0.75}>
-                          <Iconify icon="solar:user-bold" width={18} sx={{ color: 'text.secondary', flexShrink: 0 }} />
+                          <Iconify
+                            icon="solar:user-bold"
+                            width={18}
+                            sx={{ color: 'text.secondary', flexShrink: 0 }}
+                          />
                           <Typography
                             variant="overline"
-                            sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
+                            sx={{
+                              color: 'text.secondary',
+                              fontWeight: 700,
+                              letterSpacing: 0.8,
+                              lineHeight: 1.2,
+                            }}
                           >
                             {movimento === 'entrada' ? 'Emitente' : 'Tomador'}
                           </Typography>
                         </Stack>
-                        <Typography variant="subtitle2" sx={{ fontWeight: 600, lineHeight: 1.45 }}>
+                        <Typography
+                          variant="subtitle2"
+                          sx={{ fontWeight: 600, lineHeight: 1.45 }}
+                        >
                           {parteNome || '-'}
                         </Typography>
                         {!!docFormatted && (
@@ -1100,7 +1449,8 @@ export default function DashboardFiscalPage() {
                             variant="caption"
                             sx={{
                               color: 'text.secondary',
-                              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                              fontFamily:
+                                'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                               letterSpacing: 0.4,
                             }}
                           >
@@ -1110,16 +1460,22 @@ export default function DashboardFiscalPage() {
                       </Stack>
                     </Box>
 
-                    <Box
-                      flex={2}
-                      sx={notaInnerBoxSx}
-                    >
+                    <Box flex={2} sx={notaInnerBoxSx}>
                       <Stack spacing={1}>
                         <Stack direction="row" alignItems="center" spacing={0.75}>
-                          <Iconify icon="solar:document-text-bold" width={18} sx={{ color: 'text.secondary', flexShrink: 0 }} />
+                          <Iconify
+                            icon="solar:document-text-bold"
+                            width={18}
+                            sx={{ color: 'text.secondary', flexShrink: 0 }}
+                          />
                           <Typography
                             variant="overline"
-                            sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
+                            sx={{
+                              color: 'text.secondary',
+                              fontWeight: 700,
+                              letterSpacing: 0.8,
+                              lineHeight: 1.2,
+                            }}
                           >
                             {getDescricaoNotaLabel(n.tipoNota)}
                           </Typography>
@@ -1135,15 +1491,25 @@ export default function DashboardFiscalPage() {
                           {servicoDesc || '-'}
                         </Typography>
                         {n.codigoVerificacao && (
-                          <Stack direction="row" alignItems="center" spacing={1} flexWrap="wrap" sx={{ pt: 0.25 }}>
-                            <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 600 }}>
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            spacing={1}
+                            flexWrap="wrap"
+                            sx={{ pt: 0.25 }}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{ color: 'text.secondary', fontWeight: 600 }}
+                            >
                               Cód. verificação
                             </Typography>
                             <Box
                               component="span"
                               sx={{
                                 typography: 'caption',
-                                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                                fontFamily:
+                                  'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
                                 px: 1,
                                 py: 0.35,
                                 borderRadius: 1,
@@ -1166,11 +1532,28 @@ export default function DashboardFiscalPage() {
                       }}
                     >
                       <Stack spacing={0.75} alignItems={{ xs: 'flex-start', md: 'flex-end' }}>
-                        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ width: '100%', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
-                          <Iconify icon="solar:wallet-money-bold" width={18} sx={{ color: 'text.secondary', flexShrink: 0 }} />
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={0.75}
+                          sx={{
+                            width: '100%',
+                            justifyContent: { xs: 'flex-start', md: 'flex-end' },
+                          }}
+                        >
+                          <Iconify
+                            icon="solar:wallet-money-bold"
+                            width={18}
+                            sx={{ color: 'text.secondary', flexShrink: 0 }}
+                          />
                           <Typography
                             variant="overline"
-                            sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
+                            sx={{
+                              color: 'text.secondary',
+                              fontWeight: 700,
+                              letterSpacing: 0.8,
+                              lineHeight: 1.2,
+                            }}
                           >
                             Valores
                           </Typography>
@@ -1184,7 +1567,10 @@ export default function DashboardFiscalPage() {
                           </Typography>
                         )}
                         {temRetencao && (
-                          <Typography variant="caption" sx={{ color: 'error.main', fontWeight: 600 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ color: 'error.main', fontWeight: 600 }}
+                          >
                             Retido {fCurrency(retencao.totalRetencoes || 0)}
                           </Typography>
                         )}
@@ -1194,11 +1580,26 @@ export default function DashboardFiscalPage() {
 
                   {temRetencao && (
                     <Box sx={{ ...notaInnerBoxSx, mt: 1.5 }}>
-                      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
-                        <Iconify icon="solar:shield-warning-bold" width={18} sx={{ color: 'error.main', flexShrink: 0 }} />
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        flexWrap="wrap"
+                        useFlexGap
+                      >
+                        <Iconify
+                          icon="solar:shield-warning-bold"
+                          width={18}
+                          sx={{ color: 'error.main', flexShrink: 0 }}
+                        />
                         <Typography
                           variant="overline"
-                          sx={{ color: 'text.secondary', fontWeight: 700, letterSpacing: 0.8, lineHeight: 1.2 }}
+                          sx={{
+                            color: 'text.secondary',
+                            fontWeight: 700,
+                            letterSpacing: 0.8,
+                            lineHeight: 1.2,
+                          }}
                         >
                           Retenções na fonte
                         </Typography>
@@ -1208,19 +1609,29 @@ export default function DashboardFiscalPage() {
                           </Label>
                         )}
                         {!!retencao.valorIrrf && (
-                          <Label variant="soft" color="warning">IRRF {fCurrency(retencao.valorIrrf)}</Label>
+                          <Label variant="soft" color="warning">
+                            IRRF {fCurrency(retencao.valorIrrf)}
+                          </Label>
                         )}
                         {!!retencao.valorPis && (
-                          <Label variant="soft" color="warning">PIS {fCurrency(retencao.valorPis)}</Label>
+                          <Label variant="soft" color="warning">
+                            PIS {fCurrency(retencao.valorPis)}
+                          </Label>
                         )}
                         {!!retencao.valorCofins && (
-                          <Label variant="soft" color="warning">COFINS {fCurrency(retencao.valorCofins)}</Label>
+                          <Label variant="soft" color="warning">
+                            COFINS {fCurrency(retencao.valorCofins)}
+                          </Label>
                         )}
                         {!!retencao.valorCsll && (
-                          <Label variant="soft" color="warning">CSLL {fCurrency(retencao.valorCsll)}</Label>
+                          <Label variant="soft" color="warning">
+                            CSLL {fCurrency(retencao.valorCsll)}
+                          </Label>
                         )}
                         {!!retencao.valorInss && (
-                          <Label variant="soft" color="warning">INSS {fCurrency(retencao.valorInss)}</Label>
+                          <Label variant="soft" color="warning">
+                            INSS {fCurrency(retencao.valorInss)}
+                          </Label>
                         )}
                         <Typography variant="caption" sx={{ fontWeight: 700 }}>
                           Total: {fCurrency(retencao.totalRetencoes || 0)}
@@ -1230,7 +1641,10 @@ export default function DashboardFiscalPage() {
                   )}
 
                   {(n.eNotasErro || n.motivoCancelamento) && (
-                    <Alert severity={se === 'cancelada' || s === 'cancelada' ? 'warning' : 'error'} sx={{ mt: 1 }}>
+                    <Alert
+                      severity={se === 'cancelada' || s === 'cancelada' ? 'warning' : 'error'}
+                      sx={{ mt: 1 }}
+                    >
                       {n.motivoCancelamento ? `Motivo: ${n.motivoCancelamento}` : n.eNotasErro}
                     </Alert>
                   )}
@@ -1250,8 +1664,22 @@ export default function DashboardFiscalPage() {
                             Cupom / QR
                           </Button>
                         )}
-                        <Button size="small" variant="outlined" onClick={() => handleBaixarXml(n)} startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
-                        <Button size="small" variant="outlined" onClick={() => handleConsultarNfce(n)} startIcon={<Iconify icon="solar:refresh-linear" />}>Consultar</Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleBaixarXml(n)}
+                          startIcon={<Iconify icon="solar:code-square-bold" />}
+                        >
+                          XML
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleConsultarNfce(n)}
+                          startIcon={<Iconify icon="solar:refresh-linear" />}
+                        >
+                          Consultar
+                        </Button>
                       </>
                     ) : isSefaz ? (
                       <Button
@@ -1264,16 +1692,48 @@ export default function DashboardFiscalPage() {
                       </Button>
                     ) : isNacional ? (
                       <>
-                        <Button size="small" variant="outlined" onClick={() => handleAbrirPdf(n)} startIcon={<Iconify icon="solar:document-text-bold" />}>PDF</Button>
-                        <Button size="small" variant="outlined" onClick={() => handleBaixarXml(n)} startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleAbrirPdf(n)}
+                          startIcon={<Iconify icon="solar:document-text-bold" />}
+                        >
+                          PDF
+                        </Button>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          onClick={() => handleBaixarXml(n)}
+                          startIcon={<Iconify icon="solar:code-square-bold" />}
+                        >
+                          XML
+                        </Button>
                       </>
                     ) : (
                       <>
                         {!!n.linkNota && n.linkNota !== 'Processando...' && (
-                          <Button size="small" variant="outlined" href={n.linkNota} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:document-text-bold" />}>PDF</Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            href={n.linkNota}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            startIcon={<Iconify icon="solar:document-text-bold" />}
+                          >
+                            PDF
+                          </Button>
                         )}
                         {!!n.linkXml && (
-                          <Button size="small" variant="outlined" href={n.linkXml} target="_blank" rel="noopener noreferrer" startIcon={<Iconify icon="solar:code-square-bold" />}>XML</Button>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            href={n.linkXml}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            startIcon={<Iconify icon="solar:code-square-bold" />}
+                          >
+                            XML
+                          </Button>
                         )}
                       </>
                     )}
@@ -1283,7 +1743,9 @@ export default function DashboardFiscalPage() {
                         variant="outlined"
                         startIcon={<Iconify icon="solar:code-square-bold" />}
                         onClick={() => {
-                          const blob = new Blob([atob(n.siegXmlBase64)], { type: 'application/xml' });
+                          const blob = new Blob([atob(n.siegXmlBase64)], {
+                            type: 'application/xml',
+                          });
                           const url = window.URL.createObjectURL(blob);
                           const link = document.createElement('a');
                           link.href = url;
@@ -1297,18 +1759,20 @@ export default function DashboardFiscalPage() {
                         XML Sieg
                       </Button>
                     )}
-                    {dominioHabilitado && isNotaElegivelDominio(n) && podeReenviarDominio(n.dominioEnvio) && (
-                      <LoadingButton
-                        size="small"
-                        variant="outlined"
-                        color="info"
-                        loading={reenviandoDominioId === (n._id || n.id)}
-                        startIcon={<Iconify icon="solar:buildings-3-bold" />}
-                        onClick={() => handleReenviarDominio(n)}
-                      >
-                        Reenviar Domínio
-                      </LoadingButton>
-                    )}
+                    {dominioHabilitado &&
+                      isNotaElegivelDominio(n) &&
+                      podeReenviarDominio(n.dominioEnvio) && (
+                        <LoadingButton
+                          size="small"
+                          variant="outlined"
+                          color="info"
+                          loading={reenviandoDominioId === (n._id || n.id)}
+                          startIcon={<Iconify icon="solar:buildings-3-bold" />}
+                          onClick={() => handleReenviarDominio(n)}
+                        >
+                          Reenviar Domínio
+                        </LoadingButton>
+                      )}
                     {dominioHabilitado && podeReenviarCancelamentoDominio(n) && (
                       <LoadingButton
                         size="small"
@@ -1380,9 +1844,7 @@ export default function DashboardFiscalPage() {
                 <Typography variant="subtitle2" color="text.secondary">
                   Nota #{notaToCancel.numeroNota || notaToCancel.siegNumero || '-'}
                 </Typography>
-                <Typography variant="body2">
-                  {notaToCancel.tomador?.nome || '-'}
-                </Typography>
+                <Typography variant="body2">{notaToCancel.tomador?.nome || '-'}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   Valor: {fCurrency(notaToCancel.valorServicos || notaToCancel.valor || 0)}
                 </Typography>
@@ -1482,7 +1944,9 @@ export default function DashboardFiscalPage() {
                   disabled={importing}
                 >
                   {MESES.map((m) => (
-                    <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                    <MenuItem key={m.value} value={m.value}>
+                      {m.label}
+                    </MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -1497,7 +1961,9 @@ export default function DashboardFiscalPage() {
                     disabled={importing}
                   >
                     {MESES.map((m) => (
-                      <MenuItem key={m.value} value={m.value}>{m.label}</MenuItem>
+                      <MenuItem key={m.value} value={m.value}>
+                        {m.label}
+                      </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
@@ -1524,22 +1990,26 @@ export default function DashboardFiscalPage() {
 
                 {importResultado.resultados?.nacional && (
                   <Alert severity="info">
-                    <Typography variant="caption" sx={{ fontWeight: 600 }}>Emissor Nacional</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                      Emissor Nacional
+                    </Typography>
                     <Typography variant="body2">
                       {importResultado.resultados.nacional.notasImportadas ?? 0} importadas ·{' '}
-                      {importResultado.resultados.nacional.notasAtualizadas ?? 0} atualizadas ·{' '}
-                      NSU: {importResultado.resultados.nacional.ultimoNSU ?? '-'}
+                      {importResultado.resultados.nacional.notasAtualizadas ?? 0} atualizadas · NSU:{' '}
+                      {importResultado.resultados.nacional.ultimoNSU ?? '-'}
                     </Typography>
                   </Alert>
                 )}
 
                 {importResultado.resultados?.nfe && (
                   <Alert severity="info">
-                    <Typography variant="caption" sx={{ fontWeight: 600 }}>NF-e SEFAZ</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                      NF-e SEFAZ
+                    </Typography>
                     <Typography variant="body2">
                       {importResultado.resultados.nfe.notasImportadas ?? 0} importadas ·{' '}
-                      {importResultado.resultados.nfe.resumosImportados ?? 0} resumos ·{' '}
-                      NSU: {importResultado.resultados.nfe.ultimoNSU ?? '-'}
+                      {importResultado.resultados.nfe.resumosImportados ?? 0} resumos · NSU:{' '}
+                      {importResultado.resultados.nfe.ultimoNSU ?? '-'}
                     </Typography>
                     {importResultado.resultados.nfe._aviso && (
                       <Typography variant="caption" color="text.secondary">
@@ -1551,7 +2021,9 @@ export default function DashboardFiscalPage() {
 
                 {importResultado.resultados?.sieg && (
                   <Alert severity="info">
-                    <Typography variant="caption" sx={{ fontWeight: 600 }}>SIEG</Typography>
+                    <Typography variant="caption" sx={{ fontWeight: 600 }}>
+                      SIEG
+                    </Typography>
                     <Typography variant="body2">
                       {importResultado.resultados.sieg.totalCriados ?? 0} criadas ·{' '}
                       {importResultado.resultados.sieg.totalAtualizados ?? 0} atualizadas ·{' '}
@@ -1584,7 +2056,11 @@ export default function DashboardFiscalPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button variant="outlined" onClick={() => setImportDialogOpen(false)} disabled={importing}>
+          <Button
+            variant="outlined"
+            onClick={() => setImportDialogOpen(false)}
+            disabled={importing}
+          >
             Fechar
           </Button>
           <LoadingButton
@@ -1600,5 +2076,3 @@ export default function DashboardFiscalPage() {
     </Card>
   );
 }
-
-

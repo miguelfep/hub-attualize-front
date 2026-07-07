@@ -398,6 +398,7 @@ export function GuiaFiscalEmitirDasDialog({
 
       if (guiaExistente) {
         await substituirArquivoGuia(guiaExistente._id, finalFile, {
+          clienteId,
           serproId,
           dataVencimento: dv,
         });

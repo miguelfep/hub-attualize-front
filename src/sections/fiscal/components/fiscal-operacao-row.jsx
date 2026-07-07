@@ -1,5 +1,7 @@
 'use client';
 
+import dayjs from 'dayjs';
+
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
@@ -103,6 +105,14 @@ export function FiscalOperacaoRow({ row, onEmitDas, showCompetencia = false }) {
           >
             {emitLabel}
           </Button>
+        ) : null}
+
+        {row.canEmitDas && row.ultimaEmissao ? (
+          <Typography variant="caption" color="text.disabled" sx={{ whiteSpace: 'nowrap' }}>
+            {`Emitido por ${row.ultimaEmissao.usuarioNome || row.ultimaEmissao.usuarioEmail}`}
+            {' · '}
+            {dayjs(row.ultimaEmissao.emissaoEm).format('DD/MM/YYYY HH:mm')}
+          </Typography>
         ) : null}
       </Stack>
     </Stack>

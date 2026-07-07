@@ -8,10 +8,24 @@ const baseUrl = process.env.NEXT_PUBLIC_API_URL;
  * @param {string} clienteId
  * @param {{ periodoApuracao?: string, anoCalendario?: string }} params
  */
-export async function consultarDeclaracoes(clienteId, { periodoApuracao, anoCalendario }) {
+export async function consultarDeclaracoes(clienteId, { periodoApuracao, anoCalendario } = {}) {
   return axios.get(`${baseUrl}serpro/${clienteId}/declaracoes`, {
     params: {
       periodoApuracao: periodoApuracao || undefined,
+      anoCalendario: anoCalendario || undefined,
+    },
+  });
+}
+
+/**
+ * Carrega declarações do último log CONSDECLARACAO13 salvo (sem nova chamada Serpro).
+ * Cache por ano-calendário. Retorna 404 quando não há log para o ano informado.
+ * @param {string} clienteId
+ * @param {{ anoCalendario: string }} params
+ */
+export async function consultarDeclaracoesFromLog(clienteId, { anoCalendario } = {}) {
+  return axios.get(`${baseUrl}serpro/${clienteId}/declaracoes/ultimo-log`, {
+    params: {
       anoCalendario: anoCalendario || undefined,
     },
   });

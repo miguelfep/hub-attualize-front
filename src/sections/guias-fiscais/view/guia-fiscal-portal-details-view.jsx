@@ -32,6 +32,7 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
+import { getStatusPagamentoChipProps } from '../guia-documento-visualizacao';
 import {
   isGuia,
   getCompetencia,
@@ -155,7 +156,15 @@ export function GuiaFiscalPortalDetailsView({ id }) {
               </Button>
             </Stack>
           ) : (
-            <Chip size="small" label="Sem PDF" color="warning" variant="soft" />
+            <Stack direction="row" spacing={1}>
+              <Chip size="small" label="Sem PDF" color="warning" variant="soft" />
+              {(() => {
+                const statusChip = getStatusPagamentoChipProps(guia?.statusPagamento);
+                return statusChip ? (
+                  <Chip size="small" label={statusChip.label} color={statusChip.color} variant="soft" />
+                ) : null;
+              })()}
+            </Stack>
           )
         }
         sx={{ mb: { xs: 3, md: 5 } }}

@@ -16,6 +16,7 @@ import { fDate } from 'src/utils/format-time';
 import { Iconify } from 'src/components/iconify';
 
 import { GuiaFiscalPortalReadEye } from './guia-fiscal-portal-read-eye';
+import { getStatusPagamentoChipProps } from '../guia-documento-visualizacao';
 import {
   DRIVE_BORDER_COLOR,
   DRIVE_FILE_CARD_SX,
@@ -639,6 +640,8 @@ export function DriveFolderEmptyPortal() {
 }
 
 export function DriveFileCardGridPortal({ file, fileMetaLines, isNovo, onDownload, onPreview }) {
+  const statusChip = file?.semArquivo ? getStatusPagamentoChipProps(file?.statusPagamento) : null;
+
   return (
     <Card
       variant="outlined"
@@ -668,7 +671,11 @@ export function DriveFileCardGridPortal({ file, fileMetaLines, isNovo, onDownloa
           <Typography variant="subtitle2" fontWeight={600} noWrap title={file.nomeArquivo} sx={{ flex: 1, minWidth: 0 }}>
             {file.nomeArquivo || 'Documento'}
           </Typography>
-          {isNovo ? <Chip label="Novo" color="info" size="small" variant="soft" sx={{ height: 22, flexShrink: 0 }} /> : null}
+          {statusChip ? (
+            <Chip label={statusChip.label} color={statusChip.color} size="small" variant="soft" sx={{ height: 22, flexShrink: 0 }} />
+          ) : isNovo ? (
+            <Chip label="Novo" color="info" size="small" variant="soft" sx={{ height: 22, flexShrink: 0 }} />
+          ) : null}
         </Stack>
 
         <Stack spacing={0.5} sx={{ minWidth: 0 }}>
@@ -723,6 +730,8 @@ export function DriveFileCardGridPortal({ file, fileMetaLines, isNovo, onDownloa
 }
 
 export function DriveFileCardListPortal({ file, fileMetaLines, isNovo, onDownload, onPreview }) {
+  const statusChip = file?.semArquivo ? getStatusPagamentoChipProps(file?.statusPagamento) : null;
+
   return (
     <Card
       variant="outlined"
@@ -746,7 +755,11 @@ export function DriveFileCardListPortal({ file, fileMetaLines, isNovo, onDownloa
             <Typography variant="subtitle2" fontWeight={600} noWrap title={file.nomeArquivo} sx={{ flex: 1, minWidth: 0 }}>
               {file.nomeArquivo || 'Documento'}
             </Typography>
-            {isNovo ? <Chip label="Novo" color="info" size="small" variant="soft" sx={{ height: 22, flexShrink: 0 }} /> : null}
+            {statusChip ? (
+              <Chip label={statusChip.label} color={statusChip.color} size="small" variant="soft" sx={{ height: 22, flexShrink: 0 }} />
+            ) : isNovo ? (
+              <Chip label="Novo" color="info" size="small" variant="soft" sx={{ height: 22, flexShrink: 0 }} />
+            ) : null}
           </Stack>
 
           <Box

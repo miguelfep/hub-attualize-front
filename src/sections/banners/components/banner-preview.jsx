@@ -4,9 +4,10 @@ import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
-import { alpha } from '@mui/material/styles';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
+
+import { safeAlpha } from 'src/theme/styles';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -125,7 +126,7 @@ export function BannerPreview({ banner, compact = false }) {
                 fontWeight: 700,
                 flexShrink: 0,
                 '&:hover': {
-                  bgcolor: alpha(corBotaoFundo, 0.85),
+                  bgcolor: safeAlpha(corBotaoFundo, 0.85),
                 },
               }}
             >
