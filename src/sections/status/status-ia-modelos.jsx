@@ -53,11 +53,23 @@ function descreverSkipReason(trainingResult) {
   return `Treino não publicado: ${skipReason}`;
 }
 
-/** Normaliza a resposta do testar-sugestao para uma lista de {conta, codigo, confianca}. */
+/**
+ * Normaliza a resposta do testar-sugestao para uma lista de
+ * {conta, codigo, confianca, acimaDoCorte}. O formato atual do backend traz
+ * `topKRaw` (todas as candidatas) + `model.threshold` (corte de confiança);
+ * os demais campos são fallbacks de formatos antigos.
+ */
 function extrairSugestoes(payload) {
   const d = payload?.data ?? payload;
+  const threshold = d?.model?.threshold ?? null;
   const arr =
-    d?.sugestoes || d?.suggestions || d?.top3 || d?.resultados || (Array.isArray(d) ? d : []);
+    d?.topKRaw ||
+    d?.topKAboveThreshold ||
+    d?.sugestoes ||
+    d?.suggestions ||
+    d?.top3 ||
+    d?.resultados ||
+    (Array.isArray(d) ? d : []);
   return (arr || []).map((s) => ({
     conta:
       s?.conta?.nome ||
@@ -67,8 +79,18 @@ function extrairSugestoes(payload) {
       (typeof s?.conta === 'string' ? s.conta : null) ||
       'Conta sem nome',
     codigo: s?.conta?.codigo || s?.contaCodigo || s?.codigo || null,
-    confianca: s?.confianca ?? s?.confidence ?? s?.score ?? s?.probability ?? null,
+    confianca:
+      s?.confiancaPercentual ?? s?.confianca ?? s?.confidence ?? s?.score ?? s?.probability ?? null,
+    acimaDoCorte:
+      threshold != null && typeof s?.score === 'number' ? s.score >= threshold : null,
   }));
+}
+
+/** Verde quando a sugestão passa do corte do modelo (fallback: 1ª da lista). */
+function corSugestao(s, index) {
+  if (s.acimaDoCorte === true) return 'success';
+  if (s.acimaDoCorte === false) return 'default';
+  return index === 0 ? 'success' : 'default';
 }
 
 // ----------------------------------------------------------------------
@@ -372,7 +394,7 @@ export function StatusIaModelos() {
                     <Chip
                       size="small"
                       variant="soft"
-                      color={index === 0 ? 'success' : 'default'}
+                      color={corSugestao(s, index)}
                       label={formatarPercentual(s.confianca)}
                     />
                   </Box>
