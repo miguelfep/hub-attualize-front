@@ -127,7 +127,7 @@ const FaturaViewPage = ({ faturaData }) => {
               Fatura paga. Obrigado!
             </Typography>
             <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-              O pagamento de <strong>{fCurrency(valor)}</strong> foi confirmado. Não é preciso fazer mais nada.
+              O pagamento da fatura foi confirmado. Não é preciso fazer mais nada.
             </Typography>
           </Card>
         )}
