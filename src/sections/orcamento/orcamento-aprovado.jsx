@@ -289,10 +289,10 @@ export function OrcamentoAprovado({
           display: 'grid',
           gap: 3,
           alignItems: 'flex-start',
-          gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 340px' },
+          gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 360px', lg: 'minmax(0, 1fr) 400px' },
         }}
       >
-        <Card variant="outlined" sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 2 }}>
+        <Card variant="outlined" sx={{ p: { xs: 2.5, sm: 3 }, borderRadius: 2 }}>
           <PaymentBillingAddress
             formData={formData}
             errors={errors}
@@ -303,9 +303,8 @@ export function OrcamentoAprovado({
             loadingCep={loadingCep}
             cepNotFound={cepNotFound}
           />
-          <Box sx={{ mt: 4 }}>
-            <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
-          </Box>
+          <Divider sx={{ my: 3, borderStyle: 'dashed' }} />
+          <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
           {method === 'pix' && (
             <Alert severity="info" sx={{ mt: 3 }}>
               Clique em &quot;Finalizar pedido&quot; para gerar o QR Code PIX na hora.
@@ -337,11 +336,14 @@ export function OrcamentoAprovado({
   );
 }
 
-const fieldSxBase = { '& .MuiInputBase-root': { minHeight: 56 } };
-const rowSpacing = 5;
-const colGap = 4;
+// Grid de 12 colunas: larguras proporcionais ao conteúdo (CEP/Número/Estado estreitos, Endereço largo)
+const formGridSx = {
+  display: 'grid',
+  gap: 2,
+  gridTemplateColumns: { xs: '1fr', sm: 'repeat(12, 1fr)' },
+};
 
-const rowStackSx = { width: '100%', '& > *': { flex: 1, minWidth: 0 } };
+const span = (cols) => ({ gridColumn: { xs: 'auto', sm: `span ${cols}` } });
 
 function PaymentBillingAddress({
   formData,
@@ -357,157 +359,138 @@ function PaymentBillingAddress({
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 4, fontSize: { xs: '1rem', sm: '1.125rem' } }}>
+      <Typography variant="h6" sx={{ mb: 2.5, fontSize: { xs: '1rem', sm: '1.125rem' } }}>
         Dados para cobrança
       </Typography>
-      <Stack spacing={rowSpacing}>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
-            fullWidth
-            label="Nome"
-            name="nome"
-            value={formData.nome}
-            onChange={handleInputChange}
-            error={!!errors.nome}
-            helperText={errors.nome}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="E-mail"
-            name="email"
-            type="email"
-            value={formData.email}
-            onChange={handleInputChange}
-            error={!!errors.email}
-            helperText={errors.email}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <PhoneInput
-            fullWidth
-            country="BR"
-            label="Telefone"
-            name="telefone"
-            value={formData.telefone}
-            onChange={handleTelefoneChange}
-            error={!!errors.telefone}
-            helperText={errors.telefone}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="CPF/CNPJ"
-            name="cpfCnpj"
-            value={formData.cpfCnpj}
-            onChange={handleCpfCnpjChange}
-            error={!!errors.cpfCnpj}
-            helperText={errors.cpfCnpj}
-            inputProps={{ maxLength: 18 }}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
+      <Box sx={formGridSx}>
+        <TextField
+          size="small"
+          label="Nome"
+          name="nome"
+          value={formData.nome}
+          onChange={handleInputChange}
+          error={!!errors.nome}
+          helperText={errors.nome}
+          sx={span(6)}
+        />
+        <TextField
+          size="small"
+          label="E-mail"
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          error={!!errors.email}
+          helperText={errors.email}
+          sx={span(6)}
+        />
+        <PhoneInput
+          size="small"
+          country="BR"
+          label="Telefone"
+          name="telefone"
+          value={formData.telefone}
+          onChange={handleTelefoneChange}
+          error={!!errors.telefone}
+          helperText={errors.telefone}
+          sx={span(6)}
+        />
+        <TextField
+          size="small"
+          label="CPF/CNPJ"
+          name="cpfCnpj"
+          value={formData.cpfCnpj}
+          onChange={handleCpfCnpjChange}
+          error={!!errors.cpfCnpj}
+          helperText={errors.cpfCnpj}
+          inputProps={{ maxLength: 18 }}
+          sx={span(6)}
+        />
 
-        <Typography variant="subtitle2" sx={{ pt: 1, pb: 0.5, color: 'text.secondary' }}>
+        <Typography variant="subtitle2" sx={{ color: 'text.secondary', mt: 1, gridColumn: '1 / -1' }}>
           Endereço
         </Typography>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
-            fullWidth
-            label="CEP"
-            name="cep"
-            value={formData.cep}
-            onChange={handleCepChange}
-            InputProps={{
-              endAdornment: loadingCep && <CircularProgress size={20} />,
-            }}
-            error={!!errors.cep}
-            helperText={errors.cep}
-            inputProps={{ maxLength: 9 }}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="Endereço"
-            name="endereco"
-            value={formData.endereco}
-            onChange={handleInputChange}
-            disabled={isFieldDisabled}
-            error={!!errors.endereco}
-            helperText={errors.endereco}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
-            fullWidth
-            label="Número"
-            name="numero"
-            value={formData.numero}
-            onChange={handleInputChange}
-            error={!!errors.numero}
-            helperText={errors.numero}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="Complemento"
-            name="complemento"
-            value={formData.complemento}
-            onChange={handleInputChange}
-            error={!!errors.complemento}
-            helperText={errors.complemento}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="Bairro"
-            name="bairro"
-            value={formData.bairro}
-            onChange={handleInputChange}
-            disabled={isFieldDisabled}
-            error={!!errors.bairro}
-            helperText={errors.bairro}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={colGap} sx={rowStackSx}>
-          <TextField
-            fullWidth
-            label="Cidade"
-            name="cidade"
-            value={formData.cidade}
-            onChange={handleInputChange}
-            disabled={isFieldDisabled}
-            error={!!errors.cidade}
-            helperText={errors.cidade}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-          <TextField
-            fullWidth
-            label="Estado"
-            name="estado"
-            value={formData.estado}
-            onChange={handleInputChange}
-            disabled={isFieldDisabled}
-            error={!!errors.estado}
-            helperText={errors.estado}
-            variant="outlined"
-            sx={fieldSxBase}
-          />
-        </Stack>
-      </Stack>
+
+        <TextField
+          size="small"
+          label="CEP"
+          name="cep"
+          value={formData.cep}
+          onChange={handleCepChange}
+          InputProps={{
+            endAdornment: loadingCep && <CircularProgress size={18} />,
+          }}
+          error={!!errors.cep}
+          helperText={errors.cep}
+          inputProps={{ maxLength: 9 }}
+          sx={span(4)}
+        />
+        <TextField
+          size="small"
+          label="Endereço"
+          name="endereco"
+          value={formData.endereco}
+          onChange={handleInputChange}
+          disabled={isFieldDisabled}
+          error={!!errors.endereco}
+          helperText={errors.endereco}
+          sx={span(8)}
+        />
+        <TextField
+          size="small"
+          label="Número"
+          name="numero"
+          value={formData.numero}
+          onChange={handleInputChange}
+          error={!!errors.numero}
+          helperText={errors.numero}
+          sx={span(3)}
+        />
+        <TextField
+          size="small"
+          label="Complemento"
+          name="complemento"
+          value={formData.complemento}
+          onChange={handleInputChange}
+          error={!!errors.complemento}
+          helperText={errors.complemento}
+          sx={span(5)}
+        />
+        <TextField
+          size="small"
+          label="Bairro"
+          name="bairro"
+          value={formData.bairro}
+          onChange={handleInputChange}
+          disabled={isFieldDisabled}
+          error={!!errors.bairro}
+          helperText={errors.bairro}
+          sx={span(4)}
+        />
+        <TextField
+          size="small"
+          label="Cidade"
+          name="cidade"
+          value={formData.cidade}
+          onChange={handleInputChange}
+          disabled={isFieldDisabled}
+          error={!!errors.cidade}
+          helperText={errors.cidade}
+          sx={span(8)}
+        />
+        <TextField
+          size="small"
+          label="Estado"
+          name="estado"
+          value={formData.estado}
+          onChange={handleInputChange}
+          disabled={isFieldDisabled}
+          error={!!errors.estado}
+          helperText={errors.estado}
+          inputProps={{ maxLength: 2, style: { textTransform: 'uppercase' } }}
+          sx={span(4)}
+        />
+      </Box>
     </Box>
   );
 }

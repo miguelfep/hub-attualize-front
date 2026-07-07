@@ -113,7 +113,7 @@ export function OrcamentoView({ invoice: initialInvoice, nfses }) {
           )})`,
         })}
       >
-        <Container maxWidth="md" sx={{ py: { xs: 2, md: 2.5 } }}>
+        <Container maxWidth="lg" sx={{ py: { xs: 2, md: 2.5 } }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
             <Stack direction="row" alignItems="center" spacing={1.5}>
               <Box component="img" alt="Attualize" src="/logo/hub-tt.png" sx={{ width: 36, height: 36 }} />
@@ -132,7 +132,7 @@ export function OrcamentoView({ invoice: initialInvoice, nfses }) {
       </Box>
 
       <Container
-        maxWidth="md"
+        maxWidth="lg"
         sx={{
           pt: { xs: 3, md: 5 },
           // Espaço extra no mobile para a barra fixa de aprovação
