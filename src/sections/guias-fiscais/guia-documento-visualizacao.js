@@ -184,3 +184,18 @@ export function isDocumentoNovoParaClientePortal(guia) {
 
   return !clienteJaVisualizouDocumento(guia);
 }
+
+/**
+ * Props do chip de status de pagamento para exibição no portal.
+ * @param {string|null|undefined} statusPagamento
+ * @returns {{ label: string, color: import('@mui/material').ChipProps['color'] }|null}
+ */
+export function getStatusPagamentoChipProps(statusPagamento) {
+  if (!statusPagamento) return null;
+  const map = {
+    a_pagar: { label: 'A Pagar', color: 'warning' },
+    pago: { label: 'Pago', color: 'success' },
+    vencido: { label: 'Vencido', color: 'error' },
+  };
+  return map[statusPagamento] || { label: statusPagamento, color: 'default' };
+}

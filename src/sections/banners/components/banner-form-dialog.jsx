@@ -34,6 +34,7 @@ import { useGetAllClientes } from 'src/actions/clientes';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
 import { Form, Field } from 'src/components/hook-form';
+import { ColorPicker } from 'src/components/color-utils/color-picker';
 
 import { BannerPreview } from './banner-preview';
 
@@ -138,31 +139,25 @@ function ColorField({ name, label, control }) {
           <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
             {label}
           </Typography>
-          <Stack direction="row" spacing={0.5} flexWrap="wrap" sx={{ gap: 0.5 }}>
-            {COLORS.map((cor) => (
-              <Box
-                key={cor}
-                onClick={() => field.onChange(cor)}
-                sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 1,
-                  bgcolor: cor,
-                  border: 2,
-                  borderColor: field.value === cor ? 'primary.main' : 'divider',
-                  cursor: 'pointer',
-                  '&:hover': { opacity: 0.8 },
-                }}
-              />
-            ))}
-            <TextField
-              size="small"
-              value={field.value || ''}
-              onChange={(e) => field.onChange(e.target.value)}
-              sx={{ width: 110 }}
-              placeholder="#000000"
-            />
-          </Stack>
+          <ColorPicker
+            colors={COLORS}
+            selected={field.value}
+            onSelectColor={field.onChange}
+          />
+          <TextField
+            size="small"
+            value={(field.value || '').replace('#', '').toUpperCase()}
+            onChange={(e) => {
+              const hex = e.target.value.replace(/[^0-9a-fA-F]/g, '').toUpperCase().slice(0, 6);
+              field.onChange(hex ? `#${hex}` : '');
+            }}
+            placeholder="000000"
+            inputProps={{ maxLength: 6 }}
+            InputProps={{
+              startAdornment: <InputAdornment position="start">#</InputAdornment>,
+            }}
+            sx={{ mt: 1, width: 110 }}
+          />
         </Box>
       )}
     />
@@ -254,7 +249,10 @@ export function BannerFormDialog({ open, onClose, onSave, loading, banner, editi
         <Form methods={methods} onSubmit={onSubmit}>
           <Stack spacing={2.5} sx={{ pt: 1 }}>
             {/* ── Preview ── */}
-            <Card variant="outlined">
+            <Card
+              variant="outlined"
+              sx={{ position: 'sticky', top: 8, zIndex: 10, bgcolor: 'background.paper' }}
+            >
               <CardContent>
                 <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
                   Preview

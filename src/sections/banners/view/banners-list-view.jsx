@@ -264,6 +264,7 @@ export function BannersListView() {
         </Scrollbar>
 
         <TablePaginationCustom
+          rowsPerPageOptions={[10, 50, 100, 150]}
           count={banners.length}
           page={table.page}
           rowsPerPage={table.rowsPerPage}

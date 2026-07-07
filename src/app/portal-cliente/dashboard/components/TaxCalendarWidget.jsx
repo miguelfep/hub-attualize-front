@@ -2,12 +2,12 @@
 
 import dayjs from 'dayjs';
 import 'dayjs/locale/pt-br';
-import { useMemo, useState } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { PickersDay, DateCalendar, LocalizationProvider } from '@mui/x-date-pickers';
-import { Box, Card, Stack, Divider, Skeleton, Typography, CardHeader, IconButton as MuiIconButton } from '@mui/material';
+import { Box, Card, Stack, Divider, Skeleton, Typography, CardHeader, CircularProgress, IconButton as MuiIconButton } from '@mui/material';
 
 import { downloadGuiaFiscalPortal } from 'src/utils/portal-guia-download';
 
@@ -27,7 +27,7 @@ const WEEKS_COUNT = 5;
 // ----------------------------------------------------------------------
 
 function CustomDay(props) {
-  const { highlightedDates = [], datesWithDocuments = [], datesUrgent = [], day, outsideCurrentMonth, ...other } = props;
+  const { datesWithDocuments = [], datesUrgent = [], day, outsideCurrentMonth, ...other } = props;
   const hasDocument = !outsideCurrentMonth && datesWithDocuments.includes(day.format('YYYY-MM-DD'));
   const isUrgent = !outsideCurrentMonth && datesUrgent.includes(day.format('YYYY-MM-DD'));
 
@@ -72,21 +72,23 @@ function CustomDay(props) {
 
 export default function TaxCalendarWidget({ sx, ...other }) {
   const theme = useTheme();
-  const [date, setDate] = useState(dayjs());
-  const [currentMonth, setCurrentMonth] = useState(dayjs());
+  const [selectedDay, setSelectedDay] = useState(dayjs());
+  const [visibleMonth, setVisibleMonth] = useState(dayjs());
 
   const apiParams = useMemo(() => ({
     limit: 200,
-    dataInicio: currentMonth.startOf('month').format('YYYY-MM-DD'),
-    dataFim: currentMonth.endOf('month').format('YYYY-MM-DD'),
-  }), [currentMonth]);
+    dataInicio: visibleMonth.startOf('month').format('YYYY-MM-DD'),
+    dataFim: visibleMonth.endOf('month').format('YYYY-MM-DD'),
+  }), [visibleMonth]);
 
   const { data, isLoading } = useGetGuiasFiscaisPortal(apiParams);
   const guias = useMemo(() => data?.guias ?? [], [data]);
 
-  const highlightedDates = useMemo(() =>
-    [...new Set(guias.map((g) => dayjs(g.dataVencimento).format('YYYY-MM-DD')))],
-    [guias]);
+  const hasLoadedOnceRef = useRef(false);
+  useEffect(() => {
+    if (!isLoading) hasLoadedOnceRef.current = true;
+  }, [isLoading]);
+  const isInitialLoad = isLoading && !hasLoadedOnceRef.current;
 
   const datesWithDocuments = useMemo(() =>
     [...new Set(guias.map((g) => dayjs(g.dataVencimento).format('YYYY-MM-DD')))],
@@ -111,9 +113,9 @@ export default function TaxCalendarWidget({ sx, ...other }) {
   const hasUrgentDocuments = useMemo(() => datesUrgent.length > 0, [datesUrgent]);
 
   const selectedDayItems = useMemo(() => {
-    const dateKey = date.format('YYYY-MM-DD');
+    const dateKey = selectedDay.format('YYYY-MM-DD');
     return guias.filter((g) => dayjs(g.dataVencimento).format('YYYY-MM-DD') === dateKey);
-  }, [guias, date]);
+  }, [guias, selectedDay]);
 
   const handleDownload = async (guia) => {
     try {
@@ -154,9 +156,9 @@ export default function TaxCalendarWidget({ sx, ...other }) {
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
 
         {/* ÁREA DO CALENDÁRIO */}
-        <Box sx={{ px: { xs: 0.5, sm: 1 }, minWidth: 0, maxWidth: '100%', overflow: 'hidden', minHeight: 284 }}>
-          {isLoading ? (
-            /* INTEGRADO: Miolo do seu esqueleto do calendário */
+        <Box sx={{ position: 'relative', px: { xs: 0.5, sm: 1 }, minWidth: 0, maxWidth: '100%', overflow: 'hidden', minHeight: 284 }}>
+          {isInitialLoad ? (
+            /* INTEGRADO: Miolo do seu esqueleto do calendário (apenas 1ª carga) */
             <Box>
               <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ px: 1, mb: 0.5, height: 44 }}>
                 <Skeleton variant="rounded" width={32} height={32} />
@@ -175,45 +177,66 @@ export default function TaxCalendarWidget({ sx, ...other }) {
               </Box>
             </Box>
           ) : (
-            /* Componente Real do Calendário */
-            <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
-              <DateCalendar
-                value={date}
-                onChange={(newDate) => {
-                  const nextDate = newDate || dayjs();
-                  setDate(nextDate);
-                  if (nextDate.month() !== currentMonth.month()) {
-                    setCurrentMonth(nextDate);
-                  }
-                }}
-                onMonthChange={(newMonth) => {
-                  setCurrentMonth(newMonth);
-                }}
-                slots={{ day: CustomDay }}
-                slotProps={{ day: { highlightedDates, datesWithDocuments, datesUrgent } }}
-                sx={{
-                  width: '100%',
-                  maxWidth: '100%',
-                  maxHeight: 280,
-                  '& .MuiPickersCalendarHeader-root': {
-                    margin: 0,
-                    padding: '4px 8px',
-                    maxHeight: 44,
-                    minHeight: 44,
-                    '& .MuiPickersCalendarHeader-labelContainer': { fontSize: '0.85rem', fontWeight: 800 },
-                  },
-                  '& .MuiDayCalendar-header': {
-                    justifyContent: 'space-around',
-                    '& span': { width: 32, height: 28, fontSize: '0.65rem', fontWeight: 700 }
-                  },
-                  '& .MuiDayCalendar-weekContainer': {
-                    justifyContent: 'space-around',
-                    margin: '4px 0'
-                  },
-                  '& .MuiDayCalendar-monthContainer': { minHeight: 180 }
-                }}
-              />
-            </LocalizationProvider>
+            /* Componente Real do Calendário — sempre montado (overlay trata o loading) */
+            <>
+              <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="pt-br">
+                <DateCalendar
+                  value={selectedDay}
+                  onChange={(newDate) => {
+                    const nextDate = newDate || dayjs();
+                    setSelectedDay(nextDate);
+                    if (!nextDate.isSame(visibleMonth, 'month')) {
+                      setVisibleMonth(nextDate);
+                    }
+                  }}
+                  onMonthChange={(newMonth) => {
+                    setVisibleMonth(newMonth);
+                    if (!selectedDay.isSame(newMonth, 'month')) {
+                      const preservedDay = Math.min(selectedDay.date(), newMonth.daysInMonth());
+                      setSelectedDay(newMonth.date(preservedDay));
+                    }
+                  }}
+                  slots={{ day: CustomDay }}
+                  slotProps={{ day: { datesWithDocuments, datesUrgent } }}
+                  sx={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    maxHeight: 280,
+                    '& .MuiPickersCalendarHeader-root': {
+                      margin: 0,
+                      padding: '4px 8px',
+                      maxHeight: 44,
+                      minHeight: 44,
+                      '& .MuiPickersCalendarHeader-labelContainer': { fontSize: '0.85rem', fontWeight: 800 },
+                    },
+                    '& .MuiDayCalendar-header': {
+                      justifyContent: 'space-around',
+                      '& span': { width: 32, height: 28, fontSize: '0.65rem', fontWeight: 700 }
+                    },
+                    '& .MuiDayCalendar-weekContainer': {
+                      justifyContent: 'space-around',
+                      margin: '4px 0'
+                    },
+                    '& .MuiDayCalendar-monthContainer': { minHeight: 180 }
+                  }}
+                />
+              </LocalizationProvider>
+              {isLoading && (
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                    zIndex: 2,
+                  }}
+                >
+                  <CircularProgress size={32} />
+                </Box>
+              )}
+            </>
           )}
         </Box>
 
@@ -222,7 +245,7 @@ export default function TaxCalendarWidget({ sx, ...other }) {
         {/* LISTA DE ITENS */}
         <Box sx={{ p: 2, pt: 1.5, flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
           <Typography variant="overline" sx={{ fontSize: '0.65rem', fontWeight: 800, color: 'text.secondary', mb: 1.5, display: 'block' }}>
-            {date.format('DD [de] MMMM')}
+            {selectedDay.format('DD [de] MMMM')}
           </Typography>
 
           <Scrollbar sx={{ flex: 1 }}>

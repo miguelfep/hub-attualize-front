@@ -120,7 +120,7 @@ function getClienteLabel(cliente) {
 function FileMetaLines({ file }) {
   const comp = getCompetencia(file);
   const showVenc = Boolean(file?.dataVencimento);
-  if (!comp && !showVenc && !file?.semArquivo) return null;
+  if (!comp && !showVenc) return null;
   return (
     <Stack spacing={0.15}>
       {comp ? (
@@ -131,11 +131,6 @@ function FileMetaLines({ file }) {
       {showVenc ? (
         <Typography variant="caption" color="text.secondary" sx={{ lineHeight: 1.35 }} noWrap>
           Vencimento: {fDate(file.dataVencimento)}
-        </Typography>
-      ) : null}
-      {file?.semArquivo ? (
-        <Typography variant="caption" color="warning.main" sx={{ lineHeight: 1.35 }} noWrap>
-          Sem PDF (sincronizado via PGDAS)
         </Typography>
       ) : null}
     </Stack>

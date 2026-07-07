@@ -9,13 +9,13 @@ import { LoadingButton } from '@mui/lab';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
-import Toolbar from '@mui/material/Toolbar';
 import Divider from '@mui/material/Divider';
+import Toolbar from '@mui/material/Toolbar';
 import MenuItem from '@mui/material/MenuItem';
 import Container from '@mui/material/Container';
+import { useTheme } from '@mui/material/styles';
 import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
-import { alpha, useTheme } from '@mui/material/styles';
 
 import { paths } from 'src/routes/paths';
 import { usePathname } from 'src/routes/hooks';
@@ -26,6 +26,7 @@ import { useBoolean } from 'src/hooks/use-boolean';
 import { toTitleCase } from 'src/utils/helper';
 import axios, { endpoints } from 'src/utils/axios';
 
+import { safeAlpha } from 'src/theme/styles';
 import { confirmarPagamentoDasPortal } from 'src/actions/cliente-portal-guias-api';
 
 import { Logo } from 'src/components/logo';
@@ -382,7 +383,7 @@ export function ClienteLayout({ children }) {
                           fontWeight: 700,
                           flexShrink: 0,
                           '&:hover': {
-                            bgcolor: alpha(banner.corBotaoFundo, 0.85),
+                            bgcolor: safeAlpha(banner.corBotaoFundo, 0.85),
                           },
                         }}
                       >
@@ -398,12 +399,12 @@ export function ClienteLayout({ children }) {
                         onClick={() => setConfirmPagamentoOpen(true)}
                         sx={{
                           color: banner.corTexto,
-                          borderColor: alpha(banner.corTexto || '#fff', 0.7),
+                          borderColor: safeAlpha(banner.corTexto || '#fff', 0.7),
                           fontWeight: 700,
                           flexShrink: 0,
                           '&:hover': {
                             borderColor: banner.corTexto,
-                            bgcolor: alpha(banner.corTexto || '#fff', 0.12),
+                            bgcolor: safeAlpha(banner.corTexto || '#fff', 0.12),
                           },
                         }}
                       >

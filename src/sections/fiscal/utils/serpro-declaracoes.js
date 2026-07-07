@@ -25,7 +25,7 @@ function periodoApuracaoToMesAno(periodoApuracao) {
   return { ano: digits.slice(0, 4), mes: digits.slice(4, 6) };
 }
 
-function mapOperacao(op, periodoApuracao, index) {
+function mapOperacao(op, periodoApuracao, index, ultimaEmissao) {
   const { mes, ano } = periodoApuracaoToMesAno(periodoApuracao);
   const competencia = periodoApuracaoToCompetencia(periodoApuracao) || '';
   const tipoOperacao = op?.tipoOperacao || 'Operação';
@@ -63,15 +63,37 @@ function mapOperacao(op, periodoApuracao, index) {
     dasPago: typeof das?.dasPago === 'boolean' ? das.dasPago : null,
     detail: detailParts.join(' · '),
     canEmitDas: Boolean(mes && ano),
+    ultimaEmissao: ultimaEmissao || null,
   };
 }
 
-function flattenPeriodo(periodo, rows) {
+function flattenPeriodo(periodo, rows, ultimaEmissaoMap = {}) {
   if (!periodo || typeof periodo !== 'object') return;
   const pa = periodo.periodoApuracao ?? '';
   const operacoes = Array.isArray(periodo.operacoes) ? periodo.operacoes : [];
-  operacoes.forEach((op, index) => {
-    rows.push(mapOperacao(op, pa, index));
+  if (!operacoes.length) return;
+
+  const ultimaEmissao = ultimaEmissaoMap[String(pa)] || null;
+  const mapped = operacoes.map((op, index) => mapOperacao(op, pa, index, ultimaEmissao));
+
+  const lastIndex = mapped.length - 1;
+  const lastRow = mapped[lastIndex];
+  const hasMesAno = Boolean(lastRow.mes && lastRow.ano);
+
+  // Vencimento DAS: dia 20 do mês seguinte à competência (Simples Nacional)
+  const { mes, ano } = periodoApuracaoToMesAno(pa);
+  const mesNum = parseInt(mes, 10);
+  const anoNum = parseInt(ano, 10);
+  const dataVencimento = new Date(anoNum, mesNum, 20);
+  const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
+  const vencida = dataVencimento < hoje;
+
+  const ultimaNaoPagaVencida = lastRow.dasPago !== true && vencida;
+
+  mapped.forEach((row, index) => {
+    row.canEmitDas = index === lastIndex && ultimaNaoPagaVencida && hasMesAno;
+    rows.push(row);
   });
 }
 
@@ -80,7 +102,7 @@ function flattenPeriodo(periodo, rows) {
  * @param {object} payload - res.data da consulta
  * @returns {Array}
  */
-export function parseSerproDeclaracoesPayload(payload) {
+export function parseSerproDeclaracoesPayload(payload, ultimaEmissaoMap = {}) {
   const root = payload?.declaracoes ?? payload;
   const dados = root?.dados ?? root;
   if (!dados || typeof dados !== 'object') return [];
@@ -88,11 +110,11 @@ export function parseSerproDeclaracoesPayload(payload) {
   const rows = [];
 
   if (Array.isArray(dados.periodos)) {
-    dados.periodos.forEach((periodo) => flattenPeriodo(periodo, rows));
+    dados.periodos.forEach((periodo) => flattenPeriodo(periodo, rows, ultimaEmissaoMap));
   }
 
   if (dados.periodo && typeof dados.periodo === 'object') {
-    flattenPeriodo(dados.periodo, rows);
+    flattenPeriodo(dados.periodo, rows, ultimaEmissaoMap);
   }
 
   return rows;
