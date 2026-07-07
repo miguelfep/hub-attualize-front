@@ -8,7 +8,6 @@ import { CardPayment } from '@mercadopago/sdk-react';
 
 import {
   Box,
-  Grid,
   Card,
   Chip,
   Radio,
@@ -199,8 +198,6 @@ export function OrcamentoAprovado({
           telefone: onlyDigits(formData.telefone),
         };
 
-        console.log('📤 Enviando dados do formulário para checkout:', dataInvoice);
-
         // Criar pedido e gerar PIX em uma única chamada
         // A API irá: atualizar cliente/lead com os dados do formulário e gerar o PIX
         await crirarPedidoOrcamento(invoice._id, dataInvoice);
@@ -262,7 +259,6 @@ export function OrcamentoAprovado({
         telefone: onlyDigits(formData.telefone),
       };
 
-      console.log("DADOS DA INVOICE PARA CRIAR PEDIDO", dataInvoice);
       await crirarPedidoOrcamento(invoice._id, dataInvoice);
 
       // Chamar a função de atualização da invoice
@@ -277,54 +273,53 @@ export function OrcamentoAprovado({
   };
 
   return (
-    <Box sx={{ pt: { xs: 2, sm: 4 }, pb: { xs: 8, md: 10 }, px: { xs: 2, sm: 3 } }}>
-      <Typography variant="h4" align="center" sx={{ mb: 1, fontSize: { xs: '1.15rem', sm: '1.35rem' } }}>
-        Pronto para simplificar sua contabilidade?
-      </Typography>
-      <Typography variant="h5" align="center" sx={{ mb: { xs: 3, md: 4 }, color: 'text.secondary', fontSize: { xs: '1rem', sm: '1.25rem' } }}>
-        Conclua seu orçamento agora!
-      </Typography>
+    <Box>
+      <Box sx={{ textAlign: 'center', mb: { xs: 3, md: 4 } }}>
+        <Typography variant="h4" sx={{ mb: 0.5 }}>
+          Proposta aprovada! 🎉
+        </Typography>
+        <Typography variant="body1" sx={{ color: 'text.secondary' }}>
+          Agora é só escolher a forma de pagamento para concluir.
+        </Typography>
+      </Box>
 
       {/* Mobile: formulário primeiro, depois resumo. Desktop: form à esquerda, resumo à direita */}
-      <Grid container spacing={{ xs: 3, md: 4 }} alignItems="flex-start">
-        <Grid xs={12} md={8} sx={{ order: { xs: 1, md: 1 }, pr: { md: 3 } }}>
-          <Card
-            variant="outlined"
-            sx={{
-              p: { xs: 2.5, sm: 4, md: 5 },
-              borderRadius: 2,
-              minHeight: 320,
-            }}
-          >
-            <PaymentBillingAddress
-              formData={formData}
-              errors={errors}
-              handleCepChange={handleCepChange}
-              handleInputChange={handleInputChange}
-              handleTelefoneChange={handleTelefoneChange}
-              handleCpfCnpjChange={handleCpfCnpjChange}
-              loadingCep={loadingCep}
-              cepNotFound={cepNotFound}
-            />
-            <Box sx={{ mt: 4 }}>
-              <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
-            </Box>
-            {method === 'pix' && (
-              <Alert severity="info" sx={{ mt: 3 }}>
-                Clique em &quot;Finalizar pedido&quot; para gerar o QR Code PIX. O QR Code aparecerá na seção &quot;Detalhes da Cobrança&quot;.
-              </Alert>
-            )}
-            {method === 'credit_card' && (
-              <Alert severity="info" sx={{ mt: 3 }}>
-                Clique em &quot;Finalizar pedido&quot; e preencha os dados do cartão na próxima tela. Parcelamento em até 4x.
-              </Alert>
-            )}
-          </Card>
-        </Grid>
-        <Grid xs={12} md={4} sx={{ order: { xs: 2, md: 2 }, pl: { md: 2 } }}>
-          <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} gerandoPix={gerandoPix} method={method} />
-        </Grid>
-      </Grid>
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          alignItems: 'flex-start',
+          gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 340px' },
+        }}
+      >
+        <Card variant="outlined" sx={{ p: { xs: 2.5, sm: 4 }, borderRadius: 2 }}>
+          <PaymentBillingAddress
+            formData={formData}
+            errors={errors}
+            handleCepChange={handleCepChange}
+            handleInputChange={handleInputChange}
+            handleTelefoneChange={handleTelefoneChange}
+            handleCpfCnpjChange={handleCpfCnpjChange}
+            loadingCep={loadingCep}
+            cepNotFound={cepNotFound}
+          />
+          <Box sx={{ mt: 4 }}>
+            <PaymentMethods method={method} handleChangeMethod={handleChangeMethod} />
+          </Box>
+          {method === 'pix' && (
+            <Alert severity="info" sx={{ mt: 3 }}>
+              Clique em &quot;Finalizar pedido&quot; para gerar o QR Code PIX na hora.
+            </Alert>
+          )}
+          {method === 'credit_card' && (
+            <Alert severity="info" sx={{ mt: 3 }}>
+              Clique em &quot;Finalizar pedido&quot; e preencha os dados do cartão na próxima tela. Parcelamento em até 4x.
+            </Alert>
+          )}
+        </Card>
+
+        <PaymentSummary invoice={invoice} handleFinalize={handleFinalize} isCreating={isCreating} gerandoPix={gerandoPix} method={method} />
+      </Box>
 
       {/* Dialog cartão de crédito — nova API ms-me POST /api/checkout/:id/pedido */}
       <OrcamentoCartaoDialog
@@ -734,10 +729,12 @@ function PaymentSummary({ invoice, handleFinalize, isCreating, gerandoPix, metho
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>Subtotal</Typography>
           <Typography variant="body2">{fCurrency(invoice?.subTotal)}</Typography>
         </Stack>
-        <Stack direction="row" justifyContent="space-between">
-          <Typography variant="body2" sx={{ color: 'text.secondary' }}>Desconto</Typography>
-          <Typography variant="body2" color="error.main">- {fCurrency(invoice?.desconto)}</Typography>
-        </Stack>
+        {Number(invoice?.desconto) > 0 && (
+          <Stack direction="row" justifyContent="space-between">
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>Desconto</Typography>
+            <Typography variant="body2" color="success.main">- {fCurrency(invoice?.desconto)}</Typography>
+          </Stack>
+        )}
         <Divider sx={{ borderStyle: 'dashed' }} />
         <Stack direction="row" justifyContent="space-between">
           <Typography variant="subtitle1">Total</Typography>
