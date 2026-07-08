@@ -33,7 +33,17 @@ export const NavItem = forwardRef(
       >
         {title}
 
-        {hasChild && <Iconify width={16} icon="eva:arrow-ios-downward-fill" sx={{ ml: 0.75 }} />}
+        {hasChild && (
+          <Iconify
+            width={16}
+            icon="eva:arrow-ios-downward-fill"
+            sx={{
+              ml: 0.75,
+              transition: (theme) => theme.transitions.create('transform', { duration: 180 }),
+              transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          />
+        )}
       </StyledNavItem>
     );
   }
@@ -76,14 +86,26 @@ const StyledNavItem = styled(ButtonBase, {
      */
     ...(rootItem && {
       ...baseStyles.item,
+      px: 1.25,
+      py: 0.75,
       height: '100%',
-      '&:hover': { opacity: 0.64, '&::before': baseStyles.dot },
+      borderRadius: 1.25,
+      '&:hover': {
+        opacity: 0.9,
+        backgroundColor: theme.vars.palette.action.hover,
+        '&::before': baseStyles.dot,
+      },
       ...(active && {
         color: theme.vars.palette.primary.main,
         fontWeight: theme.typography.fontWeightSemiBold,
+        backgroundColor: theme.vars.palette.action.hover,
         '&::before': baseStyles.dot,
       }),
-      ...(open && { opacity: 0.64, '&::before': baseStyles.dot }),
+      ...(open && {
+        opacity: 0.95,
+        backgroundColor: theme.vars.palette.action.hover,
+        '&::before': baseStyles.dot,
+      }),
     }),
 
     /**
@@ -91,16 +113,22 @@ const StyledNavItem = styled(ButtonBase, {
      */
     ...(subItem && {
       ...baseStyles.item,
+      width: '100%',
+      px: 1,
+      py: 0.75,
+      borderRadius: 1,
       justifyContent: 'flex-start',
       color: theme.vars.palette.text.secondary,
-      fontSize: theme.typography.pxToRem(13),
+      fontSize: theme.typography.pxToRem(14),
       '&:hover': {
         color: theme.vars.palette.text.primary,
+        backgroundColor: theme.vars.palette.action.hover,
         '&::before': baseStyles.dot,
       },
       ...(active && {
         color: theme.vars.palette.text.primary,
         fontWeight: theme.typography.fontWeightSemiBold,
+        backgroundColor: theme.vars.palette.action.selected,
         '&::before': baseStyles.dot,
       }),
     }),

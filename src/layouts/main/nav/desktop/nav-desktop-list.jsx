@@ -23,6 +23,7 @@ export function NavList({ data }) {
   const theme = useTheme();
 
   const navItemRef = useRef(null);
+  const closeTimerRef = useRef(null);
 
   const pathname = usePathname();
 
@@ -34,19 +35,41 @@ export function NavList({ data }) {
 
   useEffect(() => {
     if (openMenu) {
-      handleCloseMenu();
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
+      setOpenMenu(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
+
+  useEffect(
+    () => () => {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+      }
+    },
+    []
+  );
 
   const handleOpenMenu = useCallback(() => {
     if (data.children) {
+      if (closeTimerRef.current) {
+        clearTimeout(closeTimerRef.current);
+        closeTimerRef.current = null;
+      }
       setOpenMenu(true);
     }
   }, [data.children]);
 
   const handleCloseMenu = useCallback(() => {
-    setOpenMenu(false);
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+    }
+    closeTimerRef.current = setTimeout(() => {
+      setOpenMenu(false);
+      closeTimerRef.current = null;
+    }, 180);
   }, []);
 
   const renderNavItem = (
@@ -97,13 +120,13 @@ export function NavList({ data }) {
                 onMouseEnter={handleOpenMenu}
                 onMouseLeave={handleCloseMenu}
                 sx={{
-                  pt: 0.5,
+                  pt: 1.25,
                   left: 0,
                   right: 0,
                   mx: 'auto',
+                  width: 'min(1280px, calc(100vw - 24px))',
                   position: 'fixed',
                   zIndex: theme.zIndex.modal,
-                  maxWidth: theme.breakpoints.values.lg,
                   top: Math.round(clientRect.top + clientRect.height),
                 }}
               >
@@ -111,13 +134,18 @@ export function NavList({ data }) {
                   component="nav"
                   sx={{
                     ...paper({ theme, dropdown: true }),
-                    borderRadius: 2,
-                    p: theme.spacing(5, 1, 1, 4),
+                    borderRadius: 2.5,
+                    border: `1px solid ${theme.vars.palette.divider}`,
+                    boxShadow: theme.customShadows?.dropdown || theme.shadows[24],
+                    pl: { xs: 3, md: 5 },
+                    pr: { xs: 2.5, md: 4 },
+                    pt: { xs: 2.5, md: 3 },
+                    pb: { xs: 3.25, md: 4 },
                   }}
                 >
                   <NavUl
                     sx={{
-                      gap: 3,
+                      gap: { xs: 1.5, md: 2.25 },
                       width: 1,
                       flexWrap: 'wrap',
                       flexDirection: 'row',
@@ -165,7 +193,13 @@ function NavSubList({ data, subheader, sx, ...other }) {
         <ListSubheader
           disableSticky
           disableGutters
-          sx={{ fontSize: 11, color: 'text.primary', typography: 'overline' }}
+          sx={{
+            mb: 0.25,
+            fontSize: 12,
+            letterSpacing: 0.6,
+            color: 'text.primary',
+            typography: 'overline',
+          }}
         >
           {subheader}
         </ListSubheader>
@@ -176,7 +210,7 @@ function NavSubList({ data, subheader, sx, ...other }) {
               <NavItemDashboard path={item.path} />
             </NavLi>
           ) : (
-            <NavLi key={item.title} sx={{ mt: 1.5 }}>
+            <NavLi key={item.title} sx={{ mt: 1.25 }}>
               <NavItem
                 subItem
                 title={item.title}

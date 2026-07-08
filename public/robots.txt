@@ -1,6 +1,7 @@
 # *
 User-agent: *
 Allow: /
+Allow: /_next/static/   # <-- IMPORTANTE: Permite que o Google leia os scripts visuais
 Disallow: /dashboard/
 Disallow: /portal-cliente/
 Disallow: /auth/

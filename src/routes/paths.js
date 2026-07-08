@@ -68,10 +68,16 @@ export const paths = {
     },
   },
   post: {
-    root: `/blog`,
-    blog: `/blog`,
-    details: (slug) => `/blog/${slug}`,
-    demo: { details: `/blog/${paramCase(MOCK_TITLE)}` },
+    root: `/blog/`,
+    blog: `/blog/`,
+    details: (slug) => {
+      const normalizedSlug = typeof slug === 'string' ? slug.trim() : '';
+      if (!normalizedSlug || normalizedSlug === 'undefined' || normalizedSlug === 'null') {
+        return `/blog/`;
+      }
+      return `/blog/${normalizedSlug}/`;
+    },
+    demo: { details: `/blog/${paramCase(MOCK_TITLE)}/` },
   },
   // AUTH
   auth: {

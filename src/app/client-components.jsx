@@ -2,6 +2,7 @@
 
 import { Snackbar } from 'src/components/snackbar';
 import { SettingsDrawer } from 'src/components/settings';
+import { ExitIntentDiscountModal } from 'src/components/exit-intent';
 
 import { CheckoutProvider } from 'src/sections/checkout/context';
 
@@ -17,6 +18,7 @@ export function ClientComponents({ children }) {
     <CheckoutProvider>
       <Snackbar />
       <SettingsDrawer />
+      <ExitIntentDiscountModal />
       {children}
     </CheckoutProvider>
   );
