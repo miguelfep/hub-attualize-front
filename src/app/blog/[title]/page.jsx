@@ -1,5 +1,6 @@
 import { CONFIG } from 'src/config-global';
 import { getBlogPosts, getBlogPostBySlug, getBlogLatestPosts } from 'src/actions/blog-ssr';
+import { permanentRedirect } from 'next/navigation';
 
 import { StructuredData } from 'src/components/seo/structured-data';
 
@@ -10,19 +11,26 @@ import { PostDetailsHomeView } from 'src/sections/blog/view';
 const SITE_URL = 'https://www.attualize.com.br';
 
 const getBlogPostUrl = (slug) => `${SITE_URL}/blog/${slug}/`;
+const normalizeSlug = (value) => {
+  const slug = typeof value === 'string' ? value.trim() : '';
+  if (!slug || slug === 'undefined' || slug === 'null') return '';
+  return slug;
+};
 
 export async function generateMetadata({ params }) {
   try {
     const { title } = await params;
+    const normalizedTitle = normalizeSlug(title);
 
-    if (!title) {
+    if (!normalizedTitle) {
       return {
         title: `Blog - ${CONFIG.site.name}`,
         description: 'Blog da Attualize Contábil',
+        robots: { index: false, follow: false },
       };
     }
 
-    const post = await getBlogPostBySlug(title);
+    const post = await getBlogPostBySlug(normalizedTitle);
 
     if (post) {
       const postUrl = post.canonicalUrl || getBlogPostUrl(post.slug);
@@ -75,15 +83,16 @@ export async function generateMetadata({ params }) {
 
 export default async function Page({ params }) {
   const { title } = await params;
+  const normalizedTitle = normalizeSlug(title);
 
-  if (!title) {
-    return <PostDetailsHomeView post={null} latestPosts={[]} />;
+  if (!normalizedTitle) {
+    permanentRedirect('/blog/');
   }
 
   try {
     // Em paralelo (antes eram sequenciais → somavam a latência das duas).
     const [post, latestPosts] = await Promise.all([
-      getBlogPostBySlug(title),
+      getBlogPostBySlug(normalizedTitle),
       getBlogLatestPosts(8),
     ]);
 

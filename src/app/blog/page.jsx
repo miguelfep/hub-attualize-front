@@ -22,13 +22,13 @@ export const metadata = {
     'contabilidade para estética',
   ],
   alternates: {
-    canonical: `${SITE_URL}/blog`,
+    canonical: `${SITE_URL}/blog/`,
   },
   openGraph: {
     title: 'Blog - Artigos sobre Contabilidade, Gestão e Negócios',
     description:
       'Acesse nosso blog e fique por dentro de artigos sobre contabilidade, gestão empresarial, dicas para psicólogos, clínicas de estética e muito mais.',
-    url: `${SITE_URL}/blog`,
+    url: `${SITE_URL}/blog/`,
     type: 'website',
   },
   twitter: {
@@ -49,7 +49,7 @@ export default async function Page() {
     name: 'Blog Attualize Contábil',
     description:
       'Acesse nosso blog e fique por dentro de artigos sobre contabilidade, gestão empresarial, dicas para psicólogos, clínicas de estética e muito mais.',
-    url: `${SITE_URL}/blog`,
+    url: `${SITE_URL}/blog/`,
     publisher: {
       '@type': 'Organization',
       name: CONFIG.site.name,

@@ -54,13 +54,18 @@ export async function GET() {
       }
     }
 
-    // Criar URLs dos posts
-    const postFields = allPosts.map((post) => ({
-      loc: `${SITE_URL}/blog/${post.slug}/`,
-      lastmod: normalizeDate(post.modified || post.date),
-      changefreq: 'weekly',
-      priority: 0.8,
-    }));
+    // Criar URLs dos posts (ignora slugs inválidos para não emitir /blog/undefined).
+    const postFields = allPosts
+      .filter((post) => {
+        const slug = typeof post?.slug === 'string' ? post.slug.trim() : '';
+        return slug && slug !== 'undefined' && slug !== 'null';
+      })
+      .map((post) => ({
+        loc: `${SITE_URL}/blog/${post.slug}/`,
+        lastmod: normalizeDate(post.modified || post.date),
+        changefreq: 'weekly',
+        priority: 0.8,
+      }));
 
     // Adicionar outras páginas públicas importantes
     const staticPages = [
@@ -107,7 +112,61 @@ export async function GET() {
         priority: 0.8,
       },
       {
+        loc: `${SITE_URL}/contabilidade-para-negocios-da-area-da-saude/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-medicos/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-dentistas/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-fisioterapeutas/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-nutricionistas/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-fonoaudiologos/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-terapeutas/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
         loc: `${SITE_URL}/contabilidade-para-clinicas-de-estetica/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-profissional-parceiro/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-prestadores-de-servicos/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.8,

@@ -1,4 +1,4 @@
-import { redirect } from 'next/navigation';
+import { permanentRedirect } from 'next/navigation';
 
 // ----------------------------------------------------------------------
 
@@ -7,8 +7,13 @@ import { redirect } from 'next/navigation';
  * Redirecionamento 301 para SEO
  */
 export default async function Page({ params }) {
-  const { title } = params;
-  
+  const { title } = await params;
+  const normalizedTitle = typeof title === 'string' ? title.trim() : '';
+
+  if (!normalizedTitle || normalizedTitle === 'undefined' || normalizedTitle === 'null') {
+    permanentRedirect('/blog/');
+  }
+
   // Redirecionamento permanente (301) para /blog/[title]
-  redirect(`/blog/${title}`);
+  permanentRedirect(`/blog/${normalizedTitle}/`);
 }
