@@ -25,9 +25,36 @@ const DISCOUNT_CODE = 'ATTUALIZE10';
 const SESSION_KEY_SHOWN = 'attualize_exit_intent_shown_v1';
 const STORAGE_KEY_CONVERTED = 'attualize_exit_intent_converted_v1';
 
-const BLOCKED_PREFIXES = ['/dashboard', '/portal-cliente', '/auth', '/auth-demo', '/error'];
+// O exit-intent é ferramenta de CAPTAÇÃO: só aparece em páginas de marketing/conteúdo
+// (allowlist). Páginas transacionais — orçamento, fatura, fluxos de abertura/alteração
+// contratados, dashboard, portal — nunca exibem: cliente com proposta fechada veria a
+// oferta e pediria desconto sobre algo já negociado.
+const ALLOWED_EXACT = ['/', '/sobre'];
 
-const isBlockedPath = (pathname) => BLOCKED_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+const ALLOWED_PREFIXES = [
+  '/contabilidade-para-', // todas as landings de especialidade
+  '/fale-conosco',
+  '/blog',
+  '/post',
+  '/faqs',
+  '/abertura', // wizard público de captação (inclui /abertura-cnpj-psicologo)
+  '/aulao-reforma',
+  '/como-instalar-certificado-digital',
+  '/imposto-de-renda',
+  '/jornada-defina',
+  '/medpass',
+];
+
+const normalizePath = (pathname) => {
+  const semBarraFinal = String(pathname || '/').replace(/\/+$/, '');
+  return semBarraFinal === '' ? '/' : semBarraFinal;
+};
+
+const isAllowedPath = (pathname) => {
+  const path = normalizePath(pathname);
+  if (ALLOWED_EXACT.includes(path)) return true;
+  return ALLOWED_PREFIXES.some((prefix) => path.startsWith(prefix));
+};
 
 const MODAL_VARIANTS = [
   {
@@ -88,7 +115,7 @@ export function ExitIntentDiscountModal() {
 
   const isEligiblePage = useMemo(() => {
     if (!pathname) return false;
-    return !isBlockedPath(pathname);
+    return isAllowedPath(pathname);
   }, [pathname]);
 
   const variant = useMemo(() => getVariantByPath(pathname || '/'), [pathname]);
