@@ -210,7 +210,7 @@ export const navData = [
         title: 'Fiscal',
         path: paths.dashboard.fiscal.root,
         icon: ICONS.tax,
-        roles: ['admin', 'financeiro', 'operacional', 'gerencial'],
+        roles: ['admin', 'financeiro', 'operacional', 'gerencial', 'contabil_externo'],
         children: [
           {
             title: 'Nota Fiscal',
@@ -226,6 +226,11 @@ export const navData = [
             title: 'Caixa Postal',
             path: paths.dashboard.fiscal.caixaPostal,
             roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
+          },
+          {
+            title: 'Reforma Tributária',
+            path: paths.dashboard.fiscal.reformaTributaria.root,
+            roles: ['admin', 'operacional', 'gerencial', 'contabil_externo'],
           },
         ],
       },

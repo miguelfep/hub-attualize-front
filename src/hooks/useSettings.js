@@ -50,6 +50,7 @@ export function useSettings() {
     interConfigCompleta,
     interProntoParaBoleto,
     podeUsarAgendamentos: isFuncionalidadeAtiva('agendamentos'),
+    podeUsarReformaTributariaDiagnostico: isFuncionalidadeAtiva('reformaTributariaDiagnostico'),
     possuiFuncionario,
     possuiExtrato: settingsSafe?.possuiExtrato, // Novo campo
     limiteClientes: settingsSafe.configuracoes?.limiteClientes,

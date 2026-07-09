@@ -102,7 +102,6 @@ export const MEDICOS = {
     {
       title: 'Dra.',
       name: 'Camila Ferreira',
-      registry: 'CRM-PR',
       city: 'Curitiba - PR',
       testimonial:
         'Migrei do carnê-leão para o CNPJ com a Attualize e a economia foi imediata. Eles cuidam de tudo e eu finalmente parei de perder tempo com burocracia.',
@@ -111,7 +110,6 @@ export const MEDICOS = {
     {
       title: 'Dr.',
       name: 'Eduardo Tavares',
-      registry: 'CRM-DF',
       city: 'Brasília - DF',
       testimonial:
         'A análise de equiparação hospitalar reduziu drasticamente os impostos da nossa clínica. Profissionais que realmente conhecem a área da saúde.',
@@ -120,7 +118,6 @@ export const MEDICOS = {
     {
       title: 'Dr.',
       name: 'Marcos Vinícius Rocha',
-      registry: 'CRM-SP',
       city: 'São Paulo - SP',
       testimonial:
         'Faço plantões em três hospitais e a Attualize organizou tudo: notas, pró-labore e impostos. O atendimento pelo WhatsApp é rápido de verdade.',

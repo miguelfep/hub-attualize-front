@@ -14,6 +14,7 @@ export function usePortalNavData() {
     podeCriarOrcamentos,
     possuiExtrato,
     possuiFuncionario,
+    podeUsarReformaTributariaDiagnostico,
   } = useSettings();
 
   // const departamentoPessoalChildren = [
@@ -164,6 +165,11 @@ export function usePortalNavData() {
         //   icon: <Iconify icon="solar:users-group-rounded-bold-duotone" />,
         //   children: departamentoPessoalChildren,
         // },
+        podeUsarReformaTributariaDiagnostico && {
+          title: 'Reforma Tributária',
+          path: paths.cliente.reformaTributariaDiagnostico,
+          icon: <Iconify icon="solar:calculator-bold-duotone" />,
+        },
         {
           title: 'Programa de indicação',
           path: paths.cliente.indicacoes.root,
