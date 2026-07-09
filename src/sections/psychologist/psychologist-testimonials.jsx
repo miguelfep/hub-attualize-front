@@ -20,7 +20,6 @@ const TESTIMONIALS = [
     id: 1,
     title: 'Dra.',
     name: 'Mariana Silva',
-    crp: 'CRP 08/12345',
     city: 'Curitiba - PR',
     rating: 5,
     testimonial: 'A Attualize revolucionou minha gestão financeira! Com a abertura de CNPJ gratuita e suporte constante, consegui focar 100% nos meus pacientes. Recomendo demais!',
@@ -30,7 +29,6 @@ const TESTIMONIALS = [
     id: 2,
     title: 'Dr.',
     name: 'Carlos Mendes',
-    crp: 'CRP 06/45678',
     city: 'São Paulo - SP',
     rating: 5,
     testimonial: 'Economizei mais de R$ 3.000 no primeiro ano! A equipe é super atenciosa e resolve tudo rápido. Minha contabilidade nunca esteve tão organizada.',
@@ -40,7 +38,6 @@ const TESTIMONIALS = [
     id: 3,
     title: 'Dra.',
     name: 'Juliana Costa',
-    crp: 'CRP 12/23456',
     city: 'Florianópolis - SC',
     rating: 5,
     testimonial: 'O atendimento especializado para psicólogos faz toda a diferença. Eles entendem nossas particularidades e sempre têm soluções práticas. Excelente!',
@@ -50,7 +47,6 @@ const TESTIMONIALS = [
     id: 4,
     title: 'Dr.',
     name: 'Roberto Alves',
-    crp: 'CRP 01/34567',
     city: 'Brasília - DF',
     rating: 5,
     testimonial: 'Migrei de outra contabilidade e foi a melhor decisão! Preço justo, atendimento humanizado e total transparência. Minha vida profissional ficou muito mais leve.',
@@ -60,7 +56,6 @@ const TESTIMONIALS = [
     id: 5,
     title: 'Dra.',
     name: 'Ana Paula Santos',
-    crp: 'CRP 03/56789',
     city: 'Salvador - BA',
     rating: 5,
     testimonial: 'Impressionante como simplificaram minha rotina! Dashboard intuitivo, relatórios claros e sempre disponíveis para tirar dúvidas. Parceria de confiança!',
@@ -70,7 +65,6 @@ const TESTIMONIALS = [
     id: 6,
     title: 'Dr.',
     name: 'Fernando Lima',
-    crp: 'CRP 02/67890',
     city: 'Recife - PE',
     rating: 5,
     testimonial: 'A abertura do CNPJ foi super rápida e sem burocracia. Em menos de 30 dias já estava atendendo legalmente. Processo impecável do início ao fim!',
@@ -231,9 +225,6 @@ export function PsychologistTestimonials() {
                 <Box>
                   <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                     {testimonial.title ? `${testimonial.title} ` : ''}{testimonial.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                    {testimonial.crp}
                   </Typography>
                   <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
                     <Iconify

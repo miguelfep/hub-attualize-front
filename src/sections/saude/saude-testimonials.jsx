@@ -20,7 +20,6 @@ const TESTIMONIALS = [
     id: 1,
     title: 'Dra.',
     name: 'Camila Ferreira',
-    registry: 'CRM-PR',
     city: 'Curitiba - PR',
     rating: 5,
     testimonial:
@@ -31,7 +30,6 @@ const TESTIMONIALS = [
     id: 2,
     title: 'Dr.',
     name: 'Rafael Moreira',
-    registry: 'CRO-SP',
     city: 'São Paulo - SP',
     rating: 5,
     testimonial:
@@ -42,7 +40,6 @@ const TESTIMONIALS = [
     id: 3,
     title: 'Dra.',
     name: 'Patrícia Lemos',
-    registry: 'CRP-SC',
     city: 'Florianópolis - SC',
     rating: 5,
     testimonial:
@@ -53,7 +50,6 @@ const TESTIMONIALS = [
     id: 4,
     title: 'Dr.',
     name: 'Gustavo Andrade',
-    registry: 'CREFITO-MG',
     city: 'Belo Horizonte - MG',
     rating: 5,
     testimonial:
@@ -64,7 +60,6 @@ const TESTIMONIALS = [
     id: 5,
     title: 'Dra.',
     name: 'Renata Campos',
-    registry: 'CRN-RS',
     city: 'Porto Alegre - RS',
     rating: 5,
     testimonial:
@@ -75,7 +70,6 @@ const TESTIMONIALS = [
     id: 6,
     title: 'Dr.',
     name: 'Eduardo Tavares',
-    registry: 'CRM-DF',
     city: 'Brasília - DF',
     rating: 5,
     testimonial:
@@ -207,9 +201,6 @@ export function SaudeTestimonials() {
                   <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
                     {testimonial.title ? `${testimonial.title} ` : ''}
                     {testimonial.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: 'text.secondary', display: 'block' }}>
-                    {testimonial.registry}
                   </Typography>
                   <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
                     <Iconify icon="solar:map-point-bold" width={14} sx={{ color: 'primary.main' }} />

@@ -106,6 +106,7 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
       agendamentos: Boolean(settings?.funcionalidades?.agendamentos),
       // Default ligado: emissão de 2ª via DAS fica disponível no portal para clientes Simples.
       emissaoDas2Via: settings?.funcionalidades?.emissaoDas2Via ?? true,
+      reformaTributariaDiagnostico: Boolean(settings?.funcionalidades?.reformaTributariaDiagnostico),
     }),
     [settings]
   );
@@ -1084,6 +1085,15 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
               />
             }
             label="Emissão de 2ª via DAS (portal)"
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={localState.funcionalidades.reformaTributariaDiagnostico}
+                onChange={handleToggle('reformaTributariaDiagnostico')}
+              />
+            }
+            label="Diagnóstico Reforma Tributária"
           />
         </Grid>
 

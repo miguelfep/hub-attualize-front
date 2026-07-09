@@ -101,7 +101,6 @@ export const FISIOTERAPEUTAS = {
     {
       title: 'Dr.',
       name: 'Gustavo Andrade',
-      registry: 'CREFITO-MG',
       city: 'Belo Horizonte - MG',
       testimonial:
         'Abri meu estúdio de fisioterapia com a Attualize. CNPJ saiu rápido, me orientaram sobre alvará e vigilância sanitária e hoje cuidam de toda a rotina.',
@@ -110,7 +109,6 @@ export const FISIOTERAPEUTAS = {
     {
       title: 'Dra.',
       name: 'Bianca Souto',
-      registry: 'CREFITO-SP',
       city: 'Campinas - SP',
       testimonial:
         'Atendo home care por duas operadoras e a Attualize organizou minhas notas e meu Fator R. Pago muito menos imposto do que quando estava no carnê-leão.',
@@ -119,7 +117,6 @@ export const FISIOTERAPEUTAS = {
     {
       title: 'Dr.',
       name: 'Henrique Vilela',
-      registry: 'CREFITO-RS',
       city: 'Porto Alegre - RS',
       testimonial:
         'Nossa clínica de reabilitação cresceu e a contabilidade acompanhou: folha dos funcionários, impostos e relatórios sempre em dia, com atendimento humano.',

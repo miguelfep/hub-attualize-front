@@ -101,7 +101,6 @@ export const FONOAUDIOLOGOS = {
     {
       title: 'Dra.',
       name: 'Vanessa Ribeiro',
-      registry: 'CRFa-PR',
       city: 'Curitiba - PR',
       testimonial:
         'Saí do carnê-leão para o CNPJ com a orientação da Attualize e a economia foi visível já no primeiro mês. Atendimento rápido e sem burocracia.',
@@ -110,7 +109,6 @@ export const FONOAUDIOLOGOS = {
     {
       title: 'Dr.',
       name: 'André Luiz Mota',
-      registry: 'CRFa-SP',
       city: 'São Paulo - SP',
       testimonial:
         'Presto serviço para duas escolas e uma clínica multidisciplinar. A Attualize organizou meus contratos PJ e as notas de cada contratante.',
@@ -119,7 +117,6 @@ export const FONOAUDIOLOGOS = {
     {
       title: 'Dra.',
       name: 'Carolina Freitas',
-      registry: 'CRFa-SC',
       city: 'Florianópolis - SC',
       testimonial:
         'Faço teleatendimento para pacientes de vários estados e eles cuidam de toda a parte fiscal. Sobra tempo para o que importa: meus pacientes.',

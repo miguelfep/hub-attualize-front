@@ -730,4 +730,22 @@ export const endpoints = {
     stats: `${baseUrl}relatorios/integra-contador/stats`,
     logs: `${baseUrl}relatorios/integra-contador/logs`,
   },
+  // Reforma Tributária — Diagnóstico (comparativo Simples x híbrido IBS/CBS)
+  reformaTributariaDiagnostico: {
+    admin: {
+      list: `${baseUrl}reforma-tributaria-diagnostico`,
+      create: `${baseUrl}reforma-tributaria-diagnostico`,
+      get: (id) => `${baseUrl}reforma-tributaria-diagnostico/${id}`,
+      entradas: (id) => `${baseUrl}reforma-tributaria-diagnostico/${id}/entradas`,
+      calcular: (id) => `${baseUrl}reforma-tributaria-diagnostico/${id}/calcular`,
+      status: (id) => `${baseUrl}reforma-tributaria-diagnostico/${id}/status`,
+      delete: (id) => `${baseUrl}reforma-tributaria-diagnostico/${id}`,
+    },
+    portal: {
+      list: `${baseUrl}reforma-tributaria-diagnostico/portal`,
+      entradas: (id) => `${baseUrl}reforma-tributaria-diagnostico/portal/${id}/entradas`,
+      calcular: (id) => `${baseUrl}reforma-tributaria-diagnostico/portal/${id}/calcular`,
+      resultado: (id) => `${baseUrl}reforma-tributaria-diagnostico/portal/${id}/resultado`,
+    },
+  },
 };

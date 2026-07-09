@@ -155,6 +155,10 @@ export const paths = {
       nfse: `${ROOTS.DASHBOARD}/fiscal/nfse`,
       impostos: `${ROOTS.DASHBOARD}/fiscal/impostos`,
       caixaPostal: `${ROOTS.DASHBOARD}/fiscal/caixa-postal`,
+      reformaTributaria: {
+        root: `${ROOTS.DASHBOARD}/fiscal/reforma-tributaria`,
+        details: (id) => `${ROOTS.DASHBOARD}/fiscal/reforma-tributaria/${id}`,
+      },
     },
     contabil: {
       root: `${ROOTS.DASHBOARD}/contabil/conciliacoes`,
@@ -420,6 +424,7 @@ export const paths = {
     profile: `${ROOTS.CLIENTE}/profile`,
     settings: `${ROOTS.CLIENTE}/settings`,
     conciliacaoBancaria: `${ROOTS.CLIENTE}/conciliacao-bancaria`,
+    reformaTributariaDiagnostico: `${ROOTS.CLIENTE}/reforma-tributaria-diagnostico`,
     conteudos: {
       root: `${ROOTS.CLIENTE}/conteudos`,
       aulaoReforma: `${ROOTS.CLIENTE}/conteudos/aulao-reforma`,

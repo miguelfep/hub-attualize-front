@@ -101,7 +101,6 @@ export const DENTISTAS = {
     {
       title: 'Dr.',
       name: 'Rafael Moreira',
-      registry: 'CRO-SP',
       city: 'São Paulo - SP',
       testimonial:
         'Minha clínica odontológica estava pagando imposto a mais há anos. Com o planejamento tributário deles, a mensalidade da contabilidade se paga sozinha.',
@@ -110,7 +109,6 @@ export const DENTISTAS = {
     {
       title: 'Dra.',
       name: 'Larissa Brandão',
-      registry: 'CRO-PR',
       city: 'Curitiba - PR',
       testimonial:
         'Abri meu primeiro consultório com a Attualize. CNPJ rápido, orientação sobre vigilância sanitária e zero dor de cabeça com impostos.',
@@ -119,7 +117,6 @@ export const DENTISTAS = {
     {
       title: 'Dr.',
       name: 'Thiago Sampaio',
-      registry: 'CRO-MG',
       city: 'Belo Horizonte - MG',
       testimonial:
         'Atendo em duas clínicas como PJ e a Attualize organizou minhas notas e meu pró-labore para aproveitar o Fator R. Recomendo para todo colega dentista.',
