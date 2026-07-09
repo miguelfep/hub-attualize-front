@@ -101,7 +101,6 @@ export const NUTRICIONISTAS = {
     {
       title: 'Dra.',
       name: 'Renata Campos',
-      registry: 'CRN-RS',
       city: 'Porto Alegre - RS',
       testimonial:
         'Eles entendem as particularidades de quem atende em consultório. Minha secretária fala direto com a equipe e tudo flui sem eu precisar parar os atendimentos.',
@@ -110,7 +109,6 @@ export const NUTRICIONISTAS = {
     {
       title: 'Dra.',
       name: 'Isabela Martins',
-      registry: 'CRN-SP',
       city: 'São Paulo - SP',
       testimonial:
         'Atendo 100% online e vendo um curso de reeducação alimentar. A Attualize montou meu CNPJ com os CNAEs certos e cada receita paga o imposto correto.',
@@ -119,7 +117,6 @@ export const NUTRICIONISTAS = {
     {
       title: 'Dr.',
       name: 'Felipe Cardoso',
-      registry: 'CRN-PR',
       city: 'Curitiba - PR',
       testimonial:
         'Saí do carnê-leão e a diferença no fim do mês é enorme. Diagnóstico foi gratuito mesmo e o atendimento pelo WhatsApp é muito rápido.',
