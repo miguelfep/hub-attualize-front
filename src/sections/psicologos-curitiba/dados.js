@@ -84,7 +84,12 @@ export const FAQ_ITEMS = [
 // Links internos para outras especialidades do site (rodapé da página)
 
 export const ESPECIALIDADES_INTERNAS = [
+  { titulo: 'Planejador de Empresa (grátis)', href: '/planejador-de-empresa?segmento=psicologia' },
   { titulo: 'Contabilidade para Psicólogos', href: '/contabilidade-para-psicologos' },
+  {
+    titulo: 'Contabilidade para Médicos em Curitiba',
+    href: '/contabilidade-para-medicos-em-curitiba',
+  },
   { titulo: 'Contabilidade para Médicos', href: '/contabilidade-para-medicos' },
   { titulo: 'Contabilidade para Dentistas', href: '/contabilidade-para-dentistas' },
   { titulo: 'Contabilidade para Fisioterapeutas', href: '/contabilidade-para-fisioterapeutas' },

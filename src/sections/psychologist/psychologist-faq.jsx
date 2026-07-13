@@ -13,30 +13,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 
 import { varFade, MotionViewport } from 'src/components/animate';
 
-// ----------------------------------------------------------------------
-
-const FAQS = [
-  {
-    question: 'Sou de outra cidade e estado, vocês podem me atender?',
-    answer:
-      'Sim. Atendemos psicólogos em 21 estados do Brasil de forma 100% online. Nossas ferramentas digitais eliminam qualquer barreira de distância.',
-  },
-  {
-    question: 'Quando vou precisar pagar a primeira mensalidade?',
-    answer:
-      'Para planos com abertura gratuita sua primeira mensalidade será paga no ato da contratação, caso opte por um plano mensal, sua primeira mensalidade será paga somente no mês seguinte à assinatura do contrato, na data que for escolhida previamente por você.',
-  },
-  {
-    question: 'No contrato, há algum termo de fidelidade por tempo determinado?',
-    answer:
-      'Somente se você desejar que sua abertura de empresa seja grátis, caso contrário, não vai haver nenhuma fidelidade ou multas para cancelar. A única condição é que nos avise com 30 dias de antecedência.',
-  },
-  {
-    question: 'Por que são cobrados mais R$ 50 na mensalidade, caso eu tenha um funcionário CLT?',
-    answer:
-      'Ter um funcinario CLT aumenta o custo da mensalidade em R$ 50,00, pois iremos cuidar da folha de pagamento dele, juntamente com todos os cálculos de impostos e descontos sobre a folha.',
-  },
-];
+import { PSYCHOLOGIST_FAQS as FAQS } from './psychologist-faq-data';
 
 // ----------------------------------------------------------------------
 

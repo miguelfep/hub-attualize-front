@@ -8,4 +8,5 @@ export { PsychologistSteps } from './psychologist-steps';
 export { PsychologistPricing } from './psychologist-pricing';
 export { PsychologistCoverage } from './psychologist-coverage';
 export { PsychologistServices } from './psychologist-services';
+export { PsychologistTaxGuide } from './psychologist-tax-guide';
 export { PsychologistTestimonials } from './psychologist-testimonials';

@@ -7,6 +7,24 @@ import { endpoints, getStorageAssetUrl } from 'src/utils/axios';
 
 const DEFAULT_IMAGE = '/default-image.png';
 
+/**
+ * fetch com teto de tempo. O AbortSignal não é propagado pelo fetch cacheado do
+ * Next (`next.revalidate`), então o race é o que garante que uma API travada não
+ * derrube o build inteiro (o worker de prerender tem limite de 60s por página).
+ */
+function fetchComTimeout(url, options = {}, ms = 15000) {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) => {
+      const timer = setTimeout(
+        () => reject(new Error(`Timeout de ${ms}ms ao chamar ${url}`)),
+        ms
+      );
+      if (typeof timer?.unref === 'function') timer.unref();
+    }),
+  ]);
+}
+
 // Autor "rosto" do blog (foto em public/assets/images/about/anne.jpg)
 export const BLOG_AUTHOR = {
   name: 'Anne Monteiro',
@@ -96,7 +114,7 @@ export async function getBlogPosts(page = 1, limit = 12, extra = {}) {
   try {
     const url = `${endpoints.blog.posts}${buildQuery({ page, limit, ...extra })}`;
 
-    const res = await fetch(url, {
+    const res = await fetchComTimeout(url, {
       // Cache do Next.js: revalida a cada 30 minutos
       next: { revalidate: 1800 },
     });
@@ -136,7 +154,7 @@ export async function getBlogPostBySlug(slug) {
     const decodedSlug = decodeURIComponent(slug.trim());
     const url = endpoints.blog.post(decodedSlug);
 
-    const res = await fetch(url, {
+    const res = await fetchComTimeout(url, {
       // Cache do Next.js: revalida a cada 1 hora
       next: { revalidate: 3600 },
       headers: { Accept: 'application/json' },
@@ -189,7 +207,7 @@ export async function searchBlogPosts(query, page = 1, limit = 12) {
 export async function getBlogPostsSitemapMeta(page = 1, limit = 100) {
   try {
     const url = `${endpoints.blog.posts}${buildQuery({ page, limit })}`;
-    const res = await fetch(url, { cache: 'no-store' });
+    const res = await fetchComTimeout(url, { cache: 'no-store' });
 
     if (!res.ok) throw new Error(`Failed to fetch sitemap posts (${res.status})`);
 

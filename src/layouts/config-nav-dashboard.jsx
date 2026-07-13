@@ -325,6 +325,11 @@ export const navData = [
             path: paths.dashboard.alteracao.root,
           },
           {
+            title: 'Migração',
+            roles: ['admin', 'operacional', 'comercial', 'gerencial'],
+            path: paths.dashboard.migracao.root,
+          },
+          {
             title: 'Licenças',
             roles: ['admin', 'operacional', 'comercial', 'gerencial'],
             path: paths.dashboard.aberturas.licenca,

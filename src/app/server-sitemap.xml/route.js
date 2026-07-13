@@ -112,6 +112,24 @@ export async function GET() {
         priority: 0.8,
       },
       {
+        loc: `${SITE_URL}/planejador-de-empresa/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.9,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-psicologos-em-curitiba/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-medicos-em-curitiba/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
         loc: `${SITE_URL}/contabilidade-para-negocios-da-area-da-saude/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
@@ -155,6 +173,18 @@ export async function GET() {
       },
       {
         loc: `${SITE_URL}/contabilidade-para-clinicas-de-estetica/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-barbearias/`,
+        lastmod: new Date().toISOString(),
+        changefreq: 'monthly',
+        priority: 0.8,
+      },
+      {
+        loc: `${SITE_URL}/contabilidade-para-salao-de-beleza/`,
         lastmod: new Date().toISOString(),
         changefreq: 'monthly',
         priority: 0.8,
