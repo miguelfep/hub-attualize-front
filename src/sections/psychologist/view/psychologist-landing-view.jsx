@@ -20,6 +20,7 @@ import { PsychologistSteps } from '../psychologist-steps';
 import { PsychologistPricing } from '../psychologist-pricing';
 import { PsychologistServices } from '../psychologist-services';
 import { PsychologistCoverage } from '../psychologist-coverage';
+import { PsychologistTaxGuide } from '../psychologist-tax-guide';
 import { PsychologistTestimonials } from '../psychologist-testimonials';
 
 // ----------------------------------------------------------------------
@@ -68,6 +69,9 @@ export function PsychologistLandingView() {
 
       {/* Mapa de Cobertura - 21+ Estados */}
       <PsychologistCoverage />
+
+      {/* Guia tributário nacional - conteúdo SEO (Fator R, MEI, autônomo x PJ) */}
+      <PsychologistTaxGuide />
 
       {/* FAQ - Perguntas frequentes */}
       <PsychologistFaq />

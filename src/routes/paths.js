@@ -28,6 +28,9 @@ export const paths = {
   fonoaudiologosHome: '/contabilidade-para-fonoaudiologos',
   terapeutasHome: '/contabilidade-para-terapeutas',
   profissionalParceiroHome: '/contabilidade-para-profissional-parceiro',
+  barbeariasHome: '/contabilidade-para-barbearias',
+  salaoBelezaHome: '/contabilidade-para-salao-de-beleza',
+  planejadorEmpresa: '/planejador-de-empresa',
   prestadoresServicosHome: '/contabilidade-para-prestadores-de-servicos',
   aberturaCnpjPsicologo: '/abertura-cnpj-psicologo',
   comingSoon: '/coming-soon',
@@ -254,6 +257,9 @@ export const paths = {
     alteracao: {
       root: `${ROOTS.DASHBOARD}/societario/alteracao`,
       edit: (id) => `${ROOTS.DASHBOARD}/societario/alteracao/${id}/edit`,
+    },
+    migracao: {
+      root: `${ROOTS.DASHBOARD}/societario/migracao`,
     },
     comercial: {
       leads: `${ROOTS.DASHBOARD}/comercial/leads`,

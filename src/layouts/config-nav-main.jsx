@@ -33,6 +33,8 @@ export const navData = [
         subheader: 'Beleza e Estética',
         items: [
           { title: 'Clínicas de Estética', path: paths.esteticaHome },
+          { title: 'Barbearias', path: paths.barbeariasHome },
+          { title: 'Salão de Beleza', path: paths.salaoBelezaHome },
           { title: 'Profissional Parceiro', path: paths.profissionalParceiroHome },
         ],
       },
@@ -41,6 +43,11 @@ export const navData = [
         items: [{ title: 'Prestadores de Serviços', path: paths.prestadoresServicosHome }],
       },
     ],
+  },
+  {
+    title: 'Planejador Grátis',
+    path: paths.planejadorEmpresa,
+    icon: <Iconify width={22} icon="solar:calculator-bold-duotone" />,
   },
   {
     title: 'Blog',
