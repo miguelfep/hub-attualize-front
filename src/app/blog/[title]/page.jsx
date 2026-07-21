@@ -17,6 +17,43 @@ const normalizeSlug = (value) => {
   return slug;
 };
 
+const normalizePathname = (pathname = '') => {
+  if (!pathname) return '/';
+  const withLeadingSlash = pathname.startsWith('/') ? pathname : `/${pathname}`;
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
+};
+
+const isInternalCanonical = (rawUrl) => {
+  if (!rawUrl || typeof rawUrl !== 'string') return false;
+  try {
+    const parsed = new URL(rawUrl, SITE_URL);
+    const siteOrigin = new URL(SITE_URL).origin;
+    return parsed.origin === siteOrigin;
+  } catch (_error) {
+    return false;
+  }
+};
+
+const resolvePostCanonicalUrl = (post) => {
+  const fallback = getBlogPostUrl(post.slug);
+
+  if (!post?.canonicalUrl || !isInternalCanonical(post.canonicalUrl)) {
+    return fallback;
+  }
+
+  try {
+    const parsed = new URL(post.canonicalUrl, SITE_URL);
+    const normalizedPath = normalizePathname(parsed.pathname);
+
+    // Só aceitamos canônicos internos de páginas de blog para evitar conflitos.
+    if (!normalizedPath.startsWith('/blog/')) return fallback;
+
+    return `${parsed.origin}${normalizedPath}`;
+  } catch (_error) {
+    return fallback;
+  }
+};
+
 export async function generateMetadata({ params }) {
   try {
     const { title } = await params;
@@ -33,7 +70,7 @@ export async function generateMetadata({ params }) {
     const post = await getBlogPostBySlug(normalizedTitle);
 
     if (post) {
-      const postUrl = post.canonicalUrl || getBlogPostUrl(post.slug);
+      const postUrl = resolvePostCanonicalUrl(post);
       const postTitle = post.seoTitle || post.title;
       const postDescription = post.metaDescription || post.excerpt || 'Descrição da postagem';
       const postImage = post.ogImage || post.imageUrl || `${SITE_URL}/logo/attualize.png`;
@@ -102,7 +139,14 @@ export default async function Page({ params }) {
 
     // JSON-LD: a API já entrega `jsonLd` pronto (Article + FAQPage). Usamos quando disponível;
     // caso contrário, montamos BlogPosting + BreadcrumbList como fallback.
-    const postUrl = post.canonicalUrl || getBlogPostUrl(post.slug);
+    const postUrl = resolvePostCanonicalUrl(post);
+    const canonicalPathname = normalizePathname(new URL(postUrl).pathname);
+    const currentPathname = normalizePathname(`/blog/${normalizedTitle}/`);
+
+    // Consolidar qualquer variação para a URL canônica única.
+    if (canonicalPathname !== currentPathname) {
+      permanentRedirect(canonicalPathname);
+    }
 
     let structuredData = [];
 
