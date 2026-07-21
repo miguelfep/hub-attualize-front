@@ -24,6 +24,9 @@ import { PhoneInput } from 'src/components/phone-input';
 const DISCOUNT_CODE = 'ATTUALIZE10';
 const SESSION_KEY_SHOWN = 'attualize_exit_intent_shown_v1';
 const STORAGE_KEY_CONVERTED = 'attualize_exit_intent_converted_v1';
+const STORAGE_KEY_NEXT_ALLOWED_AT = 'attualize_exit_intent_next_allowed_at_v1';
+const MIN_TIME_ON_PAGE_MS = 30000;
+const DISMISS_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
 
 // O exit-intent é ferramenta de CAPTAÇÃO: só aparece em páginas de marketing/conteúdo
 // (allowlist). Páginas transacionais — orçamento, fatura, fluxos de abertura/alteração
@@ -122,7 +125,13 @@ export function ExitIntentDiscountModal() {
 
   const handleClose = useCallback(() => {
     setOpen(false);
-  }, []);
+
+    // Se fechou sem converter, respeita um intervalo maior para evitar incômodo.
+    if (!leadCaptured && typeof window !== 'undefined') {
+      const nextAllowedAt = String(Date.now() + DISMISS_COOLDOWN_MS);
+      localStorage.setItem(STORAGE_KEY_NEXT_ALLOWED_AT, nextAllowedAt);
+    }
+  }, [leadCaptured]);
 
   const handleCopyCode = useCallback(async () => {
     try {
@@ -194,12 +203,19 @@ export function ExitIntentDiscountModal() {
     if (leadCaptured) return undefined;
     if (sessionStorage.getItem(SESSION_KEY_SHOWN) === '1') return undefined;
     if (localStorage.getItem(STORAGE_KEY_CONVERTED) === '1') return undefined;
+    const now = Date.now();
+    const nextAllowedAt = Number(localStorage.getItem(STORAGE_KEY_NEXT_ALLOWED_AT) || '0');
+    if (nextAllowedAt > now) return undefined;
+
+    const pageEnterAt = now;
 
     const onMouseOut = (event) => {
       if (event.relatedTarget || event.toElement) return;
       if (event.clientY > 8) return;
+      if (Date.now() - pageEnterAt < MIN_TIME_ON_PAGE_MS) return;
 
       sessionStorage.setItem(SESSION_KEY_SHOWN, '1');
+      localStorage.setItem(STORAGE_KEY_NEXT_ALLOWED_AT, String(Date.now() + DISMISS_COOLDOWN_MS));
       setOpen(true);
     };
 
