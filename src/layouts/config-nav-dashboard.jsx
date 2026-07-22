@@ -102,6 +102,24 @@ export const navData = [
 
 
       {
+        title: 'Atendimento',
+        path: paths.dashboard.whatsapp,
+        icon: ICONS.chat,
+        roles: ['admin', 'gerencial', 'operacional', 'comercial', 'financeiro'],
+        children: [
+          {
+            title: 'Inbox',
+            path: paths.dashboard.whatsapp,
+            roles: ['admin', 'gerencial', 'operacional', 'comercial', 'financeiro'],
+          },
+          {
+            title: 'Administração',
+            path: paths.dashboard.whatsappAdmin,
+            roles: ['admin'],
+          },
+        ],
+      },
+      {
         title: 'Tarefas',
         path: paths.dashboard.tarefas.root,
         icon: ICONS.kanban,
