@@ -203,6 +203,31 @@ export const endpoints = {
     root: `${baseUrl}setores`,
     details: (id) => `${baseUrl}setores/${id}`,
   },
+  // Atendimento WhatsApp (WhatsApp Cloud API oficial da Meta). Base: /api/wa.
+  // Todas as rotas exigem JWT (injetado pelo interceptor do axios), exceto o
+  // stream SSE e o download de mídia, que precisam do token na query/URL —
+  // veja `src/actions/whatsapp.js`.
+  wa: {
+    stream: `${baseUrl}wa/stream`,
+    iniciar: `${baseUrl}wa/iniciar`,
+    conversas: `${baseUrl}wa/conversas`,
+    conversa: (id) => `${baseUrl}wa/conversas/${id}`,
+    mensagens: (id) => `${baseUrl}wa/conversas/${id}/mensagens`,
+    midia: (id) => `${baseUrl}wa/conversas/${id}/midia`,
+    atribuir: (id) => `${baseUrl}wa/conversas/${id}/atribuir`,
+    transferir: (id) => `${baseUrl}wa/conversas/${id}/transferir`,
+    status: (id) => `${baseUrl}wa/conversas/${id}/status`,
+    lida: (id) => `${baseUrl}wa/conversas/${id}/lida`,
+    mensagemMidia: (mensagemId) => `${baseUrl}wa/mensagens/${mensagemId}/midia`,
+    templates: `${baseUrl}wa/templates`,
+    template: (name) => `${baseUrl}wa/templates/${name}`,
+    templatesSincronizar: `${baseUrl}wa/templates/sincronizar`,
+    // Administração (admin): canais/números e configuração da API oficial.
+    canais: `${baseUrl}wa/canais`,
+    canal: (id) => `${baseUrl}wa/canais/${id}`,
+    config: `${baseUrl}wa/config`,
+    configTestar: `${baseUrl}wa/config/testar`,
+  },
   queues: {
     stats: `${baseUrl}queues/stats`,
     ui: `${baseUrl}queues/ui`,

@@ -33,14 +33,13 @@ export function NavList({ data }) {
 
   const [clientRect, setClientRect] = useState({ top: 0, height: 0 });
 
+  // Fecha o menu sempre que a rota muda (limpa também o timer de fechamento).
   useEffect(() => {
-    if (openMenu) {
-      if (closeTimerRef.current) {
-        clearTimeout(closeTimerRef.current);
-        closeTimerRef.current = null;
-      }
-      setOpenMenu(false);
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
     }
+    setOpenMenu(false);
   }, [pathname]);
 
   useEffect(
