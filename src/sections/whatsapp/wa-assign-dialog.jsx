@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 
 import Stack from '@mui/material/Stack';
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import TextField from '@mui/material/TextField';
@@ -9,6 +10,8 @@ import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
+
+import { avatarUrl } from 'src/utils/avatar';
 
 import { getSetores } from 'src/actions/setores';
 import { getUsersInternos } from 'src/actions/users';
@@ -37,10 +40,16 @@ export function WaAssignDialog({ open, onClose, conversa, modo = 'atribuir', onC
   useEffect(() => {
     if (!open) return;
     getSetores()
-      .then(setSetoresOpts)
+      .then((res) => setSetoresOpts(Array.isArray(res) ? res : res?.data ?? res?.setores ?? []))
       .catch(() => setSetoresOpts([]));
     getUsersInternos()
-      .then((res) => setUsuariosOpts(Array.isArray(res) ? res : res?.data || res?.usuarios || []))
+      .then((res) => {
+        // getUsersInternos devolve a RESPOSTA do axios: o corpo fica em res.data
+        // e a lista em res.data.data ({ success, data: [...] }). Sempre normaliza p/ array.
+        const body = res?.data ?? res;
+        const arr = Array.isArray(body) ? body : body?.data ?? body?.usuarios ?? [];
+        setUsuariosOpts(Array.isArray(arr) ? arr : []);
+      })
       .catch(() => setUsuariosOpts([]));
   }, [open]);
 
@@ -96,6 +105,24 @@ export function WaAssignDialog({ open, onClose, conversa, modo = 'atribuir', onC
             onChange={(_, v) => setAtendente(v)}
             getOptionLabel={(o) => o?.name || o?.email || ''}
             isOptionEqualToValue={(o, v) => idOf(o) === idOf(v)}
+            renderOption={(props, o) => {
+              const { key, ...optionProps } = props;
+              return (
+                <Stack
+                  component="li"
+                  key={key ?? o._id}
+                  {...optionProps}
+                  direction="row"
+                  alignItems="center"
+                  spacing={1}
+                >
+                  <Avatar src={avatarUrl(o) || undefined} sx={{ width: 26, height: 26, fontSize: 13 }}>
+                    {(o?.name || '?')[0]?.toUpperCase()}
+                  </Avatar>
+                  {o?.name || o?.email}
+                </Stack>
+              );
+            }}
             renderInput={(params) => (
               <TextField {...params} label="Atendente" placeholder="Selecione…" />
             )}

@@ -552,7 +552,11 @@ export default function StatusConciliacaoPage() {
     // ✅ Obter data de início do banco (se houver)
     let dataInicioBanco = null;
     if (banco?.dataInicio) {
-      dataInicioBanco = new Date(banco.dataInicio);
+      // ✅ Normaliza para o PRIMEIRO DIA do mês da dataInicio (getters UTC).
+      // A data é salva com horário (ex.: 12:00) — comparar o timestamp completo
+      // fazia "01/01 00:00 < 01/01 12:00" e pulava o primeiro mês configurado.
+      const d = new Date(banco.dataInicio);
+      dataInicioBanco = new Date(d.getUTCFullYear(), d.getUTCMonth(), 1);
     }
 
     // Gerar meses do ano selecionado
@@ -674,7 +678,11 @@ export default function StatusConciliacaoPage() {
     // ✅ Obter data de início do banco
     let dataInicioBanco = null;
     if (banco?.dataInicio) {
-      dataInicioBanco = new Date(banco.dataInicio);
+      // ✅ Normaliza para o PRIMEIRO DIA do mês da dataInicio (getters UTC).
+      // A data é salva com horário (ex.: 12:00) — comparar o timestamp completo
+      // fazia "01/01 00:00 < 01/01 12:00" e pulava o primeiro mês configurado.
+      const d = new Date(banco.dataInicio);
+      dataInicioBanco = new Date(d.getUTCFullYear(), d.getUTCMonth(), 1);
     }
 
     const anos = new Set();

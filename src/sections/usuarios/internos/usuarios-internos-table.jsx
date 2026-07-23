@@ -4,6 +4,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Table from '@mui/material/Table';
 import Stack from '@mui/material/Stack';
+import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import TableRow from '@mui/material/TableRow';
@@ -17,6 +18,8 @@ import TableContainer from '@mui/material/TableContainer';
 import TablePagination from '@mui/material/TablePagination';
 
 import { useBoolean } from 'src/hooks/use-boolean';
+
+import { avatarUrl } from 'src/utils/avatar';
 
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
@@ -232,24 +235,19 @@ export function UsuariosInternosTable({ usuarios, loading, onEdit, onDelete }) {
                     <TableRow hover key={usuario._id} tabIndex={-1}>
                       <TableCell>
                         <Stack direction="row" alignItems="center" spacing={2}>
-                          <Box
+                          <Avatar
+                            src={avatarUrl(usuario) || undefined}
                             sx={{
                               width: 40,
                               height: 40,
-                              borderRadius: '50%',
                               bgcolor: 'primary.lighter',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
+                              color: 'primary.main',
+                              fontWeight: 'bold',
+                              fontSize: 15,
                             }}
                           >
-                            <Typography
-                              variant="subtitle2"
-                              sx={{ color: 'primary.main', fontWeight: 'bold' }}
-                            >
-                              {usuario.name?.charAt(0)?.toUpperCase() || 'U'}
-                            </Typography>
-                          </Box>
+                            {usuario.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </Avatar>
                           <Stack spacing={0.5}>
                             <Typography variant="subtitle2" sx={{ fontWeight: 'medium' }}>
                               {usuario.name || 'Nome não informado'}

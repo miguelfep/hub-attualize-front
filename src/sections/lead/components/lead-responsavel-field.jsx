@@ -6,6 +6,8 @@ import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import Autocomplete from '@mui/material/Autocomplete';
 
+import { avatarUrl } from 'src/utils/avatar';
+
 import { Iconify } from 'src/components/iconify';
 
 import { podePegarLead, podeReatribuir, temResponsavel } from '../lead-permissions';
@@ -56,14 +58,17 @@ export function LeadResponsavelField({
         renderInput={(params) => (
           <TextField {...params} label="Responsável" placeholder="Selecione um responsável" />
         )}
-        renderOption={(props, option) => (
-          <Stack component="li" direction="row" spacing={1} alignItems="center" {...props}>
-            <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
+        renderOption={(props, option) => {
+          const { key, ...optionProps } = props;
+          return (
+          <Stack component="li" key={key ?? option._id} direction="row" spacing={1} alignItems="center" {...optionProps}>
+            <Avatar src={avatarUrl(option) || undefined} sx={{ width: 24, height: 24, fontSize: 12 }}>
               {option.name?.charAt(0)?.toUpperCase()}
             </Avatar>
             <span>{option.name}</span>
           </Stack>
-        )}
+        );
+        }}
       />
     );
   }

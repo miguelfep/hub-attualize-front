@@ -1,163 +1,116 @@
-import { z as zod } from 'zod';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { isValidPhoneNumber } from 'react-phone-number-input/input';
+'use client';
 
-import Box from '@mui/material/Box';
+import { useState, useCallback } from 'react';
+
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import Button from '@mui/material/Button';
 import Grid from '@mui/material/Unstable_Grid2';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 
+import { avatarUrl } from 'src/utils/avatar';
 import { fData } from 'src/utils/format-number';
 
-import { toast } from 'src/components/snackbar';
-import { Form, Field, schemaHelper } from 'src/components/hook-form';
+import { uploadMeuAvatar } from 'src/actions/users';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { toast } from 'src/components/snackbar';
+import { UploadAvatar } from 'src/components/upload';
+
+import { useAuthContext } from 'src/auth/hooks';
+import { getUser, setUser } from 'src/auth/context/jwt';
 
 // ----------------------------------------------------------------------
+// Minha conta: foto de perfil (upload real → POST /users/me/avatar) e dados
+// básicos (somente leitura — nome/e-mail são gerenciados pelo admin).
+// A foto aparece no chat interno, menções e no menu do usuário.
+// ----------------------------------------------------------------------
 
-export const UpdateUserSchema = zod.object({
-  displayName: zod.string().min(1, { message: 'Name is required!' }),
-  email: zod
-    .string()
-    .min(1, { message: 'Email is required!' })
-    .email({ message: 'Email must be a valid email address!' }),
-  photoURL: schemaHelper.file({
-    message: { required_error: 'Avatar is required!' },
-  }),
-  phoneNumber: schemaHelper.phoneNumber({ isValidPhoneNumber }),
-  country: schemaHelper.objectOrNull({
-    message: { required_error: 'Country is required!' },
-  }),
-  address: zod.string().min(1, { message: 'Address is required!' }),
-  state: zod.string().min(1, { message: 'State is required!' }),
-  city: zod.string().min(1, { message: 'City is required!' }),
-  zipCode: zod.string().min(1, { message: 'Zip code is required!' }),
-  about: zod.string().min(1, { message: 'About is required!' }),
-  // Not required
-  isPublic: zod.boolean(),
-});
+const MAX_AVATAR = 3 * 1024 * 1024; // 3MB
 
 export function AccountGeneral() {
-  const { user } = useMockedUser();
+  const { user, checkUserSession } = useAuthContext();
 
-  const defaultValues = {
-    displayName: user?.displayName || '',
-    email: user?.email || '',
-    photoURL: user?.photoURL || null,
-    phoneNumber: user?.phoneNumber || '',
-    country: user?.country || '',
-    address: user?.address || '',
-    state: user?.state || '',
-    city: user?.city || '',
-    zipCode: user?.zipCode || '',
-    about: user?.about || '',
-    isPublic: user?.isPublic || false,
-  };
+  const [preview, setPreview] = useState(null);
+  const [enviando, setEnviando] = useState(false);
 
-  const methods = useForm({
-    mode: 'all',
-    resolver: zodResolver(UpdateUserSchema),
-    defaultValues,
-  });
+  const fotoAtual = preview || avatarUrl(user);
 
-  const {
-    handleSubmit,
-    formState: { isSubmitting },
-  } = methods;
+  const handleDrop = useCallback(
+    async (acceptedFiles) => {
+      const file = acceptedFiles[0];
+      if (!file) return;
+      if (file.size > MAX_AVATAR) {
+        toast.error(`Imagem acima de ${fData(MAX_AVATAR)}.`);
+        return;
+      }
 
-  const onSubmit = handleSubmit(async (data) => {
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      toast.success('Update success!');
-      console.info('DATA', data);
-    } catch (error) {
-      console.error(error);
-    }
-  });
+      // Preview imediato enquanto envia.
+      const url = URL.createObjectURL(file);
+      setPreview(url);
+      setEnviando(true);
+      try {
+        const res = await uploadMeuAvatar(file);
+        // Atualiza a sessão local para a foto refletir em todo o app (menu, chat).
+        const atual = getUser();
+        if (atual) await setUser({ ...atual, imgprofile: res.imgprofile });
+        await checkUserSession?.();
+        toast.success('Foto de perfil atualizada!');
+      } catch (error) {
+        setPreview(null);
+        toast.error(error?.response?.data?.message || 'Falha ao enviar a foto.');
+      } finally {
+        setEnviando(false);
+      }
+    },
+    [checkUserSession]
+  );
 
   return (
-    <Form methods={methods} onSubmit={onSubmit}>
-      <Grid container spacing={3}>
-        <Grid xs={12} md={4}>
-          <Card
-            sx={{
-              pt: 10,
-              pb: 5,
-              px: 3,
-              textAlign: 'center',
-            }}
-          >
-            <Field.UploadAvatar
-              name="photoURL"
-              maxSize={3145728}
-              helperText={
-                <Typography
-                  variant="caption"
-                  sx={{
-                    mt: 3,
-                    mx: 'auto',
-                    display: 'block',
-                    textAlign: 'center',
-                    color: 'text.disabled',
-                  }}
-                >
-                  Allowed *.jpeg, *.jpg, *.png, *.gif
-                  <br /> max size of {fData(3145728)}
-                </Typography>
-              }
-            />
+    <Grid container spacing={3}>
+      <Grid xs={12} md={4}>
+        <Card sx={{ pt: 8, pb: 5, px: 3, textAlign: 'center' }}>
+          <UploadAvatar
+            value={fotoAtual}
+            onDrop={handleDrop}
+            disabled={enviando}
+            maxSize={MAX_AVATAR}
+            helperText={
+              <Typography
+                variant="caption"
+                sx={{ mt: 3, mx: 'auto', display: 'block', textAlign: 'center', color: 'text.disabled' }}
+              >
+                *.jpeg, *.jpg, *.png, *.webp, *.gif
+                <br /> tamanho máximo de {fData(MAX_AVATAR)}
+              </Typography>
+            }
+          />
 
-            <Field.Switch
-              name="isPublic"
-              labelPlacement="start"
-              label="Public profile"
-              sx={{ mt: 5 }}
-            />
-
-            <Button variant="soft" color="error" sx={{ mt: 3 }}>
-              Delete user
-            </Button>
-          </Card>
-        </Grid>
-
-        <Grid xs={12} md={8}>
-          <Card sx={{ p: 3 }}>
-            <Box
-              rowGap={3}
-              columnGap={2}
-              display="grid"
-              gridTemplateColumns={{
-                xs: 'repeat(1, 1fr)',
-                sm: 'repeat(2, 1fr)',
-              }}
-            >
-              <Field.Text name="displayName" label="Name" />
-              <Field.Text name="email" label="Email address" />
-              <Field.Phone name="phoneNumber" label="Phone number" />
-              <Field.Text name="address" label="Address" />
-
-              <Field.CountrySelect name="country" label="Country" placeholder="Choose a country" />
-
-              <Field.Text name="state" label="State/region" />
-              <Field.Text name="city" label="City" />
-              <Field.Text name="zipCode" label="Zip/code" />
-            </Box>
-
-            <Stack spacing={3} alignItems="flex-end" sx={{ mt: 3 }}>
-              <Field.Text name="about" multiline rows={4} label="About" />
-
-              <LoadingButton type="submit" variant="contained" loading={isSubmitting}>
-                Save changes
-              </LoadingButton>
-            </Stack>
-          </Card>
-        </Grid>
+          <LoadingButton loading={enviando} sx={{ mt: 2 }} disabled>
+            {enviando ? 'Enviando…' : 'Clique na foto para trocar'}
+          </LoadingButton>
+        </Card>
       </Grid>
-    </Form>
+
+      <Grid xs={12} md={8}>
+        <Card sx={{ p: 3 }}>
+          <Typography variant="h6" sx={{ mb: 3 }}>
+            Meus dados
+          </Typography>
+          <Stack spacing={2.5}>
+            <TextField label="Nome" value={user?.name || ''} InputProps={{ readOnly: true }} />
+            <TextField label="E-mail" value={user?.email || ''} InputProps={{ readOnly: true }} />
+            <TextField
+              label="Setores"
+              value={(user?.setores || []).map((s) => s?.nome || s).join(', ') || '—'}
+              InputProps={{ readOnly: true }}
+            />
+            <Typography variant="caption" sx={{ color: 'text.disabled' }}>
+              Nome, e-mail e setores são gerenciados pelos administradores em Usuários.
+            </Typography>
+          </Stack>
+        </Card>
+      </Grid>
+    </Grid>
   );
 }

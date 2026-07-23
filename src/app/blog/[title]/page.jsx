@@ -1,6 +1,7 @@
+import { permanentRedirect } from 'next/navigation';
+
 import { CONFIG } from 'src/config-global';
 import { getBlogPosts, getBlogPostBySlug, getBlogLatestPosts } from 'src/actions/blog-ssr';
-import { permanentRedirect } from 'next/navigation';
 
 import { StructuredData } from 'src/components/seo/structured-data';
 

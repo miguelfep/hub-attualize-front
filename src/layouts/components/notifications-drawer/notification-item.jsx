@@ -24,6 +24,10 @@ const ICONE_POR_TIPO = {
   lead_atribuicao: 'solar:user-check-bold',
   lead_prazo_vencimento: 'solar:clock-circle-bold',
   lead_prazo_digest: 'solar:clock-circle-bold',
+  // Chat interno
+  chat_mencao: 'solar:chat-round-line-bold',
+  chat_dm: 'solar:user-rounded-bold',
+  chat_thread: 'solar:chat-line-bold',
 };
 
 /** Ícone correspondente ao tipo de notificação (reusado fora do drawer). */

@@ -64,3 +64,30 @@ export async function forgotPassword({ email }) {
   return axios.post(`${baseUrl}users/forgot-password`, { email });
 }
 
+
+// ---------------- Foto de perfil (avatar) ----------------
+
+/**
+ * Envia a foto de perfil do PRÓPRIO usuário (multipart 'arquivo').
+ * → { success, imgprofile } — `imgprofile` é o caminho relativo servido pela API.
+ */
+export async function uploadMeuAvatar(file) {
+  const fd = new FormData();
+  fd.append('arquivo', file);
+  const res = await axios.post(`${baseUrl}users/me/avatar`, fd, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+}
+
+/**
+ * Troca a senha do PRÓPRIO usuário (exige a senha atual).
+ * → { success, message } | 400 com mensagem (senha atual incorreta / fraca).
+ */
+export async function alterarMinhaSenha({ senhaAtual, novaSenha }) {
+  const res = await axios.put(`${baseUrl}users/me/password`, {
+    currentPassword: senhaAtual,
+    newPassword: novaSenha,
+  });
+  return res.data;
+}

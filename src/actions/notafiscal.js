@@ -525,7 +525,7 @@ export async function abrirPdfNota(nota) {
       'O PDF da nota está sendo gerado pelo gov.br. Tente novamente em alguns instantes.';
     try {
       const parsed = JSON.parse(await res.data.text());
-      if (parsed?.message) message = parsed.message;
+      if (parsed?.message) ({ message } = parsed);
     } catch {
       // mantém a mensagem padrão
     }

@@ -11,6 +11,8 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import ClickAwayListener from '@mui/material/ClickAwayListener';
 
+import { avatarUrl } from 'src/utils/avatar';
+
 // ----------------------------------------------------------------------
 
 const normalize = (s) =>
@@ -160,7 +162,10 @@ export function MentionInput({ value, onChange, users = [], ...rest }) {
             <MenuList dense>
               {suggestions.map((u, i) => (
                 <MenuItem key={u._id} selected={i === highlight} onClick={() => selecionar(u)}>
-                  <Avatar sx={{ width: 26, height: 26, mr: 1, fontSize: 13 }} src={u.avatarUrl}>
+                  <Avatar
+                    sx={{ width: 26, height: 26, mr: 1, fontSize: 13 }}
+                    src={avatarUrl(u) || u.avatarUrl}
+                  >
                     {(u.name || '?').charAt(0).toUpperCase()}
                   </Avatar>
                   <div style={{ minWidth: 0 }}>
