@@ -35,6 +35,7 @@ import { useAuthContext } from 'src/auth/hooks';
 
 import { ChatNav } from '../chat-nav';
 import { ChatHeader } from '../chat-header';
+import { ChatDropZone } from '../chat-drop-zone';
 import { useChatInbox } from '../hooks/use-chat-inbox';
 import { ChatMessageList } from '../chat-message-list';
 import { ChatMessageInput } from '../chat-message-input';
@@ -75,6 +76,8 @@ export function ChatInternoView() {
     anexarMensagem,
     substituirMensagem,
     ultimaRespostaThread,
+    onlineIds,
+    ausenteIds,
     conectado,
   } = useChatInbox(meuId);
 
@@ -195,13 +198,26 @@ export function ChatInternoView() {
   return (
     <DashboardContent
       maxWidth={false}
-      sx={{ display: 'flex', flex: '1 1 auto', flexDirection: 'column' }}
+      sx={{
+        display: 'flex',
+        flex: '1 1 auto',
+        flexDirection: 'column',
+        // Trava o chat na altura da viewport (descontando o header) para a
+        // rolagem acontecer dentro da lista de mensagens, não na página.
+        height: {
+          xs: 'calc(100dvh - var(--layout-header-mobile-height))',
+          lg: 'calc(100dvh - var(--layout-header-desktop-height))',
+        },
+        pb: 2,
+      }}
     >
       <Card sx={{ flex: '1 1 auto', display: 'flex', overflow: 'hidden', minHeight: 0 }}>
         <Stack direction="row" sx={{ flex: '1 1 auto', minHeight: 0 }}>
           <ChatNav
             canais={canais}
             meuId={meuId}
+            onlineIds={onlineIds}
+            ausenteIds={ausenteIds}
             ehGestor={ehGestor}
             carregando={carregandoLista}
             selecionadoId={selecionadoId}
@@ -215,10 +231,12 @@ export function ChatInternoView() {
 
           <Stack sx={{ flex: '1 1 auto', minWidth: 0 }}>
             {canal ? (
-              <>
+              <ChatDropZone canalId={canal._id} onEnviada={anexarMensagem}>
                 <ChatHeader
                   canal={canal}
                   meuId={meuId}
+                  onlineIds={onlineIds}
+                  ausenteIds={ausenteIds}
                   podeCiclo={podeCiclo}
                   onMembros={() => setDialog('membros')}
                   onWaIniciar={() => setDialog('wa-iniciar')}
@@ -228,6 +246,7 @@ export function ChatInternoView() {
                 />
 
                 <ChatMessageList
+                  canalId={canal._id}
                   mensagens={mensagens}
                   carregando={carregandoCanal}
                   temMais={temMais}
@@ -249,7 +268,7 @@ export function ChatInternoView() {
                   usuarios={usuarios}
                   onEnviada={anexarMensagem}
                 />
-              </>
+              </ChatDropZone>
             ) : (
               <EmptyContent
                 title="Selecione uma conversa"
@@ -301,6 +320,8 @@ export function ChatInternoView() {
         canal={canal}
         usuarios={usuarios}
         ehGestor={ehGestor}
+        onlineIds={onlineIds}
+        ausenteIds={ausenteIds}
         onClose={fechar}
         onMudou={recarregarLista}
       />

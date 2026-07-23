@@ -21,6 +21,7 @@ import { getChatStreamUrl } from 'src/actions/chat-interno';
 //   chat.membro.adicionado   { canalId, usuario }
 //   chat.membro.removido     { canalId, usuario }
 //   chat.lido                { canalId, lastReadAt }        (só para você)
+//   chat.presenca            { usuario, online }            (broadcast)
 // ----------------------------------------------------------------------
 
 const EVENTOS = [
@@ -36,6 +37,7 @@ const EVENTOS = [
   'chat.membro.adicionado',
   'chat.membro.removido',
   'chat.lido',
+  'chat.presenca',
 ];
 
 /**

@@ -13,13 +13,15 @@ import { avatarUrl } from 'src/utils/avatar';
 
 import { Iconify } from 'src/components/iconify';
 
-import { nomeDaConversa } from './chat-nav-item';
+import { outroIdDaDm, nomeDaConversa, statusPresenca } from './chat-nav-item';
 
 // ----------------------------------------------------------------------
 
 export function ChatHeader({
   canal,
   meuId,
+  onlineIds,
+  ausenteIds,
   podeCiclo,
   onMembros,
   onWaIniciar,
@@ -57,9 +59,43 @@ export function ChatHeader({
       />
 
       <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
-        <Typography variant="subtitle1" noWrap>
-          {nome}
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          <Typography variant="subtitle1" noWrap>
+            {nome}
+          </Typography>
+          {!ehCanal &&
+            (() => {
+              const st = statusPresenca(outroIdDaDm(canal, meuId), onlineIds, ausenteIds);
+              const cor = st === 'online' ? 'success.main' : st === 'ausente' ? 'warning.main' : 'text.disabled';
+              return (
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify icon="material-symbols:circle" width={9} sx={{ color: cor }} />
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {st || 'offline'}
+                  </Typography>
+                </Stack>
+              );
+            })()}
+          {ehCanal &&
+            (() => {
+              const ids = membros.map((m) => String(m?.usuario?._id || m?.usuario));
+              const nOnline = ids.filter((id) => onlineIds?.has?.(id)).length;
+              const nAusentes = ids.filter((id) => ausenteIds?.has?.(id)).length;
+              return (
+                <Stack direction="row" alignItems="center" spacing={0.5}>
+                  <Iconify
+                    icon="material-symbols:circle"
+                    width={9}
+                    sx={{ color: nOnline ? 'success.main' : 'text.disabled' }}
+                  />
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    {nOnline} de {ids.length} online
+                    {nAusentes > 0 ? ` · ${nAusentes} ausente${nAusentes > 1 ? 's' : ''}` : ''}
+                  </Typography>
+                </Stack>
+              );
+            })()}
+        </Stack>
         {canal?.descricao && (
           <Typography variant="caption" noWrap sx={{ color: 'text.secondary' }}>
             {canal.descricao}
