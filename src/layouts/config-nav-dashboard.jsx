@@ -120,6 +120,12 @@ export const navData = [
         ],
       },
       {
+        title: 'Chat interno',
+        path: paths.dashboard.chat,
+        icon: ICONS.chat,
+        roles: ['admin', 'gerencial', 'operacional', 'comercial', 'financeiro', 'contabil_externo', 'ir'],
+      },
+      {
         title: 'Tarefas',
         path: paths.dashboard.tarefas.root,
         icon: ICONS.kanban,

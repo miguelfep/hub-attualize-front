@@ -7,6 +7,8 @@ import Typography from '@mui/material/Typography';
 import { paths } from 'src/routes/paths';
 import { useRouter, usePathname } from 'src/routes/hooks';
 
+import { avatarUrl } from 'src/utils/avatar';
+
 import { Label } from 'src/components/label';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
@@ -36,7 +38,7 @@ export function AccountPopover({ data = [], sx, ...other }) {
       <AccountButton
         open={popover.open}
         onClick={popover.onOpen}
-        photoURL={user?.photoURL}
+        photoURL={avatarUrl(user) || user?.photoURL}
         displayName={user?.displayName}
         sx={sx}
         {...other}

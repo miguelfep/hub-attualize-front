@@ -13,6 +13,8 @@ import IconButton from '@mui/material/IconButton';
 import { paths } from 'src/routes/paths';
 import { useRouter, usePathname } from 'src/routes/hooks';
 
+import { avatarUrl } from 'src/utils/avatar';
+
 import { varAlpha } from 'src/theme/styles';
 
 import { Label } from 'src/components/label';
@@ -54,20 +56,27 @@ export function AccountDrawer({ data = [], sx, ...other }) {
     [handleCloseDrawer, router]
   );
 
+  // Clicar na foto abre o Perfil (Minha conta — onde a pessoa troca a própria foto).
   const renderAvatar = (
-    <AnimateAvatar
-      width={96}
-      slotProps={{
-        avatar: { src: user?.photoURL, alt: user?.name },
-        overlay: {
-          border: 2,
-          spacing: 3,
-          color: `linear-gradient(135deg, ${varAlpha(theme.vars.palette.primary.mainChannel, 0)} 25%, ${theme.vars.palette.primary.main} 100%)`,
-        },
-      }}
+    <Box
+      onClick={() => handleClickItem(paths.dashboard.user.account)}
+      title="Abrir meu perfil"
+      sx={{ cursor: 'pointer', '&:hover': { opacity: 0.85 } }}
     >
-      {user?.name?.charAt(0).toUpperCase()}
-    </AnimateAvatar>
+      <AnimateAvatar
+        width={96}
+        slotProps={{
+          avatar: { src: avatarUrl(user) || user?.photoURL, alt: user?.name },
+          overlay: {
+            border: 2,
+            spacing: 3,
+            color: `linear-gradient(135deg, ${varAlpha(theme.vars.palette.primary.mainChannel, 0)} 25%, ${theme.vars.palette.primary.main} 100%)`,
+          },
+        }}
+      >
+        {user?.name?.charAt(0).toUpperCase()}
+      </AnimateAvatar>
+    </Box>
   );
 
   return (
@@ -75,7 +84,7 @@ export function AccountDrawer({ data = [], sx, ...other }) {
       <AccountButton
         open={open}
         onClick={handleOpenDrawer}
-        photoURL={user?.photoURL}
+        photoURL={avatarUrl(user) || user?.photoURL}
         displayName={user?.name}
         sx={sx}
         {...other}

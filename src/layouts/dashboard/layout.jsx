@@ -16,6 +16,7 @@ import { varAlpha, stylesMode } from 'src/theme/styles';
 
 import { bulletColor } from 'src/components/nav-section';
 import { useSettingsContext } from 'src/components/settings';
+import { GlobalChatAlerts } from 'src/components/chat-alerts/global-chat-alerts';
 
 import { getUser } from 'src/auth/context/jwt';
 import { RoleBasedGuard } from 'src/auth/guard';
@@ -204,6 +205,9 @@ export function DashboardLayout({ sx, children, data }) {
           </RoleBasedGuard>
         </Main>
       </LayoutSection>
+
+      {/* Som + toast de menções/DMs do chat interno em qualquer página. */}
+      <GlobalChatAlerts />
     </>
   );
 }

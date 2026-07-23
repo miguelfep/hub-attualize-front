@@ -4,45 +4,49 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import LoadingButton from '@mui/lab/LoadingButton';
 import InputAdornment from '@mui/material/InputAdornment';
 
 import { useBoolean } from 'src/hooks/use-boolean';
 
+import { alterarMinhaSenha } from 'src/actions/users';
+
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 
-export const ChangePassWordSchema = zod
-  .object({
-    oldPassword: zod
-      .string()
-      .min(1, { message: 'Password is required!' })
-      .min(6, { message: 'Password must be at least 6 characters!' }),
-    newPassword: zod.string().min(1, { message: 'New password is required!' }),
-    confirmNewPassword: zod.string().min(1, { message: 'Confirm password is required!' }),
-  })
-  .refine((data) => data.oldPassword !== data.newPassword, {
-    message: 'New password must be different than old password',
-    path: ['newPassword'],
-  })
-  .refine((data) => data.newPassword === data.confirmNewPassword, {
-    message: 'Passwords do not match!',
-    path: ['confirmNewPassword'],
-  });
-
+// ----------------------------------------------------------------------
+// Troca de senha do próprio usuário (PUT /users/me/password). Exige a senha
+// atual; o backend valida a força da nova senha.
 // ----------------------------------------------------------------------
 
-export function AccountChangePassword() {
-  const password = useBoolean();
+export const ChangePasswordSchema = zod
+  .object({
+    senhaAtual: zod.string().min(1, { message: 'Informe a senha atual.' }),
+    novaSenha: zod
+      .string()
+      .min(1, { message: 'Informe a nova senha.' })
+      .min(8, { message: 'A nova senha deve ter pelo menos 8 caracteres.' }),
+    confirmarSenha: zod.string().min(1, { message: 'Confirme a nova senha.' }),
+  })
+  .refine((data) => data.senhaAtual !== data.novaSenha, {
+    message: 'A nova senha deve ser diferente da atual.',
+    path: ['novaSenha'],
+  })
+  .refine((data) => data.novaSenha === data.confirmarSenha, {
+    message: 'As senhas não conferem.',
+    path: ['confirmarSenha'],
+  });
 
-  const defaultValues = { oldPassword: '', newPassword: '', confirmNewPassword: '' };
+export function AccountChangePassword() {
+  const mostrar = useBoolean();
 
   const methods = useForm({
     mode: 'all',
-    resolver: zodResolver(ChangePassWordSchema),
-    defaultValues,
+    resolver: zodResolver(ChangePasswordSchema),
+    defaultValues: { senhaAtual: '', novaSenha: '', confirmarSenha: '' },
   });
 
   const {
@@ -53,71 +57,55 @@ export function AccountChangePassword() {
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      await alterarMinhaSenha({ senhaAtual: data.senhaAtual, novaSenha: data.novaSenha });
+      toast.success('Senha alterada com sucesso!');
       reset();
-      toast.success('Update success!');
-      console.info('DATA', data);
     } catch (error) {
-      console.error(error);
+      toast.error(error?.response?.data?.message || 'Não foi possível alterar a senha.');
     }
   });
 
+  const adornment = (
+    <InputAdornment position="end">
+      <IconButton onClick={mostrar.onToggle} edge="end">
+        <Iconify icon={mostrar.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+      </IconButton>
+    </InputAdornment>
+  );
+
   return (
     <Form methods={methods} onSubmit={onSubmit}>
-      <Card sx={{ p: 3, gap: 3, display: 'flex', flexDirection: 'column' }}>
+      <Card sx={{ p: 3, gap: 3, display: 'flex', flexDirection: 'column', maxWidth: 480 }}>
+        <Typography variant="h6">Trocar senha</Typography>
+
         <Field.Text
-          name="oldPassword"
-          type={password.value ? 'text' : 'password'}
-          label="Old password"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
+          name="senhaAtual"
+          type={mostrar.value ? 'text' : 'password'}
+          label="Senha atual"
+          InputProps={{ endAdornment: adornment }}
         />
 
         <Field.Text
-          name="newPassword"
-          label="New password"
-          type={password.value ? 'text' : 'password'}
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
+          name="novaSenha"
+          type={mostrar.value ? 'text' : 'password'}
+          label="Nova senha"
           helperText={
-            <Stack component="span" direction="row" alignItems="center">
-              <Iconify icon="eva:info-fill" width={16} sx={{ mr: 0.5 }} /> Password must be minimum
-              6+
+            <Stack component="span" direction="row" alignItems="center" spacing={0.5}>
+              <Iconify icon="eva:info-fill" width={16} /> Mínimo de 8 caracteres.
             </Stack>
           }
+          InputProps={{ endAdornment: adornment }}
         />
 
         <Field.Text
-          name="confirmNewPassword"
-          type={password.value ? 'text' : 'password'}
-          label="Confirm new password"
-          InputProps={{
-            endAdornment: (
-              <InputAdornment position="end">
-                <IconButton onClick={password.onToggle} edge="end">
-                  <Iconify icon={password.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
-                </IconButton>
-              </InputAdornment>
-            ),
-          }}
+          name="confirmarSenha"
+          type={mostrar.value ? 'text' : 'password'}
+          label="Confirmar nova senha"
+          InputProps={{ endAdornment: adornment }}
         />
 
         <LoadingButton type="submit" variant="contained" loading={isSubmitting} sx={{ ml: 'auto' }}>
-          Save changes
+          Salvar nova senha
         </LoadingButton>
       </Card>
     </Form>

@@ -1,7 +1,12 @@
 import SvgIcon from '@mui/material/SvgIcon';
 
+import { paths } from 'src/routes/paths';
+
 import { Iconify } from 'src/components/iconify';
 
+// ----------------------------------------------------------------------
+// Menu da conta (drawer da foto do usuário). "Perfil" abre a página Minha conta
+// (foto de perfil + dados).
 // ----------------------------------------------------------------------
 
 export const _account = [
@@ -12,7 +17,7 @@ export const _account = [
   },
   {
     label: 'Perfil',
-    href: '#',
+    href: paths.dashboard.user.account,
     icon: (
       <SvgIcon>
         <path
@@ -26,15 +31,5 @@ export const _account = [
         />
       </SvgIcon>
     ),
-  },
-  {
-    label: 'Segurança',
-    href: '#',
-    icon: <Iconify icon="solar:shield-keyhole-bold-duotone" />,
-  },
-  {
-    label: 'Configurações',
-    href: '#',
-    icon: <Iconify icon="solar:settings-bold-duotone" />,
   },
 ];

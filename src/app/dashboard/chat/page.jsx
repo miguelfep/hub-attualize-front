@@ -1,11 +1,11 @@
 import { CONFIG } from 'src/config-global';
 
-import { ChatView } from 'src/sections/chat/view';
+import { ChatInternoView } from 'src/sections/chat-interno/view';
 
 // ----------------------------------------------------------------------
 
-export const metadata = { title: `Chat | Dashboard - ${CONFIG.site.name}` };
+export const metadata = { title: `Chat interno | Dashboard - ${CONFIG.site.name}` };
 
 export default function Page() {
-  return <ChatView />;
+  return <ChatInternoView />;
 }

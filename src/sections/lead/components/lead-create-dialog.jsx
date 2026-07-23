@@ -13,6 +13,8 @@ import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
+import { avatarUrl } from 'src/utils/avatar';
+
 import { saveLeadProgress } from 'src/actions/lead';
 import { getUsersInternos } from 'src/actions/users';
 
@@ -163,14 +165,17 @@ export function LeadCreateDialog({ open, onClose, onCreated }) {
                   placeholder="Atribuir a um responsável"
                 />
               )}
-              renderOption={(props, option) => (
-                <Stack component="li" direction="row" spacing={1} alignItems="center" {...props}>
-                  <Avatar sx={{ width: 24, height: 24, fontSize: 12 }}>
+              renderOption={(props, option) => {
+                const { key, ...optionProps } = props;
+                return (
+                <Stack component="li" key={key ?? option._id} direction="row" spacing={1} alignItems="center" {...optionProps}>
+                  <Avatar src={avatarUrl(option) || undefined} sx={{ width: 24, height: 24, fontSize: 12 }}>
                     {option.name?.charAt(0)?.toUpperCase()}
                   </Avatar>
                   <span>{option.name}</span>
                 </Stack>
-              )}
+              );
+        }}
             />
           </Grid>
           <Grid xs={12}>

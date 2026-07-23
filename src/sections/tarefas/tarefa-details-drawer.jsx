@@ -20,6 +20,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import LinearProgress from '@mui/material/LinearProgress';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { avatarUrl } from 'src/utils/avatar';
 import { fDate, fToNow, fDateTime } from 'src/utils/format-time';
 
 import {
@@ -805,7 +806,7 @@ export function TarefaDetailsDrawer({
                   const { corpo, refs } = parseComentario(c.texto, tarefa.anexos);
                   return (
                     <Stack key={c._id} direction="row" spacing={1.5} alignItems="flex-start">
-                      <Avatar src={c.autor?.avatarUrl} sx={{ width: 34, height: 34, fontSize: 14 }}>
+                      <Avatar src={avatarUrl(c.autor) || c.autor?.avatarUrl} sx={{ width: 34, height: 34, fontSize: 14 }}>
                         {autorNome.charAt(0).toUpperCase()}
                       </Avatar>
                       <Box
