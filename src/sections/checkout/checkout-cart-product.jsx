@@ -13,7 +13,7 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { ColorPreview } from 'src/components/color-utils';
 
-import { IncrementerButton } from '../product/components/incrementer-button';
+import { IncrementerButton } from './components/incrementer-button';
 
 // ----------------------------------------------------------------------
 

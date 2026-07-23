@@ -4,8 +4,8 @@ import dayjs from 'dayjs';
 import { useState, useEffect, useCallback } from 'react';
 
 import { LoadingButton } from '@mui/lab';
-import Grid from '@mui/material/Unstable_Grid2';
 import { alpha } from '@mui/material/styles';
+import Grid from '@mui/material/Unstable_Grid2';
 import {
   Box,
   Card,
@@ -13,15 +13,15 @@ import {
   Alert,
   Button,
   Switch,
+  Dialog,
   Divider,
   Tooltip,
   Skeleton,
   TextField,
   CardHeader,
   Typography,
-  CardContent,
   IconButton,
-  Dialog,
+  CardContent,
   DialogTitle,
   DialogContent,
   DialogActions,
@@ -192,7 +192,7 @@ export function ClienteDominioIntegracao({ clienteId, clienteCnpj }) {
   };
 
   const handleToggleHabilitado = async (e) => {
-    const checked = e.target.checked;
+    const {checked} = e.target;
     if (checked && !integrationKeyConfigurada) {
       toast.error('Ative a integração Domínio antes de habilitar o envio automático');
       return;
