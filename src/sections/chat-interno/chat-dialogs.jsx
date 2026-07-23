@@ -39,6 +39,8 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { EmptyContent } from 'src/components/empty-content';
 
+import { PresencaBadge, statusPresenca } from './chat-nav-item';
+
 // ----------------------------------------------------------------------
 // Diálogos do chat interno: novo canal (gestor), nova DM, explorar canais
 // públicos e gestão de membros.
@@ -338,7 +340,7 @@ export function ChatBrowseDialog({ open, meuId, ehAdminTop, onClose, onEntrou, o
 
 // ----------------------------------------------------------------------
 
-export function ChatMembrosDialog({ open, canal, usuarios, ehGestor, onClose, onMudou }) {
+export function ChatMembrosDialog({ open, canal, usuarios, ehGestor, onlineIds, ausenteIds, onClose, onMudou }) {
   const [novo, setNovo] = useState(null);
   const [salvando, setSalvando] = useState(false);
 
@@ -400,7 +402,9 @@ export function ChatMembrosDialog({ open, canal, usuarios, ehGestor, onClose, on
             return (
               <ListItemButton key={id} disableRipple sx={{ cursor: 'default' }}>
                 <ListItemAvatar>
-                  <Avatar src={avatarUrl(u) || undefined} sx={{ width: 32, height: 32 }}>{(u.name || '?')[0]?.toUpperCase()}</Avatar>
+                  <PresencaBadge status={statusPresenca(id, onlineIds, ausenteIds)}>
+                    <Avatar src={avatarUrl(u) || undefined} sx={{ width: 32, height: 32 }}>{(u.name || '?')[0]?.toUpperCase()}</Avatar>
+                  </PresencaBadge>
                 </ListItemAvatar>
                 <ListItemText primary={u.name || id} secondary={m.papel === 'admin' ? 'admin' : ''} />
                 {ehGestor && (

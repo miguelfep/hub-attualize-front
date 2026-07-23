@@ -234,6 +234,7 @@ export const endpoints = {
   chatInterno: {
     stream: `${baseUrl}chat/stream`,
     usuarios: `${baseUrl}chat/usuarios`,
+    presenca: `${baseUrl}chat/presenca`,
     canais: `${baseUrl}chat/canais`,
     canal: (id) => `${baseUrl}chat/canais/${id}`,
     browse: `${baseUrl}chat/canais/browse`,

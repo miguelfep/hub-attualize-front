@@ -3,6 +3,7 @@ import { useRef, useState, useEffect, useCallback } from 'react';
 import {
   getCanaisChat,
   marcarLidoChat,
+  getPresencaChat,
   getMensagensChat,
 } from 'src/actions/chat-interno';
 
@@ -32,7 +33,7 @@ const previewDe = (m) => {
   return 'Mensagem';
 };
 
-export function useChatInbox(meuId) {
+export function useChatInbox(meuId, { alertasDeMencao = true } = {}) {
   const [canais, setCanais] = useState([]);
   const [carregandoLista, setCarregandoLista] = useState(false);
 
@@ -43,6 +44,9 @@ export function useChatInbox(meuId) {
   const [carregandoCanal, setCarregandoCanal] = useState(false);
   // Última resposta de thread recebida via SSE (consumida pelo drawer aberto).
   const [ultimaRespostaThread, setUltimaRespostaThread] = useState(null);
+  // Presença: userIds online/ausentes (SSE em tempo real + polling de reconciliação p/ offline por TTL).
+  const [onlineIds, setOnlineIds] = useState(() => new Set());
+  const [ausenteIds, setAusenteIds] = useState(() => new Set());
 
   const selecionadoRef = useRef(selecionadoId);
   selecionadoRef.current = selecionadoId;
@@ -67,6 +71,25 @@ export function useChatInbox(meuId) {
   useEffect(() => {
     carregarLista();
   }, [carregarLista]);
+
+  // Presença inicial + reconciliação periódica (offline é detectado por TTL no backend).
+  useEffect(() => {
+    let ativo = true;
+    const atualizar = () =>
+      getPresencaChat()
+        .then(({ online, ausentes }) => {
+          if (!ativo) return;
+          setOnlineIds(new Set(online.map(String)));
+          setAusenteIds(new Set(ausentes.map(String)));
+        })
+        .catch(() => {});
+    atualizar();
+    const timer = setInterval(atualizar, 45000);
+    return () => {
+      ativo = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   // Ref da lista para efeitos acharem o canal sem depender de `canais`.
   const canaisRef = useRef(canais);
@@ -238,10 +261,32 @@ export function useChatInbox(meuId) {
         }
 
         case 'chat.mencao': {
+          // No widget flutuante o GlobalChatAlerts já avisa — evita toast duplo.
           const { trecho } = payload || {};
-          if (canalId !== aberto) {
+          if (alertasDeMencao && canalId !== aberto) {
             toast.info(`Você foi mencionado: ${trecho || ''}`);
           }
+          break;
+        }
+
+        case 'chat.presenca': {
+          const { usuario, online, status } = payload || {};
+          if (!usuario) break;
+          const id = String(usuario);
+          const estaOnline = online && status !== 'ausente';
+          const estaAusente = online && status === 'ausente';
+          setOnlineIds((prev) => {
+            const prox = new Set(prev);
+            if (estaOnline) prox.add(id);
+            else prox.delete(id);
+            return prox;
+          });
+          setAusenteIds((prev) => {
+            const prox = new Set(prev);
+            if (estaAusente) prox.add(id);
+            else prox.delete(id);
+            return prox;
+          });
           break;
         }
 
@@ -269,7 +314,7 @@ export function useChatInbox(meuId) {
           break;
       }
     },
-    [carregarLista]
+    [carregarLista, alertasDeMencao]
   );
 
   const { conectado } = useChatStream(onEvent);
@@ -288,6 +333,8 @@ export function useChatInbox(meuId) {
     anexarMensagem,
     substituirMensagem,
     ultimaRespostaThread,
+    onlineIds,
+    ausenteIds,
     conectado,
   };
 }

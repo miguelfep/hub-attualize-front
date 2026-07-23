@@ -114,6 +114,21 @@ export async function marcarLidoChat(id, ate) {
   return res.data;
 }
 
+/** Presença agora. → { online: string[], ausentes: string[] } */
+export async function getPresencaChat() {
+  const res = await axios.get(ep.presenca);
+  return {
+    online: Array.isArray(res.data?.online) ? res.data.online : [],
+    ausentes: Array.isArray(res.data?.ausentes) ? res.data.ausentes : [],
+  };
+}
+
+/** Reporta o MEU status de presença ('online' | 'ausente') — detecção de inatividade. */
+export async function postPresencaStatus(status) {
+  const res = await axios.post(ep.presenca, { status });
+  return res.data;
+}
+
 /** Usuários internos ativos (autocomplete de menção/DM). */
 export async function getUsuariosChat() {
   const res = await axios.get(ep.usuarios);

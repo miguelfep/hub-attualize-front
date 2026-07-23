@@ -42,6 +42,8 @@ function Secao({ titulo, children }) {
 export function ChatNav({
   canais,
   meuId,
+  onlineIds,
+  ausenteIds,
   ehGestor,
   carregando,
   selecionadoId,
@@ -176,6 +178,8 @@ export function ChatNav({
                     key={c._id}
                     canal={c}
                     meuId={meuId}
+                    onlineIds={onlineIds}
+                    ausenteIds={ausenteIds}
                     selecionado={c._id === selecionadoId}
                     onSelecionar={onSelecionar}
                   />
@@ -189,6 +193,8 @@ export function ChatNav({
                     key={c._id}
                     canal={c}
                     meuId={meuId}
+                    onlineIds={onlineIds}
+                    ausenteIds={ausenteIds}
                     selecionado={c._id === selecionadoId}
                     onSelecionar={onSelecionar}
                   />

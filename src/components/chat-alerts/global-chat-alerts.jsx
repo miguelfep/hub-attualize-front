@@ -10,6 +10,7 @@ import { toast } from 'src/components/snackbar';
 import { useAuthContext } from 'src/auth/hooks';
 
 import { tocarSomChat } from './chat-som';
+import { usePresencaAtividade } from './use-presenca-atividade';
 import { useChatStream } from '../../sections/chat-interno/hooks/use-chat-stream';
 
 // ----------------------------------------------------------------------
@@ -53,6 +54,10 @@ function Alerts() {
   );
 
   useChatStream(onEvent);
+
+  // Status "ausente" após inatividade (estilo Slack) — vale em qualquer página.
+  usePresencaAtividade(true);
+
   return null;
 }
 

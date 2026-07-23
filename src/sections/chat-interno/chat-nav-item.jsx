@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
@@ -35,6 +36,47 @@ export function nomeDaConversa(canal, meuId) {
   return outro?.usuario?.name || outro?.usuario?.email || 'Conversa';
 }
 
+/** Id do OUTRO participante de uma DM (null para canais). */
+export function outroIdDaDm(canal, meuId) {
+  if (canal?.tipo !== 'dm') return null;
+  const eu = String(meuId || '');
+  const outro =
+    (canal?.membros || []).find((m) => eu && String(m?.usuario?._id || m?.usuario) !== eu) ||
+    (canal?.membros || []).find(
+      (m) => String(m?.usuario?._id || m?.usuario) !== String(canal?.criadoPor)
+    );
+  return outro ? String(outro.usuario?._id || outro.usuario) : null;
+}
+
+/** Status de presença de um usuário: 'online' | 'ausente' | null (offline). */
+export function statusPresenca(userId, onlineIds, ausenteIds) {
+  const id = String(userId || '');
+  if (ausenteIds?.has?.(id)) return 'ausente';
+  if (onlineIds?.has?.(id)) return 'online';
+  return null;
+}
+
+/** Bolinha de presença (verde = online, amarela = ausente) sobre um avatar. */
+export function PresencaBadge({ online, status, children }) {
+  const efetivo = status ?? (online ? 'online' : null);
+  return (
+    <Badge
+      variant="dot"
+      overlap="circular"
+      invisible={!efetivo}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      sx={{
+        '& .MuiBadge-badge': {
+          bgcolor: efetivo === 'ausente' ? 'warning.main' : 'success.main',
+          boxShadow: (t) => `0 0 0 2px ${t.vars.palette.background.paper}`,
+        },
+      }}
+    >
+      {children}
+    </Badge>
+  );
+}
+
 /** Foto do OUTRO participante de uma DM (null para canais/sem foto → iniciais). */
 export function fotoDaConversa(canal, meuId) {
   if (canal?.tipo !== 'dm') return null;
@@ -49,7 +91,7 @@ export function fotoDaConversa(canal, meuId) {
 
 // ----------------------------------------------------------------------
 
-export function ChatNavItem({ canal, meuId, selecionado, onSelecionar }) {
+export function ChatNavItem({ canal, meuId, onlineIds, ausenteIds, selecionado, onSelecionar }) {
   const ehCanal = canal?.tipo === 'canal';
   const nome = nomeDaConversa(canal, meuId);
   const naoLidas = canal?.naoLidas || 0;
@@ -69,9 +111,11 @@ export function ChatNavItem({ canal, meuId, selecionado, onSelecionar }) {
             />
           </Avatar>
         ) : (
-          <Avatar src={fotoDaConversa(canal, meuId) || undefined} sx={{ width: 36, height: 36 }}>
-            {iniciais(nome)}
-          </Avatar>
+          <PresencaBadge status={statusPresenca(outroIdDaDm(canal, meuId), onlineIds, ausenteIds)}>
+            <Avatar src={fotoDaConversa(canal, meuId) || undefined} sx={{ width: 36, height: 36 }}>
+              {iniciais(nome)}
+            </Avatar>
+          </PresencaBadge>
         )}
 
         <ListItemText

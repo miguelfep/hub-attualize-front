@@ -18,6 +18,8 @@ import { bulletColor } from 'src/components/nav-section';
 import { useSettingsContext } from 'src/components/settings';
 import { GlobalChatAlerts } from 'src/components/chat-alerts/global-chat-alerts';
 
+import { ChatFlutuante } from 'src/sections/chat-interno/chat-flutuante';
+
 import { getUser } from 'src/auth/context/jwt';
 import { RoleBasedGuard } from 'src/auth/guard';
 
@@ -208,6 +210,9 @@ export function DashboardLayout({ sx, children, data }) {
 
       {/* Som + toast de menções/DMs do chat interno em qualquer página. */}
       <GlobalChatAlerts />
+
+      {/* Chat flutuante (canto inferior direito) — some na página do chat. */}
+      <ChatFlutuante />
     </>
   );
 }

@@ -2,11 +2,14 @@ import { useRef, useMemo, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
+import Menu from '@mui/material/Menu';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
+import MenuItem from '@mui/material/MenuItem';
 import InputBase from '@mui/material/InputBase';
 import IconButton from '@mui/material/IconButton';
+import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
@@ -19,6 +22,7 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
 import { ChatGifPicker } from './chat-gif-picker';
+import { ChatEmojiPicker } from './chat-emoji-picker';
 import { ChatEnqueteDialog } from './chat-enquete-dialog';
 
 // ----------------------------------------------------------------------
@@ -39,14 +43,24 @@ const tokenDoNome = (nome) =>
     .trim()
     .replace(/\s+/g, '-');
 
-export function ChatMessageInput({ canalId, threadDe, usuarios = [], onEnviada, placeholder }) {
+export function ChatMessageInput({
+  canalId,
+  threadDe,
+  usuarios = [],
+  onEnviada,
+  placeholder,
+  compacto = false,
+}) {
   const fileRef = useRef(null);
   const inputRef = useRef(null);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
 
-  // GIF / enquete / gravação de áudio
+  // GIF / emoji / enquete / gravação de áudio
   const [gifEl, setGifEl] = useState(null);
+  const [emojiEl, setEmojiEl] = useState(null);
+  // Modo compacto (widget flutuante): áudio/enquete/anexo ficam num menu ⋮.
+  const [maisEl, setMaisEl] = useState(null);
   const [enqueteOpen, setEnqueteOpen] = useState(false);
   const [gravando, setGravando] = useState(false);
   const recorderRef = useRef(null);
@@ -105,10 +119,8 @@ export function ChatMessageInput({ canalId, threadDe, usuarios = [], onEnviada, 
     [handleEnviar, sugestoes, mencaoAtiva, inserirMencao]
   );
 
-  const handleFile = useCallback(
-    async (e) => {
-      const file = e.target.files?.[0];
-      e.target.value = '';
+  const enviarArquivo = useCallback(
+    async (file) => {
       if (!file || !canalId) return;
       if (file.size > LIMITE_ANEXO) {
         toast.error('Arquivo acima de 15 MB.');
@@ -129,6 +141,32 @@ export function ChatMessageInput({ canalId, threadDe, usuarios = [], onEnviada, 
       }
     },
     [canalId, texto, threadDe, onEnviada]
+  );
+
+  const handleFile = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      enviarArquivo(file);
+    },
+    [enviarArquivo]
+  );
+
+  // Ctrl+V com arquivo/imagem na área de transferência → envia como anexo.
+  const handlePaste = useCallback(
+    (e) => {
+      const files = Array.from(e.clipboardData?.files || []);
+      if (!files.length) return;
+      e.preventDefault();
+      const file = files[0];
+      // Print/imagem colada vem como "image.png" — dá um nome único.
+      const generico = !file.name || /^image\.\w+$/i.test(file.name);
+      const nomeado = generico
+        ? new File([file], `imagem-colada-${Date.now()}.${(file.type.split('/')[1] || 'png').replace('jpeg', 'jpg')}`, { type: file.type })
+        : file;
+      enviarArquivo(nomeado);
+    },
+    [enviarArquivo]
   );
 
   // ---------------- Áudio (MediaRecorder) ----------------
@@ -177,6 +215,20 @@ export function ChatMessageInput({ canalId, threadDe, usuarios = [], onEnviada, 
       toast.error('Permita o acesso ao microfone para gravar.');
     }
   }, [canalId, threadDe, onEnviada]);
+
+  // Insere o emoji na posição do cursor (ou no fim) e devolve o foco ao input.
+  const inserirEmoji = useCallback((emoji) => {
+    const input = inputRef.current;
+    const pos = input?.selectionStart ?? null;
+    setTexto((prev) => {
+      const i = pos === null ? prev.length : pos;
+      return `${prev.slice(0, i)}${emoji}${prev.slice(i)}`;
+    });
+    requestAnimationFrame(() => {
+      input?.focus();
+      if (pos !== null) input?.setSelectionRange(pos + emoji.length, pos + emoji.length);
+    });
+  }, []);
 
   // ---------------- GIF / enquete ----------------
   const handleGif = useCallback(
@@ -229,29 +281,48 @@ export function ChatMessageInput({ canalId, threadDe, usuarios = [], onEnviada, 
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
         onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
         placeholder={placeholder || 'Escreva uma mensagem… use @ para mencionar'}
         disabled={enviando}
         multiline
         maxRows={5}
         endAdornment={
           <Stack direction="row" alignItems="center" sx={{ flexShrink: 0 }}>
-            <IconButton
-              onClick={gravando ? pararGravacao : iniciarGravacao}
-              disabled={enviando}
-              title={gravando ? 'Parar e enviar áudio' : 'Gravar áudio'}
-              sx={gravando ? { color: 'error.main', animation: 'pulse 1s infinite', '@keyframes pulse': { '50%': { opacity: 0.4 } } } : undefined}
-            >
-              <Iconify icon={gravando ? 'solar:stop-circle-bold' : 'solar:microphone-bold'} />
+            {(!compacto || gravando) && (
+              <IconButton
+                onClick={gravando ? pararGravacao : iniciarGravacao}
+                disabled={enviando}
+                title={gravando ? 'Parar e enviar áudio' : 'Gravar áudio'}
+                sx={gravando ? { color: 'error.main', animation: 'pulse 1s infinite', '@keyframes pulse': { '50%': { opacity: 0.4 } } } : undefined}
+              >
+                <Iconify icon={gravando ? 'solar:stop-circle-bold' : 'solar:microphone-bold'} />
+              </IconButton>
+            )}
+            <IconButton onClick={(e) => setEmojiEl(e.currentTarget)} disabled={enviando || gravando} title="Emoji">
+              <Iconify icon="solar:smile-circle-bold" />
             </IconButton>
-            <IconButton onClick={(e) => setGifEl(e.currentTarget)} disabled={enviando || gravando} title="Enviar GIF">
-              <Iconify icon="mdi:file-gif-box" />
-            </IconButton>
-            <IconButton onClick={() => setEnqueteOpen(true)} disabled={enviando || gravando} title="Criar enquete">
-              <Iconify icon="solar:chart-square-bold" />
-            </IconButton>
-            <IconButton onClick={() => fileRef.current?.click()} disabled={enviando || gravando} title="Anexar">
-              <Iconify icon="eva:attach-2-fill" />
-            </IconButton>
+            {!compacto && (
+              <>
+                <IconButton onClick={(e) => setGifEl(e.currentTarget)} disabled={enviando || gravando} title="Enviar GIF">
+                  <Iconify icon="mdi:file-gif-box" />
+                </IconButton>
+                <IconButton onClick={() => setEnqueteOpen(true)} disabled={enviando || gravando} title="Criar enquete">
+                  <Iconify icon="solar:chart-square-bold" />
+                </IconButton>
+                <IconButton onClick={() => fileRef.current?.click()} disabled={enviando || gravando} title="Anexar">
+                  <Iconify icon="eva:attach-2-fill" />
+                </IconButton>
+              </>
+            )}
+            {compacto && (
+              <IconButton
+                onClick={(e) => setMaisEl(e.currentTarget)}
+                disabled={enviando || gravando}
+                title="Mais opções"
+              >
+                <Iconify icon="eva:more-vertical-fill" />
+              </IconButton>
+            )}
             <IconButton
               color="primary"
               onClick={handleEnviar}
@@ -273,7 +344,69 @@ export function ChatMessageInput({ canalId, threadDe, usuarios = [], onEnviada, 
 
       <Box component="input" type="file" ref={fileRef} onChange={handleFile} sx={{ display: 'none' }} />
 
+      {compacto && (
+        <Menu
+          anchorEl={maisEl}
+          open={!!maisEl}
+          onClose={() => setMaisEl(null)}
+          anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+          transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        >
+          <MenuItem
+            onClick={() => {
+              setMaisEl(null);
+              iniciarGravacao();
+            }}
+          >
+            <ListItemIcon>
+              <Iconify icon="solar:microphone-bold" />
+            </ListItemIcon>
+            Gravar áudio
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              // Ancora o picker no botão ⋮ (o item do menu sai do DOM ao fechar).
+              setGifEl(maisEl);
+              setMaisEl(null);
+            }}
+          >
+            <ListItemIcon>
+              <Iconify icon="mdi:file-gif-box" />
+            </ListItemIcon>
+            Enviar GIF
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setMaisEl(null);
+              setEnqueteOpen(true);
+            }}
+          >
+            <ListItemIcon>
+              <Iconify icon="solar:chart-square-bold" />
+            </ListItemIcon>
+            Criar enquete
+          </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setMaisEl(null);
+              fileRef.current?.click();
+            }}
+          >
+            <ListItemIcon>
+              <Iconify icon="eva:attach-2-fill" />
+            </ListItemIcon>
+            Anexar arquivo
+          </MenuItem>
+        </Menu>
+      )}
+
       <ChatGifPicker anchorEl={gifEl} onClose={() => setGifEl(null)} onSelecionar={handleGif} />
+
+      <ChatEmojiPicker
+        anchorEl={emojiEl}
+        onClose={() => setEmojiEl(null)}
+        onSelecionar={(emoji) => inserirEmoji(emoji)}
+      />
 
       <ChatEnqueteDialog
         open={enqueteOpen}
