@@ -49,6 +49,12 @@ function resolverLink(notification) {
   const chatCanalId = notification?.chatCanal?._id || notification?.chatCanal;
   if (chatCanalId) return `${paths.dashboard.chat}?canal=${chatCanalId}`;
 
+  // Fila DCTFWeb: abre Impostos → DCTFWeb com o lote já expandido.
+  const dctfWebLoteId = notification?.dctfWebLoteId;
+  if (dctfWebLoteId) {
+    return `${paths.dashboard.fiscal.impostos}?tab=dctfweb&lote=${dctfWebLoteId}`;
+  }
+
   return null;
 }
 

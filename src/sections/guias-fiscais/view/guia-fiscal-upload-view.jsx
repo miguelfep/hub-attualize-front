@@ -84,7 +84,7 @@ function ResumoLote({ resumo }) {
       {resumo.errosDetalhados?.length > 0 && (
         <Box sx={{ mt: 1 }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
-            Detalhes dos erros:
+            Detalhes:
           </Typography>
           {resumo.errosDetalhados.map((erro, index) => (
             <Typography
@@ -110,6 +110,9 @@ export function GuiaFiscalUploadView() {
   const [enviando, setEnviando] = useState(false);
   const [loteId, setLoteId] = useState(null);
   const [loteFinalizadoId, setLoteFinalizadoId] = useState(null);
+  // Guarda os arquivos do último envio para permitir "Reenviar substituindo"
+  // (o Upload é limpo após o envio, mas os File objects seguem em memória aqui).
+  const [arquivosUltimoLote, setArquivosUltimoLote] = useState([]);
 
   const dialogClientesNaoEncontrados = useBoolean();
 
@@ -178,8 +181,8 @@ export function GuiaFiscalUploadView() {
     setFiles([]);
   }, []);
 
-  const handleUpload = useCallback(async () => {
-    if (files.length === 0) {
+  const enviarLote = useCallback(async (arquivos, { forcarSubstituicao = false } = {}) => {
+    if (!arquivos || arquivos.length === 0) {
       toast.error('Selecione pelo menos um arquivo PDF');
       return;
     }
@@ -189,13 +192,16 @@ export function GuiaFiscalUploadView() {
       setLoteId(null);
       setLoteFinalizadoId(null);
 
-      const response = await uploadGuiasFiscaisAsync(files);
+      const response = await uploadGuiasFiscaisAsync(arquivos, { forcarSubstituicao });
 
       if (response?.success && response?.data?.loteId) {
+        setArquivosUltimoLote(arquivos);
         setLoteId(response.data.loteId);
         setFiles([]);
         toast.info(
-          `Lote com ${response.data.totalArquivos} arquivo(s) enviado — processando em segundo plano.`
+          forcarSubstituicao
+            ? `Reenviando ${response.data.totalArquivos} arquivo(s), substituindo as guias já existentes...`
+            : `Lote com ${response.data.totalArquivos} arquivo(s) enviado — processando em segundo plano.`
         );
       } else {
         toast.error(response?.message || 'Erro ao enviar o lote');
@@ -215,7 +221,14 @@ export function GuiaFiscalUploadView() {
     } finally {
       setEnviando(false);
     }
-  }, [files]);
+  }, []);
+
+  const handleUpload = useCallback(() => enviarLote(files), [enviarLote, files]);
+
+  const handleReenviarSubstituindo = useCallback(
+    () => enviarLote(arquivosUltimoLote, { forcarSubstituicao: true }),
+    [enviarLote, arquivosUltimoLote]
+  );
 
   const irParaDocumentos = useCallback(async () => {
     await revalidarListagens();
@@ -337,6 +350,28 @@ export function GuiaFiscalUploadView() {
               )}
 
               <ResumoLote resumo={resumo} />
+
+              {lote?.status === 'concluido' && resumo?.duplicatas > 0 && arquivosUltimoLote.length > 0 && (
+                <Alert
+                  severity="warning"
+                  action={
+                    <Button
+                      color="warning"
+                      size="small"
+                      variant="contained"
+                      onClick={handleReenviarSubstituindo}
+                      disabled={enviando}
+                      startIcon={<Iconify icon="eva:refresh-fill" />}
+                    >
+                      Reenviar substituindo
+                    </Button>
+                  }
+                >
+                  {resumo.duplicatas} guia(s) já existiam e foram ignoradas. Se quiser
+                  sobrescrever a versão atual, reenvie substituindo (guias já pagas são
+                  preservadas).
+                </Alert>
+              )}
 
               {lote?.status === 'concluido' && (
                 <Stack direction="row" justifyContent="flex-end">

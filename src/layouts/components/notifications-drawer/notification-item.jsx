@@ -28,6 +28,8 @@ const ICONE_POR_TIPO = {
   chat_mencao: 'solar:chat-round-line-bold',
   chat_dm: 'solar:user-rounded-bold',
   chat_thread: 'solar:chat-line-bold',
+  // Fila DCTFWeb (emissão de guias)
+  dctfweb_lote_finalizado: 'solar:document-bold',
 };
 
 /** Ícone correspondente ao tipo de notificação (reusado fora do drawer). */

@@ -233,7 +233,7 @@ const MESES_SLUG_PT = [
   'dezembro',
 ];
 
-const MESES_NOME_PT = [
+export const MESES_NOME_PT = [
   'Janeiro',
   'Fevereiro',
   'Março',

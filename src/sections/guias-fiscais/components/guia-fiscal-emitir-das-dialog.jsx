@@ -22,6 +22,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import {
   gerarDas,
   base64ToPdfFile,
+  arquivarExtratoDas,
   extractDasPdfItems,
 } from 'src/actions/serPro';
 import {
@@ -421,6 +422,23 @@ export function GuiaFiscalEmitirDasDialog({
           competencia,
         });
         toast.success('DAS arquivada com sucesso.');
+      }
+
+      // Best-effort: buscar e arquivar o extrato do DAS do mês junto da DAS.
+      // Uma falha aqui NÃO deve impedir o arquivamento da DAS já concluído.
+      const numeroDasExtrato = dasDetalhe?.numeroDas || dasDetalhe?.numeroDocumento;
+      const periodoApuracao = buildPeriodoApuracaoSerpro(mes, ano);
+      if (numeroDasExtrato && periodoApuracao) {
+        try {
+          await arquivarExtratoDas(clienteId, {
+            numeroDas: String(numeroDasExtrato),
+            periodoApuracao,
+            folderId: selectedFolderId || expectedFolder?.node?._id || undefined,
+          });
+          toast.success('Extrato do DAS arquivado junto.');
+        } catch (extErr) {
+          toast.warning(`DAS arquivada, mas o extrato não pôde ser obtido: ${apiErrMsg(extErr)}`);
+        }
       }
 
       onUploadSuccess?.({
