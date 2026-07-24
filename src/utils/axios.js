@@ -778,6 +778,13 @@ export const endpoints = {
     serproDetalhe: (id) => `${baseUrl}audit/serpro/${id}`,
     caixaPostalDetalhe: (id) => `${baseUrl}audit/caixa-postal/${id}`,
   },
+  pagamentoWeb: {
+    consultar: `${baseUrl}pagamento-web/consultar`,
+    conciliar: `${baseUrl}pagamento-web/conciliar`,
+    aplicarConciliacao: `${baseUrl}pagamento-web/conciliar/aplicar`,
+    ultimoLog: (clienteId) => `${baseUrl}pagamento-web/${clienteId}/ultimo-log`,
+    pagtoWebDetalhe: (id) => `${baseUrl}audit/pagto-web/${id}`,
+  },
   integraContadorRelatorio: {
     stats: `${baseUrl}relatorios/integra-contador/stats`,
     logs: `${baseUrl}relatorios/integra-contador/logs`,

@@ -19,13 +19,15 @@ export async function consultarDeclaracoes(clienteId, { periodoApuracao, anoCale
 
 /**
  * Carrega declarações do último log CONSDECLARACAO13 salvo (sem nova chamada Serpro).
- * Cache por ano-calendário. Retorna 404 quando não há log para o ano informado.
+ * Cache por competência (periodoApuracao AAAAMM) ou por ano-calendário (AAAA).
+ * Retorna 404 quando não há log para o filtro informado.
  * @param {string} clienteId
- * @param {{ anoCalendario: string }} params
+ * @param {{ periodoApuracao?: string, anoCalendario?: string }} params
  */
-export async function consultarDeclaracoesFromLog(clienteId, { anoCalendario } = {}) {
+export async function consultarDeclaracoesFromLog(clienteId, { periodoApuracao, anoCalendario } = {}) {
   return axios.get(`${baseUrl}serpro/${clienteId}/declaracoes/ultimo-log`, {
     params: {
+      periodoApuracao: periodoApuracao || undefined,
       anoCalendario: anoCalendario || undefined,
     },
   });
@@ -71,6 +73,44 @@ export async function gerarDas(clienteId, { periodoApuracao, dataConsolidacao })
     periodoApuracao,
     dataConsolidacao: dataConsolidacao || undefined,
   });
+}
+
+/**
+ * Consulta o Extrato do DAS (Serpro CONSEXTRATO16) e retorna o PDF base64.
+ * @param {string} clienteId
+ * @param {{ numeroDas: string, periodoApuracao?: string }} data
+ */
+export async function consultarExtratoDas(clienteId, { numeroDas, periodoApuracao }) {
+  return axios.post(`${baseUrl}serpro/${clienteId}/extrato-das`, {
+    numeroDas,
+    periodoApuracao: periodoApuracao || undefined,
+  });
+}
+
+/**
+ * Consulta o Extrato do DAS e o arquiva como guia EXTRATO_PGDAS (junto da DAS).
+ * @param {string} clienteId
+ * @param {{ numeroDas: string, periodoApuracao: string, folderId?: string }} data
+ */
+export async function arquivarExtratoDas(clienteId, { numeroDas, periodoApuracao, folderId }) {
+  return axios.post(`${baseUrl}serpro/${clienteId}/arquivar-extrato`, {
+    numeroDas,
+    periodoApuracao,
+    folderId: folderId || undefined,
+  });
+}
+
+/**
+ * Extrai o PDF base64 do retorno de extrato-das. O PDF vem em `dados.extrato.pdf`.
+ * @param {object} payload - Campo `extrato` da resposta (ou seu `dados`).
+ * @returns {{ pdf: string, nomeArquivo?: string } | null}
+ */
+export function extractExtratoPdf(payload) {
+  const dados = payload?.dados ?? payload;
+  if (!dados) return null;
+  const arquivo = dados.extrato && typeof dados.extrato === 'object' ? dados.extrato : dados;
+  if (!arquivo?.pdf) return null;
+  return { pdf: arquivo.pdf, nomeArquivo: arquivo.nomeArquivo };
 }
 
 /**

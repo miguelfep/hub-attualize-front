@@ -33,20 +33,19 @@ function mapOperacao(op, periodoApuracao, index, ultimaEmissao) {
   const dec = op?.indiceDeclaracao || null;
   const das = op?.indiceDas || null;
 
+  const dataHoraTransmissao = dec?.dataHoraTransmissao
+    ? formatSerproDateTime(dec.dataHoraTransmissao)
+    : null;
+  const dataHoraEmissaoDasRaw = das?.dataHoraEmissaoDas ?? das?.datahoraEmissaoDas ?? null;
+  const dataHoraEmissaoDas = dataHoraEmissaoDasRaw
+    ? formatSerproDateTime(dataHoraEmissaoDasRaw)
+    : null;
+
   const detailParts = [];
   if (dec?.numeroDeclaracao) detailParts.push(`Declaração ${dec.numeroDeclaracao}`);
-  if (dec?.dataHoraTransmissao) {
-    const dt = formatSerproDateTime(dec.dataHoraTransmissao);
-    if (dt) detailParts.push(`Transmitida em ${dt}`);
-  }
+  if (dataHoraTransmissao) detailParts.push(`Transmitida em ${dataHoraTransmissao}`);
   if (das?.numeroDas) detailParts.push(`DAS ${das.numeroDas}`);
-  if (das?.dataHoraEmissaoDas) {
-    const dt = formatSerproDateTime(das.dataHoraEmissaoDas);
-    if (dt) detailParts.push(`Emitida em ${dt}`);
-  } else if (das?.datahoraEmissaoDas) {
-    const dt = formatSerproDateTime(das.datahoraEmissaoDas);
-    if (dt) detailParts.push(`Emitida em ${dt}`);
-  }
+  if (dataHoraEmissaoDas) detailParts.push(`Emitida em ${dataHoraEmissaoDas}`);
 
   return {
     id: `${periodoApuracao}-${index}-${tipoOperacao}`.replace(/\s+/g, '-'),
@@ -58,8 +57,10 @@ function mapOperacao(op, periodoApuracao, index, ultimaEmissao) {
     tipoOperacao,
     isDas,
     numeroDeclaracao: dec?.numeroDeclaracao || null,
+    dataHoraTransmissao,
     malha: dec?.malha || null,
     numeroDas: das?.numeroDas || null,
+    dataHoraEmissaoDas,
     dasPago: typeof das?.dasPago === 'boolean' ? das.dasPago : null,
     detail: detailParts.join(' · '),
     canEmitDas: Boolean(mes && ano),
