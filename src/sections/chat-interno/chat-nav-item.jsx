@@ -1,8 +1,11 @@
+import { useState } from 'react';
+
 import Box from '@mui/material/Box';
 import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
 import Typography from '@mui/material/Typography';
+import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListItemButton from '@mui/material/ListItemButton';
 
@@ -21,6 +24,22 @@ const iniciais = (nome) =>
     .map((p) => p[0])
     .join('')
     .toUpperCase();
+
+// Emoji no início do nome do canal (ex.: "🚀 marketing") vira o "ícone" visual
+// do canal — sem mudança de contrato no backend, o emoji viaja dentro do nome.
+const RE_EMOJI_INICIAL =
+  /^(\p{Extended_Pictographic}(?:[\u200D\uFE0F]\p{Extended_Pictographic}?|\uFE0F|\p{Emoji_Modifier})*)\s*/u;
+
+/** Emoji "ícone" do canal (prefixo do nome), ou null. */
+export function emojiDoCanal(nome) {
+  const m = String(nome || '').match(RE_EMOJI_INICIAL);
+  return m ? m[1] : null;
+}
+
+/** Nome do canal sem o emoji de prefixo (para exibir ao lado do "ícone"). */
+export function nomeSemEmoji(nome) {
+  return String(nome || '').replace(RE_EMOJI_INICIAL, '').trim() || String(nome || '');
+}
 
 /** Nome exibido: canal → #nome; DM → nome do OUTRO participante. */
 export function nomeDaConversa(canal, meuId) {
@@ -91,24 +110,46 @@ export function fotoDaConversa(canal, meuId) {
 
 // ----------------------------------------------------------------------
 
-export function ChatNavItem({ canal, meuId, onlineIds, ausenteIds, selecionado, onSelecionar }) {
+export function ChatNavItem({
+  canal,
+  meuId,
+  onlineIds,
+  ausenteIds,
+  selecionado,
+  onSelecionar,
+  fixado = false,
+  onAlternarFixado,
+}) {
+  const [hover, setHover] = useState(false);
   const ehCanal = canal?.tipo === 'canal';
   const nome = nomeDaConversa(canal, meuId);
+  const emoji = ehCanal ? emojiDoCanal(canal?.nome) : null;
   const naoLidas = canal?.naoLidas || 0;
 
   return (
-    <Box component="li" sx={{ display: 'flex' }}>
+    <Box
+      component="li"
+      sx={{ display: 'flex' }}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
       <ListItemButton
         onClick={() => onSelecionar(canal._id)}
         sx={{ py: 1, px: 2.5, gap: 1.5, ...(selecionado && { bgcolor: 'action.selected' }) }}
       >
         {ehCanal ? (
           <Avatar variant="rounded" sx={{ width: 36, height: 36, bgcolor: 'background.neutral' }}>
-            <Iconify
-              icon={canal.privado ? 'solar:lock-keyhole-bold' : 'material-symbols:tag'}
-              width={18}
-              sx={{ color: 'text.secondary' }}
-            />
+            {emoji ? (
+              <Box component="span" sx={{ fontSize: 20, lineHeight: 1 }}>
+                {emoji}
+              </Box>
+            ) : (
+              <Iconify
+                icon={canal.privado ? 'solar:lock-keyhole-bold' : 'material-symbols:tag'}
+                width={18}
+                sx={{ color: 'text.secondary' }}
+              />
+            )}
           </Avatar>
         ) : (
           <PresencaBadge status={statusPresenca(outroIdDaDm(canal, meuId), onlineIds, ausenteIds)}>
@@ -119,7 +160,7 @@ export function ChatNavItem({ canal, meuId, onlineIds, ausenteIds, selecionado, 
         )}
 
         <ListItemText
-          primary={nome}
+          primary={emoji ? nomeSemEmoji(nome) : nome}
           primaryTypographyProps={{ noWrap: true, variant: 'subtitle2' }}
           secondary={canal?.ultimaMensagemPreview || ''}
           secondaryTypographyProps={{
@@ -130,9 +171,26 @@ export function ChatNavItem({ canal, meuId, onlineIds, ausenteIds, selecionado, 
         />
 
         <Stack alignItems="flex-end" spacing={0.5}>
-          <Typography noWrap variant="caption" sx={{ color: 'text.disabled', fontSize: 11 }}>
-            {canal?.ultimaMensagemEm ? fToNow(canal.ultimaMensagemEm) : ''}
-          </Typography>
+          {hover && onAlternarFixado ? (
+            <IconButton
+              size="small"
+              title={fixado ? 'Desafixar' : 'Fixar no topo'}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAlternarFixado(canal._id);
+              }}
+              sx={{ p: 0.25 }}
+            >
+              <Iconify icon={fixado ? 'mdi:pin-off' : 'mdi:pin'} width={16} />
+            </IconButton>
+          ) : (
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              {fixado && <Iconify icon="mdi:pin" width={12} sx={{ color: 'text.disabled' }} />}
+              <Typography noWrap variant="caption" sx={{ color: 'text.disabled', fontSize: 11 }}>
+                {canal?.ultimaMensagemEm ? fToNow(canal.ultimaMensagemEm) : ''}
+              </Typography>
+            </Stack>
+          )}
 
           {naoLidas > 0 && (
             <Box

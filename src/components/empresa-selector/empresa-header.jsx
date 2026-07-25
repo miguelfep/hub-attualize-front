@@ -1,5 +1,7 @@
 import { Box, Chip, Stack, Typography } from '@mui/material';
 
+import { formatarCnpj } from 'src/utils/documento';
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -7,10 +9,8 @@ import { Iconify } from 'src/components/iconify';
 export function EmpresaHeader({ empresaAtivaData, temMultiplasEmpresas }) {
   if (!empresaAtivaData) return null;
 
-  const formatCNPJ = (cnpj) => {
-    if (!cnpj) return '';
-    return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-  };
+  // CNPJ pode ser ALFANUMÉRICO (IN RFB 2.229/2024) — delega p/ utils/documento.
+  const formatCNPJ = (cnpj) => (cnpj ? formatarCnpj(cnpj) : '');
 
   return (
     <Box sx={{ 

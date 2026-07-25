@@ -34,9 +34,10 @@ import {
 import { useDebounce } from 'src/hooks/use-debounce';
 
 import axios from 'src/utils/axios';
+import { formatCpfCnpj } from 'src/utils/format-input';
+import { normalizarDocumento } from 'src/utils/documento';
 import { formatClienteCodigoRazao } from 'src/utils/formatter';
 import { fCurrency, formatCPFOrCNPJ } from 'src/utils/format-number';
-import { formatCpfCnpj, removeFormatting } from 'src/utils/format-input';
 
 import { getClientes } from 'src/actions/clientes';
 import { useGetSettings } from 'src/actions/settings';
@@ -411,7 +412,7 @@ export default function DashboardFiscalPage() {
 
   // Aplicar filtro de CPF/CNPJ do tomador (apenas com documento completo)
   const aplicarFiltroCpfCnpj = useCallback(() => {
-    const d = removeFormatting(filtroCpfCnpj);
+    const d = normalizarDocumento(filtroCpfCnpj);
     if (!d) {
       setCpfCnpjAplicado('');
       setCpfCnpjErro('');
@@ -419,7 +420,7 @@ export default function DashboardFiscalPage() {
       return;
     }
     if (d.length !== 11 && d.length !== 14) {
-      setCpfCnpjErro('Informe CPF (11 dígitos) ou CNPJ (14 dígitos) completo para filtrar.');
+      setCpfCnpjErro('Informe CPF (11 dígitos) ou CNPJ (14 caracteres) completo para filtrar.');
       return;
     }
     setCpfCnpjErro('');
@@ -428,7 +429,7 @@ export default function DashboardFiscalPage() {
   }, [filtroCpfCnpj]);
 
   const handleCpfCnpjBlur = useCallback(() => {
-    const d = removeFormatting(filtroCpfCnpj);
+    const d = normalizarDocumento(filtroCpfCnpj);
     if (!d) {
       if (cpfCnpjAplicado) {
         setCpfCnpjAplicado('');

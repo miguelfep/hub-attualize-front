@@ -1,3 +1,5 @@
+import { formatarCnpj } from './documento';
+
 /**
  * Formata uma string de CNAE (Classificação Nacional de Atividades Econômicas).
  * Adiciona a máscara padrão XX.XX-X/XX.
@@ -23,14 +25,14 @@ export const formatCodigoServico = (codigo) => {
 };
 
 /**
- * Formata uma string de CPF ou CNPJ.
- * Adiciona a máscara padrão XX.XXX.XXX-XXXX.
- * @param {string} cnpj A string de CPF ou CNPJ a ser formatada.
- * @returns {string} O CPF ou CNPJ formatado. Retorna o original se não tiver 11 ou 14 dígitos.
+ * Formata uma string de CNPJ (numérico OU alfanumérico — IN RFB 2.229/2024).
+ * Adiciona a máscara padrão XX.XXX.XXX/XXXX-XX. Delegado p/ utils/documento.
+ * @param {string} cnpj A string de CNPJ a ser formatada.
+ * @returns {string} O CNPJ formatado.
  */
 export const formatCNPJ = (cnpj) => {
   if (!cnpj) return '';
-  return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
+  return formatarCnpj(cnpj);
 };
 
 /**

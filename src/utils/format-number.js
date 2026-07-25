@@ -1,5 +1,14 @@
 import { formatNumberLocale } from 'src/locales';
 
+import {
+  formatarCpf,
+  formatarCnpj,
+  formatarCpfCnpj,
+  normalizarDocumento,
+  validarCnpjDocumento,
+  validarCpfOuCnpjDocumento,
+} from './documento';
+
 // ----------------------------------------------------------------------
 
 const DEFAULT_LOCALE = { code: 'en-US', currency: 'USD' };
@@ -97,9 +106,10 @@ export function fData(inputValue) {
   return fm;
 }
 
+/** Normaliza CPF/CNPJ para envio à API (CNPJ pode ser ALFANUMÉRICO). */
 export function formatCpfCnpj(value) {
   if (!value) return '';
-  return String(value).replace(/\D/g, '');
+  return normalizarDocumento(value);
 }
 
 // ----------------------------------------------------------------
@@ -117,32 +127,16 @@ export const onlyDigits = (v) => v.replace(/\D/g, '');
 
 // ----------------------------------------------------------------
 
-export const formatCPF = (v) => {
-  const d = onlyDigits(v).slice(0, 11);
-  return d
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-};
+export const formatCPF = (v) => formatarCpf(v);
 
 // ----------------------------------------------------------------
 
-export const formatCNPJ = (v) => {
-  const d = onlyDigits(v).slice(0, 14);
-  return d
-    .replace(/(\d{2})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1/$2')
-    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-};
+// CNPJ pode ser ALFANUMÉRICO (IN RFB 2.229/2024) — delega p/ utils/documento.
+export const formatCNPJ = (v) => formatarCnpj(v);
 
 // ----------------------------------------------------------------
 
-export const formatCPFOrCNPJ = (v) => {
-  const d = onlyDigits(v);
-  // Se passou de 11 dígitos, assume máscara de CNPJ, senão CPF
-  return d.length > 11 ? formatCNPJ(d) : formatCPF(d);
-};
+export const formatCPFOrCNPJ = (v) => formatarCpfCnpj(v);
 
 // ----------------------------------------------------------------
 
@@ -183,51 +177,12 @@ export const validateCPF = (cpf) => {
 // ----------------------------------------------------------------
 
 /**
- * Valida CNPJ verificando dígitos verificadores
+ * Valida CNPJ (numérico OU alfanumérico) pelos dígitos verificadores.
+ * Delegado para src/utils/documento.js.
  * @param {string} cnpj - CNPJ com ou sem formatação
  * @returns {boolean} - true se CNPJ é válido
  */
-export const validateCNPJ = (cnpj) => {
-  const cleanCnpj = onlyDigits(cnpj);
-
-  if (cleanCnpj.length !== 14) return false;
-
-  // Verifica se todos os dígitos são iguais
-  if (/^(\d)\1{13}$/.test(cleanCnpj)) return false;
-
-  // Valida primeiro dígito verificador
-  let length = cleanCnpj.length - 2;
-  let numbers = cleanCnpj.substring(0, length);
-  const digits = cleanCnpj.substring(length);
-  let sum = 0;
-  let pos = length - 7;
-
-  for (let i = length; i >= 1; i -= 1) {
-    sum += parseInt(numbers.charAt(length - i), 10) * pos;
-    pos -= 1;
-    if (pos < 2) pos = 9;
-  }
-
-  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (result !== parseInt(digits.charAt(0), 10)) return false;
-
-  // Valida segundo dígito verificador
-  length += 1;
-  numbers = cleanCnpj.substring(0, length);
-  sum = 0;
-  pos = length - 7;
-
-  for (let i = length; i >= 1; i -= 1) {
-    sum += parseInt(numbers.charAt(length - i), 10) * pos;
-    pos -= 1;
-    if (pos < 2) pos = 9;
-  }
-
-  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
-  if (result !== parseInt(digits.charAt(1), 10)) return false;
-
-  return true;
-};
+export const validateCNPJ = (cnpj) => validarCnpjDocumento(cnpj);
 
 // ----------------------------------------------------------------
 
@@ -236,19 +191,7 @@ export const validateCNPJ = (cnpj) => {
  * @param {string} value - CPF/CNPJ com ou sem formatação
  * @returns {boolean} - true se CPF ou CNPJ é válido
  */
-export const validateCPFOrCNPJ = (value) => {
-  const cleanValue = onlyDigits(value);
-
-  if (cleanValue.length === 11) {
-    return validateCPF(cleanValue);
-  }
-
-  if (cleanValue.length === 14) {
-    return validateCNPJ(cleanValue);
-  }
-
-  return false;
-};
+export const validateCPFOrCNPJ = (value) => validarCpfOuCnpjDocumento(value);
 
 // ----------------------------------------------------------------
 

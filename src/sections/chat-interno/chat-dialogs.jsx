@@ -20,6 +20,7 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemButton from '@mui/material/ListItemButton';
+import InputAdornment from '@mui/material/InputAdornment';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
 import { avatarUrl } from 'src/utils/avatar';
@@ -29,6 +30,7 @@ import {
   criarCanalChat,
   entrarCanalChat,
   getBrowseCanais,
+  editarCanalChat,
   removerMembroChat,
   adicionarMembroChat,
   getCanaisArquivados,
@@ -39,7 +41,8 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { EmptyContent } from 'src/components/empty-content';
 
-import { PresencaBadge, statusPresenca } from './chat-nav-item';
+import { ChatEmojiPicker } from './chat-emoji-picker';
+import { emojiDoCanal, nomeSemEmoji, PresencaBadge, statusPresenca } from './chat-nav-item';
 
 // ----------------------------------------------------------------------
 // Diálogos do chat interno: novo canal (gestor), nova DM, explorar canais
@@ -77,8 +80,65 @@ const renderOptionUsuario = (props, u) => {
   );
 };
 
+/**
+ * Campo de nome do canal com seletor de emoji "ícone" no início: o emoji
+ * escolhido vira prefixo do nome (contrato atual não tem campo próprio) e a
+ * UI o exibe como avatar do canal na sidebar e no cabeçalho.
+ */
+function CampoNomeCanal({ nome, onNome, emoji, onEmoji, autoFocus = false }) {
+  const [pickerEl, setPickerEl] = useState(null);
+
+  return (
+    <>
+      <TextField
+        label="Nome"
+        value={nome}
+        onChange={(e) => onNome(e.target.value)}
+        autoFocus={autoFocus}
+        helperText="O emoji à esquerda vira o ícone do canal na lista."
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <IconButton
+                size="small"
+                onClick={(e) => setPickerEl(e.currentTarget)}
+                title="Escolher emoji (ícone do canal)"
+              >
+                {emoji ? (
+                  <span style={{ fontSize: 18, lineHeight: 1 }}>{emoji}</span>
+                ) : (
+                  <Iconify icon="solar:smile-circle-outline" width={20} />
+                )}
+              </IconButton>
+            </InputAdornment>
+          ),
+          endAdornment: emoji ? (
+            <InputAdornment position="end">
+              <IconButton size="small" onClick={() => onEmoji(null)} title="Remover emoji">
+                <Iconify icon="mingcute:close-line" width={16} />
+              </IconButton>
+            </InputAdornment>
+          ) : null,
+        }}
+      />
+      <ChatEmojiPicker
+        anchorEl={pickerEl}
+        onClose={() => setPickerEl(null)}
+        onSelecionar={(e) => {
+          onEmoji(e);
+          setPickerEl(null);
+        }}
+      />
+    </>
+  );
+}
+
+/** Nome final do canal: emoji como prefixo (quando escolhido). */
+const nomeComEmoji = (emoji, nome) => (emoji ? `${emoji} ${nome.trim()}` : nome.trim());
+
 export function ChatNovoCanalDialog({ open, usuarios, onClose, onCriado }) {
   const [nome, setNome] = useState('');
+  const [emoji, setEmoji] = useState(null);
   const [descricao, setDescricao] = useState('');
   const [privado, setPrivado] = useState(false);
   const [membros, setMembros] = useState([]);
@@ -87,6 +147,7 @@ export function ChatNovoCanalDialog({ open, usuarios, onClose, onCriado }) {
   useEffect(() => {
     if (!open) return;
     setNome('');
+    setEmoji(null);
     setDescricao('');
     setPrivado(false);
     setMembros([]);
@@ -100,7 +161,7 @@ export function ChatNovoCanalDialog({ open, usuarios, onClose, onCriado }) {
     setSalvando(true);
     try {
       const canal = await criarCanalChat({
-        nome: nome.trim(),
+        nome: nomeComEmoji(emoji, nome),
         descricao: descricao.trim() || undefined,
         privado,
         membros: membros.map((u) => u._id),
@@ -112,14 +173,14 @@ export function ChatNovoCanalDialog({ open, usuarios, onClose, onCriado }) {
     } finally {
       setSalvando(false);
     }
-  }, [nome, descricao, privado, membros, onCriado]);
+  }, [nome, emoji, descricao, privado, membros, onCriado]);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
       <DialogTitle>Novo canal</DialogTitle>
       <DialogContent>
         <Stack spacing={2.5} sx={{ pt: 1 }}>
-          <TextField label="Nome" value={nome} onChange={(e) => setNome(e.target.value)} autoFocus />
+          <CampoNomeCanal nome={nome} onNome={setNome} emoji={emoji} onEmoji={setEmoji} autoFocus />
           <TextField
             label="Descrição (opcional)"
             value={descricao}
@@ -149,6 +210,70 @@ export function ChatNovoCanalDialog({ open, usuarios, onClose, onCriado }) {
         </Button>
         <LoadingButton variant="contained" loading={salvando} onClick={handleCriar}>
           Criar
+        </LoadingButton>
+      </DialogActions>
+    </Dialog>
+  );
+}
+
+// ----------------------------------------------------------------------
+
+/** Edição de nome (com emoji), e descrição do canal aberto — criador ou admin. */
+export function ChatEditarCanalDialog({ open, canal, onClose, onSalvo }) {
+  const [nome, setNome] = useState('');
+  const [emoji, setEmoji] = useState(null);
+  const [descricao, setDescricao] = useState('');
+  const [salvando, setSalvando] = useState(false);
+
+  useEffect(() => {
+    if (!open || !canal) return;
+    setEmoji(emojiDoCanal(canal.nome));
+    setNome(nomeSemEmoji(canal.nome));
+    setDescricao(canal.descricao || '');
+  }, [open, canal]);
+
+  const handleSalvar = useCallback(async () => {
+    if (!canal?._id) return;
+    if (!nome.trim()) {
+      toast.error('Informe o nome do canal.');
+      return;
+    }
+    setSalvando(true);
+    try {
+      await editarCanalChat(canal._id, {
+        nome: nomeComEmoji(emoji, nome),
+        descricao: descricao.trim(),
+      });
+      toast.success('Canal atualizado.');
+      onSalvo?.();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || error?.message || 'Falha ao editar o canal.');
+    } finally {
+      setSalvando(false);
+    }
+  }, [canal, nome, emoji, descricao, onSalvo]);
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+      <DialogTitle>Editar canal</DialogTitle>
+      <DialogContent>
+        <Stack spacing={2.5} sx={{ pt: 1 }}>
+          <CampoNomeCanal nome={nome} onNome={setNome} emoji={emoji} onEmoji={setEmoji} autoFocus />
+          <TextField
+            label="Descrição (opcional)"
+            value={descricao}
+            onChange={(e) => setDescricao(e.target.value)}
+            multiline
+            minRows={2}
+          />
+        </Stack>
+      </DialogContent>
+      <DialogActions>
+        <Button color="inherit" onClick={onClose}>
+          Cancelar
+        </Button>
+        <LoadingButton variant="contained" loading={salvando} onClick={handleSalvar}>
+          Salvar
         </LoadingButton>
       </DialogActions>
     </Dialog>

@@ -3,6 +3,8 @@ import { Controller, useFormContext } from "react-hook-form"
 
 import { Box, Grid, Switch, Select,  Divider, MenuItem, TextField, Typography, FormControlLabel } from "@mui/material";
 
+import { formatarCnpj } from 'src/utils/documento';
+
 import { RHFPhoneInput } from 'src/components/hook-form';
 
 import {
@@ -119,12 +121,11 @@ export default function AlteracaoInfoGeralForm({ infoGeralAlteracao }) {
                         name="cnpj"
                         control={control}
                         render={({ field }) => (
-                            <NumericFormat
+                            <TextField
                                 {...field}
-                                format="99.999.999/9999-99"
+                                value={formatarCnpj(field.value)}
                                 label="CNPJ"
                                 fullWidth
-                                customInput={TextField}
                                 disabled
                             />
                         )}

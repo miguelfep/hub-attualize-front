@@ -27,6 +27,7 @@ import { useSettings } from 'src/hooks/useSettings';
 
 import { endpoints } from 'src/utils/axios';
 import { toPayloadLegacyDigits } from 'src/utils/phone-e164';
+import { formatarCpf, formatarCnpj, formatarCpfCnpj, normalizarDocumento } from 'src/utils/documento';
 
 import { buscarCep } from 'src/actions/cep';
 import { buscarCnpj } from 'src/actions/cnpj';
@@ -53,25 +54,10 @@ const toPhoneInputValue = (raw) => {
   if (d.length === 10 || d.length === 11) return `+55${d}`;
   return `+${d}`;
 };
-const formatCPF = (v) => {
-  const d = onlyDigits(v).slice(0, 11);
-  return d
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-};
-const formatCNPJ = (v) => {
-  const d = onlyDigits(v).slice(0, 14);
-  return d
-    .replace(/(\d{2})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1.$2')
-    .replace(/(\d{3})(\d)/, '$1/$2')
-    .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-};
-const formatCPFOrCNPJ = (v) => {
-  const d = onlyDigits(v);
-  return d.length > 11 ? formatCNPJ(d) : formatCPF(d);
-};
+// CPF/CNPJ delegados p/ utils/documento — CNPJ pode ser ALFANUMÉRICO (IN RFB 2.229/2024).
+const formatCPF = (v) => formatarCpf(v);
+const formatCNPJ = (v) => formatarCnpj(v);
+const formatCPFOrCNPJ = (v) => formatarCpfCnpj(v);
 
 const SectionHeader = ({ icon, title }) => (
   <Stack direction="row" alignItems="center" spacing={2} sx={{ my: 3 }}>
@@ -131,7 +117,7 @@ export default function PortalClienteNovoPage() {
 
   const validateForm = () => {
     const newErrors = {};
-    const docDigits = onlyDigits(formData.cpfCnpj);
+    const docDigits = normalizarDocumento(formData.cpfCnpj);
     const complemento = formData.endereco?.complemento?.trim() || '';
 
     if (!formData.nome.trim()) newErrors.nome = 'Nome / Nome Fantasia é obrigatório';
@@ -143,7 +129,7 @@ export default function PortalClienteNovoPage() {
     } else if (formData.tipoPessoa === 'fisica' && docDigits.length !== 11) {
       newErrors.cpfCnpj = 'CPF inválido, deve conter 11 dígitos';
     } else if (formData.tipoPessoa === 'juridica' && docDigits.length !== 14) {
-      newErrors.cpfCnpj = 'CNPJ inválido, deve conter 14 dígitos';
+      newErrors.cpfCnpj = 'CNPJ inválido, deve conter 14 caracteres';
     }
     if (!formData.email.trim()) {
       newErrors.email = 'Email é obrigatório';
@@ -187,7 +173,7 @@ export default function PortalClienteNovoPage() {
       const res = await portalCreateCliente({
         ...formData,
         clienteProprietarioId,
-        cpfCnpj: onlyDigits(formData.cpfCnpj),
+        cpfCnpj: normalizarDocumento(formData.cpfCnpj),
         telefone: toPayloadLegacyDigits(formData.telefone),
         whatsapp: toPayloadLegacyDigits(formData.whatsapp),
         endereco: { ...formData.endereco, cep: onlyDigits(formData.endereco.cep) },
@@ -295,9 +281,9 @@ export default function PortalClienteNovoPage() {
   const handleCpfCnpjChange = (value) => {
     const masked = formatCPFOrCNPJ(value);
     setFormData((f) => ({ ...f, cpfCnpj: masked }));
-    const digits = onlyDigits(masked);
-    if (formData.tipoPessoa === 'juridica' && digits.length === 14) {
-      handleCnpjLookup(digits);
+    const doc = normalizarDocumento(masked);
+    if (formData.tipoPessoa === 'juridica' && doc.length === 14) {
+      handleCnpjLookup(doc);
     }
   };
 

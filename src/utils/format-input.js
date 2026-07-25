@@ -1,5 +1,7 @@
 // Funções de formatação para inputs sem dependência de react-input-mask
 
+import { formatarCnpj, formatarCpfCnpj } from './documento';
+
 /**
  * Formata CEP
  * @param {string} value - Valor a ser formatado
@@ -27,18 +29,14 @@ export const formatCpf = (value) => {
 };
 
 /**
- * Formata CNPJ
+ * Formata CNPJ (numérico OU alfanumérico — IN RFB 2.229/2024).
+ * Delegado para src/utils/documento.js.
  * @param {string} value - Valor a ser formatado
- * @returns {string} - Valor formatado (00.000.000/0000-00)
+ * @returns {string} - Valor formatado (XX.XXX.XXX/XXXX-XX)
  */
 export const formatCnpj = (value) => {
   if (!value) return '';
-  const numbers = value.replace(/\D/g, '');
-  if (numbers.length <= 2) return numbers;
-  if (numbers.length <= 5) return `${numbers.slice(0, 2)}.${numbers.slice(2)}`;
-  if (numbers.length <= 8) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5)}`;
-  if (numbers.length <= 12) return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8)}`;
-  return `${numbers.slice(0, 2)}.${numbers.slice(2, 5)}.${numbers.slice(5, 8)}/${numbers.slice(8, 12)}-${numbers.slice(12, 14)}`;
+  return formatarCnpj(value);
 };
 
 /**
@@ -91,15 +89,12 @@ export const removeFormatting = (value) => {
 };
 
 /**
- * Máscara dinâmica CPF (até 11 dígitos) ou CNPJ (12–14 dígitos)
+ * Máscara dinâmica CPF (até 11 dígitos) ou CNPJ (12–14 caracteres, podendo ser
+ * ALFANUMÉRICO). Delegada para src/utils/documento.js.
  * @param {string} value
  * @returns {string}
  */
 export const formatCpfCnpj = (value) => {
   if (!value) return '';
-  const numbers = value.replace(/\D/g, '').slice(0, 14);
-  if (numbers.length <= 11) {
-    return formatCpf(numbers);
-  }
-  return formatCnpj(numbers);
+  return formatarCpfCnpj(value);
 };

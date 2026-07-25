@@ -3,9 +3,11 @@ import { useState } from 'react';
 import Box from '@mui/material/Box';
 import Fab from '@mui/material/Fab';
 import Fade from '@mui/material/Fade';
+import Chip from '@mui/material/Chip';
 import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
+import Divider from '@mui/material/Divider';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import { Iconify } from 'src/components/iconify';
@@ -24,11 +26,15 @@ export function ChatMessageList({
   carregando,
   temMais,
   onCarregarMais,
+  primeiraNaoLidaId,
   meuId,
   ehGestor,
   onReagir,
   onVotar,
   onAbrirThread,
+  onCriarTarefa,
+  salvosIds,
+  onSalvar,
   onEditar,
   onRemover,
 }) {
@@ -68,18 +74,27 @@ export function ChatMessageList({
         )}
         <Box>
           {mensagens.map((mensagem) => (
-            <ChatMessageItem
-              key={mensagem._id}
-              mensagem={mensagem}
-              meuId={meuId}
-              ehGestor={ehGestor}
-              onReagir={onReagir}
-              onVotar={onVotar}
-              onAbrirThread={onAbrirThread}
-              onEditar={onEditar}
-              onRemover={onRemover}
-              onOpenLightbox={(src) => setImagemAberta(src)}
-            />
+            <Box key={mensagem._id}>
+              {mensagem._id === primeiraNaoLidaId && (
+                <Divider sx={{ my: 1.5, '&::before, &::after': { borderColor: 'error.main' } }}>
+                  <Chip size="small" color="error" variant="outlined" label="Novas mensagens" />
+                </Divider>
+              )}
+              <ChatMessageItem
+                mensagem={mensagem}
+                meuId={meuId}
+                ehGestor={ehGestor}
+                onReagir={onReagir}
+                onVotar={onVotar}
+                onAbrirThread={onAbrirThread}
+                onCriarTarefa={onCriarTarefa}
+                salva={salvosIds?.has?.(mensagem._id) || false}
+                onSalvar={onSalvar}
+                onEditar={onEditar}
+                onRemover={onRemover}
+                onOpenLightbox={(src) => setImagemAberta(src)}
+              />
+            </Box>
           ))}
         </Box>
       </Scrollbar>

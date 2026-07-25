@@ -29,7 +29,8 @@ import { useEmpresa } from 'src/hooks/use-empresa';
 import { useDebounce } from 'src/hooks/use-debounce';
 
 import { toTitleCase } from 'src/utils/helper';
-import { formatCpfCnpj, removeFormatting } from 'src/utils/format-input';
+import { formatCpfCnpj } from 'src/utils/format-input';
+import { normalizarDocumento } from 'src/utils/documento';
 
 import {
   abrirPdfNota,
@@ -227,7 +228,7 @@ export default function PortalFaturamentoPage() {
   }, [notas]);
 
   const aplicarFiltroCpfCnpj = useCallback(() => {
-    const d = removeFormatting(filtroCpfCnpj);
+    const d = normalizarDocumento(filtroCpfCnpj);
     if (!d) {
       setCpfCnpjAplicado('');
       setCpfCnpjErro('');
@@ -235,7 +236,7 @@ export default function PortalFaturamentoPage() {
       return;
     }
     if (d.length !== 11 && d.length !== 14) {
-      setCpfCnpjErro('Informe CPF (11 dígitos) ou CNPJ (14 dígitos) completo para filtrar.');
+      setCpfCnpjErro('Informe CPF (11 dígitos) ou CNPJ (14 caracteres) completo para filtrar.');
       return;
     }
     setCpfCnpjErro('');
@@ -244,7 +245,7 @@ export default function PortalFaturamentoPage() {
   }, [filtroCpfCnpj]);
 
   const handleCpfCnpjBlur = useCallback(() => {
-    const d = removeFormatting(filtroCpfCnpj);
+    const d = normalizarDocumento(filtroCpfCnpj);
     if (!d) {
       if (cpfCnpjAplicado) {
         setCpfCnpjAplicado('');
@@ -703,7 +704,7 @@ export default function PortalFaturamentoPage() {
                   : n.tomador?.razaoSocial || n.tomador?.nome;
                 const tomadorDoc = emitente ? emitente.cpfCnpj : n.tomador?.cpfCnpj;
                 const tomadorDocFmt = tomadorDoc
-                  ? formatCpfCnpj(removeFormatting(String(tomadorDoc)))
+                  ? formatCpfCnpj(String(tomadorDoc))
                   : '';
                 const tipoNotaLabel = formatTipoNota(n.tipoNota);
                 const tipoNotaColor = getTipoNotaColor(n.tipoNota);

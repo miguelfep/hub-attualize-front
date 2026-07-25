@@ -42,6 +42,8 @@ export function useChatInbox(meuId, { alertasDeMencao = true } = {}) {
   const [mensagens, setMensagens] = useState([]);
   const [temMais, setTemMais] = useState(false);
   const [carregandoCanal, setCarregandoCanal] = useState(false);
+  // Id da 1ª mensagem ainda não lida ao abrir a conversa (divisor "Novas mensagens").
+  const [primeiraNaoLidaId, setPrimeiraNaoLidaId] = useState(null);
   // Última resposta de thread recebida via SSE (consumida pelo drawer aberto).
   const [ultimaRespostaThread, setUltimaRespostaThread] = useState(null);
   // Presença: userIds online/ausentes (SSE em tempo real + polling de reconciliação p/ offline por TTL).
@@ -105,6 +107,7 @@ export function useChatInbox(meuId, { alertasDeMencao = true } = {}) {
       setCanal(null);
       setMensagens([]);
       setTemMais(false);
+      setPrimeiraNaoLidaId(null);
       return undefined;
     }
 
@@ -115,9 +118,18 @@ export function useChatInbox(meuId, { alertasDeMencao = true } = {}) {
       try {
         const res = await getMensagensChat(selecionadoId, { limit: 50 });
         if (!ativo) return;
-        setMensagens(res?.itens || []);
+        const itens = res?.itens || [];
+        setMensagens(itens);
         setTemMais(Boolean(res?.temMais));
         setCanal((prev) => canaisRef.current.find((c) => c._id === selecionadoId) || prev);
+
+        // Guarda onde começam as não lidas ANTES de marcar como lido, para o
+        // divisor "Novas mensagens" no feed (aproximação pelo contador agregado).
+        const naoLidas =
+          canaisRef.current.find((c) => c._id === selecionadoId)?.naoLidas || 0;
+        setPrimeiraNaoLidaId(
+          naoLidas > 0 ? itens[Math.max(itens.length - naoLidas, 0)]?._id || null : null
+        );
 
         await marcarLidoChat(selecionadoId);
         if (!ativo) return;
@@ -329,6 +341,7 @@ export function useChatInbox(meuId, { alertasDeMencao = true } = {}) {
     mensagens,
     temMais,
     carregandoCanal,
+    primeiraNaoLidaId,
     carregarMaisAntigas,
     anexarMensagem,
     substituirMensagem,

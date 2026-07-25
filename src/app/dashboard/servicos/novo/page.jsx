@@ -68,6 +68,10 @@ export default function NovoServicoAdminPage() {
     codigoServicoMunicipio: '',
     itemListaServicoLC116: '',
     codigoTributacaoNacional: '',
+    cstIbsCbs: '',
+    cClassTrib: '',
+    cIndOpIbsCbs: '',
+    codigoNbs: '',
     codigoTributacaoMunicipal: '',
     aliquotaIss: '',
     status: true,
@@ -138,6 +142,10 @@ export default function NovoServicoAdminPage() {
         codigoServicoMunicipio: isNacional ? '' : form.codigoServicoMunicipio?.trim() || '',
         itemListaServicoLC116: form.itemListaServicoLC116?.trim() || '',
         codigoTributacaoNacional: isNacional ? form.codigoTributacaoNacional?.trim() || '' : '',
+        cstIbsCbs: isNacional ? form.cstIbsCbs?.trim() || '' : '',
+        cClassTrib: isNacional ? form.cClassTrib?.trim() || '' : '',
+        cIndOpIbsCbs: isNacional ? form.cIndOpIbsCbs?.trim() || '' : '',
+        codigoNbs: isNacional ? form.codigoNbs?.trim() || '' : '',
         codigoTributacaoMunicipal: isNacional ? form.codigoTributacaoMunicipal?.trim() || '' : '',
         aliquotaIss: form.aliquotaIss !== '' && form.aliquotaIss != null ? Number(form.aliquotaIss) : null,
         status: form.status,
@@ -384,6 +392,69 @@ export default function NovoServicoAdminPage() {
                             placeholder="Ex: 171901"
                             helperText="6 dígitos — obrigatório para emissão pelo Sefin"
                             inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                          />
+                        </Grid>
+                        <Grid xs={12} sm={4}>
+                          <TextField
+                            fullWidth
+                            label="CST IBS/CBS"
+                            value={form.cstIbsCbs}
+                            onChange={(e) =>
+                              handleChange('cstIbsCbs', onlyDigits(e.target.value).slice(0, 3))
+                            }
+                            placeholder="Ex: 000"
+                            helperText="Reforma Tributária — Código de Situação Tributária (3 dígitos). Facultativo em 2026"
+                            inputProps={{ maxLength: 3, inputMode: 'numeric' }}
+                          />
+                        </Grid>
+                        <Grid xs={12} sm={4}>
+                          <TextField
+                            fullWidth
+                            label="Classificação Tributária IBS/CBS (cClassTrib)"
+                            value={form.cClassTrib}
+                            onChange={(e) =>
+                              handleChange('cClassTrib', onlyDigits(e.target.value).slice(0, 6))
+                            }
+                            placeholder="Ex: 000001"
+                            error={Boolean(
+                              form.cstIbsCbs?.length === 3 &&
+                                form.cClassTrib?.length === 6 &&
+                                !form.cClassTrib.startsWith(form.cstIbsCbs)
+                            )}
+                            helperText={
+                              form.cstIbsCbs?.length === 3 &&
+                              form.cClassTrib?.length === 6 &&
+                              !form.cClassTrib.startsWith(form.cstIbsCbs)
+                                ? `Os 3 primeiros dígitos devem ser iguais ao CST ${form.cstIbsCbs} (regra E0959 do Emissor Nacional)`
+                                : '6 dígitos — Anexo da NT-004. Os 3 primeiros dígitos devem ser iguais ao CST'
+                            }
+                            inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                          />
+                        </Grid>
+                        <Grid xs={12} sm={4}>
+                          <TextField
+                            fullWidth
+                            label="Indicador da Operação (cIndOp)"
+                            value={form.cIndOpIbsCbs}
+                            onChange={(e) =>
+                              handleChange('cIndOpIbsCbs', onlyDigits(e.target.value).slice(0, 6))
+                            }
+                            placeholder="Ex: 000001"
+                            helperText="6 dígitos — art. 11 da LC 214/2025 (local da operação)"
+                            inputProps={{ maxLength: 6, inputMode: 'numeric' }}
+                          />
+                        </Grid>
+                        <Grid xs={12} sm={4}>
+                          <TextField
+                            fullWidth
+                            label="Código NBS (cNBS)"
+                            value={form.codigoNbs}
+                            onChange={(e) =>
+                              handleChange('codigoNbs', onlyDigits(e.target.value).slice(0, 9))
+                            }
+                            placeholder="Ex: 123456789"
+                            helperText="9 dígitos — Nomenclatura Brasileira de Serviços. Obrigatório quando os campos IBS/CBS estão preenchidos (regra E0322)"
+                            inputProps={{ maxLength: 9, inputMode: 'numeric' }}
                           />
                         </Grid>
                         <Grid xs={12} sm={6}>
