@@ -10,18 +10,20 @@ import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
-import { formatToCamelCase } from 'src/utils/formatter'; import { onlyDigits, formatCPFOrCNPJ } from 'src/utils/format-number';
+import { formatToCamelCase } from 'src/utils/formatter'; import { formatCPFOrCNPJ } from 'src/utils/format-number';
+import { documentoCompleto, normalizarDocumento } from 'src/utils/documento';
 
 import { criarLead, getAllLeadsOrigens } from 'src/actions/lead';
 
 import { Field } from 'src/components/hook-form';
 
 
+// CNPJ pode ser ALFANUMÉRICO (IN RFB 2.229/2024) — 11 dígitos (CPF) ou 14 caracteres (CNPJ).
 const validarCpfCnpj = (value) => {
-  const cleanValue = onlyDigits(value);
+  const cleanValue = normalizarDocumento(value);
   if (!cleanValue) return 'CPF/CNPJ é obrigatório';
 
-  if (cleanValue.length !== 11 && cleanValue.length !== 14) {
+  if (!documentoCompleto(cleanValue)) {
     return 'Insira um CPF ou CNPJ válido';
   }
   return true;
@@ -95,7 +97,7 @@ export function NewLeadDialog({ open, onClose, onAddLead }) {
       }
 
       const clearedWhatsapp = digitsWhatsapp;
-      const clearedCpfCnpj = onlyDigits(data.cnpj);
+      const clearedCpfCnpj = normalizarDocumento(data.cnpj);
 
       let origemFinal = data.origem;
       if (typeof data.origem === 'string' && data.origem) {

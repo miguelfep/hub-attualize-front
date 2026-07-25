@@ -13,7 +13,13 @@ import { avatarUrl } from 'src/utils/avatar';
 
 import { Iconify } from 'src/components/iconify';
 
-import { outroIdDaDm, nomeDaConversa, statusPresenca } from './chat-nav-item';
+import {
+  outroIdDaDm,
+  emojiDoCanal,
+  nomeSemEmoji,
+  nomeDaConversa,
+  statusPresenca,
+} from './chat-nav-item';
 
 // ----------------------------------------------------------------------
 
@@ -25,6 +31,7 @@ export function ChatHeader({
   podeCiclo,
   onMembros,
   onWaIniciar,
+  onEditarCanal,
   onArquivar,
   onExcluir,
   onSair,
@@ -32,6 +39,7 @@ export function ChatHeader({
   const [menuEl, setMenuEl] = useState(null);
   const ehCanal = canal?.tipo === 'canal';
   const nome = nomeDaConversa(canal, meuId);
+  const emoji = ehCanal ? emojiDoCanal(canal?.nome) : null;
   const membros = canal?.membros || [];
 
   const fechar = () => setMenuEl(null);
@@ -47,21 +55,27 @@ export function ChatHeader({
       spacing={1.5}
       sx={{ px: 2.5, py: 1.5, borderBottom: (t) => `solid 1px ${t.vars.palette.divider}` }}
     >
-      <Iconify
-        icon={
-          !ehCanal
-            ? 'solar:user-rounded-bold'
-            : canal?.privado
-              ? 'solar:lock-keyhole-bold'
-              : 'material-symbols:tag'
-        }
-        sx={{ color: 'text.secondary' }}
-      />
+      {emoji ? (
+        <Typography component="span" sx={{ fontSize: 20, lineHeight: 1 }}>
+          {emoji}
+        </Typography>
+      ) : (
+        <Iconify
+          icon={
+            !ehCanal
+              ? 'solar:user-rounded-bold'
+              : canal?.privado
+                ? 'solar:lock-keyhole-bold'
+                : 'material-symbols:tag'
+          }
+          sx={{ color: 'text.secondary' }}
+        />
+      )}
 
       <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
         <Stack direction="row" alignItems="center" spacing={1}>
           <Typography variant="subtitle1" noWrap>
-            {nome}
+            {emoji ? nomeSemEmoji(nome) : nome}
           </Typography>
           {!ehCanal &&
             (() => {
@@ -137,6 +151,14 @@ export function ChatHeader({
               <Iconify icon="solar:users-group-rounded-bold" />
             </ListItemIcon>
             Membros
+          </MenuItem>
+        )}
+        {ehCanal && podeCiclo && (
+          <MenuItem onClick={acao(onEditarCanal)}>
+            <ListItemIcon>
+              <Iconify icon="solar:pen-bold" />
+            </ListItemIcon>
+            Editar canal
           </MenuItem>
         )}
         {ehCanal && (

@@ -3,6 +3,8 @@
 // Baseado na documentação FRONTEND_IMPLEMENTATION_GUIDE.md
 // ----------------------------------------------------------------------
 
+import { formatarCnpj } from './documento';
+
 /**
  * Formata valor para moeda brasileira (R$)
  * @param {number} value - Valor a ser formatado
@@ -90,23 +92,14 @@ export function formatCPF(cpf) {
 }
 
 /**
- * Formata CNPJ brasileiro
+ * Formata CNPJ brasileiro (numérico OU alfanumérico — IN RFB 2.229/2024).
+ * Delegado para src/utils/documento.js.
  * @param {string} cnpj - CNPJ a ser formatado
- * @returns {string} CNPJ formatado (00.000.000/0000-00)
+ * @returns {string} CNPJ formatado (XX.XXX.XXX/XXXX-XX)
  */
 export function formatCNPJ(cnpj) {
   if (!cnpj) return '';
-  
-  // Remove tudo que não é número
-  const numeros = cnpj.replace(/\D/g, '');
-  
-  // Formata se tiver 14 dígitos
-  if (numeros.length === 14) {
-    return `${numeros.slice(0, 2)}.${numeros.slice(2, 5)}.${numeros.slice(5, 8)}/${numeros.slice(8, 12)}-${numeros.slice(12)}`;
-  }
-  
-  // Retorna apenas os números se não tiver o tamanho esperado
-  return numeros;
+  return formatarCnpj(cnpj);
 }
 
 /**

@@ -12,6 +12,7 @@ import FormControl from '@mui/material/FormControl';
 import CircularProgress from '@mui/material/CircularProgress';
 
 import axios from 'src/utils/axios';
+import { formatarCnpj } from 'src/utils/documento';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -74,10 +75,8 @@ export function EmpresaSelector({ userId, onEmpresaChange }) {
 
   const getEmpresaAtiva = () => empresas.find(empresa => empresa._id === empresaAtiva);
 
-  const formatCNPJ = (cnpj) => {
-    if (!cnpj) return '';
-    return cnpj.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
-  };
+  // CNPJ pode ser ALFANUMÉRICO (IN RFB 2.229/2024) — delega p/ utils/documento.
+  const formatCNPJ = (cnpj) => (cnpj ? formatarCnpj(cnpj) : '');
 
   if (loadingEmpresas) {
     return (

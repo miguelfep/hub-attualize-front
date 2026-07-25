@@ -16,6 +16,7 @@ import { useSettings } from 'src/hooks/useSettings';
 
 import { fCurrency } from 'src/utils/format-number';
 import { toPayloadLegacyDigits } from 'src/utils/phone-e164';
+import { pareceCnpj, formatarCpf, formatarCnpj, formatarCpfCnpj, normalizarDocumento } from 'src/utils/documento';
 
 import { buscarCep } from 'src/actions/cep';
 import { buscarCnpj } from 'src/actions/cnpj';
@@ -70,7 +71,7 @@ export default function NovoOrcamentoPage() {
 
   const validateForm = () => {
     const newErrors = {};
-    const docDigits = onlyDigits(quickCli.doc);
+    const docDigits = normalizarDocumento(quickCli.doc);
 
     if (!quickCli.nome.trim()) newErrors.nome = 'Nome é obrigatório';
     if (!quickCli.email.trim()) {
@@ -129,25 +130,10 @@ export default function NovoOrcamentoPage() {
     return `+${d}`;
   };
 
-  const formatCPF = (v) => {
-    const d = onlyDigits(v).slice(0, 11);
-    return d
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-  };
-  const formatCNPJ = (v) => {
-    const d = onlyDigits(v).slice(0, 14);
-    return d
-      .replace(/(\d{2})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1/$2')
-      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-  };
-  const formatCPFOrCNPJ = (v) => {
-    const d = onlyDigits(v);
-    return d.length > 11 ? formatCNPJ(d) : formatCPF(d);
-  };
+  // CPF/CNPJ delegados p/ utils/documento — CNPJ pode ser ALFANUMÉRICO (IN RFB 2.229/2024).
+  const formatCPF = (v) => formatarCpf(v);
+  const formatCNPJ = (v) => formatarCnpj(v);
+  const formatCPFOrCNPJ = (v) => formatarCpfCnpj(v);
 
   const initialState = {
     nome: '',
@@ -222,8 +208,8 @@ export default function NovoOrcamentoPage() {
   const handleQuickDocChange = (value) => {
     const masked = formatCPFOrCNPJ(value);
     setQuickCli((q) => ({ ...q, doc: masked }));
-    const digits = onlyDigits(masked);
-    if (digits.length === 14) handleQuickCnpjLookup(digits);
+    const doc = normalizarDocumento(masked);
+    if (doc.length === 14) handleQuickCnpjLookup(doc);
   };
 
   if (loadingEmpresas || !clienteProprietarioId) return <NovoOrcamentoPageSkeleton />;
@@ -700,10 +686,10 @@ export default function NovoOrcamentoPage() {
                 return;
               }
               try {
-                const docDigits = onlyDigits(quickCli.doc);
+                const docDigits = normalizarDocumento(quickCli.doc);
                 const payload = {
                   clienteProprietarioId,
-                  tipoPessoa: docDigits.length > 11 ? 'juridica' : 'fisica',
+                  tipoPessoa: pareceCnpj(docDigits) ? 'juridica' : 'fisica',
                   nome: quickCli.nome,
                   cpfCnpj: docDigits,
                   email: quickCli.email,

@@ -19,6 +19,8 @@ import {
   CircularProgress,
 } from '@mui/material';
 
+import { formatarCnpj, validarCnpjDocumento } from 'src/utils/documento';
+
 import { criarLead } from 'src/actions/lead';
 
 import { Iconify } from 'src/components/iconify';
@@ -26,39 +28,9 @@ import { Field } from 'src/components/hook-form';
 
 // ----------------------------------------------------------------------
 
-function formatCnpj(value) {
-  return value
-    .replace(/\D/g, '')
-    .slice(0, 14)
-    .replace(/^(\d{2})(\d)/, '$1.$2')
-    .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-    .replace(/\.(\d{3})(\d)/, '.$1/$2')
-    .replace(/(\d{4})(\d)/, '$1-$2');
-}
-
-function isValidCnpj(value) {
-  const cnpj = value.replace(/\D/g, '');
-  if (cnpj.length !== 14 || /^(\d)\1{13}$/.test(cnpj)) return false;
-
-  const calcDigit = (base) => {
-    let factor = base.length - 7;
-    const sum = base
-      .split('')
-      .reduce((acc, digit) => {
-        const result = acc + Number(digit) * factor;
-        factor -= 1;
-        if (factor < 2) factor = 9;
-        return result;
-      }, 0);
-    const rest = sum % 11;
-    return rest < 2 ? 0 : 11 - rest;
-  };
-
-  const d1 = calcDigit(cnpj.slice(0, 12));
-  const d2 = calcDigit(cnpj.slice(0, 12) + d1);
-
-  return cnpj === cnpj.slice(0, 12) + String(d1) + String(d2);
-}
+// CNPJ pode ser ALFANUMÉRICO (IN RFB 2.229/2024) — delegado p/ utils/documento.
+const formatCnpj = (value) => formatarCnpj(value);
+const isValidCnpj = (value) => validarCnpjDocumento(value);
 
 // ----------------------------------------------------------------------
 

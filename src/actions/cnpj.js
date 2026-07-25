@@ -1,3 +1,5 @@
+import { normalizarDocumento } from 'src/utils/documento';
+
 const onlyDigits = (v) => (v || '').replace(/\D/g, '');
 
 const normalizarTelefone = (ddd, numero) => {
@@ -71,7 +73,10 @@ async function buscarNoBrasilApi(cnpj) {
 }
 
 export async function buscarCnpj(cnpj) {
-  const digits = onlyDigits(cnpj);
+  // CNPJ pode ser ALFANUMÉRICO (IN RFB 2.229/2024) — normaliza mantendo letras.
+  // As APIs públicas seguem a cadeia de fallback; se ainda não suportarem o
+  // formato novo, caem no erro padrão "CNPJ não encontrado".
+  const digits = normalizarDocumento(cnpj);
   if (digits.length !== 14) {
     throw new Error('CNPJ inválido');
   }

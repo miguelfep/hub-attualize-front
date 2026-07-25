@@ -2,6 +2,7 @@ import { useState } from 'react';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import Link from '@mui/material/Link';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
 import Avatar from '@mui/material/Avatar';
@@ -37,20 +38,36 @@ const iniciais = (nome) =>
     .join('')
     .toUpperCase();
 
-/** Realça @menções no texto. */
+/** Realça @menções e torna URLs clicáveis no texto. */
 function TextoComMencoes({ texto }) {
-  const partes = String(texto || '').split(/(@[a-zA-Z0-9._-]+)/g);
+  const partes = String(texto || '').split(/((?:https?:\/\/[^\s]+)|@[a-zA-Z0-9._-]+)/g);
   return (
     <>
-      {partes.map((p, i) =>
-        p.startsWith('@') ? (
-          <Box key={i} component="span" sx={{ color: 'info.main', fontWeight: 'fontWeightMedium' }}>
-            {p}
-          </Box>
-        ) : (
-          p
-        )
-      )}
+      {partes.map((p, i) => {
+        if (/^https?:\/\//.test(p)) {
+          return (
+            <Link key={i} href={p} target="_blank" rel="noopener" sx={{ wordBreak: 'break-all' }}>
+              {p}
+            </Link>
+          );
+        }
+        if (p.startsWith('@')) {
+          const todos = p.toLowerCase() === '@todos';
+          return (
+            <Box
+              key={i}
+              component="span"
+              sx={{
+                color: todos ? 'warning.main' : 'info.main',
+                fontWeight: todos ? 'fontWeightBold' : 'fontWeightMedium',
+              }}
+            >
+              {p}
+            </Box>
+          );
+        }
+        return p;
+      })}
     </>
   );
 }
@@ -174,6 +191,9 @@ export function ChatMessageItem({
   onReagir,
   onVotar,
   onAbrirThread,
+  onCriarTarefa,
+  salva = false,
+  onSalvar,
   onEditar,
   onRemover,
   onOpenLightbox,
@@ -324,6 +344,25 @@ export function ChatMessageItem({
           {!emThread && (
             <IconButton size="small" onClick={() => onAbrirThread?.(mensagem)} title="Responder em thread">
               <Iconify icon="solar:chat-line-outline" width={18} />
+            </IconButton>
+          )}
+          {onCriarTarefa && (
+            <IconButton
+              size="small"
+              onClick={() => onCriarTarefa(mensagem)}
+              title="Criar tarefa a partir desta mensagem"
+            >
+              <Iconify icon="solar:checklist-minimalistic-outline" width={18} />
+            </IconButton>
+          )}
+          {onSalvar && (
+            <IconButton
+              size="small"
+              onClick={() => onSalvar(mensagem)}
+              title={salva ? 'Remover dos salvos' : 'Salvar para depois'}
+              sx={salva ? { color: 'warning.main' } : undefined}
+            >
+              <Iconify icon={salva ? 'solar:bookmark-bold' : 'solar:bookmark-outline'} width={18} />
             </IconButton>
           )}
           {(podeEditar || podeRemover) && (

@@ -45,9 +45,10 @@ function resolverLink(notification) {
   const leadId = notification?.lead?._id || notification?.lead;
   if (leadId) return paths.dashboard.comercial.leadDetails(leadId);
 
-  // Chat interno: abre o chat já no canal/DM da notificação.
+  // Chat interno: abre o chat já no canal/DM da notificação. O nonce `n` força
+  // a troca de conversa mesmo quando a URL já tem o mesmo canal na query.
   const chatCanalId = notification?.chatCanal?._id || notification?.chatCanal;
-  if (chatCanalId) return `${paths.dashboard.chat}?canal=${chatCanalId}`;
+  if (chatCanalId) return `${paths.dashboard.chat}?canal=${chatCanalId}&n=${Date.now()}`;
 
   return null;
 }

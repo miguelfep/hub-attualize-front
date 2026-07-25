@@ -60,15 +60,17 @@ const VAZIO = {
  * @param {boolean}  props.open
  * @param {() => void} props.onClose
  * @param {object=}  props.tarefa      tarefa a editar (undefined → criação)
+ * @param {object=}  props.valoresIniciais campos pré-preenchidos na criação (ex.: vindos do chat)
  * @param {Array}    props.usuarios    lista de internos p/ o responsável
  * @param {Array}    props.clientes    lista de clientes (opcional)
  * @param {Array}    props.setores     setores ativos ({ _id, nome, slug })
- * @param {() => void} props.onSuccess callback após salvar
+ * @param {(tarefa) => void} props.onSuccess callback após salvar (recebe a tarefa criada/atualizada)
  */
 export function TarefaFormDialog({
   open,
   onClose,
   tarefa,
+  valoresIniciais,
   usuarios = [],
   clientes = [],
   setores = [],
@@ -95,9 +97,9 @@ export function TarefaFormDialog({
         checklist: [],
       });
     } else {
-      setForm(VAZIO);
+      setForm({ ...VAZIO, ...valoresIniciais });
     }
-  }, [open, editando, tarefa]);
+  }, [open, editando, tarefa, valoresIniciais]);
 
   useEffect(() => {
     if (!open) return;
@@ -137,6 +139,7 @@ export function TarefaFormDialog({
 
     setSalvando(true);
     try {
+      let salva;
       if (editando) {
         // Reatribuição não é feita aqui — `responsavel` é ignorado no PATCH.
         const payload = {
@@ -149,7 +152,7 @@ export function TarefaFormDialog({
           prioridade: form.prioridade,
           pop: form.pop || null,
         };
-        await atualizarTarefa(tarefa._id, payload);
+        salva = await atualizarTarefa(tarefa._id, payload);
         toast.success('Tarefa atualizada.');
       } else {
         const payload = {
@@ -164,10 +167,10 @@ export function TarefaFormDialog({
           pop: form.pop || undefined,
           checklist: checklistParaPayload(form.checklist),
         };
-        await criarTarefa(payload);
+        salva = await criarTarefa(payload);
         toast.success('Tarefa criada.');
       }
-      onSuccess?.();
+      onSuccess?.(salva);
       onClose();
     } catch (e) {
       toast.error(e?.message || e?.response?.data?.message || 'Erro ao salvar a tarefa.');

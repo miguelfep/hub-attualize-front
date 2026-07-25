@@ -74,13 +74,21 @@ export function ChatMessageInput({
 
   const sugestoes = useMemo(() => {
     if (mencaoAtiva === null) return [];
-    return usuarios
+    const base = usuarios
       .filter((u) => {
         const alvo = `${u.name || ''} ${u.email || ''}`.toLowerCase();
         return !mencaoAtiva || alvo.includes(mencaoAtiva);
       })
       .slice(0, 6);
-  }, [mencaoAtiva, usuarios]);
+    // @todos notifica todos do canal. Só vira 1ª opção (Enter seleciona) quando
+    // digitado por inteiro, para não roubar o Enter de nomes que começam com "t".
+    if (!threadDe && 'todos'.startsWith(mencaoAtiva)) {
+      const opcaoTodos = { _id: '__todos__', name: 'todos', email: 'Notificar todos do canal', todos: true };
+      if (mencaoAtiva === 'todos') base.unshift(opcaoTodos);
+      else base.push(opcaoTodos);
+    }
+    return base;
+  }, [mencaoAtiva, usuarios, threadDe]);
 
   const inserirMencao = useCallback(
     (usuario) => {
@@ -89,6 +97,12 @@ export function ChatMessageInput({
     },
     []
   );
+
+  // O input fica desabilitado durante o envio; devolve o foco depois que o
+  // re-render o reabilitar, para emendar a próxima mensagem sem clicar.
+  const refocarInput = useCallback(() => {
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }, []);
 
   const handleEnviar = useCallback(async () => {
     const corpo = texto.trim();
@@ -102,8 +116,9 @@ export function ChatMessageInput({
       toast.error(error?.response?.data?.message || error?.message || 'Falha ao enviar.');
     } finally {
       setEnviando(false);
+      refocarInput();
     }
-  }, [texto, canalId, threadDe, onEnviada]);
+  }, [texto, canalId, threadDe, onEnviada, refocarInput]);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -138,9 +153,10 @@ export function ChatMessageInput({
         toast.error(error?.response?.data?.message || error?.message || 'Falha ao anexar.');
       } finally {
         setEnviando(false);
+        refocarInput();
       }
     },
-    [canalId, texto, threadDe, onEnviada]
+    [canalId, texto, threadDe, onEnviada, refocarInput]
   );
 
   const handleFile = useCallback(
@@ -243,9 +259,10 @@ export function ChatMessageInput({
         toast.error(error?.response?.data?.message || 'Falha ao enviar o GIF.');
       } finally {
         setEnviando(false);
+        refocarInput();
       }
     },
-    [canalId, threadDe, onEnviada]
+    [canalId, threadDe, onEnviada, refocarInput]
   );
 
   return (
@@ -261,7 +278,7 @@ export function ChatMessageInput({
               <ListItemButton key={u._id} onClick={() => inserirMencao(u)}>
                 <ListItemAvatar sx={{ minWidth: 40 }}>
                   <Avatar src={avatarUrl(u) || undefined} sx={{ width: 28, height: 28, fontSize: 13 }}>
-                    {(u.name || '?')[0].toUpperCase()}
+                    {u.todos ? '📢' : (u.name || '?')[0].toUpperCase()}
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText

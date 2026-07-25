@@ -56,6 +56,19 @@ const cobrancaStatusColors = {
   PROCESSANDO: 'secondary'
 };
 
+// Traduz erros conhecidos do Emissor Nacional (códigos EXXXX) para algo acionável;
+// para o restante, repassa a mensagem do backend em vez de um erro genérico.
+function mensagemErroEmissaoNota(error) {
+  const msg = error?.message || '';
+  if (/E0207|CPF do tomador/i.test(msg)) {
+    return 'CPF do tomador não encontrado no cadastro da Receita Federal. Verifique o CPF do cliente e tente novamente.';
+  }
+  if (/CNPJ do tomador/i.test(msg)) {
+    return 'CNPJ do tomador não encontrado no cadastro da Receita Federal. Verifique o CNPJ do cliente e tente novamente.';
+  }
+  return msg || 'Falha ao gerar nota fiscal';
+}
+
 const cobrancaStatusTexts = {
   EMABERTO: 'Aguardando pagamento',
   VENCIDO: 'Vencida',
@@ -486,7 +499,7 @@ export function InvoiceDetails({ invoice, nfses }) {
                     toast.error('Falha ao gerar nota fiscal');
                   }
                 } catch (e) {
-                  toast.error('Falha ao gerar nota fiscal');
+                  toast.error(mensagemErroEmissaoNota(e));
                 } finally {
                   setGeneratingNf(false);
                 }

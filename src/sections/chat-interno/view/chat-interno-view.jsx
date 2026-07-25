@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -12,9 +12,12 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 
+import { paths } from 'src/routes/paths';
 import { useSearchParams } from 'src/routes/hooks';
 
 import { CONFIG } from 'src/config-global';
+import { getSetores } from 'src/actions/setores';
+import { getClientes } from 'src/actions/clientes';
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
   reagirChat,
@@ -24,6 +27,7 @@ import {
   votarEnqueteChat,
   arquivarCanalChat,
   editarMensagemChat,
+  enviarMensagemChat,
   removerMensagemChat,
 } from 'src/actions/chat-interno';
 
@@ -31,13 +35,18 @@ import { toast } from 'src/components/snackbar';
 import { EmptyContent } from 'src/components/empty-content';
 import { ConfirmDialog } from 'src/components/custom-dialog';
 
+import { TarefaFormDialog } from 'src/sections/tarefas/tarefa-form-dialog';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import { ChatNav } from '../chat-nav';
 import { ChatHeader } from '../chat-header';
 import { ChatDropZone } from '../chat-drop-zone';
+import { nomeDaConversa } from '../chat-nav-item';
 import { useChatInbox } from '../hooks/use-chat-inbox';
 import { ChatMessageList } from '../chat-message-list';
+import { useChatSalvos } from '../hooks/use-chat-salvos';
+import { ChatSalvosDrawer } from '../chat-salvos-drawer';
 import { ChatMessageInput } from '../chat-message-input';
 import { ChatThreadDrawer } from '../chat-thread-drawer';
 import { ChatWaIniciarDialog } from '../chat-wa-dialogs';
@@ -46,6 +55,7 @@ import {
   ChatBrowseDialog,
   ChatMembrosDialog,
   ChatNovoCanalDialog,
+  ChatEditarCanalDialog,
 } from '../chat-dialogs';
 
 // ----------------------------------------------------------------------
@@ -72,6 +82,7 @@ export function ChatInternoView() {
     mensagens,
     temMais,
     carregandoCanal,
+    primeiraNaoLidaId,
     carregarMaisAntigas,
     anexarMensagem,
     substituirMensagem,
@@ -89,18 +100,24 @@ export function ChatInternoView() {
       .catch(() => {});
   }, []);
 
-  // Deep-link do sino/toast: /dashboard/chat?canal=<id> abre direto a conversa.
+  // Deep-link do sino/toast: /dashboard/chat?canal=<id>&n=<ts> abre a conversa.
+  // Guarda a última chave APLICADA (canal + nonce `n`): um novo clique no sino,
+  // mesmo já dentro da página (e até para o MESMO canal da URL, graças ao
+  // nonce), troca a conversa — mas navegar manualmente entre conversas não faz
+  // a query antiga "puxar de volta".
   const searchParams = useSearchParams();
   const canalQuery = searchParams.get('canal');
-  const deepLinkAplicado = useRef(false);
+  const nonceQuery = searchParams.get('n') || '';
+  const deepLinkAplicado = useRef(null);
   useEffect(() => {
-    if (!canalQuery || deepLinkAplicado.current) return;
-    deepLinkAplicado.current = true;
+    const chave = canalQuery ? `${canalQuery}|${nonceQuery}` : null;
+    if (!chave || chave === deepLinkAplicado.current) return;
+    deepLinkAplicado.current = chave;
     selecionar(canalQuery);
-  }, [canalQuery, selecionar]);
+  }, [canalQuery, nonceQuery, selecionar]);
 
   // Diálogos / painéis
-  const [dialog, setDialog] = useState(null); // 'novo-canal'|'nova-dm'|'browse'|'membros'|'wa-iniciar'
+  const [dialog, setDialog] = useState(null); // 'novo-canal'|'editar-canal'|'nova-dm'|'browse'|'membros'|'wa-iniciar'
   const [threadRaiz, setThreadRaiz] = useState(null);
   const [editando, setEditando] = useState(null);
   const [textoEdicao, setTextoEdicao] = useState('');
@@ -174,6 +191,74 @@ export function ChatInternoView() {
     }
   }, [removendo, substituirMensagem]);
 
+  // ------------------------------------------------------------------
+  // Salvos: "salvar para depois" (localStorage, por usuário/navegador).
+  // ------------------------------------------------------------------
+  const { salvos, alternarSalvo, removerSalvo } = useChatSalvos();
+  const [salvosAberto, setSalvosAberto] = useState(false);
+  const salvosIds = useMemo(() => new Set(salvos.map((s) => s.mensagemId)), [salvos]);
+
+  const handleSalvar = useCallback(
+    (mensagem) => alternarSalvo(mensagem, canal, nomeDaConversa(canal, meuId)),
+    [alternarSalvo, canal, meuId]
+  );
+
+  // ------------------------------------------------------------------
+  // Chat → Tarefas: criar tarefa a partir de uma mensagem (gestores).
+  // Setores/clientes do form são carregados sob demanda, na primeira vez.
+  // ------------------------------------------------------------------
+  const [tarefaDeMsg, setTarefaDeMsg] = useState(null);
+  const [setores, setSetores] = useState([]);
+  const [clientes, setClientes] = useState([]);
+  const auxTarefaCarregado = useRef(false);
+
+  const handleCriarTarefa = useCallback((mensagem) => {
+    setTarefaDeMsg(mensagem);
+    if (auxTarefaCarregado.current) return;
+    auxTarefaCarregado.current = true;
+    getSetores()
+      .then((data) => setSetores(Array.isArray(data) ? data : []))
+      .catch(() => setSetores([]));
+    getClientes({ status: true, tipoContato: 'cliente' })
+      .then((data) => setClientes(Array.isArray(data) ? data : []))
+      .catch(() => setClientes([]));
+  }, []);
+
+  const valoresTarefa = useMemo(() => {
+    if (!tarefaDeMsg) return undefined;
+    const autor = tarefaDeMsg.autor || {};
+    const autorNome = autor.name || autor.email || 'Usuário';
+    const texto = tarefaDeMsg.texto || '';
+    const origem = canal?.tipo === 'canal' ? `#${canal?.nome}` : 'mensagem direta';
+    return {
+      titulo: texto.slice(0, 80),
+      descricao: `Criada a partir do chat (${origem}) — mensagem de ${autorNome}:\n\n${texto}`,
+    };
+  }, [tarefaDeMsg, canal]);
+
+  // Após criar, compartilha o link da tarefa na própria conversa.
+  const handleTarefaCriada = useCallback(
+    async (criada) => {
+      setTarefaDeMsg(null);
+      if (!canal?._id) return;
+      const id = criada?._id || criada?.data?._id;
+      const titulo = criada?.titulo || criada?.data?.titulo || '';
+      const link = id
+        ? `${window.location.origin}${paths.dashboard.tarefas.minhas}?tarefa=${id}`
+        : '';
+      try {
+        const msg = await enviarMensagemChat(
+          canal._id,
+          `📋 Tarefa criada${titulo ? `: "${titulo}"` : ''}${link ? `\n${link}` : ''}`
+        );
+        anexarMensagem(msg);
+      } catch {
+        /* a tarefa já foi criada; falha ao avisar no canal não deve bloquear */
+      }
+    },
+    [canal, anexarMensagem]
+  );
+
   const handleConfirmarAcaoCanal = useCallback(async () => {
     if (!canal?._id) return;
     try {
@@ -226,6 +311,8 @@ export function ChatInternoView() {
             onNovoCanal={() => setDialog('novo-canal')}
             onNovaDm={() => setDialog('nova-dm')}
             onBrowse={() => setDialog('browse')}
+            onSalvos={() => setSalvosAberto(true)}
+            totalSalvos={salvos.length}
             conectado={conectado}
           />
 
@@ -240,6 +327,7 @@ export function ChatInternoView() {
                   podeCiclo={podeCiclo}
                   onMembros={() => setDialog('membros')}
                   onWaIniciar={() => setDialog('wa-iniciar')}
+                  onEditarCanal={() => setDialog('editar-canal')}
                   onArquivar={() => setConfirmar('arquivar')}
                   onExcluir={() => setConfirmar('excluir')}
                   onSair={() => setConfirmar('sair')}
@@ -251,11 +339,15 @@ export function ChatInternoView() {
                   carregando={carregandoCanal}
                   temMais={temMais}
                   onCarregarMais={carregarMaisAntigas}
+                  primeiraNaoLidaId={primeiraNaoLidaId}
                   meuId={meuId}
                   ehGestor={ehGestor}
                   onReagir={handleReagir}
                   onVotar={handleVotar}
                   onAbrirThread={(m) => setThreadRaiz(m)}
+                  onCriarTarefa={ehGestor ? handleCriarTarefa : undefined}
+                  salvosIds={salvosIds}
+                  onSalvar={handleSalvar}
                   onEditar={(m) => {
                     setEditando(m);
                     setTextoEdicao(m.texto || '');
@@ -300,6 +392,15 @@ export function ChatInternoView() {
         onClose={fechar}
         onCriado={aoCriarConversa}
       />
+      <ChatEditarCanalDialog
+        open={dialog === 'editar-canal'}
+        canal={canal}
+        onClose={fechar}
+        onSalvo={() => {
+          fechar();
+          recarregarLista();
+        }}
+      />
       <ChatNovaDmDialog
         open={dialog === 'nova-dm'}
         usuarios={usuarios}
@@ -333,6 +434,32 @@ export function ChatInternoView() {
           fechar();
           if (res?.mensagem) anexarMensagem(res.mensagem);
         }}
+      />
+
+      {/* Mensagens salvas */}
+      <ChatSalvosDrawer
+        open={salvosAberto}
+        salvos={salvos}
+        onClose={() => setSalvosAberto(false)}
+        onAbrir={(item) => {
+          setSalvosAberto(false);
+          if (item.canalId) selecionar(item.canalId);
+        }}
+        onConcluir={(id) => {
+          removerSalvo(id);
+          toast.success('Concluído! Item removido dos salvos.');
+        }}
+      />
+
+      {/* Criar tarefa a partir de uma mensagem do chat */}
+      <TarefaFormDialog
+        open={!!tarefaDeMsg}
+        onClose={() => setTarefaDeMsg(null)}
+        valoresIniciais={valoresTarefa}
+        usuarios={usuarios}
+        clientes={clientes}
+        setores={setores}
+        onSuccess={handleTarefaCriada}
       />
 
       {/* Edição de mensagem */}
