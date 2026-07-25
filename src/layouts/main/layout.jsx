@@ -1,6 +1,5 @@
 'use client';
 
-import Alert from '@mui/material/Alert';
 import { useTheme } from '@mui/material/styles';
 
 import { useBoolean } from 'src/hooks/use-boolean';
@@ -46,11 +45,6 @@ export function MainLayout({ sx, data, children }) {
               notifications: false,
             }}
             slots={{
-              topArea: (
-                <Alert severity="info" sx={{ display: 'none', borderRadius: 0 }}>
-                  This is an info Alert.
-                </Alert>
-              ),
               rightAreaStart: (
                 <NavDesktop
                   data={navData}
