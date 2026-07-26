@@ -18,6 +18,7 @@ import { EmptyContent } from 'src/components/empty-content';
 
 import { WaNavItem } from './wa-nav-item';
 import { ABAS } from './hooks/use-wa-inbox';
+import { TERMOMETRO_OPCOES } from './wa-termometro';
 
 // ----------------------------------------------------------------------
 
@@ -28,6 +29,8 @@ const nomeContato = (c) => c?.contato?.profileName || c?.contato?.waId || '';
 export function WaNav({
   aba,
   onChangeAba,
+  termometro,
+  onChangeTermometro,
   conversas,
   carregando,
   selecionadaId,
@@ -129,6 +132,35 @@ export function WaNav({
           />
         ))}
       </Tabs>
+
+      {/* Termômetro do cliente (sentimento por IA ao concluir atendimentos) */}
+      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ px: 2, py: 1 }}>
+        <Typography variant="caption" sx={{ color: 'text.secondary', mr: 0.5 }}>
+          Termômetro:
+        </Typography>
+        <Button
+          size="small"
+          variant={!termometro ? 'contained' : 'text'}
+          color="inherit"
+          onClick={() => onChangeTermometro?.('')}
+          sx={{ minWidth: 0, px: 1, py: 0.25, fontSize: 12 }}
+        >
+          Todos
+        </Button>
+        {TERMOMETRO_OPCOES.map((o) => (
+          <Tooltip key={o.value} title={o.label}>
+            <Button
+              size="small"
+              variant={termometro === o.value ? 'contained' : 'text'}
+              color="inherit"
+              onClick={() => onChangeTermometro?.(termometro === o.value ? '' : o.value)}
+              sx={{ minWidth: 0, px: 0.75, py: 0.25, fontSize: 16, lineHeight: 1 }}
+            >
+              {o.emoji}
+            </Button>
+          </Tooltip>
+        ))}
+      </Stack>
 
       {/* Lista */}
       <Scrollbar sx={{ flex: '1 1 auto' }}>
