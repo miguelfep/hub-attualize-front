@@ -18,6 +18,9 @@ export function WaRoom({
   onAtribuir,
   onTransferir,
   onMudarStatus,
+  temMaisMensagens,
+  carregandoMais,
+  onCarregarMais,
 }) {
   // Mensagem sendo respondida (reply/quote) — limpa ao trocar de conversa.
   const [respondendoA, setRespondendoA] = useState(null);
@@ -40,6 +43,9 @@ export function WaRoom({
         mensagens={mensagens}
         carregando={carregando}
         onResponder={setRespondendoA}
+        temMais={temMaisMensagens}
+        carregandoMais={carregandoMais}
+        onCarregarMais={onCarregarMais}
       />
 
       <WaMessageInput

@@ -5,6 +5,7 @@ import Fab from '@mui/material/Fab';
 import Fade from '@mui/material/Fade';
 import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
+import Button from '@mui/material/Button';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -19,7 +20,15 @@ import { useMessagesScroll } from './hooks/use-messages-scroll';
 
 // ----------------------------------------------------------------------
 
-export function WaMessageList({ conversaId, mensagens = [], carregando, onResponder }) {
+export function WaMessageList({
+  conversaId,
+  mensagens = [],
+  carregando,
+  onResponder,
+  temMais,
+  carregandoMais,
+  onCarregarMais,
+}) {
   const { messagesEndRef, longeDoFim, novasMensagens, scrollToBottom } = useMessagesScroll(
     mensagens,
     conversaId
@@ -56,6 +65,26 @@ export function WaMessageList({ conversaId, mensagens = [], carregando, onRespon
     <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0 }}>
       <Scrollbar ref={messagesEndRef} sx={{ px: 3, pt: 5, pb: 3, flex: '1 1 auto' }}>
         <Box>
+          {temMais && (
+            <Stack alignItems="center" sx={{ mb: 2 }}>
+              <Button
+                size="small"
+                variant="soft"
+                color="inherit"
+                disabled={carregandoMais}
+                startIcon={
+                  carregandoMais ? (
+                    <CircularProgress size={14} color="inherit" />
+                  ) : (
+                    <Iconify icon="eva:arrow-ios-upward-fill" width={16} />
+                  )
+                }
+                onClick={onCarregarMais}
+              >
+                Carregar mensagens anteriores
+              </Button>
+            </Stack>
+          )}
           {mensagens.map((mensagem, index) => {
             // A thread mostra o histórico completo do CONTATO: quando a conversa
             // (atendimento) muda entre uma mensagem e a seguinte, marcamos a

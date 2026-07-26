@@ -59,6 +59,9 @@ export function useWaInbox() {
   const [conversa, setConversa] = useState(null);
   const [mensagens, setMensagens] = useState([]);
   const [carregandoConversa, setCarregandoConversa] = useState(false);
+  // Paginação estilo WhatsApp: abre com as últimas N e carrega antigas sob demanda.
+  const [temMaisMensagens, setTemMaisMensagens] = useState(false);
+  const [carregandoMais, setCarregandoMais] = useState(false);
 
   // Refs pra o SSE enxergar sempre a seleção atual sem virar dependência.
   const selecionadaRef = useRef(selecionadaId);
@@ -108,11 +111,12 @@ export function useWaInbox() {
       try {
         const [conv, msgs] = await Promise.all([
           getConversa(selecionadaId),
-          getMensagens(selecionadaId, { limit: 200, contato: true }),
+          getMensagens(selecionadaId, { limit: 20, contato: true, ultimas: true }),
         ]);
         if (!ativo) return;
         setConversa(conv);
         setMensagens(msgs?.itens || []);
+        setTemMaisMensagens(Boolean(msgs?.temMais));
 
         // Zera não lidas ao abrir.
         await marcarLida(selecionadaId);
@@ -131,6 +135,31 @@ export function useWaInbox() {
       ativo = false;
     };
   }, [selecionadaId]);
+
+  // "Carregar mais": busca as mensagens anteriores à mais antiga já carregada e
+  // as insere no topo (o hook de scroll preserva a posição de leitura no prepend).
+  const carregarMaisMensagens = useCallback(async () => {
+    const maisAntiga = mensagens[0];
+    if (!selecionadaId || !maisAntiga?.createdAt || carregandoMais) return;
+    setCarregandoMais(true);
+    try {
+      const res = await getMensagens(selecionadaId, {
+        limit: 20,
+        contato: true,
+        antesDe: maisAntiga.createdAt,
+      });
+      const antigas = res?.itens || [];
+      setMensagens((prev) => {
+        const ids = new Set(prev.map((m) => m._id));
+        return [...antigas.filter((m) => !ids.has(m._id)), ...prev];
+      });
+      setTemMaisMensagens(Boolean(res?.temMais));
+    } catch (error) {
+      console.error('[wa] falha ao carregar mensagens antigas', error);
+    } finally {
+      setCarregandoMais(false);
+    }
+  }, [selecionadaId, mensagens, carregandoMais]);
 
   // Reatribui/atualiza a conversa selecionada no estado (após mutações REST).
   const atualizarConversaSelecionada = useCallback((conv) => {
@@ -306,6 +335,9 @@ export function useWaInbox() {
     conversa,
     mensagens,
     carregandoConversa,
+    temMaisMensagens,
+    carregandoMais,
+    carregarMaisMensagens,
     // mutações locais
     atualizarConversaSelecionada,
     anexarMensagem,

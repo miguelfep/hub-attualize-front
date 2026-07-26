@@ -77,11 +77,22 @@ export async function getConversa(id) {
  * Lista mensagens de uma conversa, em ordem cronológica (mais antigas primeiro).
  * @returns {Promise<{ itens: any[], total: number, page: number, limit: number, totalPages: number }>}
  */
-export async function getMensagens(id, { page = 1, limit = 50, contato = false } = {}) {
+export async function getMensagens(
+  id,
+  { page = 1, limit = 50, contato = false, ultimas = false, antesDe } = {}
+) {
   // contato=true → histórico completo do contato (todas as conversas dele),
   // estilo WhatsApp; cada mensagem traz `conversa` para marcar as fronteiras.
+  // ultimas=true → só as últimas `limit` mensagens (+ `temMais` na resposta);
+  // antesDe=<ISO> → "carregar mais": mensagens anteriores a essa data.
   const res = await axios.get(endpoints.wa.mensagens(id), {
-    params: { page, limit, ...(contato ? { contato: 'true' } : {}) },
+    params: {
+      page,
+      limit,
+      ...(contato ? { contato: 'true' } : {}),
+      ...(ultimas ? { ultimas: 'true' } : {}),
+      ...(antesDe ? { antesDe } : {}),
+    },
   });
   return res.data;
 }
