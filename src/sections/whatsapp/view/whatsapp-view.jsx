@@ -38,6 +38,9 @@ export function WhatsAppView() {
     conversa,
     mensagens,
     carregandoConversa,
+    temMaisMensagens,
+    carregandoMais,
+    carregarMaisMensagens,
     atualizarConversaSelecionada,
     anexarMensagem,
     conectado,
@@ -142,6 +145,9 @@ export function WhatsAppView() {
                 onAtribuir={() => setDialog('atribuir')}
                 onTransferir={() => setDialog('transferir')}
                 onMudarStatus={handleMudarStatus}
+                temMaisMensagens={temMaisMensagens}
+                carregandoMais={carregandoMais}
+                onCarregarMais={carregarMaisMensagens}
               />
             ) : (
               <EmptyContent
