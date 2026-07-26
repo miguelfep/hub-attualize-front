@@ -14,6 +14,8 @@ import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
 import { usePopover, CustomPopover } from 'src/components/custom-popover';
 
+import { WaTermometro } from './wa-termometro';
+
 // ----------------------------------------------------------------------
 
 const STATUS_COLOR = { pendente: 'warning', aberta: 'info', resolvida: 'success' };
@@ -73,9 +75,12 @@ export function WaHeaderDetail({ conversa, onAtribuir, onTransferir, onMudarStat
       <Avatar sx={{ width: 40, height: 40, mr: 2 }}>{iniciais(nome)}</Avatar>
 
       <Stack sx={{ minWidth: 0, flexGrow: 1 }}>
-        <Typography variant="subtitle2" noWrap>
-          {nome}
-        </Typography>
+        <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minWidth: 0 }}>
+          <Typography variant="subtitle2" noWrap>
+            {nome}
+          </Typography>
+          <WaTermometro termometro={conversa?.contato?.termometro} size={15} />
+        </Stack>
         <Stack direction="row" alignItems="center" spacing={1} sx={{ color: 'text.secondary' }}>
           <Typography variant="caption" noWrap>
             {conversa?.contato?.waId}

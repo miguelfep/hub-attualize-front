@@ -28,6 +28,8 @@ export function WhatsAppView() {
   const {
     aba,
     setAba,
+    termometro,
+    setTermometro,
     conversas,
     carregandoLista,
     recarregarLista,
@@ -120,6 +122,8 @@ export function WhatsAppView() {
               <WaNav
                 aba={aba}
                 onChangeAba={handleChangeAba}
+                termometro={termometro}
+                onChangeTermometro={setTermometro}
                 conversas={conversas}
                 carregando={carregandoLista}
                 selecionadaId={selecionadaId}

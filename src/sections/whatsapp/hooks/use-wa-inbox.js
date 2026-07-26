@@ -50,6 +50,8 @@ function unicaPorContato(lista) {
 
 export function useWaInbox() {
   const [aba, setAba] = useState('aberta');
+  // Filtro pelo termômetro do contato ('' = todos | feliz | neutro | bravo).
+  const [termometro, setTermometro] = useState('');
   const [conversas, setConversas] = useState([]);
   const [carregandoLista, setCarregandoLista] = useState(false);
 
@@ -70,16 +72,18 @@ export function useWaInbox() {
   const carregarLista = useCallback(async () => {
     setCarregandoLista(true);
     try {
-      const res = await getConversas(
-        aba === 'meus' ? { meus: true, limit: 100 } : { status: aba, limit: 100 }
-      );
+      const res = await getConversas({
+        ...(aba === 'meus' ? { meus: true } : { status: aba }),
+        ...(termometro ? { termometro } : {}),
+        limit: 100,
+      });
       setConversas(ordenar(res?.itens || []));
     } catch (error) {
       console.error('[wa] falha ao listar conversas', error);
     } finally {
       setCarregandoLista(false);
     }
-  }, [aba]);
+  }, [aba, termometro]);
 
   useEffect(() => {
     carregarLista();
@@ -247,6 +251,18 @@ export function useWaInbox() {
           break;
         }
 
+        case 'contato_termometro': {
+          const { contatoId, termometro: term } = payload || {};
+          if (!contatoId) break;
+          const aplicar = (c) =>
+            idOf(c?.contato) === contatoId
+              ? { ...c, contato: { ...(typeof c.contato === 'object' ? c.contato : { _id: c.contato }), termometro: term } }
+              : c;
+          setConversas((prev) => prev.map(aplicar));
+          setConversa((c) => (c ? aplicar(c) : c));
+          break;
+        }
+
         case 'conversa_status': {
           const { status } = payload || {};
           if (conversaId === aberta) setConversa((c) => (c ? { ...c, status } : c));
@@ -279,6 +295,8 @@ export function useWaInbox() {
     // abas / lista
     aba,
     setAba,
+    termometro,
+    setTermometro,
     conversas: conversasVisiveis,
     carregandoLista,
     recarregarLista: carregarLista,

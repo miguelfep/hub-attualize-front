@@ -11,6 +11,8 @@ import { Label } from 'src/components/label';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import { WaTermometro } from './wa-termometro';
+
 // ----------------------------------------------------------------------
 
 const nomeContato = (conversa) =>
@@ -53,9 +55,12 @@ export function WaNavItem({ conversa, selecionada, onSelecionar }) {
         <ListItemText
           disableTypography
           primary={
-            <Typography noWrap variant="subtitle2">
-              {nome}
-            </Typography>
+            <Stack direction="row" alignItems="center" spacing={0.75} sx={{ minWidth: 0 }}>
+              <Typography noWrap variant="subtitle2">
+                {nome}
+              </Typography>
+              <WaTermometro termometro={conversa?.contato?.termometro} size={14} />
+            </Stack>
           }
           secondary={
             <>
