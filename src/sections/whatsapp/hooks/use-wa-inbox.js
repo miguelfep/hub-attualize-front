@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import {
   marcarLida,
@@ -30,6 +30,22 @@ function ordenar(lista) {
   return [...lista].sort(
     (a, b) => new Date(b.ultimaMensagemEm || 0) - new Date(a.ultimaMensagemEm || 0)
   );
+}
+
+/**
+ * Mantém só a conversa mais recente de cada contato (a lista já vem ordenada
+ * desc). Usado na aba Resolvidas: cada atendimento encerrado é um documento, e
+ * sem isso o mesmo contato aparece repetido — a thread aberta já mostra o
+ * histórico completo do contato, então basta um card.
+ */
+function unicaPorContato(lista) {
+  const vistos = new Set();
+  return lista.filter((c) => {
+    const contato = idOf(c.contato) || c._id;
+    if (vistos.has(contato)) return false;
+    vistos.add(contato);
+    return true;
+  });
 }
 
 export function useWaInbox() {
@@ -253,11 +269,17 @@ export function useWaInbox() {
 
   const { conectado } = useWaStream(onEvent);
 
+  // Na aba Resolvidas cada contato aparece uma vez só (atendimento mais recente).
+  const conversasVisiveis = useMemo(
+    () => (aba === 'resolvida' ? unicaPorContato(conversas) : conversas),
+    [aba, conversas]
+  );
+
   return {
     // abas / lista
     aba,
     setAba,
-    conversas,
+    conversas: conversasVisiveis,
     carregandoLista,
     recarregarLista: carregarLista,
     // seleção

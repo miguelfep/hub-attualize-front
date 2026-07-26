@@ -1,11 +1,15 @@
 import { useState, Fragment } from 'react';
 
 import Box from '@mui/material/Box';
+import Fab from '@mui/material/Fab';
+import Fade from '@mui/material/Fade';
+import Badge from '@mui/material/Badge';
 import Stack from '@mui/material/Stack';
 import Divider from '@mui/material/Divider';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { Iconify } from 'src/components/iconify';
 import { Lightbox } from 'src/components/lightbox';
 import { Scrollbar } from 'src/components/scrollbar';
 import { EmptyContent } from 'src/components/empty-content';
@@ -15,8 +19,11 @@ import { useMessagesScroll } from './hooks/use-messages-scroll';
 
 // ----------------------------------------------------------------------
 
-export function WaMessageList({ mensagens = [], carregando, onResponder }) {
-  const { messagesEndRef } = useMessagesScroll(mensagens);
+export function WaMessageList({ conversaId, mensagens = [], carregando, onResponder }) {
+  const { messagesEndRef, longeDoFim, novasMensagens, scrollToBottom } = useMessagesScroll(
+    mensagens,
+    conversaId
+  );
 
   // Índice wamid → mensagem para resolver respostas citadas (quote) localmente.
   const porWamid = new Map(
@@ -46,7 +53,7 @@ export function WaMessageList({ mensagens = [], carregando, onResponder }) {
   }
 
   return (
-    <>
+    <Box sx={{ position: 'relative', display: 'flex', flexDirection: 'column', flex: '1 1 auto', minHeight: 0 }}>
       <Scrollbar ref={messagesEndRef} sx={{ px: 3, pt: 5, pb: 3, flex: '1 1 auto' }}>
         <Box>
           {mensagens.map((mensagem, index) => {
@@ -82,11 +89,29 @@ export function WaMessageList({ mensagens = [], carregando, onResponder }) {
         </Box>
       </Scrollbar>
 
+      <Fade in={longeDoFim}>
+        <Badge
+          variant="dot"
+          color="error"
+          invisible={!novasMensagens}
+          sx={{ position: 'absolute', right: 24, bottom: 16, zIndex: 9 }}
+        >
+          <Fab
+            size="small"
+            color="default"
+            aria-label="Ir para as mensagens mais recentes"
+            onClick={() => scrollToBottom('smooth')}
+          >
+            <Iconify icon="eva:arrow-ios-downward-fill" />
+          </Fab>
+        </Badge>
+      </Fade>
+
       <Lightbox
         open={!!imagemAberta}
         close={() => setImagemAberta(null)}
         slides={imagemAberta ? [{ src: imagemAberta }] : []}
       />
-    </>
+    </Box>
   );
 }
