@@ -4,12 +4,10 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
 import Switch from '@mui/material/Switch';
 import Divider from '@mui/material/Divider';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import LoadingButton from '@mui/lab/LoadingButton';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -20,6 +18,8 @@ import { getAgenteConfig, salvarAgenteConfig } from 'src/actions/whatsapp';
 
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
+
+import { WaBotConhecimento } from './wa-bot-conhecimento';
 
 // ----------------------------------------------------------------------
 // Aba "Bot": agente de IA embarcado do atendimento. Liga/desliga, escolhe o
@@ -41,7 +41,6 @@ export function WaBotTab() {
   const [provider, setProvider] = useState('claude');
   const [modelo, setModelo] = useState('');
   const [instrucoes, setInstrucoes] = useState('');
-  const [conhecimento, setConhecimento] = useState([]);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -52,7 +51,6 @@ export function WaBotTab() {
       setProvider(res?.provider || 'claude');
       setModelo(res?.modelo || '');
       setInstrucoes(res?.instrucoes || '');
-      setConhecimento(res?.conhecimento || []);
     } catch (error) {
       toast.error(error?.message || 'Falha ao carregar a configuração do bot.');
     } finally {
@@ -85,7 +83,6 @@ export function WaBotTab() {
         provider,
         modelo: modelo.trim(),
         instrucoes,
-        conhecimento: conhecimento.filter((c) => c.pergunta?.trim() && c.resposta?.trim()),
       });
       setConfig(res || {});
       toast.success('Configuração do bot salva.');
@@ -94,18 +91,6 @@ export function WaBotTab() {
     } finally {
       setSalvando(false);
     }
-  };
-
-  const atualizarItem = (index, patch) => {
-    setConhecimento((prev) => prev.map((c, i) => (i === index ? { ...c, ...patch } : c)));
-  };
-
-  const removerItem = (index) => {
-    setConhecimento((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const adicionarItem = () => {
-    setConhecimento((prev) => [...prev, { pergunta: '', resposta: '', ativo: true }]);
   };
 
   if (carregando) {
@@ -197,59 +182,7 @@ export function WaBotTab() {
 
           <Divider />
 
-          <Box>
-            <Typography variant="subtitle2">Base de conhecimento (perguntas e respostas)</Typography>
-            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-              O bot usa estas respostas quando a pergunta do cliente corresponder. Desative um item
-              para pausá-lo sem apagar.
-            </Typography>
-          </Box>
-
-          <Stack spacing={2}>
-            {conhecimento.map((item, index) => (
-              <Card key={index} variant="outlined" sx={{ p: 2, bgcolor: 'background.neutral' }}>
-                <Stack spacing={1.5}>
-                  <Stack direction="row" spacing={1} alignItems="flex-start">
-                    <TextField
-                      fullWidth
-                      size="small"
-                      label={`Pergunta ${index + 1}`}
-                      value={item.pergunta}
-                      onChange={(e) => atualizarItem(index, { pergunta: e.target.value })}
-                      placeholder="Ex.: Vocês atendem MEI?"
-                    />
-                    <Switch
-                      checked={item.ativo !== false}
-                      onChange={(e) => atualizarItem(index, { ativo: e.target.checked })}
-                      title={item.ativo !== false ? 'Ativa' : 'Pausada'}
-                    />
-                    <IconButton color="error" onClick={() => removerItem(index)} title="Remover">
-                      <Iconify icon="solar:trash-bin-trash-bold" />
-                    </IconButton>
-                  </Stack>
-                  <TextField
-                    fullWidth
-                    size="small"
-                    multiline
-                    minRows={2}
-                    label="Resposta"
-                    value={item.resposta}
-                    onChange={(e) => atualizarItem(index, { resposta: e.target.value })}
-                    placeholder="A resposta completa que o bot deve dar."
-                  />
-                </Stack>
-              </Card>
-            ))}
-
-            <Button
-              variant="outlined"
-              startIcon={<Iconify icon="mingcute:add-line" />}
-              onClick={adicionarItem}
-              sx={{ alignSelf: 'flex-start' }}
-            >
-              Adicionar pergunta
-            </Button>
-          </Stack>
+          <WaBotConhecimento />
 
           <Divider />
 

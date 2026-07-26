@@ -283,3 +283,36 @@ export async function salvarAgenteConfig(payload) {
   const res = await axios.put(endpoints.wa.agente, payload);
   return res.data;
 }
+
+// ----------------------------------------------------------------------
+// Base de conhecimento pesquisável do bot (admin). Diferente das instruções:
+// os itens NÃO entram inteiros no prompt — o bot busca os relevantes (RAG).
+// ----------------------------------------------------------------------
+
+/** Lista itens da base ({ itens, total, ... }). `q` filtra por texto. */
+export async function getConhecimento({ q, page = 1, limit = 50 } = {}) {
+  const res = await axios.get(endpoints.wa.conhecimento, {
+    params: limparParams({ q, page, limit }),
+  });
+  return res.data;
+}
+
+/** Testa a busca semântica (a mesma que o bot usa). → { itens: [{titulo, conteudo, relevancia}] } */
+export async function buscarConhecimento(q) {
+  const res = await axios.get(endpoints.wa.conhecimentoBuscar, { params: { q } });
+  return res.data;
+}
+
+export async function criarConhecimento(payload) {
+  const res = await axios.post(endpoints.wa.conhecimento, payload);
+  return res.data;
+}
+
+export async function atualizarConhecimento(id, payload) {
+  const res = await axios.put(endpoints.wa.conhecimentoItem(id), payload);
+  return res.data;
+}
+
+export async function removerConhecimento(id) {
+  await axios.delete(endpoints.wa.conhecimentoItem(id));
+}
