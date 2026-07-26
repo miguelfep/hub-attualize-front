@@ -190,7 +190,11 @@ export function WaBotConhecimento() {
     try {
       const res = await reindexarConhecimento();
       if (!res.total) toast.success('Todos os itens já estão indexados.');
-      else if (res.falhas) toast.warning(`${res.processados} reindexados, ${res.falhas} falharam.`);
+      else if (res.falhas)
+        toast.error(
+          `${res.processados} reindexados, ${res.falhas} falharam${res.ultimoErro ? ` — ${res.ultimoErro}` : ''}`,
+          { duration: 10000 }
+        );
       else toast.success(`${res.processados} itens reindexados.`);
     } catch (error) {
       toast.error(error?.message || 'Falha na re-indexação.');
