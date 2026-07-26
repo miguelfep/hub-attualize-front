@@ -43,6 +43,8 @@ export function WaHeaderDetail({ conversa, onAtribuir, onTransferir, onMudarStat
   const nome = conversa?.contato?.profileName || conversa?.contato?.waId || 'Contato';
   const setores = conversa?.setores || [];
   const atendente = conversa?.atendente;
+  // Resolvidas perdem o vínculo — mostra o último atendente como histórico.
+  const ultimoAtendente = !atendente ? conversa?.ultimoAtendente : null;
 
   const handleStatus = async (status) => {
     statusPopover.onClose();
@@ -96,6 +98,15 @@ export function WaHeaderDetail({ conversa, onAtribuir, onTransferir, onMudarStat
         {atendente && (
           <Label variant="outlined" startIcon={<Iconify icon="solar:user-bold" width={14} />}>
             {atendente.name}
+          </Label>
+        )}
+        {ultimoAtendente?.name && (
+          <Label
+            variant="soft"
+            color="default"
+            startIcon={<Iconify icon="solar:user-check-bold" width={14} />}
+          >
+            Atendido por {ultimoAtendente.name}
           </Label>
         )}
       </Stack>

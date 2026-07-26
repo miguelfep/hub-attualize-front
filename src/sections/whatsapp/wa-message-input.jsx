@@ -13,6 +13,7 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
 import { WaTemplateDialog } from './wa-template-dialog';
+import { ChatEmojiPicker } from '../chat-interno/chat-emoji-picker';
 
 // ----------------------------------------------------------------------
 // Janela de 24h: fora dela só é possível enviar templates. Dentro, texto/mídia
@@ -31,9 +32,11 @@ function dentroDaJanela(conversa) {
 
 export function WaMessageInput({ conversa, onEnviada, respondendoA, onCancelarResposta }) {
   const fileRef = useRef(null);
+  const inputRef = useRef(null);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [templateOpen, setTemplateOpen] = useState(false);
+  const [emojiEl, setEmojiEl] = useState(null);
 
   const conversaId = conversa?._id;
   const janelaAberta = dentroDaJanela(conversa);
@@ -72,6 +75,20 @@ export function WaMessageInput({ conversa, onEnviada, respondendoA, onCancelarRe
   );
 
   const handleAttach = useCallback(() => fileRef.current?.click(), []);
+
+  // Insere o emoji na posição do cursor (ou no fim) e devolve o foco ao input.
+  const inserirEmoji = useCallback((emoji) => {
+    const input = inputRef.current;
+    const pos = input?.selectionStart ?? null;
+    setTexto((prev) => {
+      const i = pos === null ? prev.length : pos;
+      return `${prev.slice(0, i)}${emoji}${prev.slice(i)}`;
+    });
+    requestAnimationFrame(() => {
+      input?.focus();
+      if (pos !== null) input?.setSelectionRange(pos + emoji.length, pos + emoji.length);
+    });
+  }, []);
 
   const handleFile = useCallback(
     async (e) => {
@@ -189,6 +206,7 @@ export function WaMessageInput({ conversa, onEnviada, respondendoA, onCancelarRe
       {renderRespondendo}
       <InputBase
         value={texto}
+        inputRef={inputRef}
         onChange={(e) => setTexto(e.target.value)}
         onKeyUp={handleKeyUp}
         placeholder="Escreva uma mensagem…"
@@ -197,6 +215,9 @@ export function WaMessageInput({ conversa, onEnviada, respondendoA, onCancelarRe
         maxRows={4}
         endAdornment={
           <Stack direction="row" alignItems="center" sx={{ flexShrink: 0 }}>
+            <IconButton onClick={(e) => setEmojiEl(e.currentTarget)} disabled={enviando} title="Emoji">
+              <Iconify icon="solar:smile-circle-bold" />
+            </IconButton>
             <IconButton onClick={() => setTemplateOpen(true)} title="Enviar template">
               <Iconify icon="solar:document-text-bold" />
             </IconButton>
@@ -223,6 +244,12 @@ export function WaMessageInput({ conversa, onEnviada, respondendoA, onCancelarRe
       />
 
       <Box component="input" type="file" ref={fileRef} onChange={handleFile} sx={{ display: 'none' }} />
+
+      <ChatEmojiPicker
+        anchorEl={emojiEl}
+        onClose={() => setEmojiEl(null)}
+        onSelecionar={(emoji) => inserirEmoji(emoji)}
+      />
 
       <WaTemplateDialog
         open={templateOpen}

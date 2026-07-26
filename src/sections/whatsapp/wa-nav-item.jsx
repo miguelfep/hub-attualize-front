@@ -36,7 +36,9 @@ export function WaNavItem({ conversa, selecionada, onSelecionar }) {
   const setores = conversa?.setores || [];
   const naoLidas = conversa?.naoLidas || 0;
 
-  const atendente = conversa?.atendente || null;
+  // Resolvidas perdem o vínculo — cai para o último atendente (histórico).
+  const atendente = conversa?.atendente || conversa?.ultimoAtendente || null;
+  const historico = !conversa?.atendente && !!conversa?.ultimoAtendente;
   const meuId = String(user?._id || user?.id || '');
   const souEu = atendente && String(atendente._id || atendente) === meuId;
 
@@ -88,7 +90,11 @@ export function WaNavItem({ conversa, selecionada, onSelecionar }) {
                         fontWeight: souEu ? 'fontWeightSemiBold' : 'fontWeightRegular',
                       }}
                     >
-                      {souEu ? 'Você' : primeiroNome(atendente.name)}
+                      {historico
+                        ? `Atendido por ${souEu ? 'você' : primeiroNome(atendente.name)}`
+                        : souEu
+                          ? 'Você'
+                          : primeiroNome(atendente.name)}
                     </Typography>
                   </>
                 ) : (

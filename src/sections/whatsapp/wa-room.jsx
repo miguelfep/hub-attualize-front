@@ -36,6 +36,7 @@ export function WaRoom({
       />
 
       <WaMessageList
+        conversaId={conversa?._id}
         mensagens={mensagens}
         carregando={carregando}
         onResponder={setRespondendoA}
