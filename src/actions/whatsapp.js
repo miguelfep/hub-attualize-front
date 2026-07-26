@@ -316,3 +316,9 @@ export async function atualizarConhecimento(id, payload) {
 export async function removerConhecimento(id) {
   await axios.delete(endpoints.wa.conhecimentoItem(id));
 }
+
+/** Re-gera embeddings pendentes/desatualizados. → { processados, falhas, total } */
+export async function reindexarConhecimento() {
+  const res = await axios.post(endpoints.wa.conhecimentoReindexar);
+  return res.data;
+}

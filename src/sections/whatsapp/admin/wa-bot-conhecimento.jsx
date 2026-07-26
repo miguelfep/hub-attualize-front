@@ -19,6 +19,7 @@ import {
   buscarConhecimento,
   removerConhecimento,
   atualizarConhecimento,
+  reindexarConhecimento,
 } from 'src/actions/whatsapp';
 
 import { toast } from 'src/components/snackbar';
@@ -131,6 +132,7 @@ export function WaBotConhecimento() {
   const [novoConteudo, setNovoConteudo] = useState('');
   const [criando, setCriando] = useState(false);
 
+  const [reindexando, setReindexando] = useState(false);
   const [testeQ, setTesteQ] = useState('');
   const [testeResultados, setTesteResultados] = useState(null);
   const [testando, setTestando] = useState(false);
@@ -180,6 +182,20 @@ export function WaBotConhecimento() {
       toast.error(error?.message || 'Falha na busca.');
     } finally {
       setTestando(false);
+    }
+  };
+
+  const handleReindexar = async () => {
+    setReindexando(true);
+    try {
+      const res = await reindexarConhecimento();
+      if (!res.total) toast.success('Todos os itens já estão indexados.');
+      else if (res.falhas) toast.warning(`${res.processados} reindexados, ${res.falhas} falharam.`);
+      else toast.success(`${res.processados} itens reindexados.`);
+    } catch (error) {
+      toast.error(error?.message || 'Falha na re-indexação.');
+    } finally {
+      setReindexando(false);
     }
   };
 
@@ -259,6 +275,15 @@ export function WaBotConhecimento() {
           placeholder="Filtrar itens…"
           sx={{ flexGrow: 1 }}
         />
+        <LoadingButton
+          variant="outlined"
+          loading={reindexando}
+          startIcon={<Iconify icon="solar:refresh-bold" />}
+          onClick={handleReindexar}
+          title="Re-gera os embeddings de itens pendentes ou indexados por modelo antigo"
+        >
+          Re-indexar
+        </LoadingButton>
         <Button
           variant="contained"
           startIcon={<Iconify icon="mingcute:add-line" />}

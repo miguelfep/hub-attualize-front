@@ -230,6 +230,7 @@ export const endpoints = {
     agente: `${baseUrl}wa/agente`,
     conhecimento: `${baseUrl}wa/conhecimento`,
     conhecimentoBuscar: `${baseUrl}wa/conhecimento/buscar`,
+    conhecimentoReindexar: `${baseUrl}wa/conhecimento/reindexar`,
     conhecimentoItem: (id) => `${baseUrl}wa/conhecimento/${id}`,
   },
   // Chat interno estilo Slack (/api/chat). Canais, DMs, menções, threads, reações,
