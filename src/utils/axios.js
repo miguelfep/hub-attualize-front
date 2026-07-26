@@ -227,6 +227,11 @@ export const endpoints = {
     canal: (id) => `${baseUrl}wa/canais/${id}`,
     config: `${baseUrl}wa/config`,
     configTestar: `${baseUrl}wa/config/testar`,
+    agente: `${baseUrl}wa/agente`,
+    conhecimento: `${baseUrl}wa/conhecimento`,
+    conhecimentoBuscar: `${baseUrl}wa/conhecimento/buscar`,
+    conhecimentoReindexar: `${baseUrl}wa/conhecimento/reindexar`,
+    conhecimentoItem: (id) => `${baseUrl}wa/conhecimento/${id}`,
   },
   // Chat interno estilo Slack (/api/chat). Canais, DMs, menções, threads, reações,
   // anexos e cards de atendimento WhatsApp. Contrato: docs/chat-interno-api-frontend.md

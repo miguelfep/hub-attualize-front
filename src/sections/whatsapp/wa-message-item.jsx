@@ -1,5 +1,6 @@
 import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
+import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 
 import { fTime } from 'src/utils/format-time';
@@ -39,12 +40,34 @@ function StatusCheck({ status }) {
 
 // ----------------------------------------------------------------------
 
-export function WaMessageItem({ mensagem, onOpenLightbox }) {
+export function WaMessageItem({ mensagem, citada, onResponder, onOpenLightbox }) {
   const me = mensagem.direcao === 'outbound';
   const temMidia = MIDIA_TIPOS.includes(mensagem.tipo) && mensagem.midia;
   const falhou = mensagem.status === 'falha';
 
   const quando = mensagem.timestampMeta || mensagem.createdAt;
+
+  // Resposta a outra mensagem (quote): a mensagem citada vem resolvida pela lista.
+  const renderCitacao = citada && (
+    <Stack
+      sx={{
+        px: 1,
+        py: 0.5,
+        mb: 0.5,
+        borderRadius: 0.75,
+        borderLeft: '3px solid',
+        borderColor: 'primary.main',
+        bgcolor: 'action.hover',
+      }}
+    >
+      <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 'fontWeightSemiBold' }}>
+        {citada.direcao === 'outbound' ? citada.enviadaPor?.name || 'Atendente' : 'Cliente'}
+      </Typography>
+      <Typography noWrap variant="caption" sx={{ color: 'text.secondary', maxWidth: 300 }}>
+        {citada.texto || `(${citada.tipo})`}
+      </Typography>
+    </Stack>
+  );
 
   const renderInfo = (
     <Stack
@@ -86,6 +109,7 @@ export function WaMessageItem({ mensagem, onOpenLightbox }) {
         ...(temMidia && { p: 0.5, bgcolor: 'transparent' }),
       }}
     >
+      {renderCitacao}
       {temMidia ? (
         <Stack spacing={0.5}>
           <WaMedia mensagem={mensagem} onOpenLightbox={onOpenLightbox} />
@@ -103,12 +127,52 @@ export function WaMessageItem({ mensagem, onOpenLightbox }) {
     </Stack>
   );
 
+  // Reação do cliente à mensagem (como no WhatsApp: emoji "grudado" na bolha).
+  const renderReacao = mensagem.reacao?.emoji && (
+    <Stack
+      sx={{
+        mt: -1,
+        px: 0.75,
+        py: 0.125,
+        borderRadius: 2,
+        alignSelf: me ? 'flex-end' : 'flex-start',
+        bgcolor: 'background.paper',
+        boxShadow: (theme) => theme.customShadows?.z1 || 1,
+        fontSize: 14,
+        lineHeight: '20px',
+        zIndex: 1,
+      }}
+    >
+      {mensagem.reacao.emoji}
+    </Stack>
+  );
+
   return (
-    <Stack direction="row" justifyContent={me ? 'flex-end' : 'flex-start'} sx={{ mb: 2.5 }}>
+    <Stack
+      direction="row"
+      justifyContent={me ? 'flex-end' : 'flex-start'}
+      sx={{ mb: 2.5, '&:hover .wa-acao-responder': { opacity: 1 } }}
+    >
       <Stack alignItems={me ? 'flex-end' : 'flex-start'} sx={{ maxWidth: '75%' }}>
         {renderInfo}
-        <Stack direction="row" alignItems="center" spacing={0.5}>
+        <Stack
+          direction={me ? 'row-reverse' : 'row'}
+          alignItems="center"
+          spacing={0.5}
+        >
           {renderBody}
+          {onResponder && mensagem.waMessageId && (
+            <Tooltip title="Responder">
+              <IconButton
+                size="small"
+                className="wa-acao-responder"
+                onClick={() => onResponder(mensagem)}
+                sx={{ opacity: 0, transition: (t) => t.transitions.create('opacity') }}
+              >
+                <Iconify icon="solar:reply-bold" width={16} />
+              </IconButton>
+            </Tooltip>
+          )}
           {falhou && (
             <Tooltip
               title={mensagem.erro?.title || mensagem.erro?.details || 'Falha no envio'}
@@ -117,6 +181,7 @@ export function WaMessageItem({ mensagem, onOpenLightbox }) {
             </Tooltip>
           )}
         </Stack>
+        {renderReacao}
       </Stack>
     </Stack>
   );

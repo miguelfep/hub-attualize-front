@@ -17,8 +17,9 @@ import { useWaStream } from './use-wa-stream';
 
 /** Aba (status) → filtro de listagem. `pendente` é a fila sem atendente. */
 export const ABAS = [
-  { value: 'pendente', label: 'Pendentes' },
-  { value: 'aberta', label: 'Em atendimento' },
+  { value: 'meus', label: 'Meus' },
+  { value: 'pendente', label: 'Fila' },
+  { value: 'aberta', label: 'Abertas' },
   { value: 'resolvida', label: 'Resolvidas' },
 ];
 
@@ -41,9 +42,11 @@ export function useWaInbox() {
   const [mensagens, setMensagens] = useState([]);
   const [carregandoConversa, setCarregandoConversa] = useState(false);
 
-  // Ref pra o SSE enxergar sempre a seleção atual sem virar dependência.
+  // Refs pra o SSE enxergar sempre a seleção atual sem virar dependência.
   const selecionadaRef = useRef(selecionadaId);
   selecionadaRef.current = selecionadaId;
+  const contatoAbertoRef = useRef('');
+  contatoAbertoRef.current = idOf(conversa?.contato) || '';
 
   // ------------------------------------------------------------------
   // Lista de conversas (por aba)
@@ -51,7 +54,9 @@ export function useWaInbox() {
   const carregarLista = useCallback(async () => {
     setCarregandoLista(true);
     try {
-      const res = await getConversas({ status: aba, limit: 100 });
+      const res = await getConversas(
+        aba === 'meus' ? { meus: true, limit: 100 } : { status: aba, limit: 100 }
+      );
       setConversas(ordenar(res?.itens || []));
     } catch (error) {
       console.error('[wa] falha ao listar conversas', error);
@@ -83,7 +88,7 @@ export function useWaInbox() {
       try {
         const [conv, msgs] = await Promise.all([
           getConversa(selecionadaId),
-          getMensagens(selecionadaId, { limit: 100 }),
+          getMensagens(selecionadaId, { limit: 200, contato: true }),
         ]);
         if (!ativo) return;
         setConversa(conv);
@@ -135,8 +140,12 @@ export function useWaInbox() {
       switch (tipo) {
         case 'mensagem': {
           const { mensagem, conversa: conv } = payload || {};
-          // Thread aberta: anexa a mensagem.
-          if (conversaId === aberta && mensagem) {
+          // Thread aberta: anexa a mensagem. Como a thread mostra o histórico do
+          // CONTATO, mensagens de uma conversa nova do mesmo contato também entram
+          // (ex.: cliente volta a falar depois de a conversa ser resolvida).
+          const mesmoContato =
+            mensagem && contatoAbertoRef.current && idOf(mensagem.contato) === contatoAbertoRef.current;
+          if ((conversaId === aberta || mesmoContato) && mensagem) {
             setMensagens((prev) =>
               prev.some((m) => m._id === mensagem._id) ? prev : [...prev, mensagem]
             );
@@ -146,6 +155,10 @@ export function useWaInbox() {
             const idx = prev.findIndex((c) => c._id === conversaId);
             if (idx === -1) {
               // Conversa nova nesta aba — puxa a versão completa.
+              if (aba === 'meus') {
+                carregarLista();
+                return prev;
+              }
               if (conv && conv.status === aba) return ordenar([conv, ...prev]);
               return prev;
             }
@@ -176,6 +189,13 @@ export function useWaInbox() {
           setMensagens((prev) =>
             prev.map((m) => (m._id === mensagemId ? { ...m, status } : m))
           );
+          break;
+        }
+
+        case 'mensagem_reacao': {
+          if (conversaId !== aberta) break;
+          const { mensagemId, reacao } = payload || {};
+          setMensagens((prev) => prev.map((m) => (m._id === mensagemId ? { ...m, reacao } : m)));
           break;
         }
 
@@ -216,7 +236,9 @@ export function useWaInbox() {
           if (conversaId === aberta) setConversa((c) => (c ? { ...c, status } : c));
           setConversas((prev) => {
             // Se saiu da aba atual, some da lista; se entrou, deixa carregarLista repuxar.
-            if (status && status !== aba) return prev.filter((c) => c._id !== conversaId);
+            // Na aba "meus" o filtro é por atendente, não por status — mantém.
+            if (status && aba !== 'meus' && status !== aba)
+              return prev.filter((c) => c._id !== conversaId);
             return prev.map((c) => (c._id === conversaId ? { ...c, status } : c));
           });
           break;

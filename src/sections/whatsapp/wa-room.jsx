@@ -1,3 +1,5 @@
+import { useState, useEffect } from 'react';
+
 import Stack from '@mui/material/Stack';
 
 import { WaMessageList } from './wa-message-list';
@@ -17,6 +19,13 @@ export function WaRoom({
   onTransferir,
   onMudarStatus,
 }) {
+  // Mensagem sendo respondida (reply/quote) — limpa ao trocar de conversa.
+  const [respondendoA, setRespondendoA] = useState(null);
+
+  useEffect(() => {
+    setRespondendoA(null);
+  }, [conversa?._id]);
+
   return (
     <Stack sx={{ flex: '1 1 auto', minHeight: 0 }}>
       <WaHeaderDetail
@@ -26,9 +35,18 @@ export function WaRoom({
         onMudarStatus={onMudarStatus}
       />
 
-      <WaMessageList mensagens={mensagens} carregando={carregando} />
+      <WaMessageList
+        mensagens={mensagens}
+        carregando={carregando}
+        onResponder={setRespondendoA}
+      />
 
-      <WaMessageInput conversa={conversa} onEnviada={onEnviada} />
+      <WaMessageInput
+        conversa={conversa}
+        onEnviada={onEnviada}
+        respondendoA={respondendoA}
+        onCancelarResposta={() => setRespondendoA(null)}
+      />
     </Stack>
   );
 }

@@ -77,8 +77,12 @@ export async function getConversa(id) {
  * Lista mensagens de uma conversa, em ordem cronológica (mais antigas primeiro).
  * @returns {Promise<{ itens: any[], total: number, page: number, limit: number, totalPages: number }>}
  */
-export async function getMensagens(id, { page = 1, limit = 50 } = {}) {
-  const res = await axios.get(endpoints.wa.mensagens(id), { params: { page, limit } });
+export async function getMensagens(id, { page = 1, limit = 50, contato = false } = {}) {
+  // contato=true → histórico completo do contato (todas as conversas dele),
+  // estilo WhatsApp; cada mensagem traz `conversa` para marcar as fronteiras.
+  const res = await axios.get(endpoints.wa.mensagens(id), {
+    params: { page, limit, ...(contato ? { contato: 'true' } : {}) },
+  });
   return res.data;
 }
 
@@ -98,9 +102,9 @@ export async function enviarMensagem(id, payload) {
   return res.data;
 }
 
-/** Atalho para envio de texto. */
-export function enviarTexto(id, texto) {
-  return enviarMensagem(id, { tipo: 'text', texto });
+/** Atalho para envio de texto. `responderA` = _id da mensagem citada (reply). */
+export function enviarTexto(id, texto, { responderA } = {}) {
+  return enviarMensagem(id, { tipo: 'text', texto, ...(responderA ? { responderA } : {}) });
 }
 
 /** Atalho para envio de template. */
@@ -261,5 +265,60 @@ export async function salvarConfig(payload) {
  */
 export async function testarConfig(payload = {}) {
   const res = await axios.post(endpoints.wa.configTestar, payload);
+  return res.data;
+}
+
+/**
+ * Config do agente de IA (bot) do atendimento (admin).
+ * Ex.: { habilitado, provider: 'claude'|'gemini', modelo, instrucoes,
+ *        claudeDisponivel, geminiDisponivel, modelosSugeridos }.
+ */
+export async function getAgenteConfig() {
+  const res = await axios.get(endpoints.wa.agente);
+  return res.data;
+}
+
+/** Salva a config do agente de IA (admin). Campos omitidos são mantidos. */
+export async function salvarAgenteConfig(payload) {
+  const res = await axios.put(endpoints.wa.agente, payload);
+  return res.data;
+}
+
+// ----------------------------------------------------------------------
+// Base de conhecimento pesquisável do bot (admin). Diferente das instruções:
+// os itens NÃO entram inteiros no prompt — o bot busca os relevantes (RAG).
+// ----------------------------------------------------------------------
+
+/** Lista itens da base ({ itens, total, ... }). `q` filtra por texto. */
+export async function getConhecimento({ q, page = 1, limit = 50 } = {}) {
+  const res = await axios.get(endpoints.wa.conhecimento, {
+    params: limparParams({ q, page, limit }),
+  });
+  return res.data;
+}
+
+/** Testa a busca semântica (a mesma que o bot usa). → { itens: [{titulo, conteudo, relevancia}] } */
+export async function buscarConhecimento(q) {
+  const res = await axios.get(endpoints.wa.conhecimentoBuscar, { params: { q } });
+  return res.data;
+}
+
+export async function criarConhecimento(payload) {
+  const res = await axios.post(endpoints.wa.conhecimento, payload);
+  return res.data;
+}
+
+export async function atualizarConhecimento(id, payload) {
+  const res = await axios.put(endpoints.wa.conhecimentoItem(id), payload);
+  return res.data;
+}
+
+export async function removerConhecimento(id) {
+  await axios.delete(endpoints.wa.conhecimentoItem(id));
+}
+
+/** Re-gera embeddings pendentes/desatualizados. → { processados, falhas, total } */
+export async function reindexarConhecimento() {
+  const res = await axios.post(endpoints.wa.conhecimentoReindexar);
   return res.data;
 }
