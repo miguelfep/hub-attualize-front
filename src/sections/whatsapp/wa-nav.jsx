@@ -121,7 +121,12 @@ export function WaNav({
         sx={{ px: 1, boxShadow: (t) => `inset 0 -1px 0 0 ${t.vars.palette.divider}` }}
       >
         {ABAS.map((t) => (
-          <Tab key={t.value} value={t.value} label={t.label} sx={{ minHeight: 44 }} />
+          <Tab
+            key={t.value}
+            value={t.value}
+            label={t.label}
+            sx={{ minHeight: 44, minWidth: 'auto', px: 1, whiteSpace: 'nowrap', fontSize: 13 }}
+          />
         ))}
       </Tabs>
 

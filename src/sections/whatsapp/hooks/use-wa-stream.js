@@ -24,6 +24,7 @@ const EVENTOS = [
   'mensagem',
   'mensagem_status',
   'mensagem_midia',
+  'mensagem_reacao',
   'atribuicao',
   'transferencia',
   'conversa_status',

@@ -16,6 +16,7 @@ import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 import { RoleBasedGuard } from 'src/auth/guard';
 import { useAuthContext } from 'src/auth/hooks';
 
+import { WaBotTab } from '../wa-bot-tab';
 import { WaConfigTab } from '../wa-config-tab';
 import { WaCanaisTab } from '../wa-canais-tab';
 import { WaTemplatesTab } from '../wa-templates-tab';
@@ -25,6 +26,7 @@ import { WaTemplatesTab } from '../wa-templates-tab';
 const TABS = [
   { value: 'canais', label: 'Canais / Números', icon: 'solar:phone-bold' },
   { value: 'templates', label: 'Templates', icon: 'solar:document-text-bold' },
+  { value: 'bot', label: 'Bot (IA)', icon: 'solar:ghost-smile-bold' },
   { value: 'config', label: 'Configuração da API', icon: 'solar:settings-bold' },
 ];
 
@@ -66,6 +68,7 @@ export function WhatsAppAdminView() {
           <div style={{ padding: 24 }}>
             {aba === 'canais' && <WaCanaisTab />}
             {aba === 'templates' && <WaTemplatesTab />}
+            {aba === 'bot' && <WaBotTab />}
             {aba === 'config' && <WaConfigTab />}
           </div>
         </Card>

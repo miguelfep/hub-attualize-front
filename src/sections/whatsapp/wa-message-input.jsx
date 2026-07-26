@@ -29,7 +29,7 @@ function dentroDaJanela(conversa) {
 
 // ----------------------------------------------------------------------
 
-export function WaMessageInput({ conversa, onEnviada }) {
+export function WaMessageInput({ conversa, onEnviada, respondendoA, onCancelarResposta }) {
   const fileRef = useRef(null);
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -43,8 +43,11 @@ export function WaMessageInput({ conversa, onEnviada }) {
     if (!corpo || !conversaId) return;
     setEnviando(true);
     try {
-      const msg = await enviarTexto(conversaId, corpo);
+      const msg = await enviarTexto(conversaId, corpo, {
+        responderA: respondendoA?._id,
+      });
       setTexto('');
+      onCancelarResposta?.();
       onEnviada?.(msg);
     } catch (error) {
       if (error?.status === 409) {
@@ -56,7 +59,7 @@ export function WaMessageInput({ conversa, onEnviada }) {
     } finally {
       setEnviando(false);
     }
-  }, [texto, conversaId, onEnviada]);
+  }, [texto, conversaId, respondendoA, onCancelarResposta, onEnviada]);
 
   const handleKeyUp = useCallback(
     (e) => {
@@ -153,8 +156,37 @@ export function WaMessageInput({ conversa, onEnviada }) {
     );
   }
 
+  const renderRespondendo = respondendoA && (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={1}
+      sx={{
+        px: 2,
+        py: 0.75,
+        flexShrink: 0,
+        borderTop: (t) => `solid 1px ${t.vars.palette.divider}`,
+        bgcolor: 'background.neutral',
+      }}
+    >
+      <Iconify icon="solar:reply-bold" width={16} sx={{ color: 'primary.main' }} />
+      <Stack sx={{ flexGrow: 1, minWidth: 0 }}>
+        <Typography variant="caption" sx={{ color: 'primary.main', fontWeight: 'fontWeightSemiBold' }}>
+          Respondendo a {respondendoA.direcao === 'outbound' ? 'você' : 'cliente'}
+        </Typography>
+        <Typography noWrap variant="caption" sx={{ color: 'text.secondary' }}>
+          {respondendoA.texto || `(${respondendoA.tipo})`}
+        </Typography>
+      </Stack>
+      <IconButton size="small" onClick={onCancelarResposta} title="Cancelar resposta">
+        <Iconify icon="mingcute:close-line" width={16} />
+      </IconButton>
+    </Stack>
+  );
+
   return (
     <>
+      {renderRespondendo}
       <InputBase
         value={texto}
         onChange={(e) => setTexto(e.target.value)}
