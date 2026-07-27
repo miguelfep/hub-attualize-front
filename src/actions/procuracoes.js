@@ -5,8 +5,13 @@ import { useMemo } from 'react';
 
 import axios, { fetcher, endpoints } from 'src/utils/axios';
 
+/**
+ * Estas rotas leem cache LOCAL do backend — nenhuma chama a Serpro. Por isso
+ * revalidamos ao montar: o custo é baixo e o dado precisa refletir o que foi
+ * consultado em outra tela (ex.: a procuração consultada na página do cliente).
+ */
 const swrOptions = {
-  revalidateIfStale: false,
+  revalidateIfStale: true,
   revalidateOnFocus: false,
   revalidateOnReconnect: false,
 };
@@ -40,6 +45,13 @@ export async function consultarProcuracao(clienteId) {
   return res.data;
 }
 
+/** Vai à Serpro e percorre todas as páginas. Operação explícita e demorada. */
+export async function sincronizarVinculos() {
+  const res = await axios.post(endpoints.procuracoes.sincronizarVinculos);
+  return res.data;
+}
+
+/** Lê o cache local — não chama a Serpro. */
 export function useGetVinculos(params = {}) {
   const url = buildQuery(endpoints.procuracoes.vinculos, params);
   const { data, isLoading, error, mutate } = useSWR(url, fetcher, swrOptions);
@@ -48,7 +60,7 @@ export function useGetVinculos(params = {}) {
     () => ({
       vinculos: data?.vinculos ?? [],
       total: data?.total ?? 0,
-      lastCnpj: data?.lastCnpj,
+      sincronizadoEm: data?.sincronizadoEm ?? null,
       vinculosLoading: isLoading,
       vinculosError: error,
       refetchVinculos: mutate,
