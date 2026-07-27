@@ -164,6 +164,10 @@ export const paths = {
         root: `${ROOTS.DASHBOARD}/fiscal/reforma-tributaria`,
         details: (id) => `${ROOTS.DASHBOARD}/fiscal/reforma-tributaria/${id}`,
       },
+      fatorR: {
+        root: `${ROOTS.DASHBOARD}/fiscal/fator-r`,
+        details: (id) => `${ROOTS.DASHBOARD}/fiscal/fator-r/${id}`,
+      },
     },
     contabil: {
       root: `${ROOTS.DASHBOARD}/contabil/conciliacoes`,

@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
@@ -20,11 +22,12 @@ import {
   STATUS_OPTIONS,
   prioridadeColor,
   prioridadeLabel,
+  transicoesPermitidas,
 } from './utils';
 
 // ----------------------------------------------------------------------
 
-function KanbanCard({ tarefa, setores, onClick }) {
+function KanbanCard({ tarefa, setores, onClick, onDragStart, onDragEnd, arrastavel }) {
   const totalItens = tarefa.checklist?.length || 0;
   const itensConcluidos = totalItens
     ? tarefa.checklist.filter((i) => i.concluido).length
@@ -33,7 +36,18 @@ function KanbanCard({ tarefa, setores, onClick }) {
   return (
     <Card
       onClick={() => onClick(tarefa)}
-      sx={{ p: 1.5, cursor: 'pointer', '&:hover': { boxShadow: (theme) => theme.customShadows.z8 } }}
+      draggable={arrastavel}
+      onDragStart={(e) => {
+        e.dataTransfer.effectAllowed = 'move';
+        onDragStart?.(tarefa);
+      }}
+      onDragEnd={() => onDragEnd?.()}
+      sx={{
+        p: 1.5,
+        cursor: arrastavel ? 'grab' : 'pointer',
+        '&:hover': { boxShadow: (theme) => theme.customShadows.z8 },
+        '&:active': arrastavel ? { cursor: 'grabbing' } : undefined,
+      }}
     >
       <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
         {tarefa.titulo}
@@ -88,27 +102,63 @@ function KanbanCard({ tarefa, setores, onClick }) {
 // ----------------------------------------------------------------------
 
 /**
- * Quadro Kanban (visualização) das tarefas, agrupadas por status. Os cards são
- * clicáveis e abrem o drawer de detalhes, onde o status muda respeitando as
- * transições válidas.
+ * Quadro Kanban das tarefas, agrupadas por status. Os cards abrem o drawer de
+ * detalhes e podem ser ARRASTADOS entre colunas — o drop só é aceito quando a
+ * transição de status é válida (Cancelada fica de fora: exige motivo, feito
+ * pelo drawer). A mudança em si é responsabilidade do pai via `onMoverStatus`.
  *
  * @param {object} props
  * @param {Array}  props.tarefas
  * @param {Array}  props.setores
  * @param {boolean} props.loading
  * @param {(tarefa: object) => void} props.onCardClick
+ * @param {(tarefa: object, novoStatus: string) => void} [props.onMoverStatus]
  */
-export function TarefaKanban({ tarefas = [], setores = [], loading, onCardClick }) {
+export function TarefaKanban({ tarefas = [], setores = [], loading, onCardClick, onMoverStatus }) {
+  // Tarefa em arrasto (HTML5 DnD não expõe o payload durante o dragover).
+  const [arrastando, setArrastando] = useState(null);
+
+  const aceitaDrop = (col) =>
+    Boolean(
+      arrastando &&
+        onMoverStatus &&
+        col !== 'cancelada' &&
+        transicoesPermitidas(arrastando.status).includes(col)
+    );
+
   return (
     <Scrollbar sx={{ pb: 1 }}>
       <Box sx={{ display: 'flex', gap: 2, minHeight: 360 }}>
         {STATUS_OPTIONS.map((col) => {
           const itens = tarefas.filter((t) => t.status === col.value);
+          const dropAtivo = aceitaDrop(col.value);
           return (
             <Paper
               key={col.value}
               variant="outlined"
-              sx={{ width: 300, flexShrink: 0, p: 1.5, bgcolor: 'background.neutral' }}
+              onDragOver={(e) => {
+                if (dropAtivo) e.preventDefault();
+              }}
+              onDrop={(e) => {
+                if (!dropAtivo) return;
+                e.preventDefault();
+                const tarefa = arrastando;
+                setArrastando(null);
+                onMoverStatus?.(tarefa, col.value);
+              }}
+              sx={{
+                width: 300,
+                flexShrink: 0,
+                p: 1.5,
+                bgcolor: 'background.neutral',
+                ...(arrastando && {
+                  opacity: dropAtivo ? 1 : 0.55,
+                  ...(dropAtivo && {
+                    outline: (theme) => `2px dashed ${theme.vars.palette.primary.main}`,
+                    outlineOffset: -2,
+                  }),
+                }),
+              }}
             >
               <Stack
                 direction="row"
@@ -127,7 +177,15 @@ export function TarefaKanban({ tarefas = [], setores = [], loading, onCardClick 
                   </Typography>
                 )}
                 {itens.map((t) => (
-                  <KanbanCard key={t._id} tarefa={t} setores={setores} onClick={onCardClick} />
+                  <KanbanCard
+                    key={t._id}
+                    tarefa={t}
+                    setores={setores}
+                    onClick={onCardClick}
+                    arrastavel={Boolean(onMoverStatus) && transicoesPermitidas(t.status).length > 0}
+                    onDragStart={setArrastando}
+                    onDragEnd={() => setArrastando(null)}
+                  />
                 ))}
               </Stack>
             </Paper>
