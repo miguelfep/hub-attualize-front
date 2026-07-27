@@ -215,6 +215,22 @@ export async function sincronizarNotas(clienteId, periodo) {
 
 // ─── Apuração PGDAS-D ───────────────────────────────────────────────────────
 
+export function useGetFilaApuracao(params = {}) {
+  const url = buildQuery(endpoints.fatorR.apuracao.fila, params);
+  const { data, isLoading, error, mutate } = useSWR(url, fetcher, swrOptions);
+
+  return useMemo(
+    () => ({
+      itens: data?.itens ?? [],
+      totais: data?.totais ?? {},
+      filaLoading: isLoading,
+      filaError: error,
+      refetchFila: mutate,
+    }),
+    [data, isLoading, error, mutate]
+  );
+}
+
 export function useGetApuracao(clienteId, ano, mes, params = {}) {
   const pronto = clienteId && ano && mes;
   const url = pronto ? buildQuery(endpoints.fatorR.apuracao.get(clienteId, ano, mes), params) : null;

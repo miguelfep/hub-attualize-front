@@ -75,6 +75,7 @@ import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
 import { ClienteDominioIntegracao } from './cliente-dominio-integracao';
+import { ProcuracaoClienteCard } from '../procuracoes/procuracao-cliente-card';
 
 const MESES = [
   { value: 1, label: 'Janeiro' },
@@ -1793,6 +1794,49 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
           <FormControlLabel
             control={<Switch {...field} checked={!!field.value} />}
             label="Importar Notas Fiscais da Sieg automaticamente"
+          />
+        )}
+      />
+
+          <Divider sx={{ my: 3 }} />
+
+          {clienteId && (
+            <Box sx={{ mb: 3 }}>
+              <ProcuracaoClienteCard clienteId={clienteId} />
+            </Box>
+          )}
+
+          <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
+            Apuração do Simples Nacional (Serpro)
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            Habilita este cliente na fila de apuração do PGDAS-D. Só clientes habilitados entram no
+            fechamento mensal. Independe do Fator R: clientes de qualquer anexo do Simples podem ser
+            apurados, e nos anexos III e V o enquadramento vem do Fator R apurado.
+          </Typography>
+      <Controller
+        name="apuracaoSerproAtiva"
+        control={control}
+        render={({ field }) => (
+          <FormControlLabel
+            control={<Switch {...field} checked={!!field.value} />}
+            label="Habilitar apuração do Simples Nacional via Serpro"
+          />
+        )}
+      />
+      <Controller
+        name="apuracaoIdAtividade"
+        control={control}
+        render={({ field }) => (
+          <TextField
+            {...field}
+            type="number"
+            size="small"
+            label="Código da atividade no PGDAS-D"
+            value={field.value ?? ''}
+            onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
+            helperText="Obrigatório para montar a declaração deste cliente."
+            sx={{ mt: 2, maxWidth: 360 }}
           />
         )}
       />

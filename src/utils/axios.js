@@ -783,6 +783,13 @@ export const endpoints = {
     serproDetalhe: (id) => `${baseUrl}audit/serpro/${id}`,
     caixaPostalDetalhe: (id) => `${baseUrl}audit/caixa-postal/${id}`,
   },
+  pagamentoWeb: {
+    consultar: `${baseUrl}pagamento-web/consultar`,
+    conciliar: `${baseUrl}pagamento-web/conciliar`,
+    aplicarConciliacao: `${baseUrl}pagamento-web/conciliar/aplicar`,
+    ultimoLog: (clienteId) => `${baseUrl}pagamento-web/${clienteId}/ultimo-log`,
+    pagtoWebDetalhe: (id) => `${baseUrl}audit/pagto-web/${id}`,
+  },
   integraContadorRelatorio: {
     stats: `${baseUrl}relatorios/integra-contador/stats`,
     logs: `${baseUrl}relatorios/integra-contador/logs`,
@@ -817,6 +824,7 @@ export const endpoints = {
         `${baseUrl}fator-r/${clienteId}/faturamento/sincronizar-notas`,
     },
     apuracao: {
+      fila: `${baseUrl}fator-r/apuracao/fila`,
       get: (clienteId, ano, mes) => `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}`,
       simular: (clienteId, ano, mes) =>
         `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}/simular`,
@@ -825,6 +833,16 @@ export const endpoints = {
       transmitir: (clienteId, ano, mes) =>
         `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}/transmitir`,
     },
+  },
+  procuracoes: {
+    vinculos: `${baseUrl}procuracoes/vinculos`,
+    renuncias: `${baseUrl}procuracoes/renuncias`,
+    situacaoRenuncia: (idSolicitacao) =>
+      `${baseUrl}procuracoes/renuncias/${idSolicitacao}/situacao`,
+    comprovanteRenuncia: (idRenuncia) =>
+      `${baseUrl}procuracoes/renuncias/${idRenuncia}/comprovante`,
+    doCliente: (clienteId) => `${baseUrl}procuracoes/clientes/${clienteId}`,
+    consultar: (clienteId) => `${baseUrl}procuracoes/clientes/${clienteId}/consultar`,
   },
   reformaTributariaDiagnostico: {
     admin: {

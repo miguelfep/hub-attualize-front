@@ -36,13 +36,18 @@ export async function uploadGuiasFiscais(files) {
  * Upload ASSÍNCRONO de guias (fluxo novo): o backend enfileira o lote e
  * responde 202 com `loteId`. Acompanhar via useGetLoteUpload(loteId).
  * @param {File[]} files
+ * @param {{ forcarSubstituicao?: boolean }} [opcoes] - Reenvio explícito que
+ *   sobrescreve guias já existentes no slot (botão "Reenviar substituindo").
  * @returns {Promise<{ loteId: string, status: string, totalArquivos: number }>}
  */
-export async function uploadGuiasFiscaisAsync(files) {
+export async function uploadGuiasFiscaisAsync(files, opcoes = {}) {
   const formData = new FormData();
   files.forEach((file) => {
     formData.append('files', file);
   });
+  if (opcoes.forcarSubstituicao) {
+    formData.append('forcarSubstituicao', 'true');
+  }
 
   const res = await axios.post(endpoints.guiasFiscais.uploadAsync, formData, {
     headers: {
