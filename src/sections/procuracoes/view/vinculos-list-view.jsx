@@ -26,10 +26,11 @@ import TableContainer from '@mui/material/TableContainer';
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 
+import { fDateTime } from 'src/utils/format-time';
 import { formatCNPJ } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { useGetVinculos, solicitarRenuncia } from 'src/actions/procuracoes';
+import { useGetVinculos, solicitarRenuncia, sincronizarVinculos } from 'src/actions/procuracoes';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
@@ -58,15 +59,38 @@ export function VinculosListView() {
   const { user } = useAuthContext();
   const podeRenunciar = ROLES_RENUNCIA.includes(user?.role);
 
-  const { vinculos, total, vinculosLoading, refetchVinculos } = useGetVinculos({ size: 50 });
+  const { vinculos, total, sincronizadoEm, vinculosLoading, refetchVinculos } = useGetVinculos();
   const [renunciando, setRenunciando] = useState(null);
+  const [sincronizando, setSincronizando] = useState(false);
 
   const foraDaCarteira = vinculos.filter((v) => v.foraDaCarteira).length;
+
+  const handleSincronizar = useCallback(async () => {
+    setSincronizando(true);
+    try {
+      const res = await sincronizarVinculos();
+      const partes = [`${res.encontrados} vínculo(s) ativo(s)`];
+      if (res.novos) partes.push(`${res.novos} novo(s)`);
+      if (res.desaparecidos) partes.push(`${res.desaparecidos} encerrado(s)`);
+      toast.success(partes.join(' · '));
+      refetchVinculos();
+    } catch (error) {
+      toast.error(apiErrMsg(error, 'Falha ao sincronizar com a Serpro'));
+    } finally {
+      setSincronizando(false);
+    }
+  }, [refetchVinculos]);
 
   const handleRenunciar = useCallback(
     async (cnpj, cpfContador) => {
       try {
-        const res = await solicitarRenuncia({ cnpj, cpfContador });
+        // O mesmo CPF serve de preenchedor quando o perfil do usuário não tem
+        // um cadastrado; o backend dá preferência ao do perfil.
+        const res = await solicitarRenuncia({
+          cnpj,
+          cpfContador,
+          cpfPreenchedor: cpfContador,
+        });
         const protocolo = res?.solicitacao?.idSolicitacao;
         toast.success(
           protocolo
@@ -92,13 +116,14 @@ export function VinculosListView() {
           { name: 'Vínculos' },
         ]}
         action={
-          <Button
-            variant="outlined"
-            startIcon={<Iconify icon="eva:refresh-fill" />}
-            onClick={() => refetchVinculos()}
+          <LoadingButton
+            variant="contained"
+            loading={sincronizando}
+            startIcon={<Iconify icon="eva:cloud-download-fill" />}
+            onClick={handleSincronizar}
           >
-            Atualizar
-          </Button>
+            Consultar todas na Receita
+          </LoadingButton>
         }
         sx={{ mb: { xs: 3, md: 5 } }}
       />
@@ -108,7 +133,17 @@ export function VinculosListView() {
         As empresas em que o escritório consta como contabilista <strong>na Receita</strong>, que
         não é a mesma coisa que a carteira do sistema. Empresa que aparece aqui e não está na
         carteira costuma ser vínculo esquecido — candidata a renúncia.
+        <Box component="span" sx={{ display: 'block', mt: 1 }}>
+          A tela lê de um cache local. Só o botão acima vai à Receita.
+        </Box>
       </Alert>
+
+      {!vinculosLoading && !sincronizadoEm && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          Nenhuma sincronização feita ainda. Use “Consultar todas na Receita” para preencher a
+          lista.
+        </Alert>
+      )}
 
       {!vinculosLoading && foraDaCarteira > 0 && (
         <Alert severity="warning" sx={{ mb: 3 }}>
@@ -117,11 +152,20 @@ export function VinculosListView() {
       )}
 
       <Card>
-        <Box sx={{ p: 2.5 }}>
-          <Typography variant="subtitle2">
-            {total} empresa(s) com vínculo ativo
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          justifyContent="space-between"
+          alignItems={{ sm: 'center' }}
+          spacing={1}
+          sx={{ p: 2.5 }}
+        >
+          <Typography variant="subtitle2">{total} empresa(s) com vínculo ativo</Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+            {sincronizadoEm
+              ? `Última consulta à Receita em ${fDateTime(sincronizadoEm)}`
+              : 'Nunca consultado'}
           </Typography>
-        </Box>
+        </Stack>
 
         <Scrollbar>
           <TableContainer sx={{ overflow: 'auto' }}>
@@ -253,10 +297,10 @@ function RenunciaDialog({ vinculo, onClose, onConfirm }) {
 
         <TextField
           fullWidth
-          label="CPF do contador (opcional)"
+          label="CPF do contador responsável"
           value={cpfContador}
           onChange={(e) => setCpfContador(e.target.value)}
-          helperText="Em branco, usa o CPF do seu usuário. Seu CPF precisa estar cadastrado."
+          helperText="A Serpro exige o CPF de quem solicita. Se o seu perfil já tiver CPF cadastrado, ele é usado e este campo é ignorado."
         />
       </DialogContent>
 

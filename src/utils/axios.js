@@ -836,6 +836,7 @@ export const endpoints = {
   },
   procuracoes: {
     vinculos: `${baseUrl}procuracoes/vinculos`,
+    sincronizarVinculos: `${baseUrl}procuracoes/vinculos/sincronizar`,
     renuncias: `${baseUrl}procuracoes/renuncias`,
     situacaoRenuncia: (idSolicitacao) =>
       `${baseUrl}procuracoes/renuncias/${idSolicitacao}/situacao`,
