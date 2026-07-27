@@ -39,6 +39,7 @@ import {
   atualizarTarefa,
   reatribuirTarefa,
   getMinhasTarefas,
+  alterarStatusTarefa,
 } from 'src/actions/tarefas';
 
 import { Label } from 'src/components/label';
@@ -374,20 +375,36 @@ export function TarefasListView({ minhas = false }) {
       return next;
     });
 
-  const handleAcoesMassa = async ({ responsavelId, setores: novosSetores, excluir }) => {
+  // Drag & drop do kanban: atualização otimista + rollback se a API recusar.
+  const handleMoverStatus = async (tarefa, novoStatus) => {
+    const statusAnterior = tarefa.status;
+    setLista((prev) => prev.map((t) => (t._id === tarefa._id ? { ...t, status: novoStatus } : t)));
+    try {
+      await alterarStatusTarefa(tarefa._id, novoStatus);
+      carregarResumo();
+    } catch (error) {
+      setLista((prev) =>
+        prev.map((t) => (t._id === tarefa._id ? { ...t, status: statusAnterior } : t))
+      );
+      toast.error(error?.message || 'Falha ao mudar o status da tarefa.');
+    }
+  };
+
+  const handleAcoesMassa = async ({ responsavelId, setores: novosSetores, status, motivo, excluir }) => {
     const ids = [...selecionados];
     setReatribuindo(true);
     try {
       const results = await Promise.allSettled(
         ids.map(async (id) => {
-          // Exclusão é exclusiva; senão, setores via PATCH /:id e responsável
-          // via PATCH /:id/responsavel.
+          // Exclusão é exclusiva; senão, setores via PATCH /:id, responsável
+          // via PATCH /:id/responsavel e status via PATCH /:id/status.
           if (excluir) {
             await deletarTarefa(id);
             return;
           }
           if (novosSetores !== undefined) await atualizarTarefa(id, { setores: novosSetores });
           if (responsavelId) await reatribuirTarefa(id, responsavelId);
+          if (status) await alterarStatusTarefa(id, status, motivo);
         })
       );
       const ok = results.filter((r) => r.status === 'fulfilled').length;
@@ -459,7 +476,7 @@ export function TarefasListView({ minhas = false }) {
           >
             <TextField
               size="small"
-              placeholder="Buscar por título ou descrição..."
+              placeholder="Buscar por título, descrição ou empresa..."
               value={filtros.q}
               onChange={(e) => setFiltro('q', e.target.value)}
               sx={{ minWidth: 220, flexGrow: 1 }}
@@ -622,6 +639,7 @@ export function TarefasListView({ minhas = false }) {
             setores={setores}
             loading={loading}
             onCardClick={(t) => setDrawerId(t._id)}
+            onMoverStatus={handleMoverStatus}
           />
         </>
       ) : (

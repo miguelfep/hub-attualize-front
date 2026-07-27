@@ -256,6 +256,21 @@ export const navData = [
             path: paths.dashboard.fiscal.reformaTributaria.root,
             roles: ['admin', 'operacional', 'gerencial', 'contabil_externo'],
           },
+          {
+            title: 'Fator R',
+            path: paths.dashboard.fiscal.fatorR.root,
+            roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
+          },
+          {
+            title: 'Apuração do Simples',
+            path: paths.dashboard.fiscal.fatorR.apuracoes,
+            roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
+          },
+          {
+            title: 'Vínculos e procurações',
+            path: paths.dashboard.fiscal.procuracoes.root,
+            roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
+          },
         ],
       },
       {

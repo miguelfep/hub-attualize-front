@@ -8,6 +8,7 @@ import { LoadingButton } from '@mui/lab';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import Checkbox from '@mui/material/Checkbox';
+import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import DialogTitle from '@mui/material/DialogTitle';
 import Autocomplete from '@mui/material/Autocomplete';
@@ -15,7 +16,7 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import FormControlLabel from '@mui/material/FormControlLabel';
 
-import { setorNome } from './utils';
+import { setorNome, statusLabel, STATUS_OPTIONS } from './utils';
 
 // ----------------------------------------------------------------------
 
@@ -46,6 +47,9 @@ export function AcoesMassaDialog({
   const [responsavel, setResponsavel] = useState(null);
   const [aplicarSetores, setAplicarSetores] = useState(false);
   const [setoresSel, setSetoresSel] = useState([]);
+  const [aplicarStatus, setAplicarStatus] = useState(false);
+  const [statusSel, setStatusSel] = useState('');
+  const [motivoCancelamento, setMotivoCancelamento] = useState('');
   const [aplicarExcluir, setAplicarExcluir] = useState(false);
 
   useEffect(() => {
@@ -54,6 +58,9 @@ export function AcoesMassaDialog({
       setResponsavel(null);
       setAplicarSetores(false);
       setSetoresSel([]);
+      setAplicarStatus(false);
+      setStatusSel('');
+      setMotivoCancelamento('');
       setAplicarExcluir(false);
     }
   }, [open]);
@@ -71,12 +78,19 @@ export function AcoesMassaDialog({
       setResponsavel(null);
       setAplicarSetores(false);
       setSetoresSel([]);
+      setAplicarStatus(false);
+      setStatusSel('');
+      setMotivoCancelamento('');
     }
   };
 
   const responsavelOk = !aplicarResponsavel || Boolean(responsavel);
+  const statusOk =
+    !aplicarStatus ||
+    (Boolean(statusSel) && (statusSel !== 'cancelada' || Boolean(motivoCancelamento.trim())));
   const podeConfirmar =
-    aplicarExcluir || ((aplicarResponsavel || aplicarSetores) && responsavelOk);
+    aplicarExcluir ||
+    ((aplicarResponsavel || aplicarSetores || aplicarStatus) && responsavelOk && statusOk);
 
   const handleConfirmar = () => {
     if (aplicarExcluir) {
@@ -86,6 +100,8 @@ export function AcoesMassaDialog({
     onConfirm({
       responsavelId: aplicarResponsavel ? responsavel?._id : undefined,
       setores: aplicarSetores ? setoresSel : undefined,
+      status: aplicarStatus ? statusSel : undefined,
+      motivo: aplicarStatus && statusSel === 'cancelada' ? motivoCancelamento.trim() : undefined,
     });
   };
 
@@ -148,6 +164,44 @@ export function AcoesMassaDialog({
                 />
               )}
             />
+          </Stack>
+
+          {/* Alterar status */}
+          <Stack spacing={1}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={aplicarStatus}
+                  disabled={aplicarExcluir}
+                  onChange={(e) => setAplicarStatus(e.target.checked)}
+                />
+              }
+              label="Alterar status"
+            />
+            <TextField
+              select
+              label="Novo status"
+              value={statusSel}
+              disabled={!aplicarStatus}
+              onChange={(e) => setStatusSel(e.target.value)}
+              helperText="Transições inválidas (ex.: reabrir concluída) falham tarefa a tarefa."
+            >
+              {STATUS_OPTIONS.map((s) => (
+                <MenuItem key={s.value} value={s.value}>
+                  {statusLabel(s.value)}
+                </MenuItem>
+              ))}
+            </TextField>
+            {aplicarStatus && statusSel === 'cancelada' && (
+              <TextField
+                label="Motivo do cancelamento"
+                value={motivoCancelamento}
+                onChange={(e) => setMotivoCancelamento(e.target.value)}
+                required
+                multiline
+                minRows={2}
+              />
+            )}
           </Stack>
 
           {/* Excluir (somente admin/gerencial — exclusão permanente) */}

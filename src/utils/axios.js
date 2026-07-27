@@ -795,6 +795,55 @@ export const endpoints = {
     logs: `${baseUrl}relatorios/integra-contador/logs`,
   },
   // Reforma Tributária — Diagnóstico (comparativo Simples x híbrido IBS/CBS)
+  fatorR: {
+    monitoramento: `${baseUrl}fator-r/monitoramento`,
+    auditoriaPortfolio: `${baseUrl}fator-r/auditoria/portfolio`,
+    calculo: (clienteId) => `${baseUrl}fator-r/${clienteId}`,
+    simulacao: (clienteId) => `${baseUrl}fator-r/${clienteId}/simulacao`,
+    projecao: (clienteId) => `${baseUrl}fator-r/${clienteId}/projecao`,
+    auditoria: (clienteId) => `${baseUrl}fator-r/${clienteId}/auditoria`,
+    apuracoes: (clienteId) => `${baseUrl}fator-r/${clienteId}/apuracoes`,
+    folha: {
+      list: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha`,
+      anomalias: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha/anomalias`,
+      upsert: (clienteId, ano, mes) => `${baseUrl}fator-r/${clienteId}/folha/${ano}/${mes}`,
+      remover: (clienteId, ano, mes) => `${baseUrl}fator-r/${clienteId}/folha/${ano}/${mes}`,
+      sugestao: (clienteId, ano, mes) =>
+        `${baseUrl}fator-r/${clienteId}/folha/${ano}/${mes}/sugestao`,
+      importarPgdas: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha/importar-pgdas`,
+      importarGuias: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha/importar-guias`,
+      importarDocumento: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha/importar-documento`,
+      importarCadastro: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha/importar-cadastro`,
+    },
+    faturamento: {
+      list: (clienteId) => `${baseUrl}fator-r/${clienteId}/faturamento`,
+      upsert: (clienteId, ano, mes) => `${baseUrl}fator-r/${clienteId}/faturamento/${ano}/${mes}`,
+      sugestao: (clienteId, ano, mes) =>
+        `${baseUrl}fator-r/${clienteId}/faturamento/${ano}/${mes}/sugestao`,
+      sincronizarNotas: (clienteId) =>
+        `${baseUrl}fator-r/${clienteId}/faturamento/sincronizar-notas`,
+    },
+    apuracao: {
+      fila: `${baseUrl}fator-r/apuracao/fila`,
+      get: (clienteId, ano, mes) => `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}`,
+      simular: (clienteId, ano, mes) =>
+        `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}/simular`,
+      revisar: (clienteId, ano, mes) =>
+        `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}/revisar`,
+      transmitir: (clienteId, ano, mes) =>
+        `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}/transmitir`,
+    },
+  },
+  procuracoes: {
+    vinculos: `${baseUrl}procuracoes/vinculos`,
+    renuncias: `${baseUrl}procuracoes/renuncias`,
+    situacaoRenuncia: (idSolicitacao) =>
+      `${baseUrl}procuracoes/renuncias/${idSolicitacao}/situacao`,
+    comprovanteRenuncia: (idRenuncia) =>
+      `${baseUrl}procuracoes/renuncias/${idRenuncia}/comprovante`,
+    doCliente: (clienteId) => `${baseUrl}procuracoes/clientes/${clienteId}`,
+    consultar: (clienteId) => `${baseUrl}procuracoes/clientes/${clienteId}/consultar`,
+  },
   reformaTributariaDiagnostico: {
     admin: {
       list: `${baseUrl}reforma-tributaria-diagnostico`,

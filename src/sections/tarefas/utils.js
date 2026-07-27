@@ -38,8 +38,8 @@ export const PRIORIDADE_OPTIONS = [
 
 /** Transições válidas de status (estados terminais não permitem transição). */
 export const TRANSICOES_STATUS = {
-  pendente: ['em_andamento', 'cancelada'],
-  em_andamento: ['concluida', 'cancelada'],
+  pendente: ['em_andamento', 'concluida', 'cancelada'],
+  em_andamento: ['pendente', 'concluida', 'cancelada'],
   concluida: [],
   cancelada: [],
 };
