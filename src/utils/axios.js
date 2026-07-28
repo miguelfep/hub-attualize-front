@@ -831,6 +831,7 @@ export const endpoints = {
     clientes: `${baseUrl}apuracao/clientes`,
     habilitacao: `${baseUrl}apuracao/clientes/habilitacao`,
     get: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}`,
+    montar: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}/montar`,
     simular: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}/simular`,
     revisar: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}/revisar`,
     transmitir: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}/transmitir`,

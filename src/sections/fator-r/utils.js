@@ -23,9 +23,29 @@ export function riscoColor(risco) {
 }
 
 export function anexoLabel(anexo) {
+  if (anexo === 'anexo1') return 'Anexo I';
+  if (anexo === 'anexo2') return 'Anexo II';
   if (anexo === 'anexo3') return 'Anexo III';
+  if (anexo === 'anexo4') return 'Anexo IV';
   if (anexo === 'anexo5') return 'Anexo V';
   return anexo ?? '—';
+}
+
+/**
+ * Códigos de tributo do PGDAS-D. Espelha CODIGO_TRIBUTO do backend
+ * (src/constants/simplesNacional.ts) — se um lado mudar, o outro tem que mudar.
+ */
+export const NOME_TRIBUTO = {
+  1001: 'IRPJ',
+  1002: 'CSLL',
+  1004: 'COFINS',
+  1005: 'PIS/Pasep',
+  1006: 'CPP (INSS)',
+  1010: 'ISS',
+};
+
+export function tributoLabel(codigo) {
+  return NOME_TRIBUTO[codigo] ?? `Tributo ${codigo}`;
 }
 
 /** Anexo III é o desfecho barato; Anexo V é o que se quer evitar. */

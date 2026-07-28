@@ -77,6 +77,15 @@ export function useGetApuracao(clienteId, ano, mes, params = {}) {
   );
 }
 
+/**
+ * Remontagem explícita. Distinta do GET de propósito: derruba a simulação e a
+ * aprovação, então não pode acontecer como efeito colateral de carregar a tela.
+ */
+export async function montarApuracao(clienteId, ano, mes, params = {}) {
+  const res = await axios.post(buildQuery(endpoints.apuracao.montar(clienteId, ano, mes), params));
+  return res.data;
+}
+
 export async function simularApuracao(clienteId, ano, mes) {
   const res = await axios.post(endpoints.apuracao.simular(clienteId, ano, mes));
   return res.data;
