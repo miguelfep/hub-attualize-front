@@ -29,6 +29,7 @@ import { fCurrency } from 'src/utils/format-number';
 import { recalcularFatorR } from 'src/actions/fator-r';
 import {
   useGetApuracao,
+  montarApuracao,
   revisarApuracao,
   simularApuracao,
   transmitirApuracao,
@@ -40,10 +41,12 @@ import { Iconify } from 'src/components/iconify';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import { ApuracaoConferencia } from './apuracao-conferencia';
 import { AtividadePgdasSelect } from './atividade-pgdas-select';
 import {
   apiErrMsg,
   anexoLabel,
+  tributoLabel,
   statusApuracaoColor,
   statusApuracaoLabel,
 } from '../../fator-r/utils';
@@ -192,11 +195,24 @@ export function ApuracaoPainel({ clienteId, ano, mes }) {
           )}
 
           <Stack direction="row" spacing={1} flexWrap="wrap">
+            {/* Remontar é destrutivo — derruba simulação e aprovação. Por isso
+                é um POST explícito, e não o refetch da tela: enquanto os dois
+                eram a mesma coisa, carregar a página apagava a simulação. */}
             <LoadingButton
               variant="outlined"
+              disabled={transmitida}
               loading={carregando === 'montar'}
               startIcon={<Iconify icon="eva:refresh-fill" />}
-              onClick={() => executar('montar', async () => refetchApuracao(), 'Apuração remontada')}
+              onClick={() =>
+                executar(
+                  'montar',
+                  () =>
+                    montarApuracao(clienteId, ano, mes, {
+                      idAtividade: idAtividade || undefined,
+                    }),
+                  'Apuração remontada — simule novamente na Receita'
+                )
+              }
             >
               Remontar
             </LoadingButton>
@@ -282,7 +298,7 @@ export function ApuracaoPainel({ clienteId, ano, mes }) {
               <TableBody>
                 {apuracao.valoresDevidos.map((v) => (
                   <TableRow key={v.codigoTributo}>
-                    <TableCell>Tributo {v.codigoTributo}</TableCell>
+                    <TableCell>{tributoLabel(v.codigoTributo)}</TableCell>
                     <TableCell align="right">
                       <Typography variant="subtitle2">{fCurrency(v.valor)}</Typography>
                     </TableCell>
@@ -313,12 +329,21 @@ export function ApuracaoPainel({ clienteId, ano, mes }) {
         </Card>
       )}
 
+      {simulada && <ApuracaoConferencia conferencia={apuracao?.conferencia} />}
+
       <Dialog open={confirmando} onClose={() => setConfirmando(false)} maxWidth="xs" fullWidth>
         <DialogTitle>Transmitir declaração?</DialogTitle>
         <DialogContent>
           <Alert severity="warning" sx={{ mb: 2 }}>
             A transmissão é irreversível. Retificar depois é um processo manual na Receita.
           </Alert>
+
+          {apuracao?.conferencia && !apuracao.conferencia.ok && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              <AlertTitle>A conferência não fechou</AlertTitle>
+              {apuracao.conferencia.alertas?.[0]}
+            </Alert>
+          )}
           <Typography variant="body2">
             Serão transmitidos os valores aprovados, totalizando{' '}
             <strong>
