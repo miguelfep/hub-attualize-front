@@ -45,12 +45,22 @@ export function useGetFatorRCliente(clienteId, params = {}) {
       atual: data?.atual ?? null,
       risco: data?.risco ?? null,
       serie: data?.serie ?? [],
+      cliente: data?.cliente ?? null,
       fatorRLoading: isLoading,
       fatorRError: error,
       refetchFatorR: mutate,
     }),
     [data, isLoading, error, mutate]
   );
+}
+
+/**
+ * Recalcula e grava o snapshot do período. É pré-requisito da apuração: sem
+ * snapshot, o anexo não está determinado e a apuração fica bloqueada.
+ */
+export async function recalcularFatorR(clienteId, ano, mes) {
+  const res = await axios.post(endpoints.fatorR.recalcular(clienteId), { ano, mes });
+  return res.data;
 }
 
 export function useGetSimulacao(clienteId, params = {}) {
@@ -181,6 +191,19 @@ export async function importarFolhaDocumento(clienteId, guiaFiscalId) {
   return res.data;
 }
 
+/**
+ * Upload do Extrato do Simples Nacional (PDF). Preenche folha E faturamento da
+ * janela inteira de uma vez — a melhor fonte de backfill disponível.
+ */
+export async function importarExtratoPgdas(clienteId, arquivo) {
+  const formData = new FormData();
+  formData.append('file', arquivo);
+  const res = await axios.post(endpoints.fatorR.extratoPgdas(clienteId), formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+}
+
 // ─── Faturamento ────────────────────────────────────────────────────────────
 
 export function useGetFaturamentos(clienteId, params = {}) {
@@ -210,54 +233,5 @@ export async function sugerirFaturamento(clienteId, ano, mes) {
 
 export async function sincronizarNotas(clienteId, periodo) {
   const res = await axios.post(endpoints.fatorR.faturamento.sincronizarNotas(clienteId), periodo);
-  return res.data;
-}
-
-// ─── Apuração PGDAS-D ───────────────────────────────────────────────────────
-
-export function useGetFilaApuracao(params = {}) {
-  const url = buildQuery(endpoints.fatorR.apuracao.fila, params);
-  const { data, isLoading, error, mutate } = useSWR(url, fetcher, swrOptions);
-
-  return useMemo(
-    () => ({
-      itens: data?.itens ?? [],
-      totais: data?.totais ?? {},
-      filaLoading: isLoading,
-      filaError: error,
-      refetchFila: mutate,
-    }),
-    [data, isLoading, error, mutate]
-  );
-}
-
-export function useGetApuracao(clienteId, ano, mes, params = {}) {
-  const pronto = clienteId && ano && mes;
-  const url = pronto ? buildQuery(endpoints.fatorR.apuracao.get(clienteId, ano, mes), params) : null;
-  const { data, isLoading, error, mutate } = useSWR(url, fetcher, swrOptions);
-
-  return useMemo(
-    () => ({
-      apuracao: data?.apuracao ?? null,
-      apuracaoLoading: isLoading,
-      apuracaoError: error,
-      refetchApuracao: mutate,
-    }),
-    [data, isLoading, error, mutate]
-  );
-}
-
-export async function simularApuracao(clienteId, ano, mes) {
-  const res = await axios.post(endpoints.fatorR.apuracao.simular(clienteId, ano, mes));
-  return res.data;
-}
-
-export async function revisarApuracao(clienteId, ano, mes) {
-  const res = await axios.post(endpoints.fatorR.apuracao.revisar(clienteId, ano, mes));
-  return res.data;
-}
-
-export async function transmitirApuracao(clienteId, ano, mes) {
-  const res = await axios.post(endpoints.fatorR.apuracao.transmitir(clienteId, ano, mes));
   return res.data;
 }

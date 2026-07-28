@@ -14,6 +14,7 @@ import Skeleton from '@mui/material/Skeleton';
 import Grid from '@mui/material/Unstable_Grid2';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
+import LoadingButton from '@mui/lab/LoadingButton';
 import FormControl from '@mui/material/FormControl';
 
 import { paths } from 'src/routes/paths';
@@ -21,14 +22,17 @@ import { paths } from 'src/routes/paths';
 import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { useGetFatorRCliente } from 'src/actions/fator-r';
+import { recalcularFatorR, useGetFatorRCliente } from 'src/actions/fator-r';
 
 import { Label } from 'src/components/label';
+import { toast } from 'src/components/snackbar';
+import { Iconify } from 'src/components/iconify';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
+
+import { ApuracaoPainel } from 'src/sections/apuracao/components/apuracao-painel';
 
 import { FatorRChart } from '../components/fator-r-chart';
 import { FatorRFolha } from '../components/fator-r-folha';
-import { FatorRApuracao } from '../components/fator-r-apuracao';
 import { FatorRProjecao } from '../components/fator-r-projecao';
 import { FatorRAuditoria } from '../components/fator-r-auditoria';
 import { FatorRSimulacao } from '../components/fator-r-simulacao';
@@ -60,10 +64,28 @@ export function FatorRDetailView({ id }) {
   const [mes, setMes] = useState(inicial.mes);
   const [tab, setTab] = useState('resumo');
 
-  const { atual, risco, serie, fatorRLoading, refetchFatorR } = useGetFatorRCliente(id, {
+  const { atual, risco, serie, cliente, fatorRLoading, refetchFatorR } = useGetFatorRCliente(id, {
     ano,
     mes,
   });
+  const [recalculando, setRecalculando] = useState(false);
+
+  const handleRecalcular = useCallback(async () => {
+    setRecalculando(true);
+    try {
+      const res = await recalcularFatorR(id, ano, mes);
+      toast.success(
+        res.gravado
+          ? `Fator R apurado e gravado (versão ${res.versao}).`
+          : 'Fator R recalculado — resultado idêntico ao já gravado.'
+      );
+      refetchFatorR();
+    } catch (error) {
+      toast.error(error?.response?.data?.message || 'Falha ao recalcular o Fator R');
+    } finally {
+      setRecalculando(false);
+    }
+  }, [id, ano, mes, refetchFatorR]);
 
   // Médias da janela viram sugestão inicial da projeção — melhor ponto de
   // partida que zero, e o usuário ajusta.
@@ -83,15 +105,41 @@ export function FatorRDetailView({ id }) {
   return (
     <DashboardContent>
       <CustomBreadcrumbs
-        heading="Fator R do cliente"
+        heading={cliente?.nome || 'Fator R do cliente'}
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Fiscal', href: paths.dashboard.fiscal.root },
           { name: 'Fator R', href: paths.dashboard.fiscal.fatorR.root },
-          { name: 'Detalhe' },
+          { name: cliente?.nome || 'Detalhe' },
         ]}
-        sx={{ mb: { xs: 3, md: 5 } }}
+        action={
+          <LoadingButton
+            variant="outlined"
+            loading={recalculando}
+            startIcon={<Iconify icon="eva:refresh-fill" />}
+            onClick={handleRecalcular}
+          >
+            Recalcular e gravar
+          </LoadingButton>
+        }
+        sx={{ mb: { xs: 1, md: 2 } }}
       />
+
+      {cliente && (
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: { xs: 3, md: 5 } }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+            {cliente.cnpj || 'sem CNPJ'}
+          </Typography>
+          {cliente.regimeTributario && (
+            <Label variant="soft">{cliente.regimeTributario}</Label>
+          )}
+          {cliente.tributacao?.map((t) => (
+            <Label key={t} variant="soft" color="info">
+              {t}
+            </Label>
+          ))}
+        </Stack>
+      )}
 
       <Card sx={{ mb: 3 }}>
         <Stack
@@ -177,7 +225,7 @@ export function FatorRDetailView({ id }) {
 
       {tab === 'auditoria' && <FatorRAuditoria clienteId={id} />}
 
-      {tab === 'apuracao' && <FatorRApuracao clienteId={id} ano={ano} mes={mes} />}
+      {tab === 'apuracao' && <ApuracaoPainel clienteId={id} ano={ano} mes={mes} />}
     </DashboardContent>
   );
 }

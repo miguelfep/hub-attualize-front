@@ -14,7 +14,6 @@ import Skeleton from '@mui/material/Skeleton';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import StepLabel from '@mui/material/StepLabel';
-import TextField from '@mui/material/TextField';
 import CardHeader from '@mui/material/CardHeader';
 import Typography from '@mui/material/Typography';
 import AlertTitle from '@mui/material/AlertTitle';
@@ -27,12 +26,13 @@ import TableContainer from '@mui/material/TableContainer';
 import { fDateTime } from 'src/utils/format-time';
 import { fCurrency } from 'src/utils/format-number';
 
+import { recalcularFatorR } from 'src/actions/fator-r';
 import {
   useGetApuracao,
   revisarApuracao,
   simularApuracao,
   transmitirApuracao,
-} from 'src/actions/fator-r';
+} from 'src/actions/apuracao';
 
 import { Label } from 'src/components/label';
 import { toast } from 'src/components/snackbar';
@@ -40,12 +40,13 @@ import { Iconify } from 'src/components/iconify';
 
 import { useAuthContext } from 'src/auth/hooks';
 
+import { AtividadePgdasSelect } from './atividade-pgdas-select';
 import {
   apiErrMsg,
   anexoLabel,
   statusApuracaoColor,
   statusApuracaoLabel,
-} from '../utils';
+} from '../../fator-r/utils';
 
 /** Transmitir é irreversível — mesmo conjunto restrito que o backend aplica. */
 const ROLES_TRANSMISSAO = ['admin', 'gerencial', 'financeiro'];
@@ -60,11 +61,11 @@ function passoAtual(apuracao) {
   return 1;
 }
 
-export function FatorRApuracao({ clienteId, ano, mes }) {
+export function ApuracaoPainel({ clienteId, ano, mes }) {
   const { user } = useAuthContext();
   const podeTransmitir = ROLES_TRANSMISSAO.includes(user?.role);
 
-  const [idAtividade, setIdAtividade] = useState('');
+  const [idAtividade, setIdAtividade] = useState(null);
   const { apuracao, apuracaoLoading, refetchApuracao } = useGetApuracao(clienteId, ano, mes, {
     idAtividade: idAtividade || undefined,
   });
@@ -101,6 +102,9 @@ export function FatorRApuracao({ clienteId, ano, mes }) {
 
   const pendencias = apuracao?.pendencias ?? [];
   const temPendencia = pendencias.length > 0;
+  // Pendências acionáveis daqui: cada uma tem um caminho de solução distinto.
+  const faltaFatorR = pendencias.some((p) => p.includes('Fator R'));
+  const faltaFaturamento = pendencias.some((p) => p.includes('Faturamento'));
   const simulada = !!apuracao?.simuladoEm;
   const transmitida = apuracao?.status === 'transmitida';
 
@@ -131,7 +135,27 @@ export function FatorRApuracao({ clienteId, ano, mes }) {
 
         <Stack spacing={2.5} sx={{ p: 3 }}>
           {temPendencia && (
-            <Alert severity="warning">
+            <Alert
+              severity="warning"
+              action={
+                faltaFatorR ? (
+                  <LoadingButton
+                    size="small"
+                    color="warning"
+                    loading={carregando === 'recalcular'}
+                    onClick={() =>
+                      executar(
+                        'recalcular',
+                        () => recalcularFatorR(clienteId, ano, mes),
+                        'Fator R apurado — a pendência deve sair ao remontar'
+                      )
+                    }
+                  >
+                    Apurar Fator R
+                  </LoadingButton>
+                ) : null
+              }
+            >
               <AlertTitle>Pendências bloqueiam a apuração</AlertTitle>
               <Stack component="ul" spacing={0.5} sx={{ pl: 2, m: 0 }}>
                 {pendencias.map((p) => (
@@ -140,17 +164,23 @@ export function FatorRApuracao({ clienteId, ano, mes }) {
                   </li>
                 ))}
               </Stack>
+              {faltaFaturamento && (
+                <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                  Lance a receita desta competência na aba Faturamento, ou importe o extrato do
+                  PGDAS-D na aba Folha — ele preenche folha e faturamento de uma vez.
+                </Typography>
+              )}
             </Alert>
           )}
 
           {!transmitida && (
-            <TextField
-              label="Código da atividade no PGDAS-D (idAtividade)"
-              value={idAtividade}
-              onChange={(e) => setIdAtividade(e.target.value)}
-              helperText="Obrigatório para montar a declaração. A montagem cobre um estabelecimento e uma atividade."
-              sx={{ maxWidth: 420 }}
-            />
+            <Box sx={{ maxWidth: 560 }}>
+              <AtividadePgdasSelect
+                value={idAtividade}
+                onChange={setIdAtividade}
+                helperText="Obrigatória para montar a declaração. A montagem cobre um estabelecimento e uma atividade."
+              />
+            </Box>
           )}
 
           {apuracao && (

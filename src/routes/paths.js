@@ -167,7 +167,9 @@ export const paths = {
       fatorR: {
         root: `${ROOTS.DASHBOARD}/fiscal/fator-r`,
         details: (id) => `${ROOTS.DASHBOARD}/fiscal/fator-r/${id}`,
-        apuracoes: `${ROOTS.DASHBOARD}/fiscal/apuracao-simples`,
+      },
+      apuracao: {
+        root: `${ROOTS.DASHBOARD}/fiscal/apuracao`,
       },
       procuracoes: {
         root: `${ROOTS.DASHBOARD}/fiscal/procuracoes`,

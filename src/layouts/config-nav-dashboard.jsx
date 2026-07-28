@@ -262,8 +262,8 @@ export const navData = [
             roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
           },
           {
-            title: 'Apuração do Simples',
-            path: paths.dashboard.fiscal.fatorR.apuracoes,
+            title: 'Apuração de impostos',
+            path: paths.dashboard.fiscal.apuracao.root,
             roles: ['admin', 'operacional', 'financeiro', 'gerencial'],
           },
           {

@@ -803,6 +803,7 @@ export const endpoints = {
     projecao: (clienteId) => `${baseUrl}fator-r/${clienteId}/projecao`,
     auditoria: (clienteId) => `${baseUrl}fator-r/${clienteId}/auditoria`,
     apuracoes: (clienteId) => `${baseUrl}fator-r/${clienteId}/apuracoes`,
+    recalcular: (clienteId) => `${baseUrl}fator-r/${clienteId}/recalcular`,
     folha: {
       list: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha`,
       anomalias: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha/anomalias`,
@@ -815,6 +816,7 @@ export const endpoints = {
       importarDocumento: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha/importar-documento`,
       importarCadastro: (clienteId) => `${baseUrl}fator-r/${clienteId}/folha/importar-cadastro`,
     },
+    extratoPgdas: (clienteId) => `${baseUrl}fator-r/${clienteId}/extrato-pgdas`,
     faturamento: {
       list: (clienteId) => `${baseUrl}fator-r/${clienteId}/faturamento`,
       upsert: (clienteId, ano, mes) => `${baseUrl}fator-r/${clienteId}/faturamento/${ano}/${mes}`,
@@ -823,16 +825,15 @@ export const endpoints = {
       sincronizarNotas: (clienteId) =>
         `${baseUrl}fator-r/${clienteId}/faturamento/sincronizar-notas`,
     },
-    apuracao: {
-      fila: `${baseUrl}fator-r/apuracao/fila`,
-      get: (clienteId, ano, mes) => `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}`,
-      simular: (clienteId, ano, mes) =>
-        `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}/simular`,
-      revisar: (clienteId, ano, mes) =>
-        `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}/revisar`,
-      transmitir: (clienteId, ano, mes) =>
-        `${baseUrl}fator-r/${clienteId}/apuracao/${ano}/${mes}/transmitir`,
-    },
+  },
+  apuracao: {
+    fila: `${baseUrl}apuracao/fila`,
+    clientes: `${baseUrl}apuracao/clientes`,
+    habilitacao: `${baseUrl}apuracao/clientes/habilitacao`,
+    get: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}`,
+    simular: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}/simular`,
+    revisar: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}/revisar`,
+    transmitir: (clienteId, ano, mes) => `${baseUrl}apuracao/${clienteId}/${ano}/${mes}/transmitir`,
   },
   procuracoes: {
     vinculos: `${baseUrl}procuracoes/vinculos`,

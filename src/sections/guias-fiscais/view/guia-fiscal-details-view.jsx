@@ -84,6 +84,22 @@ export function GuiaFiscalDetailsView({ id }) {
 
   const { data: guia, isLoading, error } = useGetGuiaFiscalById(id);
 
+  // `clienteId` chega populado (nome/cnpj) ou como id cru, dependendo da rota.
+  const cliente = typeof guia?.clienteId === 'object' ? guia?.clienteId : null;
+  // Razão social é a identificação formal da empresa; o nome fantasia é o fallback.
+  const nomeCliente = cliente?.razaoSocial || cliente?.nome || null;
+  const clienteIdDoDocumento = cliente?._id || (typeof guia?.clienteId === 'string' ? guia.clienteId : null);
+  const pastaDoDocumento =
+    typeof guia?.folderId === 'object' ? guia?.folderId?._id : guia?.folderId || null;
+
+  // Volta para a listagem já com o cliente e a pasta do documento abertos.
+  const voltarParaCliente = (() => {
+    if (!clienteIdDoDocumento) return paths.dashboard.guiasEDocumentos.list;
+    const qs = new URLSearchParams({ clienteId: String(clienteIdDoDocumento) });
+    if (pastaDoDocumento) qs.set('pastaId', String(pastaDoDocumento));
+    return `${paths.dashboard.guiasEDocumentos.list}?${qs.toString()}`;
+  })();
+
 
   const handleDownload = async () => {
     try {
@@ -125,7 +141,7 @@ export function GuiaFiscalDetailsView({ id }) {
             <Button
               variant="outlined"
               component={RouterLink}
-              href={paths.dashboard.guiasEDocumentos.list}
+              href={voltarParaCliente}
               startIcon={<Iconify icon="eva:arrow-back-fill" />}
             >
               Voltar para Lista
@@ -143,6 +159,11 @@ export function GuiaFiscalDetailsView({ id }) {
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Documentos e Guias', href: paths.dashboard.guiasEDocumentos.list },
+          // O cliente vem populado no próprio documento, então o caminho de
+          // volta funciona até quando se chega aqui por link direto.
+          ...(nomeCliente
+            ? [{ name: nomeCliente, href: voltarParaCliente }]
+            : []),
           { name: 'Detalhes' },
         ]}
         action={
