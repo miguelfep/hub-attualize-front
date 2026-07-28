@@ -76,6 +76,7 @@ import { Iconify } from 'src/components/iconify';
 
 import { ClienteDominioIntegracao } from './cliente-dominio-integracao';
 import { ProcuracaoClienteCard } from '../procuracoes/procuracao-cliente-card';
+import { AtividadePgdasSelect } from '../apuracao/components/atividade-pgdas-select';
 
 const MESES = [
   { value: 1, label: 'Janeiro' },
@@ -1828,16 +1829,13 @@ export const ClientePortalSettings = forwardRef(({ clienteId, clienteCnpj, contr
         name="apuracaoIdAtividade"
         control={control}
         render={({ field }) => (
-          <TextField
-            {...field}
-            type="number"
-            size="small"
-            label="Código da atividade no PGDAS-D"
-            value={field.value ?? ''}
-            onChange={(e) => field.onChange(e.target.value === '' ? null : Number(e.target.value))}
-            helperText="Obrigatório para montar a declaração deste cliente."
-            sx={{ mt: 2, maxWidth: 360 }}
-          />
+          <Box sx={{ mt: 2, maxWidth: 560 }}>
+            <AtividadePgdasSelect
+              value={field.value}
+              onChange={field.onChange}
+              helperText="Obrigatória para montar a declaração. Confira no extrato do PGDAS-D do cliente — a atividade aparece por extenso."
+            />
+          </Box>
         )}
       />
 

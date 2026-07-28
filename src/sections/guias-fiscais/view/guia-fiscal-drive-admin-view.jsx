@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -140,8 +140,10 @@ function FileMetaLines({ file }) {
 export function GuiaFiscalDriveAdminView() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [clienteId, setClienteId] = useState('');
-  const [currentFolderId, setCurrentFolderId] = useState(null);
+  // Inicializa DA URL: se começasse vazio, o efeito de sincronização abaixo
+  // rodaria antes da leitura e apagaria o parâmetro recém-recebido.
+  const [clienteId, setClienteId] = useState(() => searchParams.get('clienteId') || '');
+  const [currentFolderId, setCurrentFolderId] = useState(() => searchParams.get('pastaId') || null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [pastaUploadOpen, setPastaUploadOpen] = useState(false);
   const [pastaUploadFiles, setPastaUploadFiles] = useState([]);
@@ -222,14 +224,50 @@ export function GuiaFiscalDriveAdminView() {
 
   const showFilesLoadingPlaceholder = Boolean(loadingFiles && !hasFolderOrFiles);
 
+  /**
+   * Cliente e pasta vivem na URL, não só no estado.
+   *
+   * Sem isso, abrir um documento e voltar traz a tela em branco: o histórico do
+   * navegador restaura a URL, e se ela não carrega o contexto, a seleção se
+   * perde e o usuário escolhe o cliente de novo.
+   */
   useEffect(() => {
-    const fromQuery = searchParams.get('clienteId');
-    if (!fromQuery) return;
+    const clienteDaUrl = searchParams.get('clienteId') || '';
+    const pastaDaUrl = searchParams.get('pastaId') || null;
 
-    setClienteId(fromQuery);
-    setCurrentFolderId(null);
-    router.replace(paths.dashboard.guiasEDocumentos.list);
-  }, [searchParams, router]);
+    setClienteId((atual) => (atual === clienteDaUrl ? atual : clienteDaUrl));
+    setCurrentFolderId((atual) => (atual === pastaDaUrl ? atual : pastaDaUrl));
+    // Só reage à URL: a sincronização no sentido inverso é o efeito abaixo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  /**
+   * Espelha a navegação na URL com `replace`, para não encher o histórico a
+   * cada pasta aberta — o que importa é a última URL antes de abrir o arquivo.
+   *
+   * A trava de primeira renderização é essencial: sem ela este efeito roda na
+   * montagem com o estado ainda não aplicado e apaga o `clienteId` que veio na
+   * URL, que era exatamente o sintoma de um link direto perder a empresa.
+   */
+  const urlSincronizadaRef = useRef(false);
+
+  useEffect(() => {
+    if (!urlSincronizadaRef.current) {
+      urlSincronizadaRef.current = true;
+      return;
+    }
+
+    const atual = new URLSearchParams(Array.from(searchParams.entries()));
+    const desejado = new URLSearchParams();
+    if (clienteId) desejado.set('clienteId', clienteId);
+    if (currentFolderId) desejado.set('pastaId', currentFolderId);
+
+    if (atual.toString() === desejado.toString()) return;
+
+    const qs = desejado.toString();
+    router.replace(qs ? `${paths.dashboard.guiasEDocumentos.list}?${qs}` : paths.dashboard.guiasEDocumentos.list);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clienteId, currentFolderId]);
 
   useEffect(() => {
     setSelectedFileIds([]);

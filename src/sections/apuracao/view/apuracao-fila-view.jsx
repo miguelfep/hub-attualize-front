@@ -28,7 +28,7 @@ import { useRouter } from 'src/routes/hooks';
 import { fCurrency } from 'src/utils/format-number';
 
 import { DashboardContent } from 'src/layouts/dashboard';
-import { useGetFilaApuracao } from 'src/actions/fator-r';
+import { useGetFilaApuracao } from 'src/actions/apuracao';
 
 import { Label } from 'src/components/label';
 import { Iconify } from 'src/components/iconify';
@@ -37,7 +37,8 @@ import { TableHeadCustom } from 'src/components/table';
 import { EmptyContent } from 'src/components/empty-content';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import { MESES, anexoLabel, anosDisponiveis, competenciaAtual } from '../utils';
+import { ApuracaoHabilitacaoDialog } from '../components/apuracao-habilitacao-dialog';
+import { MESES, anexoLabel, anosDisponiveis, competenciaAtual } from '../../fator-r/utils';
 
 const TABLE_HEAD = [
   { id: 'nome', label: 'Cliente' },
@@ -72,6 +73,7 @@ export function ApuracaoFilaView() {
   const [ano, setAno] = useState(anoAnterior);
   const [mes, setMes] = useState(anterior);
   const [status, setStatus] = useState('all');
+  const [habilitando, setHabilitando] = useState(false);
 
   const { itens, totais, filaLoading, refetchFila } = useGetFilaApuracao({
     ano,
@@ -87,28 +89,37 @@ export function ApuracaoFilaView() {
   return (
     <DashboardContent>
       <CustomBreadcrumbs
-        heading="Apuração do Simples Nacional"
+        heading="Apuração de impostos"
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Fiscal', href: paths.dashboard.fiscal.root },
           { name: 'Apuração' },
         ]}
         action={
-          <Button
-            variant="outlined"
-            startIcon={<Iconify icon="eva:refresh-fill" />}
-            onClick={() => refetchFila()}
-          >
-            Atualizar
-          </Button>
+          <Stack direction="row" spacing={1}>
+            <Button
+              variant="outlined"
+              startIcon={<Iconify icon="eva:refresh-fill" />}
+              onClick={() => refetchFila()}
+            >
+              Atualizar
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<Iconify icon="mingcute:add-line" />}
+              onClick={() => setHabilitando(true)}
+            >
+              Habilitar clientes
+            </Button>
+          </Stack>
         }
         sx={{ mb: { xs: 3, md: 5 } }}
       />
 
       {!filaLoading && totalGeral === 0 && (
         <Alert severity="info" sx={{ mb: 3 }}>
-          Nenhum cliente com apuração via Serpro habilitada. Ative o recurso no cadastro do cliente
-          para ele entrar nesta fila.
+          Nenhum cliente habilitado na apuração. Use “Habilitar clientes” para escolher quem entra
+          nesta fila.
         </Alert>
       )}
 
@@ -254,6 +265,12 @@ export function ApuracaoFilaView() {
           </Box>
         )}
       </Card>
+
+      <ApuracaoHabilitacaoDialog
+        open={habilitando}
+        onClose={() => setHabilitando(false)}
+        onSaved={refetchFila}
+      />
     </DashboardContent>
   );
 }

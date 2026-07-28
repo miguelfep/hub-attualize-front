@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useRef, useState, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -31,6 +31,7 @@ import {
   useGetFolhas,
   importarFolhaGuias,
   importarFolhaPgdas,
+  importarExtratoPgdas,
   importarFolhaCadastro,
 } from 'src/actions/fator-r';
 
@@ -74,6 +75,7 @@ export function FatorRFolha({ clienteId, onChanged }) {
   const [editando, setEditando] = useState(null);
   const [menuImport, setMenuImport] = useState(null);
   const [importando, setImportando] = useState(false);
+  const inputExtrato = useRef(null);
 
   const recarregar = useCallback(() => {
     refetchFolhas();
@@ -114,8 +116,47 @@ export function FatorRFolha({ clienteId, onChanged }) {
     [clienteId, recarregar]
   );
 
+  const handleExtrato = useCallback(
+    async (event) => {
+      const arquivo = event.target.files?.[0];
+      // Limpa o input para permitir reenviar o mesmo arquivo depois.
+      event.target.value = '';
+      if (!arquivo) return;
+
+      setImportando(true);
+      try {
+        const res = await importarExtratoPgdas(clienteId, arquivo);
+        const partes = [
+          `${res.folha?.gravados ?? 0} competência(s) de folha`,
+          `${res.faturamento?.gravados ?? 0} de faturamento`,
+        ];
+        if (res.folha?.pulados) partes.push(`${res.folha.pulados} preservada(s)`);
+        toast.success(partes.join(' · '));
+
+        if (res.fatorRDeclarado != null) {
+          toast.info(
+            `Extrato informa Fator R de ${String(res.fatorRDeclarado).replace('.', ',')} — use para conferir o cálculo.`
+          );
+        }
+        recarregar();
+      } catch (error) {
+        toast.error(apiErrMsg(error, 'Falha ao importar o extrato'));
+      } finally {
+        setImportando(false);
+      }
+    },
+    [clienteId, recarregar]
+  );
+
   return (
     <Card>
+      <input
+        ref={inputExtrato}
+        type="file"
+        accept="application/pdf"
+        hidden
+        onChange={handleExtrato}
+      />
       <CardHeader
         title="Folha de pagamento"
         subheader="Uma fonte automática nunca sobrescreve um lançamento manual"
@@ -143,7 +184,15 @@ export function FatorRFolha({ clienteId, onChanged }) {
       />
 
       <Menu anchorEl={menuImport} open={!!menuImport} onClose={() => setMenuImport(null)}>
-        <MenuItem onClick={() => handleImport('pgdas')}>Do PGDAS-D declarado</MenuItem>
+        <MenuItem
+          onClick={() => {
+            setMenuImport(null);
+            inputExtrato.current?.click();
+          }}
+        >
+          Do extrato do PGDAS-D (PDF)
+        </MenuItem>
+        <MenuItem onClick={() => handleImport('pgdas')}>Do PGDAS-D declarado (API)</MenuItem>
         <MenuItem onClick={() => handleImport('guias')}>Das guias de INSS e FGTS</MenuItem>
         <MenuItem onClick={() => handleImport('cadastro')}>Do cadastro de salários</MenuItem>
       </Menu>
