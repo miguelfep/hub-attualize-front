@@ -27,6 +27,7 @@ import { getClienteById } from 'src/actions/clientes';
 import {
   useAdminFuncionarios,
   adminDownloadApontamentosTxt,
+  useAdminApontamentosConferencia,
   adminReabrirCompetenciaApontamentos,
   usePortalApontamentosCompetenciaMes,
   revalidatePortalApontamentosCompetencia,
@@ -36,6 +37,7 @@ import { Iconify } from 'src/components/iconify';
 import { EmptyContent } from 'src/components/empty-content';
 
 import { PortalDpRubricasView } from './portal-dp-rubricas-view';
+import { DpConferenciaCompetencia } from '../dp-conferencia-competencia';
 
 // ----------------------------------------------------------------------
 
@@ -100,6 +102,16 @@ export function AdminDpApontamentosHubView() {
       anoValido ? anoNum : null,
       mesValido ? mesNum : null
     );
+
+  const {
+    data: conferencia,
+    isLoading: loadingConferencia,
+    mutate: mutConferencia,
+  } = useAdminApontamentosConferencia(
+    clienteParam && anoValido && mesValido ? clienteParam : null,
+    anoValido ? anoNum : null,
+    mesValido ? mesNum : null
+  );
 
   const funcionariosOrdenados = useMemo(() => {
     const list = funcionariosDp || [];
@@ -174,6 +186,7 @@ export function AdminDpApontamentosHubView() {
       await adminReabrirCompetenciaApontamentos(clienteParam, anoNum, mesNum);
       toast.success('Competência reaberta. O mês pode ser editado novamente no portal e aqui.');
       await mutCompMes();
+      await mutConferencia();
       await revalidatePortalApontamentosCompetencia(clienteParam);
       setDialogReabrirOpen(false);
     } catch (e) {
@@ -317,6 +330,15 @@ export function AdminDpApontamentosHubView() {
           )}
         </Box>
       </Card>
+
+      <Box sx={{ mb: 2 }}>
+        <DpConferenciaCompetencia
+          data={conferencia}
+          isLoading={loadingConferencia}
+          descricao="Tudo que o cliente lançou nesta competência. Confira aqui antes de baixar o TXT; use Abrir para corrigir um colaborador."
+          onAbrirColaborador={setFuncionarioHubId}
+        />
+      </Box>
 
       <Card variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
         <Box sx={{ px: { xs: 2, sm: 2.5 }, py: 2 }}>

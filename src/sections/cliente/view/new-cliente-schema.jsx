@@ -63,6 +63,8 @@ export const NewClienteSchema = zod.object({
         rg: zod.string().optional(),
         cnh: zod.string().optional(),
         administrador: zod.boolean().optional(),
+        /** Pró-labore mensal — entra na folha do Fator R pela via 'cadastro'. */
+        proLabore: zod.number().min(0).optional(),
       })
     )
     .optional(),

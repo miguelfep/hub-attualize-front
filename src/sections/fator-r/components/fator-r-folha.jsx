@@ -101,6 +101,14 @@ export function FatorRFolha({ clienteId, onChanged }) {
         if (res.indisponiveis?.length) partes.push(`${res.indisponiveis.length} sem dado na fonte`);
         toast.success(partes.join(' · '));
 
+        // Competência recente só tem folha no extrato do mês seguinte; sem esta
+        // explicação o "sem dado na fonte" parece falha do import.
+        if (fonte === 'pgdas' && res.indisponiveis?.length) {
+          toast.info(
+            `Sem folha na fonte para ${res.indisponiveis.join(', ')}. O extrato traz os 12 meses anteriores ao período, então a competência mais recente só aparece no extrato do mês seguinte.`
+          );
+        }
+
         if (res.semSalario?.length) {
           toast.warning(
             `${res.semSalario.length} funcionário(s) sem salário cadastrado ficaram de fora: ${res.semSalario.join(', ')}`
@@ -192,7 +200,9 @@ export function FatorRFolha({ clienteId, onChanged }) {
         >
           Do extrato do PGDAS-D (PDF)
         </MenuItem>
-        <MenuItem onClick={() => handleImport('pgdas')}>Do PGDAS-D declarado (API)</MenuItem>
+        <MenuItem onClick={() => handleImport('pgdas')}>
+          Do PGDAS-D declarado (API + extrato)
+        </MenuItem>
         <MenuItem onClick={() => handleImport('guias')}>Das guias de INSS e FGTS</MenuItem>
         <MenuItem onClick={() => handleImport('cadastro')}>Do cadastro de salários</MenuItem>
       </Menu>

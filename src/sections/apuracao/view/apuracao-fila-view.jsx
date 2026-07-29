@@ -204,7 +204,7 @@ export function ApuracaoFilaView() {
                         <TableCell>
                           <Stack spacing={0.5}>
                             <Typography variant="subtitle2" noWrap>
-                              {item.nome}
+                              {item.razaoSocial || item.nome}
                             </Typography>
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                               {item.cnpj || '—'}

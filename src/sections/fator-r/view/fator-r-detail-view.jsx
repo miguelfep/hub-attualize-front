@@ -105,12 +105,12 @@ export function FatorRDetailView({ id }) {
   return (
     <DashboardContent>
       <CustomBreadcrumbs
-        heading={cliente?.nome || 'Fator R do cliente'}
+        heading={cliente?.razaoSocial || cliente?.nome || 'Fator R do cliente'}
         links={[
           { name: 'Dashboard', href: paths.dashboard.root },
           { name: 'Fiscal', href: paths.dashboard.fiscal.root },
           { name: 'Fator R', href: paths.dashboard.fiscal.fatorR.root },
-          { name: cliente?.nome || 'Detalhe' },
+          { name: cliente?.razaoSocial || cliente?.nome || 'Detalhe' },
         ]}
         action={
           <LoadingButton

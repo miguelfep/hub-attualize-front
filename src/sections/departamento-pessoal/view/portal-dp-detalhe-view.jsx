@@ -20,17 +20,20 @@ import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
 import { fDate } from 'src/utils/format-time';
-import { formatCPF, onlyDigits, validateCPF } from 'src/utils/format-number';
+import { fCurrency, formatCPF, onlyDigits, validateCPF } from 'src/utils/format-number';
 
 import { usePortalFuncionario, portalUpdateFuncionario } from 'src/actions/departamento-pessoal';
 
 import { Form, Field } from 'src/components/hook-form';
 
 import {
+  parseSalarioBase,
   ChipStatusVinculo,
+  salarioBaseSchema,
   ChipStatusCadastro,
   ChipStatusDemissao,
   useDpPortalContext,
+  SALARIO_BASE_HELPER,
 } from '../dp-shared';
 
 // ----------------------------------------------------------------------
@@ -51,6 +54,7 @@ const editSchema = zod.object({
   cargo: zod.string().optional(),
   codigoFolha: codigoFolhaField,
   dataAdmissao: zod.string().optional(),
+  salarioBase: salarioBaseSchema,
   observacoes: zod.string().optional(),
 });
 
@@ -74,6 +78,7 @@ export function PortalDpDetalheView({ funcionarioId }) {
       cargo: '',
       codigoFolha: '',
       dataAdmissao: '',
+      salarioBase: '',
       observacoes: '',
     },
   });
@@ -89,6 +94,7 @@ export function PortalDpDetalheView({ funcionarioId }) {
       cargo: f.cargo || '',
       codigoFolha: f.codigoFolha != null && f.codigoFolha !== '' ? String(f.codigoFolha) : '',
       dataAdmissao: f.dataAdmissao ? String(f.dataAdmissao).slice(0, 10) : '',
+      salarioBase: f.salarioBase != null ? String(f.salarioBase) : '',
       observacoes: f.observacoes || '',
     });
   }, [f, reset]);
@@ -103,6 +109,7 @@ export function PortalDpDetalheView({ funcionarioId }) {
         cargo: data.cargo?.trim() || undefined,
         codigoFolha: data.codigoFolha === undefined ? null : data.codigoFolha,
         dataAdmissao: data.dataAdmissao || undefined,
+        salarioBase: parseSalarioBase(data.salarioBase),
         observacoes: data.observacoes?.trim() || undefined,
       });
       toast.success('Dados atualizados.');
@@ -214,6 +221,10 @@ export function PortalDpDetalheView({ funcionarioId }) {
                 <strong>Admissão:</strong> {fDate(f.dataAdmissao)}
               </Typography>
             )}
+            <Typography variant="body2">
+              <strong>Salário base:</strong>{' '}
+              {f.salarioBase != null ? fCurrency(f.salarioBase) : 'não informado'}
+            </Typography>
             {f.observacoes && (
               <Typography variant="body2">
                 <strong>Observações:</strong> {f.observacoes}
@@ -240,6 +251,13 @@ export function PortalDpDetalheView({ funcionarioId }) {
                 inputProps={{ inputMode: 'numeric', maxLength: 12 }}
               />
               <Field.Text name="dataAdmissao" label="Data de admissão" type="date" InputLabelProps={{ shrink: true }} />
+              <Field.Text
+                name="salarioBase"
+                label="Salário base mensal (R$)"
+                placeholder="Ex.: 2500,00"
+                helperText={SALARIO_BASE_HELPER}
+                inputProps={{ inputMode: 'decimal' }}
+              />
               <Field.Text name="observacoes" label="Observações" multiline rows={3} />
               <Divider sx={{ my: 1 }} />
               <LoadingButton type="submit" variant="contained" loading={isSubmitting}>

@@ -24,6 +24,7 @@ import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 
 import {
+  usePortalApontamentosConferencia,
   usePortalApontamentosCompetenciaAno,
   adminReabrirCompetenciaApontamentos,
   portalFecharCompetenciaApontamentos,
@@ -31,6 +32,8 @@ import {
 } from 'src/actions/departamento-pessoal';
 
 import { Iconify } from 'src/components/iconify';
+
+import { DpConferenciaCompetencia } from '../dp-conferencia-competencia';
 
 // ----------------------------------------------------------------------
 
@@ -124,6 +127,13 @@ export function PortalDpCompetenciaMensalPanel({
   const [fechando, setFechando] = useState(false);
   const [dialogReabrirOpen, setDialogReabrirOpen] = useState(false);
   const [reabrindo, setReabrindo] = useState(false);
+
+  // Só busca a conferência do mês aberto no diálogo — é onde o cliente decide.
+  const { data: conferencia, isLoading: conferenciaLoading } = usePortalApontamentosConferencia(
+    dialogOpen ? clienteProprietarioId : null,
+    ano,
+    detalheMes?.mes
+  );
 
   const gridMeses = useMemo(() => {
     if (!Array.isArray(lista)) return [];
@@ -275,7 +285,7 @@ export function PortalDpCompetenciaMensalPanel({
       <Dialog
         open={dialogOpen}
         onClose={() => !fechando && !reabrindo && setDialogOpen(false)}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
       >
         <DialogTitle>
@@ -316,6 +326,12 @@ export function PortalDpCompetenciaMensalPanel({
                   declare &quot;sem apontamentos&quot; (só permitido se não houver lançamentos no mês).
                 </Alert>
               )}
+              <DpConferenciaCompetencia
+                embedded
+                data={conferencia}
+                isLoading={conferenciaLoading}
+                descricao="Confira o que foi lançado para cada colaborador antes de finalizar o mês."
+              />
               {habilitarReabrirMesAdmin && detalheMes.situacao && detalheMes.situacao !== 'em_aberto' && (
                 <Alert severity="warning" variant="outlined">
                   Este mês já foi validado ou encerrado. Use <strong>Reabrir mês para edição</strong> apenas quando a

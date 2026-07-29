@@ -1,5 +1,6 @@
 'use client';
 
+import { z as zod } from 'zod';
 import { useContext } from 'react';
 
 import Chip from '@mui/material/Chip';
@@ -42,6 +43,29 @@ export function useDpPortalContext() {
       : possuiFuncionario;
   return { enabled, loadingEmpresas, clienteProprietarioId: empresaAtiva, empresaAtivaData };
 }
+
+/**
+ * Salário base no formulário: string livre (aceita vírgula) que o submit converte.
+ * Vazio = não informado — o Fator R trata o funcionário como "sem salário" em vez
+ * de somar zero à folha.
+ */
+export const salarioBaseSchema = zod
+  .string()
+  .optional()
+  .refine((s) => !s?.trim() || Number(String(s).replace(',', '.')) >= 0, {
+    message: 'Salário base inválido',
+  });
+
+/** String do formulário → número para a API. Vazio vira `null` (limpa o valor). */
+export function parseSalarioBase(valor) {
+  const t = String(valor ?? '').trim();
+  if (!t) return null;
+  const n = Number(t.replace(',', '.'));
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+export const SALARIO_BASE_HELPER =
+  'Opcional. Usado no cálculo da folha do Fator R quando não há documento de folha na competência.';
 
 const STATUS_CADASTRO = {
   pendente_aprovacao: { label: 'Pendente', color: 'warning' },

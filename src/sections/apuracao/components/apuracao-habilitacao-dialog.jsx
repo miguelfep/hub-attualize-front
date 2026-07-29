@@ -208,7 +208,7 @@ export function ApuracaoHabilitacaoDialog({ open, onClose, onSaved }) {
                         </TableCell>
                         <TableCell>
                           <Stack spacing={0.25}>
-                            <Typography variant="body2">{c.nome}</Typography>
+                            <Typography variant="body2">{c.razaoSocial || c.nome}</Typography>
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                               {c.cnpj || '—'} · {c.regimeTributario || 'sem regime'}
                               {c.tributacao?.length ? ` · ${c.tributacao.join(', ')}` : ''}

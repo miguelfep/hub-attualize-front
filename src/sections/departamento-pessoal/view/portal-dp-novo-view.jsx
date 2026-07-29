@@ -25,7 +25,12 @@ import {
 
 import { Form, Field } from 'src/components/hook-form';
 
-import { useDpPortalContext } from '../dp-shared';
+import {
+  parseSalarioBase,
+  salarioBaseSchema,
+  useDpPortalContext,
+  SALARIO_BASE_HELPER,
+} from '../dp-shared';
 
 // ----------------------------------------------------------------------
 
@@ -45,6 +50,7 @@ const schema = zod.object({
   cargo: zod.string().optional(),
   codigoFolha: codigoFolhaField,
   dataAdmissao: zod.string().optional(),
+  salarioBase: salarioBaseSchema,
   observacoes: zod.string().optional(),
 });
 
@@ -66,6 +72,7 @@ export function PortalDpNovoView() {
       cargo: '',
       codigoFolha: '',
       dataAdmissao: '',
+      salarioBase: '',
       observacoes: '',
     },
   });
@@ -86,6 +93,7 @@ export function PortalDpNovoView() {
         cargo: data.cargo?.trim() || undefined,
         ...(data.codigoFolha !== undefined ? { codigoFolha: data.codigoFolha } : {}),
         dataAdmissao: data.dataAdmissao || undefined,
+        salarioBase: parseSalarioBase(data.salarioBase) ?? undefined,
         observacoes: data.observacoes?.trim() || undefined,
       });
       await revalidatePortalFuncionariosByCliente(clienteProprietarioId);
@@ -136,6 +144,13 @@ export function PortalDpNovoView() {
               inputProps={{ inputMode: 'numeric', maxLength: 12 }}
             />
             <Field.Text name="dataAdmissao" label="Data de admissão" type="date" InputLabelProps={{ shrink: true }} />
+            <Field.Text
+              name="salarioBase"
+              label="Salário base mensal (R$)"
+              placeholder="Ex.: 2500,00"
+              helperText={SALARIO_BASE_HELPER}
+              inputProps={{ inputMode: 'decimal' }}
+            />
             <Field.Text name="observacoes" label="Observações" multiline rows={3} />
 
             <Stack direction="row" spacing={2} justifyContent="flex-end">
