@@ -224,7 +224,7 @@ function ClienteRow({ cliente, onClick }) {
         <Stack spacing={0.5}>
           <Stack direction="row" spacing={1} alignItems="center">
             <Typography variant="subtitle2" noWrap>
-              {cliente.nome}
+              {cliente.razaoSocial || cliente.nome}
             </Typography>
             {cliente.hibrido && (
               <Tooltip title="Receita em mais de um anexo — estimativas de economia ficam superestimadas">
@@ -235,7 +235,7 @@ function ClienteRow({ cliente, onClick }) {
             )}
           </Stack>
           <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-            {cliente.cnpj || cliente.razaoSocial || '—'}
+            {cliente.cnpj || '—'}
           </Typography>
         </Stack>
       </TableCell>

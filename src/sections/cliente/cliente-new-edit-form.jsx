@@ -226,6 +226,12 @@ export const NewUClienteSchema = zod.object({
         rg: zod.string().nullish(),
         cnh: zod.string().nullish(),
         administrador: zod.boolean().nullish(),
+        /** Pró-labore mensal — entra na folha do Fator R pela via 'cadastro'. */
+        proLabore: zod.preprocess((v) => {
+          if (v === '' || v == null) return undefined;
+          const n = Number(String(v).replace(',', '.'));
+          return Number.isFinite(n) ? n : undefined;
+        }, zod.number().min(0, 'Pró-labore inválido').optional()),
         dataInclusao: zod.preprocess((v) => {
           if (v === '' || v == null) return undefined;
           if (v instanceof Date) return Number.isNaN(v.getTime()) ? undefined : v;
@@ -378,6 +384,7 @@ export function ClienteNewEditForm({ currentCliente }) {
         rg: s?.rg ?? '',
         cnh: s?.cnh ?? '',
         administrador: s?.administrador === true,
+        proLabore: typeof s?.proLabore === 'number' ? s.proLabore : undefined,
         dataInclusao: s?.dataInclusao ? new Date(s.dataInclusao) : undefined,
       })),
       settings: currentCliente?.settings || {
@@ -404,7 +411,7 @@ export function ClienteNewEditForm({ currentCliente }) {
     defaultValues,
   });
 
-  const { reset, watch, control, handleSubmit, setValue, formState } = methods;
+  const { reset, watch, control, getValues, handleSubmit, setValue, formState } = methods;
   const { isSubmitting, errors } = formState;
 
   const clienteVip = watch('clienteVip'); // Observar o valor de clienteVip
@@ -528,6 +535,13 @@ export function ClienteNewEditForm({ currentCliente }) {
     setLoadingReceita(true);
     try {
       const clienteAtualizado = await atualizarDadosCliente(currentCliente._id);
+      // A Receita não conhece pró-labore: sem isso, atualizar o cadastro apagaria
+      // o valor e a folha do Fator R pela via 'cadastro' zeraria junto.
+      const proLaborePorCpf = new Map(
+        (getValues('socios') || [])
+          .filter((s) => typeof s?.proLabore === 'number')
+          .map((s) => [String(s.cpf || '').replace(/\D/g, ''), s.proLabore])
+      );
       reset({
         ...clienteAtualizado,
         capitalSocial: capitalSocialFromApi(clienteAtualizado.capitalSocial),
@@ -553,6 +567,10 @@ export function ClienteNewEditForm({ currentCliente }) {
           rg: s?.rg ?? '',
           cnh: s?.cnh ?? '',
           administrador: s?.administrador === true,
+          proLabore:
+            typeof s?.proLabore === 'number'
+              ? s.proLabore
+              : proLaborePorCpf.get(String(s?.cpf || '').replace(/\D/g, '')),
           dataInclusao: s?.dataInclusao ? new Date(s.dataInclusao) : undefined,
         })),
       });

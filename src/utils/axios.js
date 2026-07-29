@@ -682,6 +682,9 @@ export const endpoints = {
         `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia/${ano}`,
       apontamentosCompetenciaMes: (clienteProprietarioId, ano, mes) =>
         `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia/${ano}/${mes}`,
+      /** GET — competência inteira: colaboradores, rubricas lançadas e totais (conferência antes de validar). */
+      apontamentosConferencia: (clienteProprietarioId, ano, mes) =>
+        `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia/${ano}/${mes}/conferencia`,
       apontamentosFecharCompetencia: (clienteProprietarioId, ano, mes) =>
         `${baseUrl}portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia/${ano}/${mes}/fechar`,
       apontamentosExportarTxt: (clienteProprietarioId, ano, mes) =>
@@ -691,11 +694,16 @@ export const endpoints = {
       funcionariosByCliente: (clienteId) =>
         `${baseUrl}departamento-pessoal/clientes/${clienteId}/funcionarios`,
       funcionario: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}`,
+      /** PATCH { salarioBase } — reajuste pela equipe interna; vale com cadastro já aprovado. */
+      atualizarSalario: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/salario`,
       aprovarCadastro: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/aprovar-cadastro`,
       reprovarCadastro: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/reprovar-cadastro`,
       demissaoEmAnalise: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/em-analise`,
       demissaoAprovar: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/aprovar`,
       demissaoRejeitar: (id) => `${baseUrl}departamento-pessoal/funcionarios/${id}/demissao/rejeitar`,
+      /** GET — mesma conferência do portal, pela rota interna (equipe). */
+      apontamentosConferencia: (clienteId, ano, mes) =>
+        `${baseUrl}departamento-pessoal/clientes/${clienteId}/apontamentos/competencia/${ano}/${mes}/conferencia`,
       /** POST — reabrir competência fechada (equipe interna). Body opcional. */
       apontamentosReabrirCompetencia: (clienteId, ano, mes) =>
         `${baseUrl}departamento-pessoal/clientes/${clienteId}/apontamentos/competencia/${ano}/${mes}/reabrir`,

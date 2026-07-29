@@ -64,6 +64,19 @@ function formatDataInclusao(value) {
   return d.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }
 
+/** Campo livre (aceita vírgula) → número para a API. Vazio = sem pró-labore. */
+function parseProLabore(valor) {
+  const t = String(valor ?? '').trim();
+  if (!t) return undefined;
+  const n = Number(t.replace(',', '.'));
+  return Number.isFinite(n) && n >= 0 ? n : undefined;
+}
+
+function formatProLabore(valor) {
+  if (typeof valor !== 'number') return '—';
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
 function resetSocioForm(setters) {
   const {
     setNomeSocio,
@@ -72,6 +85,7 @@ function resetSocioForm(setters) {
     setCnhSocio,
     setAdministradorSocio,
     setDataInclusaoSocio,
+    setProLaboreSocio,
     setEditingIndex,
   } = setters;
   setNomeSocio('');
@@ -80,6 +94,7 @@ function resetSocioForm(setters) {
   setCnhSocio('');
   setAdministradorSocio(false);
   setDataInclusaoSocio(null);
+  setProLaboreSocio('');
   setEditingIndex(null);
 }
 
@@ -110,6 +125,7 @@ function SociosForm() {
   const [cnhSocio, setCnhSocio] = useState('');
   const [administradorSocio, setAdministradorSocio] = useState(false);
   const [dataInclusaoSocio, setDataInclusaoSocio] = useState(null);
+  const [proLaboreSocio, setProLaboreSocio] = useState('');
 
   const formSetters = {
     setNomeSocio,
@@ -118,6 +134,7 @@ function SociosForm() {
     setCnhSocio,
     setAdministradorSocio,
     setDataInclusaoSocio,
+    setProLaboreSocio,
     setEditingIndex,
   };
 
@@ -132,6 +149,10 @@ function SociosForm() {
     const dataInclusao = toUtcDateOnly(dataInclusaoSocio);
     if (dataInclusao) {
       payload.dataInclusao = dataInclusao;
+    }
+    const proLabore = parseProLabore(proLaboreSocio);
+    if (proLabore !== undefined) {
+      payload.proLabore = proLabore;
     }
     return payload;
   };
@@ -170,6 +191,7 @@ function SociosForm() {
     setCnhSocio(formatCnh(socio?.cnh ?? ''));
     setAdministradorSocio(socio?.administrador === true);
     setDataInclusaoSocio(toUtcDateOnly(socio?.dataInclusao));
+    setProLaboreSocio(typeof socio?.proLabore === 'number' ? String(socio.proLabore) : '');
     setEditingIndex(actionIndex);
     setOpenModal(true);
     popover.onClose();
@@ -211,6 +233,7 @@ function SociosForm() {
               <TableCell>RG</TableCell>
               <TableCell>CNH</TableCell>
               <TableCell>Data de inclusão</TableCell>
+              <TableCell>Pró-labore</TableCell>
               <TableCell>Administrador</TableCell>
               <TableCell align="right">Ações</TableCell>
             </TableRow>
@@ -277,6 +300,9 @@ function SociosForm() {
                   </TableCell>
                   <TableCell sx={{ whiteSpace: 'nowrap' }}>
                     {formatDataInclusao(socio.dataInclusao)}
+                  </TableCell>
+                  <TableCell sx={{ whiteSpace: 'nowrap' }}>
+                    {formatProLabore(socio.proLabore)}
                   </TableCell>
                   <TableCell>
                     <Switch
@@ -419,6 +445,16 @@ function SociosForm() {
               slotProps={{
                 textField: { fullWidth: true },
               }}
+            />
+            <TextField
+              fullWidth
+              label="Pró-labore mensal (R$)"
+              name="proLabore"
+              value={proLaboreSocio}
+              onChange={(e) => setProLaboreSocio(e.target.value)}
+              placeholder="Ex.: 3000,00"
+              inputProps={{ inputMode: 'decimal' }}
+              helperText="Opcional. Compõe a folha do Fator R quando não há documento de folha na competência."
             />
             <FormControlLabel
               control={

@@ -30,6 +30,7 @@ import {
   useAdminFuncionario,
   adminAprovarCadastro,
   adminDemissaoAprovar,
+  adminAtualizarSalario,
   adminReprovarCadastro,
   adminDemissaoRejeitar,
   adminDemissaoEmAnalise,
@@ -40,7 +41,13 @@ import {
 import { Form, Field } from 'src/components/hook-form';
 import { CustomBreadcrumbs } from 'src/components/custom-breadcrumbs';
 
-import { ChipStatusVinculo, ChipStatusCadastro, ChipStatusDemissao } from '../dp-shared';
+import {
+  parseSalarioBase,
+  ChipStatusVinculo,
+  ChipStatusCadastro,
+  ChipStatusDemissao,
+  SALARIO_BASE_HELPER,
+} from '../dp-shared';
 
 // ----------------------------------------------------------------------
 
@@ -72,6 +79,8 @@ export function AdminDpFuncionarioView({ funcionarioId }) {
   const [motivo, setMotivo] = useState('');
   const [obsInterna, setObsInterna] = useState('');
   const [pending, setPending] = useState(null);
+  const [salario, setSalario] = useState('');
+  const [salvandoSalario, setSalvandoSalario] = useState(false);
 
   const clienteId = f?.clienteId ?? f?.cliente_id;
 
@@ -101,7 +110,24 @@ export function AdminDpFuncionarioView({ funcionarioId }) {
       dataAdmissao: f.dataAdmissao ? String(f.dataAdmissao).slice(0, 10) : '',
       observacoes: f.observacoes || '',
     });
+    setSalario(f.salarioBase != null ? String(f.salarioBase) : '');
   }, [f, reset]);
+
+  // Salário fica fora do formulário de dados: a rota interna aceita reajuste com
+  // o cadastro já aprovado, quando a edição dos demais campos está bloqueada.
+  const onSalvarSalario = async () => {
+    setSalvandoSalario(true);
+    try {
+      const atualizado = await adminAtualizarSalario(funcionarioId, parseSalarioBase(salario));
+      if (clienteId) await revalidatePortalFuncionariosByCliente(clienteId);
+      toast.success('Salário base atualizado.');
+      mutate(atualizado, false);
+    } catch (err) {
+      toast.error(errMsg(err));
+    } finally {
+      setSalvandoSalario(false);
+    }
+  };
 
   const run = async (label, fn) => {
     setPending(label);
@@ -246,6 +272,35 @@ export function AdminDpFuncionarioView({ funcionarioId }) {
             </Grid>
           </Grid>
         </Form>
+      </Card>
+
+      <Card sx={{ p: 2, mb: 2 }}>
+        <Typography variant="subtitle1" gutterBottom fontWeight={700}>
+          Remuneração
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+          {SALARIO_BASE_HELPER} Reajuste pode ser lançado a qualquer momento, mesmo com o cadastro
+          já aprovado.
+        </Typography>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems="flex-start">
+          <TextField
+            label="Salário base mensal (R$)"
+            value={salario}
+            onChange={(e) => setSalario(e.target.value)}
+            placeholder="Ex.: 2500,00"
+            inputProps={{ inputMode: 'decimal' }}
+            helperText="Em branco remove o salário do cadastro."
+            sx={{ maxWidth: 320, width: '100%' }}
+          />
+          <LoadingButton
+            variant="contained"
+            loading={salvandoSalario}
+            onClick={onSalvarSalario}
+            sx={{ mt: 1 }}
+          >
+            Salvar salário
+          </LoadingButton>
+        </Stack>
       </Card>
 
       {f.statusCadastro === 'pendente_aprovacao' && (

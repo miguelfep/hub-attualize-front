@@ -167,6 +167,43 @@ export function usePortalApontamentosCompetenciaMes(clienteProprietarioId, ano, 
   );
 }
 
+/**
+ * Conferência da competência (portal). 404 → null, mesmo contrato degradável das
+ * demais rotas de competência.
+ */
+export function usePortalApontamentosConferencia(clienteProprietarioId, ano, mes) {
+  const url =
+    clienteProprietarioId && ano && mes
+      ? endpoints.departamentoPessoal.portal.apontamentosConferencia(clienteProprietarioId, ano, mes)
+      : null;
+  const { data, isLoading, error, isValidating, mutate } = useSWR(
+    url,
+    fetcherCompetenciaOptional,
+    swrOptions
+  );
+  return useMemo(
+    () => ({ data, isLoading, error, isValidating, mutate }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+}
+
+/** Mesma conferência pela rota interna (equipe). */
+export function useAdminApontamentosConferencia(clienteId, ano, mes) {
+  const url =
+    clienteId && ano && mes
+      ? endpoints.departamentoPessoal.admin.apontamentosConferencia(clienteId, ano, mes)
+      : null;
+  const { data, isLoading, error, isValidating, mutate } = useSWR(
+    url,
+    fetcherCompetenciaOptional,
+    swrOptions
+  );
+  return useMemo(
+    () => ({ data, isLoading, error, isValidating, mutate }),
+    [data, error, isLoading, isValidating, mutate]
+  );
+}
+
 export async function portalFecharCompetenciaApontamentos(clienteProprietarioId, ano, mes, body) {
   const res = await axios.post(
     endpoints.departamentoPessoal.portal.apontamentosFecharCompetencia(clienteProprietarioId, ano, mes),
@@ -278,12 +315,18 @@ export async function portalDownloadApontamentosTxt(clienteProprietarioId, ano, 
   }
 }
 
-/** Revalida GETs de competência (ano / mês) após fechar mês ou salvar rubricas. */
+/**
+ * Revalida GETs de competência (ano / mês / conferência) após fechar mês, reabrir
+ * ou salvar rubricas. Casa tanto as chaves do portal quanto as da rota interna —
+ * a mesma competência é lida pelos dois lados e ambos ficariam desatualizados.
+ */
 export function revalidatePortalApontamentosCompetencia(clienteProprietarioId) {
   if (!clienteProprietarioId) return Promise.resolve();
-  const needle = `portal/departamento-pessoal/${clienteProprietarioId}/apontamentos/competencia`;
   return swrGlobalMutate(
-    (key) => typeof key === 'string' && key.includes(needle),
+    (key) =>
+      typeof key === 'string' &&
+      key.includes('apontamentos/competencia') &&
+      key.includes(clienteProprietarioId),
     undefined,
     { revalidate: true }
   );
@@ -321,6 +364,14 @@ export function useAdminFuncionario(funcionarioId) {
 
 export async function adminGetFuncionario(id) {
   const res = await axios.get(endpoints.departamentoPessoal.admin.funcionario(id));
+  return unwrapApi(res.data);
+}
+
+/** Reajuste de salário base pela equipe interna. `null` limpa o valor. */
+export async function adminAtualizarSalario(id, salarioBase) {
+  const res = await axios.patch(endpoints.departamentoPessoal.admin.atualizarSalario(id), {
+    salarioBase,
+  });
   return unwrapApi(res.data);
 }
 
