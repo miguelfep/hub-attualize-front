@@ -56,9 +56,10 @@ const resolvePostCanonicalUrl = (post) => {
 };
 
 export async function generateMetadata({ params }) {
+  const { title } = await params;
+  const normalizedTitle = normalizeSlug(title);
+
   try {
-    const { title } = await params;
-    const normalizedTitle = normalizeSlug(title);
 
     if (!normalizedTitle) {
       return {
@@ -112,9 +113,14 @@ export async function generateMetadata({ params }) {
     };
   } catch (error) {
     console.error('Erro ao gerar metadata:', error);
+    // Mesmo com a API fora, a página precisa declarar canonical — sem ele o
+    // Google classifica como "cópia sem página canônica selecionada pelo usuário".
     return {
       title: `Blog - ${CONFIG.site.name}`,
       description: 'Blog da Attualize Contábil',
+      ...(normalizedTitle && {
+        alternates: { canonical: getBlogPostUrl(normalizedTitle) },
+      }),
     };
   }
 }
