@@ -5,7 +5,6 @@ import { useState, useEffect, useCallback } from 'react';
 import Box from '@mui/material/Box';
 import Menu from '@mui/material/Menu';
 import Stack from '@mui/material/Stack';
-import { LoadingButton } from '@mui/lab';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
@@ -27,13 +26,10 @@ import { toTitleCase } from 'src/utils/helper';
 import axios, { endpoints } from 'src/utils/axios';
 
 import { safeAlpha } from 'src/theme/styles';
-import { confirmarPagamentoDasPortal } from 'src/actions/cliente-portal-guias-api';
 
 import { Logo } from 'src/components/logo';
-import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 import { Scrollbar } from 'src/components/scrollbar';
-import { ConfirmDialog } from 'src/components/custom-dialog';
 import { useSettingsContext } from 'src/components/settings';
 import { PartnerBanners } from 'src/components/banner/partner-banners';
 import { NavSectionVertical } from 'src/components/nav-section/vertical';
@@ -63,8 +59,6 @@ export function ClienteLayout({ children }) {
 
   const mobileNavOpen = useBoolean();
   const [banners, setBanners] = useState([]);
-  const [confirmPagamentoOpen, setConfirmPagamentoOpen] = useState(false);
-  const [confirmPagamentoLoading, setConfirmPagamentoLoading] = useState(false);
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -87,22 +81,6 @@ export function ClienteLayout({ children }) {
       console.error('Erro ao carregar banners:', e);
     }
   }, []);
-
-  const handleConfirmarPagamentoDas = async () => {
-    try {
-      setConfirmPagamentoLoading(true);
-      await confirmarPagamentoDasPortal();
-      toast.success('Guia DAS marcada como paga.');
-      setConfirmPagamentoOpen(false);
-      await fetchBanners();
-    } catch (e) {
-      toast.error(
-        e?.response?.data?.message || e?.message || 'Não foi possível confirmar o pagamento.'
-      );
-    } finally {
-      setConfirmPagamentoLoading(false);
-    }
-  };
 
   // Fechar menu mobile quando a rota mudar
   useEffect(() => {
@@ -363,7 +341,7 @@ export function ClienteLayout({ children }) {
                   {banner.titulo}
                   {banner.descricao ? ` — ${banner.descricao}` : ''}
                 </Typography>
-                {(banner.textoBotao || banner.automatico) && (
+                {banner.textoBotao && (
                   <Stack direction="row" spacing={1} flexShrink={0} flexWrap="wrap" useFlexGap>
                     {banner.textoBotao && (
                       <Button
@@ -390,52 +368,12 @@ export function ClienteLayout({ children }) {
                         {banner.textoBotao}
                       </Button>
                     )}
-                    {banner.automatico && (
-                      <Button
-                        variant="outlined"
-                        color="inherit"
-                        size="small"
-                        startIcon={<Iconify icon="solar:check-circle-bold-duotone" />}
-                        onClick={() => setConfirmPagamentoOpen(true)}
-                        sx={{
-                          color: banner.corTexto,
-                          borderColor: safeAlpha(banner.corTexto || '#fff', 0.7),
-                          fontWeight: 700,
-                          flexShrink: 0,
-                          '&:hover': {
-                            borderColor: banner.corTexto,
-                            bgcolor: safeAlpha(banner.corTexto || '#fff', 0.12),
-                          },
-                        }}
-                      >
-                        Já paguei a guia
-                      </Button>
-                    )}
                   </Stack>
                 )}
               </Stack>
             </Container>
           </Box>
         ))}
-
-        <ConfirmDialog
-          open={confirmPagamentoOpen}
-          onClose={() => {
-            if (!confirmPagamentoLoading) setConfirmPagamentoOpen(false);
-          }}
-          title="Confirmar pagamento"
-          content="Você confirma que já pagou esta Guia DAS? Ela será marcada como paga no sistema e este aviso será removido."
-          action={
-            <LoadingButton
-              variant="contained"
-              color="primary"
-              loading={confirmPagamentoLoading}
-              onClick={handleConfirmarPagamentoDas}
-            >
-              Sim, já paguei
-            </LoadingButton>
-          }
-        />
 
         <Box
           component="main"
