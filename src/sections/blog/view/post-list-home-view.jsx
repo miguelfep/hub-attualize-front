@@ -30,13 +30,22 @@ import { PostSearch } from '../post-search';
 
 const PER_PAGE = 15;
 
+const MAX_CATEGORIA_CHIPS = 12;
+
 const WHATSAPP_LINK =
   buildWhatsAppLink({
     phoneNumber: ATTUALIZE_WHATSAPP_PHONE,
     message: 'Oi, vim pelo blog e quero falar com um contador especialista',
   });
 
-export function PostListHomeView({ initialPosts, totalPages }) {
+export function PostListHomeView({ initialPosts, totalPages, categorias }) {
+  // Categorias reais vindas da API (SSR, ordenadas por uso); fallback para a
+  // lista fixa. Limita os chips às mais usadas para não poluir a UI.
+  const categoriaOptions = useMemo(() => {
+    const fromApi = (categorias || []).map((c) => c.categoria).filter(Boolean);
+    return fromApi.length ? fromApi.slice(0, MAX_CATEGORIA_CHIPS) : BLOG_CATEGORIAS;
+  }, [categorias]);
+
   const [posts, setPosts] = useState(initialPosts);
   const [page, setPage] = useState(1);
   const [hasMorePosts, setHasMorePosts] = useState(totalPages > 1);
@@ -214,7 +223,7 @@ export function PostListHomeView({ initialPosts, totalPages }) {
           variant={categoria === 'all' ? 'filled' : 'outlined'}
           onClick={() => setCategoria('all')}
         />
-        {BLOG_CATEGORIAS.map((cat) => (
+        {categoriaOptions.map((cat) => (
           <Chip
             key={cat}
             label={cat}

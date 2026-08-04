@@ -142,6 +142,24 @@ export function useGetBlogPost(slug) {
   }, [data, error, isLoading, isValidating, mutate]);
 }
 
+/**
+ * Categorias em uso nos posts publicados (ordenadas por quantidade).
+ * Usado no filtro público e no select do formulário do painel.
+ */
+export function useGetBlogCategorias() {
+  const { data, isLoading, error, mutate } = useSWR(endpoints.blog.categorias, fetcher, swrOptions);
+
+  return useMemo(
+    () => ({
+      categorias: data?.categorias || [],
+      categoriasLoading: isLoading,
+      categoriasError: error,
+      categoriasMutate: mutate,
+    }),
+    [data, error, isLoading, mutate]
+  );
+}
+
 // ----------------------------------------------------------------------
 // ESCRITA (mutações)
 // ----------------------------------------------------------------------

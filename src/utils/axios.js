@@ -293,6 +293,7 @@ export const endpoints = {
   blog: {
     // Leitura pública
     posts: `${baseUrl}blog/posts`,
+    categorias: `${baseUrl}blog/categorias`,
     post: (slug) => `${baseUrl}blog/posts/${slug}`,
     markdown: (slug) => `${baseUrl}blog/posts/${slug}.md`,
     sitemap: `${baseUrl}blog/sitemap.xml`,

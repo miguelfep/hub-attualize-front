@@ -25,6 +25,7 @@ import {
   updateBlogPost,
   publishBlogPost,
   archiveBlogPost,
+  useGetBlogCategorias,
 } from 'src/actions/blog';
 
 import { toast } from 'src/components/snackbar';
@@ -67,6 +68,15 @@ export function PostNewEditForm({ currentPost }) {
 
   const publishing = useBoolean();
   const archiving = useBoolean();
+
+  // Categorias reais em uso (API) mescladas com as padrão; inclui também a do
+  // post atual para nunca renderizar um Select com valor fora das opções.
+  const { categorias: categoriasApi } = useGetBlogCategorias();
+  const categoriaOptions = useMemo(() => {
+    const fromApi = categoriasApi.map((c) => c.categoria).filter(Boolean);
+    const atual = currentPost?.categoria ? [currentPost.categoria] : [];
+    return [...new Set([...fromApi, ...CATEGORIAS, ...atual])];
+  }, [categoriasApi, currentPost?.categoria]);
 
   const defaultValues = useMemo(
     () => ({
@@ -203,7 +213,7 @@ export function PostNewEditForm({ currentPost }) {
       <Divider />
       <Stack spacing={3} sx={{ p: 3 }}>
         <Field.Select name="categoria" label="Categoria">
-          {CATEGORIAS.map((option) => (
+          {categoriaOptions.map((option) => (
             <MenuItem key={option} value={option}>
               {option}
             </MenuItem>

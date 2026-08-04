@@ -62,12 +62,12 @@ export const PostItem = memo(({ post }) => {
           {!post.authorAvatar && !post.author_avatar && post.author?.charAt(0)?.toUpperCase()}
         </Avatar>
 
-        <Image 
-          alt={post.title} 
-          src={post.imageUrl} 
+        <Image
+          alt={post.title}
+          src={post.imageUrl}
           ratio="4/3"
-          useIntersectionObserver
-          threshold={100}
+          useNextImage
+          sizes="(max-width: 600px) 100vw, (max-width: 900px) 50vw, 33vw"
         />
       </Box>
 
@@ -157,8 +157,8 @@ export const PostItemLatest = memo(({ post, index }) => {
         src={post.imageUrl}
         ratio="4/3"
         sx={{ height: 360 }}
-        useIntersectionObserver
-        threshold={100}
+        useNextImage
+        sizes="(max-width: 900px) 100vw, 50vw"
         slotProps={{ overlay: { bgcolor: varAlpha(theme.vars.palette.grey['900Channel'], 0.48) } }}
       />
 

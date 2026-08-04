@@ -7,6 +7,9 @@ import packageJson from '../package.json';
 export const CONFIG = {
   site: {
     name: 'Attualize HUB',
+    // Marca usada nas páginas públicas (blog, institucional) — o "HUB" é o
+    // nome do produto interno e não deve aparecer nos resultados do Google.
+    publicName: 'Attualize Contábil',
     serverUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? '',
     assetURL: process.env.NEXT_PUBLIC_ASSET_URL ?? '',
     basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? '',

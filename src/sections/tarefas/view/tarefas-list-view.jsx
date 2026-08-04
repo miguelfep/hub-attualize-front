@@ -446,8 +446,7 @@ export function TarefasListView({ minhas = false }) {
           { name: minhas ? 'Minhas' : 'Todas' },
         ]}
         action={
-          gestor &&
-          !minhas && (
+          gestor && (
             <Button
               variant="contained"
               startIcon={<Iconify icon="mingcute:add-line" />}
@@ -721,6 +720,8 @@ export function TarefasListView({ minhas = false }) {
         open={formOpen}
         onClose={() => setFormOpen(false)}
         tarefa={tarefaEditando}
+        // Em "Minhas", nova tarefa já nasce atribuída ao próprio usuário.
+        valoresIniciais={minhas ? { responsavel: user?.userId || user?.id || user?._id || null } : undefined}
         usuarios={usuarios}
         clientes={clientes}
         setores={setores}

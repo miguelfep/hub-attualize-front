@@ -39,7 +39,18 @@ const nextConfig = {
   },
   // Otimização de imagens
   images: {
+    // Capas/imagens do blog servidas pelo storage da API (otimizadas via next/image)
+    remotePatterns: [
+      { protocol: 'https', hostname: 'api.attualizecontabil.com.br' },
+      { protocol: 'https', hostname: 'attualizecontabil.com.br' },
+      { protocol: 'http', hostname: 'localhost', port: '9443' },
+    ],
+    // Next 16 bloqueia IPs de loopback no optimizer (proteção SSRF); em dev a
+    // API roda em localhost:9443, então liberamos apenas fora de produção.
+    ...(process.env.NODE_ENV !== 'production' && { dangerouslyAllowLocalIP: true }),
     formats: ['image/avif', 'image/webp'],
+    // Next 16 rejeita qualities fora da lista; 85 é o padrão do nosso <Image>
+    qualities: [70, 75, 85],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 2678400, // 31 dias (era 60s — re-otimizava direto)

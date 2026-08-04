@@ -32,8 +32,28 @@ export const BLOG_AUTHOR = {
   role: 'Contadora Especialista',
 };
 
-// Categorias fixas usadas no filtro da listagem (mesma lista do formulário)
+// Fallback usado quando /api/blog/categorias está indisponível
 export const BLOG_CATEGORIAS = ['Saúde', 'Beleza', 'Bem-estar', 'Contabilidade', 'Gestão', 'Geral'];
+
+/**
+ * Categorias reais em uso (posts publicados), ordenadas por quantidade.
+ * @returns {{ categoria: string, total: number }[]}
+ */
+export async function getBlogCategorias() {
+  try {
+    const res = await fetchComTimeout(endpoints.blog.categorias, {
+      next: { revalidate: 1800 },
+    });
+    if (!res.ok) throw new Error(`Failed to fetch categorias (${res.status})`);
+    const data = await res.json();
+    const categorias = Array.isArray(data?.categorias) ? data.categorias : [];
+    if (categorias.length) return categorias;
+  } catch (error) {
+    console.error('Failed to fetch blog categorias:', error);
+  }
+  // Fallback: lista fixa, sem contagem.
+  return BLOG_CATEGORIAS.map((categoria) => ({ categoria, total: 0 }));
+}
 
 /**
  * Reescreve URLs de imagens relativas do storage (/storage/...) dentro do
