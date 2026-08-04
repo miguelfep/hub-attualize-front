@@ -1,9 +1,9 @@
 'use client';
 
 import { format } from 'date-fns';
+import dynamic from 'next/dynamic';
 import { ptBR } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
-import { PDFViewer } from '@react-pdf/renderer';
 
 import { alpha, useTheme } from '@mui/material/styles';
 import {
@@ -38,6 +38,11 @@ import { formatToCurrency } from 'src/components/animate';
 import { SimplePaper } from 'src/components/paper/SimplePaper';
 
 import { InvoicePDF } from '../invoice/invoice-pdf';
+
+const PDFViewer = dynamic(() => import('@react-pdf/renderer').then((mod) => mod.PDFViewer), {
+  ssr: false,
+  loading: () => <CircularProgress />,
+});
 
 const baseUrl = process.env.NEXT_PUBLIC_FRONT_URL || 'https://www.attualize.com.br/';
 
