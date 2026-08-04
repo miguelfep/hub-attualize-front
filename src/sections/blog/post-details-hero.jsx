@@ -14,6 +14,7 @@ import { fDate } from 'src/utils/format-time';
 
 import { varAlpha, bgGradient } from 'src/theme/styles';
 
+import { Image } from 'src/components/image';
 import { Iconify, SocialIcon } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -39,16 +40,29 @@ export function PostDetailsHero({ title, author, authorRole, authorAvatar, cover
   const smUp = useResponsive('up', 'sm');
 
   return (
-    <Box
-      sx={{
-        ...bgGradient({
-          color: `0deg, ${varAlpha(theme.vars.palette.grey['900Channel'], 0.64)}, ${varAlpha(theme.vars.palette.grey['900Channel'], 0.64)}`,
-          imgUrl: coverUrl,
-        }),
-        height: 480,
-        overflow: 'hidden',
-      }}
-    >
+    <Box sx={{ height: 480, overflow: 'hidden', position: 'relative' }}>
+      {/* Capa via next/image (LCP): otimizada/redimensionada e com priority.
+          Antes era background-image — sem otimização nem preload. */}
+      {!!coverUrl && (
+        <Image
+          alt={title}
+          src={coverUrl}
+          useNextImage
+          priority
+          fetchPriority="high"
+          sizes="100vw"
+          sx={{ position: 'absolute', inset: 0, width: 1, height: 1 }}
+        />
+      )}
+      <Box
+        sx={{
+          ...bgGradient({
+            color: `0deg, ${varAlpha(theme.vars.palette.grey['900Channel'], 0.64)}, ${varAlpha(theme.vars.palette.grey['900Channel'], 0.64)}`,
+          }),
+          position: 'absolute',
+          inset: 0,
+        }}
+      />
       <Container 
         sx={{ 
           height: 1, 

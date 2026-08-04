@@ -63,14 +63,14 @@ export async function generateMetadata({ params }) {
 
     if (!normalizedTitle) {
       return {
-        title: `Blog - ${CONFIG.site.name}`,
+        title: `Blog - ${CONFIG.site.publicName}`,
         description: 'Blog da Attualize Contábil',
         robots: { index: false, follow: false },
       };
     }
 
     const post = await getBlogPostBySlug(normalizedTitle);
-
+    console.log('post ====>', post);
     if (post) {
       const postUrl = resolvePostCanonicalUrl(post);
       const postTitle = post.seoTitle || post.title;
@@ -81,17 +81,20 @@ export async function generateMetadata({ params }) {
       const modifiedTime = post.modified || post.date;
 
       return {
-        title: postTitle,
+        // `absolute` impede o template do layout raiz de anexar "| Attualize HUB"
+        // ao seoTitle salvo no post (evita título duplo/estourado nos resultados).
+        title: { absolute: postTitle },
         description: postDescription,
         keywords,
         authors: post.author ? [{ name: post.author }] : undefined,
         alternates: { canonical: postUrl },
         openGraph: {
           type: 'article',
+          locale: 'pt_BR',
           title: postTitle,
           description: postDescription,
           url: postUrl,
-          siteName: CONFIG.site.name,
+          siteName: CONFIG.site.publicName,
           publishedTime,
           modifiedTime,
           authors: post.author ? [post.author] : undefined,
@@ -107,7 +110,7 @@ export async function generateMetadata({ params }) {
     }
 
     return {
-      title: `Postagem não encontrada - ${CONFIG.site.name}`,
+      title: `Postagem não encontrada - ${CONFIG.site.publicName}`,
       description: 'A postagem solicitada não foi encontrada.',
       robots: { index: false, follow: false },
     };
@@ -116,7 +119,7 @@ export async function generateMetadata({ params }) {
     // Mesmo com a API fora, a página precisa declarar canonical — sem ele o
     // Google classifica como "cópia sem página canônica selecionada pelo usuário".
     return {
-      title: `Blog - ${CONFIG.site.name}`,
+      title: `Blog - ${CONFIG.site.publicName}`,
       description: 'Blog da Attualize Contábil',
       ...(normalizedTitle && {
         alternates: { canonical: getBlogPostUrl(normalizedTitle) },
@@ -179,7 +182,7 @@ export default async function Page({ params }) {
           author: { '@type': 'Organization', name: post.author, url: SITE_URL },
           publisher: {
             '@type': 'Organization',
-            name: CONFIG.site.name,
+            name: CONFIG.site.publicName,
             logo: {
               '@type': 'ImageObject',
               url: `${SITE_URL}/logo/attualize.png`,

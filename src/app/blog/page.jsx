@@ -1,5 +1,5 @@
 import { CONFIG } from 'src/config-global';
-import { getBlogPosts } from 'src/actions/blog-ssr';
+import { getBlogPosts, getBlogCategorias } from 'src/actions/blog-ssr';
 
 import { StructuredData } from 'src/components/seo/structured-data';
 
@@ -10,7 +10,8 @@ import { PostListHomeView } from 'src/sections/blog/view';
 const SITE_URL = 'https://www.attualize.com.br';
 
 export const metadata = {
-  title: 'Blog - Artigos sobre Contabilidade, Gestão e Negócios',
+  // `absolute` evita o sufixo "| Attualize HUB" do template do layout raiz.
+  title: { absolute: 'Blog - Artigos sobre Contabilidade, Gestão e Negócios | Attualize Contábil' },
   description:
     'Acesse nosso blog e fique por dentro de artigos sobre contabilidade, gestão empresarial, dicas para psicólogos, clínicas de estética e muito mais. Conteúdo atualizado e especializado.',
   keywords: [
@@ -30,6 +31,7 @@ export const metadata = {
       'Acesse nosso blog e fique por dentro de artigos sobre contabilidade, gestão empresarial, dicas para psicólogos, clínicas de estética e muito mais.',
     url: `${SITE_URL}/blog/`,
     type: 'website',
+    locale: 'pt_BR',
   },
   twitter: {
     card: 'summary_large_image',
@@ -40,7 +42,11 @@ export const metadata = {
 };
 
 export default async function Page() {
-  const { posts, totalPages } = await getBlogPosts(1, 15); // Primeira página com 15 posts
+  // Primeira página com 15 posts + categorias reais em uso (em paralelo)
+  const [{ posts, totalPages }, categorias] = await Promise.all([
+    getBlogPosts(1, 15),
+    getBlogCategorias(),
+  ]);
 
   // Structured data para a página do blog
   const blogStructuredData = {
@@ -52,7 +58,7 @@ export default async function Page() {
     url: `${SITE_URL}/blog/`,
     publisher: {
       '@type': 'Organization',
-      name: CONFIG.site.name,
+      name: CONFIG.site.publicName,
       logo: {
         '@type': 'ImageObject',
         url: `${SITE_URL}/logo/attualize.png`,
@@ -64,7 +70,7 @@ export default async function Page() {
   return (
     <>
       <StructuredData data={blogStructuredData} />
-      <PostListHomeView initialPosts={posts} totalPages={totalPages} />
+      <PostListHomeView initialPosts={posts} totalPages={totalPages} categorias={categorias} />
     </>
   );
 }
