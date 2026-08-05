@@ -186,12 +186,19 @@ export const NewUClienteSchema = zod.object({
   possuiFuncionario: zod.boolean().optional(),
   diaFechamentoFolha: zod.preprocess(
     (v) => {
-      if (v === '' || v === null || v === undefined) return undefined;
+      if (v === '' || v === null || v === undefined) return null;
       const n = typeof v === 'number' ? v : Number(String(v).trim());
-      if (!Number.isFinite(n)) return undefined;
+      // 0 = campo limpo (RHFTextField type="number" escreve 0 ao esvaziar)
+      if (!Number.isFinite(n) || n === 0) return null;
       return n;
     },
-    zod.number().int().min(1, { message: 'Use um dia entre 1 e 31' }).max(31, { message: 'Use um dia entre 1 e 31' }).optional()
+    zod
+      .number({ message: 'Digite um  número válido' })
+      .int({ message: 'Use um número inteiro, sem vírgulas ou pontos' })
+      .min(1, { message: 'Use um dia entre 1 e 31' })
+      .max(31, { message: 'Use um dia entre 1 e 31' })
+      .nullable()
+      .optional()
   ),
   folhaComPlano: zod.boolean().default(false),
   dadosDepartamentoPessoal: zod.string().optional(),
@@ -357,10 +364,7 @@ export function ClienteNewEditForm({ currentCliente }) {
       possuiExtrato: currentCliente?.possuiExtrato || false,
       dadosContabil: currentCliente?.dadosContabil || '',
       possuiFuncionario: currentCliente?.possuiFuncionario || false,
-      diaFechamentoFolha:
-        currentCliente?.diaFechamentoFolha != null && currentCliente?.diaFechamentoFolha !== ''
-          ? String(currentCliente.diaFechamentoFolha)
-          : '',
+      diaFechamentoFolha: currentCliente?.diaFechamentoFolha ?? '',
       folhaComPlano: currentCliente?.folhaComPlano ?? false,
       dadosDepartamentoPessoal: currentCliente?.dadosDepartamentoPessoal || '',
       planoEmpresa: currentCliente?.planoEmpresa || '',
@@ -497,10 +501,7 @@ export function ClienteNewEditForm({ currentCliente }) {
             status: updatedCliente.status !== undefined ? updatedCliente.status : true,
             dataEntrada: updatedCliente.dataEntrada ? new Date(updatedCliente.dataEntrada) : null,
             dataSaida: updatedCliente.dataSaida ? new Date(updatedCliente.dataSaida) : null,
-            diaFechamentoFolha:
-              updatedCliente.diaFechamentoFolha != null && updatedCliente.diaFechamentoFolha !== ''
-                ? String(updatedCliente.diaFechamentoFolha)
-                : '',
+            diaFechamentoFolha: updatedCliente.diaFechamentoFolha ?? '',
             folhaComPlano: updatedCliente.folhaComPlano ?? false,
           });
 
@@ -554,10 +555,7 @@ export function ClienteNewEditForm({ currentCliente }) {
         status: clienteAtualizado.status !== undefined ? clienteAtualizado.status : true,
         dataEntrada: clienteAtualizado.dataEntrada ? new Date(clienteAtualizado.dataEntrada) : null,
         dataSaida: clienteAtualizado.dataSaida ? new Date(clienteAtualizado.dataSaida) : null,
-        diaFechamentoFolha:
-          clienteAtualizado.diaFechamentoFolha != null && clienteAtualizado.diaFechamentoFolha !== ''
-            ? String(clienteAtualizado.diaFechamentoFolha)
-            : '',
+        diaFechamentoFolha: clienteAtualizado.diaFechamentoFolha ?? '',
         folhaComPlano: clienteAtualizado.folhaComPlano ?? false,
         whatsapp: normalizePhoneBR(clienteAtualizado.whatsapp),
         telefoneComercial: normalizePhoneBR(clienteAtualizado.telefoneComercial),
@@ -1091,65 +1089,65 @@ export function ClienteNewEditForm({ currentCliente }) {
                   <Grid xs={12}>
                     <Controller
                       name="atividade_principal"
-                    control={control}
-                    render={({ field }) => (
-                      <TextField
-                        {...field}
-                        value={
-                          field.value
-                            ? field.value.map((item) => `${item.code} - ${item.text}`).join(', ')
-                            : ''
-                        } // Exibir code e text
-                        label="Atividade Principal"
-                        fullWidth
-                        disabled
-                        error={!!errors.atividade_principal}
-                        helperText={
-                          errors.atividade_principal ? errors.atividade_principal.message : ''
-                        }
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid xs={12}>
-                  <Controller
-                    name="atividades_secundarias"
-                    control={control}
-                    render={({ field }) => {
-                      const value = field.value
-                        ? field.value.map((item) => `${item.code} - ${item.text}`).join('\n')
-                        : ''; // Exibir code e text com quebra de linha
-                      const rows = field.value ? field.value.length : 1; // Definir o número de linhas dinamicamente
-
-                      return (
+                      control={control}
+                      render={({ field }) => (
                         <TextField
                           {...field}
-                          value={value}
-                          label="Atividades Secundárias"
-                          fullWidth
-                          multiline
-                          rows={rows} // Definir número de linhas baseado no número de atividades
-                          disabled
-                          error={!!errors.atividades_secundarias}
-                          helperText={
-                            errors.atividades_secundarias
-                              ? errors.atividades_secundarias.message
+                          value={
+                            field.value
+                              ? field.value.map((item) => `${item.code} - ${item.text}`).join(', ')
                               : ''
+                          } // Exibir code e text
+                          label="Atividade Principal"
+                          fullWidth
+                          disabled
+                          error={!!errors.atividade_principal}
+                          helperText={
+                            errors.atividade_principal ? errors.atividade_principal.message : ''
                           }
                         />
-                      );
-                    }}
-                  />
+                      )}
+                    />
+                  </Grid>
+                  <Grid xs={12}>
+                    <Controller
+                      name="atividades_secundarias"
+                      control={control}
+                      render={({ field }) => {
+                        const value = field.value
+                          ? field.value.map((item) => `${item.code} - ${item.text}`).join('\n')
+                          : ''; // Exibir code e text com quebra de linha
+                        const rows = field.value ? field.value.length : 1; // Definir o número de linhas dinamicamente
+
+                        return (
+                          <TextField
+                            {...field}
+                            value={value}
+                            label="Atividades Secundárias"
+                            fullWidth
+                            multiline
+                            rows={rows} // Definir número de linhas baseado no número de atividades
+                            disabled
+                            error={!!errors.atividades_secundarias}
+                            helperText={
+                              errors.atividades_secundarias
+                                ? errors.atividades_secundarias.message
+                                : ''
+                            }
+                          />
+                        );
+                      }}
+                    />
+                  </Grid>
+                  <Grid xs={12}>
+                    <Divider sx={{ my: 1 }} />
+                  </Grid>
+                  <Grid xs={12}>
+                    <Field.Editor name="dadosFiscal" label="Dados Fiscais" fullWidth disabled={!statusAtivo} />
+                  </Grid>
                 </Grid>
-                <Grid xs={12}>
-                  <Divider sx={{ my: 1 }} />
-                </Grid>
-                <Grid xs={12}>
-                  <Field.Editor name="dadosFiscal" label="Dados Fiscais" fullWidth disabled={!statusAtivo} />
-                </Grid>
-              </Grid>
-            </Card>
-          </Grid>
+              </Card>
+            </Grid>
           </>
         )}
         {tabIndex === 3 && (
@@ -1247,11 +1245,28 @@ export function ClienteNewEditForm({ currentCliente }) {
                       <Field.Text
                         name="diaFechamentoFolha"
                         label="Dia fechamento da folha"
-                        type="number"
+                        type="text"
+                        inputMode="numeric"
                         placeholder="Ex.: 5"
                         disabled={!statusAtivo}
-                        inputProps={{ min: 1, max: 31 }}
                         helperText="Opcional. Dia do mês (1 a 31)."
+                        inputProps={{
+                          maxLength: 2,
+                          onKeyDown: (e) => {
+                            const isNumber = /^[0-9]$/.test(e.key);
+                            const isAllowedKey = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'Delete', 'Enter'].includes(e.key);
+                            const isShortcut = e.ctrlKey || e.metaKey;
+                            if (!isNumber && !isAllowedKey && !isShortcut) {
+                              e.preventDefault();
+                            }
+                          },
+                          onPaste: (e) => {
+                            const pastedData = e.clipboardData.getData('text');
+                            if (/\D/.test(pastedData)) {
+                              e.preventDefault();
+                            }
+                          }
+                        }}
                       />
                     </Grid>
                     <Grid xs={12} md={8}>
