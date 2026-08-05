@@ -6,34 +6,31 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 
 import { CONFIG } from 'src/config-global';
 import { primary } from 'src/theme/core/palette';
-import { LocalizationProvider } from 'src/locales';
 import { I18nProvider } from 'src/locales/i18n-provider';
 import { ThemeProvider } from 'src/theme/theme-provider';
 
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
 import { detectSettings } from 'src/components/settings/server';
-import { MercadoPagoProvider } from 'src/components/mercado-pago';
 import { InitColorSchemeScript } from 'src/components/color-scheme-script';
 import { defaultSettings, SettingsProvider } from 'src/components/settings';
+import { MercadoPagoProvider } from 'src/components/mercado-pago/mercado-pago-provider';
 
-import { AuthProvider as JwtAuthProvider } from 'src/auth/context/jwt';
-import { AuthProvider as Auth0AuthProvider } from 'src/auth/context/auth0';
-import { AuthProvider as AmplifyAuthProvider } from 'src/auth/context/amplify';
-import { AuthProvider as SupabaseAuthProvider } from 'src/auth/context/supabase';
-import { AuthProvider as FirebaseAuthProvider } from 'src/auth/context/firebase';
+// NB: MercadoPagoProvider vem do caminho direto, não do barril
+// 'src/components/mercado-pago' — o barril reexporta os diálogos de checkout,
+// que viriam junto para o bundle raiz.
+//
+// NB: apenas o provider JWT é importado. Importar os cinco (auth0/amplify/
+// supabase/firebase) fazia o bundler incluir firebase, aws-amplify, @supabase e
+// @auth0 no bundle do layout raiz — ou seja, em TODA página, inclusive as
+// landings públicas — mesmo com CONFIG.auth.method fixo em 'jwt'. Para trocar de
+// método, troque este import (e o CONFIG.auth.method) juntos.
+import { AuthProvider } from 'src/auth/context/jwt';
 
 import ClientAnalytics from './client-analytics';
 import { ClientComponents } from './client-components';
 
 // ----------------------------------------------------------------------
-
-const AuthProvider =
-  (CONFIG.auth.method === 'amplify' && AmplifyAuthProvider) ||
-  (CONFIG.auth.method === 'firebase' && FirebaseAuthProvider) ||
-  (CONFIG.auth.method === 'supabase' && SupabaseAuthProvider) ||
-  (CONFIG.auth.method === 'auth0' && Auth0AuthProvider) ||
-  JwtAuthProvider;
 
 export const viewport = {
   width: 'device-width',
@@ -156,29 +153,31 @@ export default async function RootLayout({ children }) {
             `,
           }}
         />
+        {/* NB: o LocalizationProvider (@mui/x-date-pickers + dayjs, ~25 KiB gz) saiu
+            daqui — só as áreas autenticadas usam date pickers, então ele vive nos
+            layouts de /dashboard e /portal-cliente. Mantê-lo aqui colocava os
+            pickers no bundle de TODA página pública (blog, landings). */}
         <I18nProvider lang={lang}>
-          <LocalizationProvider>
-            <AuthProvider>
-              <SettingsProvider
-                settings={settings}
-                caches={CONFIG.isStaticExport ? 'localStorage' : 'cookie'}
-              >
-                <ThemeProvider>
-                  <SpeedInsights />
-                  <MotionLazy>
-                    <MercadoPagoProvider>
-                      <ClientComponents>
-                        <ProgressBar />
-                        <Analytics />
-                        <ClientAnalytics />
-                        {children}
-                      </ClientComponents>
-                    </MercadoPagoProvider>
-                  </MotionLazy>
-                </ThemeProvider>
-              </SettingsProvider>
-            </AuthProvider>
-          </LocalizationProvider>
+          <AuthProvider>
+            <SettingsProvider
+              settings={settings}
+              caches={CONFIG.isStaticExport ? 'localStorage' : 'cookie'}
+            >
+              <ThemeProvider>
+                <SpeedInsights />
+                <MotionLazy>
+                  <MercadoPagoProvider>
+                    <ClientComponents>
+                      <ProgressBar />
+                      <Analytics />
+                      <ClientAnalytics />
+                      {children}
+                    </ClientComponents>
+                  </MercadoPagoProvider>
+                </MotionLazy>
+              </ThemeProvider>
+            </SettingsProvider>
+          </AuthProvider>
         </I18nProvider>
       </body>
     </html>

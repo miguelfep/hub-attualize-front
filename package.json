@@ -4,6 +4,12 @@
   "version": "6.0.1",
   "description": "Next & JavaScript",
   "private": true,
+  "browserslist": [
+    "chrome 111",
+    "edge 111",
+    "firefox 111",
+    "safari 16.4"
+  ],
   "scripts": {
     "dev": "next dev -p 3000",
     "start": "next start -p 3032",

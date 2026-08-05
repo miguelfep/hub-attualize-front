@@ -85,7 +85,7 @@ export function PostDetailsHomeView({ post, latestPosts = [] }) {
         title={post.title}
         author="Anne Monteiro"
         authorRole={autorRole}
-        authorAvatar="/assets/images/about/anne.jpg"
+        authorAvatar="/assets/images/about/anne-avatar.jpg"
         coverUrl={post.coverImage}
         createdAt={post.date}
       />

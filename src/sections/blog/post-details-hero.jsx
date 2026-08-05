@@ -51,6 +51,11 @@ export function PostDetailsHero({ title, author, authorRole, authorAvatar, cover
           priority
           fetchPriority="high"
           sizes="100vw"
+          // A capa tem 480px de altura e fica sob um gradiente escuro de 64%
+          // com o título por cima — qualidade 70 é indistinguível aqui e alivia
+          // bastante o elemento de LCP. O teto de resolução vem do
+          // `images.deviceSizes` no next.config.mjs.
+          quality={70}
           sx={{ position: 'absolute', inset: 0, width: 1, height: 1 }}
         />
       )}

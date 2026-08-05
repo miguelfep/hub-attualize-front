@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { initMercadoPago } from '@mercadopago/sdk-react';
 
 // ----------------------------------------------------------------------
 // Modo: "test" = chaves de teste | "production" ou vazio = chaves de produção
@@ -34,18 +33,23 @@ export function MercadoPagoProvider({ children }) {
     const publicKey = getPublicKey();
 
     if (publicKey) {
-      try {
-        initMercadoPago(publicKey, {
-          locale: 'pt-BR',
+      // Import dinâmico: o SDK do Mercado Pago só é baixado depois da
+      // hidratação. Com o import estático ele entrava no bundle do layout raiz
+      // e pesava no TBT de todas as páginas, inclusive as landings públicas.
+      import('@mercadopago/sdk-react')
+        .then(({ initMercadoPago }) => {
+          initMercadoPago(publicKey, {
+            locale: 'pt-BR',
+          });
+          if (process.env.NODE_ENV === 'development') {
+            console.info(
+              `[Mercado Pago] SDK inicializado em modo: ${MP_MODE === 'test' ? 'TESTE' : 'PRODUÇÃO'}`
+            );
+          }
+        })
+        .catch((error) => {
+          console.error('Erro ao inicializar Mercado Pago SDK:', error);
         });
-        if (process.env.NODE_ENV === 'development') {
-          console.info(
-            `[Mercado Pago] SDK inicializado em modo: ${MP_MODE === 'test' ? 'TESTE' : 'PRODUÇÃO'}`
-          );
-        }
-      } catch (error) {
-        console.error('Erro ao inicializar Mercado Pago SDK:', error);
-      }
     } else {
       const modeHint = MP_MODE === 'test' ? 'NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY_TEST' : 'NEXT_PUBLIC_MERCADO_PAGO_PUBLIC_KEY';
       console.warn(

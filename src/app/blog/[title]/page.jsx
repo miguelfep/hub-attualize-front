@@ -5,7 +5,11 @@ import { getBlogPosts, getBlogPostBySlug, getBlogLatestPosts } from 'src/actions
 
 import { StructuredData } from 'src/components/seo/structured-data';
 
-import { PostDetailsHomeView } from 'src/sections/blog/view';
+// NB: import direto, NÃO pelo barril 'src/sections/blog/view'. O barril
+// reexporta as views de criação/edição do post, que arrastam o editor
+// (@tiptap + prosemirror), o lightbox e os providers de auth (firebase/
+// amplify/supabase/auth0) para o bundle desta página pública de leitura.
+import { PostDetailsHomeView } from 'src/sections/blog/view/post-details-home-view';
 
 // ----------------------------------------------------------------------
 
@@ -70,7 +74,6 @@ export async function generateMetadata({ params }) {
     }
 
     const post = await getBlogPostBySlug(normalizedTitle);
-    console.log('post ====>', post);
     if (post) {
       const postUrl = resolvePostCanonicalUrl(post);
       const postTitle = post.seoTitle || post.title;

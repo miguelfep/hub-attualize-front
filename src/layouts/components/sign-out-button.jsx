@@ -1,27 +1,22 @@
 import { useCallback } from 'react';
-import { useAuth0 } from '@auth0/auth0-react';
 
 import Button from '@mui/material/Button';
 
 import { useRouter } from 'src/routes/hooks';
 
-import { CONFIG } from 'src/config-global';
-
 import { toast } from 'src/components/snackbar';
 
 import { useAuthContext } from 'src/auth/hooks';
-import { signOut as jwtSignOut } from 'src/auth/context/jwt/action';
-import { signOut as amplifySignOut } from 'src/auth/context/amplify/action';
-import { signOut as supabaseSignOut } from 'src/auth/context/supabase/action';
-import { signOut as firebaseSignOut } from 'src/auth/context/firebase/action';
+import { signOut } from 'src/auth/context/jwt/action';
 
 // ----------------------------------------------------------------------
 
-const signOut =
-  (CONFIG.auth.method === 'supabase' && supabaseSignOut) ||
-  (CONFIG.auth.method === 'firebase' && firebaseSignOut) ||
-  (CONFIG.auth.method === 'amplify' && amplifySignOut) ||
-  jwtSignOut;
+// NB: mesma regra do layout raiz — só o método jwt é importado. Este botão vive
+// no header, ou seja, em TODA página (inclusive blog e landings públicas).
+// Importar os quatro `signOut` (+ o `useAuth0`) fazia o bundler incluir firebase,
+// aws-amplify, @supabase e @auth0 no bundle de todas elas, mesmo com
+// CONFIG.auth.method fixo em 'jwt'. Para trocar de método, troque este import
+// (e o CONFIG.auth.method) juntos.
 
 // ----------------------------------------------------------------------
 
@@ -29,8 +24,6 @@ export function SignOutButton({ onClose, ...other }) {
   const router = useRouter();
 
   const { checkUserSession } = useAuthContext();
-
-  const { logout: signOutAuth0 } = useAuth0();
 
   const handleLogout = useCallback(async () => {
     try {
@@ -45,25 +38,13 @@ export function SignOutButton({ onClose, ...other }) {
     }
   }, [checkUserSession, onClose, router]);
 
-  const handleLogoutAuth0 = useCallback(async () => {
-    try {
-      await signOutAuth0();
-
-      onClose?.();
-      router.refresh();
-    } catch (error) {
-      console.error(error);
-      toast.error('Unable to logout!');
-    }
-  }, [onClose, router, signOutAuth0]);
-
   return (
     <Button
       fullWidth
       variant="soft"
       size="large"
       color="error"
-      onClick={CONFIG.auth.method === 'auth0' ? handleLogoutAuth0 : handleLogout}
+      onClick={handleLogout}
       {...other}
     >
       Logout

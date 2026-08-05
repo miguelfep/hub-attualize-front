@@ -41,6 +41,17 @@ const BENEFICIOS = [
   },
 ];
 
+// Larguras do otimizador para o banner (subconjunto de images.deviceSizes do
+// next.config.mjs — usar valores fora da lista faz o otimizador recusar).
+const MOBILE_WIDTHS = [640, 750, 828, 1080];
+const DESKTOP_WIDTHS = [1080, 1200, 1920, 2048];
+
+const optimizedUrl = (src, width) =>
+  `${CONFIG.site.basePath}/_next/image/?url=${encodeURIComponent(src)}&w=${width}&q=85`;
+
+const buildOptimizedSrcSet = (src, widths) =>
+  widths.map((width) => `${optimizedUrl(src, width)} ${width}w`).join(', ');
+
 // ----------------------------------------------------------------------
 
 export default function HomeBanner() {
@@ -85,48 +96,36 @@ export default function HomeBanner() {
           zIndex: 0,
         }}
       >
-        <Box
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <Image
-            src={bannerImageMobile}
-            alt="Attualize Contábil - contabilidade digital especializada em beleza, saúde e bem-estar"
-            fill
-            priority
-            fetchPriority="high"
-            quality={85}
+        {/* Art direction via <picture>: com duas <Image> (uma escondida por
+            display:none em cada breakpoint) o navegador baixava as DUAS artes e
+            o Next emitia preload fetchpriority=high para ambas — no mobile o
+            banner de desktop competia com o LCP. Com <source media> só a arte do
+            breakpoint atual é buscada. As URLs apontam para o mesmo otimizador
+            do next/image (AVIF/WebP + resize), então nada se perde. */}
+        <picture>
+          <source
+            media="(min-width: 900px)"
+            srcSet={buildOptimizedSrcSet(bannerImageDesktop, DESKTOP_WIDTHS)}
             sizes="100vw"
-            style={{ objectFit: 'cover', objectPosition: 'center' }}
           />
-        </Box>
-        <Box
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-          }}
-        >
-          <Image
-            src={bannerImageDesktop}
-            alt="Attualize Contábil - contabilidade digital especializada em beleza, saúde e bem-estar"
-            fill
-            priority
-            fetchPriority="high"
-            quality={85}
+          <img
+            src={optimizedUrl(bannerImageMobile, 828)}
+            srcSet={buildOptimizedSrcSet(bannerImageMobile, MOBILE_WIDTHS)}
             sizes="100vw"
-            style={{ objectFit: 'cover', objectPosition: 'center' }}
+            alt="Attualize Contábil - contabilidade digital especializada em beleza, saúde e bem-estar"
+            fetchPriority="high"
+            decoding="async"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              objectPosition: 'center',
+            }}
           />
-        </Box>
+        </picture>
         <Box
           sx={{
             position: 'absolute',
@@ -386,11 +385,14 @@ export default function HomeBanner() {
                 boxShadow: theme.customShadows.z24,
               }}
             >
+              {/* eager (e não priority): continua sendo buscada de imediato,
+                  mas sem <link rel=preload fetchpriority=high> disputando banda
+                  com o banner de fundo, que é o elemento de LCP. */}
               <Image
                 src="/assets/images/home/home-principal.webp"
                 alt="Attualize Contábil - contabilidade digital especializada"
                 fill
-                priority
+                loading="eager"
                 sizes="(min-width: 900px) 620px, 100vw"
                 style={{ objectFit: 'cover', objectPosition: 'center' }}
               />

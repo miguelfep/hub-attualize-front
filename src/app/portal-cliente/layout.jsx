@@ -7,6 +7,9 @@ import { useRouter } from 'src/routes/hooks';
 
 import { ClienteLayout } from 'src/layouts/cliente';
 import { SettingsProvider } from 'src/contexts/SettingsContext';
+// LocalizationProvider (@mui/x-date-pickers) fica aqui, não no layout raiz:
+// os date pickers só existem nas áreas autenticadas.
+import { LocalizationProvider } from 'src/locales/localization-provider';
 
 import { SplashScreen } from 'src/components/loading-screen';
 
@@ -62,9 +65,11 @@ export default function Layout({ children }) {
       acceptRoles={['cliente']}
       hasContent
     >
-      <SettingsProvider>
-        <ClienteLayout>{children}</ClienteLayout>
-      </SettingsProvider>
+      <LocalizationProvider>
+        <SettingsProvider>
+          <ClienteLayout>{children}</ClienteLayout>
+        </SettingsProvider>
+      </LocalizationProvider>
     </RoleBasedGuard>
   );
 }

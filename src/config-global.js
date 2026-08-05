@@ -1,7 +1,5 @@
 import { paths } from 'src/routes/paths';
 
-import packageJson from '../package.json';
-
 // ----------------------------------------------------------------------
 
 export const CONFIG = {
@@ -13,7 +11,11 @@ export const CONFIG = {
     serverUrl: process.env.NEXT_PUBLIC_SERVER_URL ?? '',
     assetURL: process.env.NEXT_PUBLIC_ASSET_URL ?? '',
     basePath: process.env.NEXT_PUBLIC_BASE_PATH ?? '',
-    version: packageJson.version,
+    // NB: vem do next.config.mjs (`env`), não de `import packageJson from
+    // '../package.json'`. O JSON não é tree-shaken: como CONFIG é importado em
+    // praticamente todo módulo, o package.json inteiro (~50 KiB com a lista de
+    // dependências) ia parar no bundle do cliente em TODAS as páginas.
+    version: process.env.NEXT_PUBLIC_APP_VERSION ?? '',
   },
   /**
    * Links do app móvel "Hub Attualize" nas lojas.
