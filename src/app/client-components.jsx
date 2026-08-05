@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useState, useEffect } from 'react';
 
 import { Snackbar } from 'src/components/snackbar';
 import { SettingsDrawer } from 'src/components/settings';
@@ -15,12 +16,11 @@ import { CheckoutProvider } from 'src/sections/checkout/context';
 // página (e retorna null fora da allowlist), então não há HTML de SSR nem
 // layout shift a preservar: carrega sob demanda depois da hidratação.
 //
-// `ssr: false` é válido aqui porque este arquivo é 'use client' — o erro
-// "Bail out to client-side rendering" só ocorre ao usar next/dynamic com
-// ssr: false dentro de um Server Component.
-const ExitIntentDiscountModal = dynamic(
-  () => import('src/components/exit-intent').then((mod) => mod.ExitIntentDiscountModal),
-  { ssr: false }
+// Só renderiza após montar (gate abaixo): com `ssr: false` no SSR, o Next
+// serializa um marcador "Bail out to client-side rendering" no HTML de toda
+// página. Como o servidor nunca vê o componente, o HTML sai limpo.
+const ExitIntentDiscountModal = dynamic(() =>
+  import('src/components/exit-intent').then((mod) => mod.ExitIntentDiscountModal)
 );
 
 // ----------------------------------------------------------------------
@@ -28,11 +28,17 @@ const ExitIntentDiscountModal = dynamic(
 // Snackbar e SettingsDrawer seguem estáticos: são componentes 'use client'
 // seguros para SSR e preservam o HTML renderizado no servidor.
 export function ClientComponents({ children }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
     <CheckoutProvider>
       <Snackbar />
       <SettingsDrawer />
-      <ExitIntentDiscountModal />
+      {mounted && <ExitIntentDiscountModal />}
       {children}
     </CheckoutProvider>
   );

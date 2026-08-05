@@ -73,9 +73,12 @@ function absolutizeContentImages(conteudo) {
 export function normalizeBlogPost(p) {
   if (!p) return null;
 
-  // Capa e og:image com fallback (coverImage -> ogImage) e URL absoluta.
+  // Capa e og:image com fallback e URL absoluta. O og segue a CAPA exibida:
+  // posts migrados do WordPress têm `ogImage` apontando para o arquivo antigo
+  // mesmo depois de trocarem a capa — compartilhar mostrava a imagem errada.
+  // Override explícito de og:image exige campo próprio no backend (não há hoje).
   const cover = getStorageAssetUrl(p.coverImage || p.ogImage || '');
-  const og = getStorageAssetUrl(p.ogImage || p.coverImage || '');
+  const og = getStorageAssetUrl(p.coverImage || p.ogImage || '');
 
   const comentarios = Array.isArray(p.comentarios) ? p.comentarios : [];
 

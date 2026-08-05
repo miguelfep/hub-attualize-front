@@ -1,5 +1,7 @@
 import { permanentRedirect } from 'next/navigation';
 
+import { getStorageAssetUrl } from 'src/utils/axios';
+
 import { CONFIG } from 'src/config-global';
 import { getBlogPosts, getBlogPostBySlug, getBlogLatestPosts } from 'src/actions/blog-ssr';
 
@@ -37,6 +39,76 @@ const isInternalCanonical = (rawUrl) => {
   } catch (_error) {
     return false;
   }
+};
+
+// Identidade única da marca nos schemas (mesma string do og:site_name).
+const PUBLISHER = {
+  '@type': 'Organization',
+  name: CONFIG.site.publicName,
+  url: SITE_URL,
+  logo: {
+    '@type': 'ImageObject',
+    url: `${SITE_URL}/logo/attualize.png`,
+    width: 1200,
+    height: 630,
+  },
+};
+
+const ARTICLE_TYPES = ['Article', 'BlogPosting', 'NewsArticle'];
+
+const toAbsoluteImageUrl = (value, fallback) => {
+  if (Array.isArray(value)) {
+    const urls = value.map((v) => toAbsoluteImageUrl(v, '')).filter(Boolean);
+    return urls.length ? urls : [fallback];
+  }
+  if (typeof value === 'string' && value.trim()) {
+    // Assets do storage vivem no host da API, não em attualize.com.br.
+    if (value.startsWith('/storage/')) return getStorageAssetUrl(value);
+    try {
+      return new URL(value, SITE_URL).toString();
+    } catch (_error) {
+      return fallback;
+    }
+  }
+  return fallback;
+};
+
+/**
+ * O `jsonLd` vem pronto da API, mas com defeitos que divergem do que a página
+ * exibe (autor como Organization, image relativa, dateModified replicando o
+ * datePublished, publisher sem logo, url/canonicalUrl no domínio antigo).
+ * Sobrescrevemos esses campos com os dados normalizados do post para schema,
+ * meta tags e canonical contarem a mesma história.
+ *
+ * A API embrulha os nós em `{"@context", "@graph": [Article, FAQPage]}` —
+ * por isso a recursão no `@graph` (checar só o nó de topo nunca casa).
+ */
+const sanitizeArticleJsonLd = (node, post, postUrl, postImage) => {
+  if (!node || typeof node !== 'object') return node;
+
+  if (Array.isArray(node['@graph'])) {
+    return {
+      ...node,
+      '@graph': node['@graph'].map((n) => sanitizeArticleJsonLd(n, post, postUrl, postImage)),
+    };
+  }
+
+  const type = node['@type'];
+  const isArticle = Array.isArray(type)
+    ? type.some((t) => ARTICLE_TYPES.includes(t))
+    : ARTICLE_TYPES.includes(type);
+  if (!isArticle) return node;
+
+  return {
+    ...node,
+    author: { '@type': 'Person', name: post.author, url: `${SITE_URL}/sobre/` },
+    image: toAbsoluteImageUrl(node.image, postImage),
+    datePublished: post.date || node.datePublished,
+    dateModified: post.modified || post.date || node.dateModified,
+    publisher: PUBLISHER,
+    url: postUrl,
+    mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
+  };
 };
 
 const resolvePostCanonicalUrl = (post) => {
@@ -161,12 +233,16 @@ export default async function Page({ params }) {
       permanentRedirect(canonicalPathname);
     }
 
+    const postImage = post.ogImage || post.imageUrl || `${SITE_URL}/logo/attualize.png`;
+
     let structuredData = [];
 
     if (post.jsonLd) {
       try {
         const parsed = JSON.parse(post.jsonLd);
-        structuredData = Array.isArray(parsed) ? parsed : [parsed];
+        structuredData = (Array.isArray(parsed) ? parsed : [parsed]).map((node) =>
+          sanitizeArticleJsonLd(node, post, postUrl, postImage)
+        );
       } catch (e) {
         console.warn('jsonLd inválido, usando fallback:', e);
       }
@@ -179,20 +255,11 @@ export default async function Page({ params }) {
           '@type': 'BlogPosting',
           headline: post.seoTitle || post.title,
           description: post.metaDescription || post.excerpt,
-          image: [post.ogImage || post.imageUrl || `${SITE_URL}/logo/attualize.png`],
+          image: [postImage],
           datePublished: post.date,
           dateModified: post.modified || post.date,
-          author: { '@type': 'Organization', name: post.author, url: SITE_URL },
-          publisher: {
-            '@type': 'Organization',
-            name: CONFIG.site.publicName,
-            logo: {
-              '@type': 'ImageObject',
-              url: `${SITE_URL}/logo/attualize.png`,
-              width: 1200,
-              height: 630,
-            },
-          },
+          author: { '@type': 'Person', name: post.author, url: `${SITE_URL}/sobre/` },
+          publisher: PUBLISHER,
           mainEntityOfPage: { '@type': 'WebPage', '@id': postUrl },
           url: postUrl,
           articleSection: post.category || 'Contabilidade',
