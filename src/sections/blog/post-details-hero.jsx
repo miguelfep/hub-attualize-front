@@ -24,6 +24,12 @@ export function PostDetailsHero({ title, author, authorRole, authorAvatar, cover
 
   const _socialsShare = [
     {
+      name: 'WhatsApp',
+      icon: 'ic:baseline-whatsapp',
+      url: (postUrl, postTitle) =>
+        `https://wa.me/?text=${encodeURIComponent(`${postTitle} ${postUrl}`)}`,
+    },
+    {
       name: 'Facebook',
       icon: 'eva:facebook-fill',
       url: (postUrl, postTitle) =>

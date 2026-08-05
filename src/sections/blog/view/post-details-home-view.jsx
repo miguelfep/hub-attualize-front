@@ -135,6 +135,7 @@ export function PostDetailsHomeView({ post, latestPosts = [] }) {
           {post.excerpt && (
             <Typography
               variant="subtitle1"
+              component="p"
               sx={{
                 mb: 3,
                 fontSize: { xs: '1rem', md: '1.125rem' },
@@ -151,13 +152,15 @@ export function PostDetailsHomeView({ post, latestPosts = [] }) {
           {/* FAQ (rich snippet — também presente no JSON-LD) */}
           {post.faq?.length > 0 && (
             <Stack sx={{ mt: 6 }}>
-              <Typography variant="h4" sx={{ mb: 3, fontWeight: 700 }}>
+              <Typography variant="h4" component="h2" sx={{ mb: 3, fontWeight: 700 }}>
                 Perguntas frequentes
               </Typography>
               {post.faq.map((item, index) => (
                 <Accordion key={index}>
                   <AccordionSummary expandIcon={<Iconify icon="eva:arrow-ios-downward-fill" />}>
-                    <Typography variant="subtitle1">{item.pergunta}</Typography>
+                    <Typography variant="subtitle1" component="h3">
+                      {item.pergunta}
+                    </Typography>
                   </AccordionSummary>
                   <AccordionDetails>
                     <Typography sx={{ color: 'text.secondary' }}>{item.resposta}</Typography>

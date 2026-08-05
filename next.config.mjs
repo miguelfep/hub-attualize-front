@@ -37,6 +37,11 @@ const nextConfig = {
     // Inlina o CSS crítico no HTML — remove os <link> de CSS do caminho
     // crítico de render (PageSpeed: "Render-blocking requests").
     inlineCss: true,
+    // Corrige o scroll não resetar ao navegar (ex.: listagem do blog → post).
+    // O handler antigo acha o 1º nó do segmento novo; como metadata/CSS da
+    // página sofrem hoisting pro <head>, ele caminha pelos irmãos dentro do
+    // head, não acha nada rolável e desiste. O novo usa Fragment refs.
+    appNewScrollHandler: true,
     optimizePackageImports: [
       '@mui/icons-material',
       '@mui/lab',

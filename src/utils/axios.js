@@ -152,9 +152,19 @@ export function getFullAssetUrl(url) {
  */
 export function getStorageAssetUrl(url) {
   if (!url || typeof url !== 'string') return '';
-  if (/^https?:\/\//i.test(url)) return url;
+  if (/^https?:\/\//i.test(url)) return forceHttps(url);
   const base = (publicBaseUrl || '').replace(/\/$/, '');
-  return base ? `${base}${url.startsWith('/') ? url : `/${url}`}` : url;
+  return forceHttps(base ? `${base}${url.startsWith('/') ? url : `/${url}`}` : url);
+}
+
+/**
+ * Sobe http:// para https:// (exceto localhost, usado em dev). Validadores de
+ * preview (WhatsApp/Facebook) rejeitam og:image sem TLS em página https.
+ */
+function forceHttps(url) {
+  if (!/^http:\/\//i.test(url)) return url;
+  if (/^http:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/i.test(url)) return url;
+  return url.replace(/^http:\/\//i, 'https://');
 }
 
 /**
