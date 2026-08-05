@@ -16,7 +16,9 @@ import { fDate } from 'src/utils/format-time';
 import { fShortenNumber } from 'src/utils/format-number';
 
 import { maxLine, varAlpha } from 'src/theme/styles';
-import { AvatarShape } from 'src/assets/illustrations';
+// Import direto, não pelo barril 'src/assets/illustrations' — o barril arrasta
+// todas as ilustrações SVG (~60 KiB) para o bundle das páginas públicas do blog.
+import AvatarShape from 'src/assets/illustrations/avatar-shape';
 
 import { Image } from 'src/components/image';
 import { Iconify } from 'src/components/iconify';

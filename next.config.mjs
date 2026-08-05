@@ -1,3 +1,8 @@
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
+const packageJson = require('./package.json');
+
 const isStaticExport = 'false';
 
 const nextConfig = {
@@ -5,6 +10,9 @@ const nextConfig = {
   basePath: process.env.NEXT_PUBLIC_BASE_PATH,
   env: {
     BUILD_STATIC_EXPORT: isStaticExport,
+    // Injetada em build-time para que src/config-global.js não precise importar
+    // o package.json (que iria inteiro para o bundle do cliente).
+    NEXT_PUBLIC_APP_VERSION: packageJson.version,
   },
   modularizeImports: {
     '@mui/icons-material': {
@@ -26,6 +34,9 @@ const nextConfig = {
     },
   },
   experimental: {
+    // Inlina o CSS crítico no HTML — remove os <link> de CSS do caminho
+    // crítico de render (PageSpeed: "Render-blocking requests").
+    inlineCss: true,
     optimizePackageImports: [
       '@mui/icons-material',
       '@mui/lab',
@@ -51,7 +62,11 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     // Next 16 rejeita qualities fora da lista; 85 é o padrão do nosso <Image>
     qualities: [70, 75, 85],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    // Sem o 3840: `sizes` descreve o tamanho em CSS pixels e o browser multiplica
+    // pelo DPR, então em telas retina um banner full-bleed (sizes="100vw") pedia
+    // sempre a variante de 3840px — vários MB para um elemento de 480px de altura.
+    // 2048 já cobre retina em telas grandes com folga.
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     minimumCacheTTL: 2678400, // 31 dias (era 60s — re-otimizava direto)
   },

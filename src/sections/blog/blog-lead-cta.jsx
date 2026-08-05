@@ -1,21 +1,37 @@
 'use client';
 
-import { useState } from 'react';
+import dynamic from 'next/dynamic';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
+import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
-import LoadingButton from '@mui/lab/LoadingButton';
 
-import { normalizePhoneToE164 } from 'src/utils/phone-e164';
-
-import { criarLead } from 'src/actions/lead';
-
-import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
-import { PhoneInput } from 'src/components/phone-input';
+
+// ----------------------------------------------------------------------
+
+// O formulário puxa react-phone-number-input + libphonenumber-js (~200 KiB) e
+// fica abaixo da dobra, então só é buscado depois da hidratação. O placeholder
+// abaixo reproduz a altura exata dos campos (2 linhas de 40px em xs / 1 em sm+,
+// telefone 40px, botão 48px, spacing 1.5 = 12px) para não causar layout shift.
+const BlogLeadCtaForm = dynamic(
+  () => import('./blog-lead-cta-form').then((mod) => mod.BlogLeadCtaForm),
+  {
+    ssr: false,
+    loading: () => (
+      <Stack spacing={1.5}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+          <Skeleton variant="rounded" height={40} sx={{ flex: 1 }} />
+          <Skeleton variant="rounded" height={40} sx={{ flex: 1 }} />
+        </Stack>
+        <Skeleton variant="rounded" height={40} />
+        <Skeleton variant="rounded" height={48} />
+      </Stack>
+    ),
+  }
+);
 
 // ----------------------------------------------------------------------
 
@@ -30,36 +46,6 @@ export function BlogLeadCta({
   titulo = 'Fale com um contador especialista',
   subtitulo = 'Receba orientação contábil para a sua área. Deixe seus dados e entramos em contato.',
 }) {
-  const [values, setValues] = useState({ nome: '', email: '', telefone: '' });
-  const [submitting, setSubmitting] = useState(false);
-
-  const handleChange = (field) => (e) => setValues((prev) => ({ ...prev, [field]: e.target.value }));
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!values.nome.trim() || !values.email.trim() || !values.telefone.trim()) {
-      toast.error('Preencha nome, e-mail e telefone.');
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      await criarLead({
-        nome: values.nome.trim(),
-        email: values.email.trim(),
-        telefone: normalizePhoneToE164(values.telefone) ?? values.telefone,
-        origem,
-      });
-      toast.success('Recebemos seus dados! Em breve entraremos em contato.');
-      setValues({ nome: '', email: '', telefone: '' });
-    } catch (error) {
-      console.error(error);
-      toast.error(typeof error === 'string' ? error : 'Não foi possível enviar seus dados.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
   return (
     <Card
       sx={{
@@ -85,48 +71,8 @@ export function BlogLeadCta({
           </Typography>
         </Stack>
 
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{ flex: 1.2, bgcolor: 'background.paper', borderRadius: 2, p: 2 }}
-        >
-          <Stack spacing={1.5}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
-              <TextField
-                fullWidth
-                size="small"
-                label="Nome"
-                required
-                value={values.nome}
-                onChange={handleChange('nome')}
-              />
-              <TextField
-                fullWidth
-                size="small"
-                type="email"
-                label="E-mail"
-                required
-                value={values.email}
-                onChange={handleChange('email')}
-              />
-            </Stack>
-
-            <PhoneInput
-              country="BR"
-              label="Telefone / WhatsApp"
-              size="small"
-              value={normalizePhoneToE164(values.telefone) || undefined}
-              onChange={(newValue) =>
-                setValues((prev) => ({ ...prev, telefone: newValue ?? '' }))
-              }
-              fullWidth
-              required
-            />
-
-            <LoadingButton type="submit" variant="contained" size="large" loading={submitting}>
-              Quero falar com um especialista
-            </LoadingButton>
-          </Stack>
+        <Box sx={{ flex: 1.2, bgcolor: 'background.paper', borderRadius: 2, p: 2 }}>
+          <BlogLeadCtaForm origem={origem} />
         </Box>
       </Stack>
     </Card>

@@ -25,10 +25,10 @@ function fetchComTimeout(url, options = {}, ms = 15000) {
   ]);
 }
 
-// Autor "rosto" do blog (foto em public/assets/images/about/anne.jpg)
+// Autor "rosto" do blog (recorte 128px de public/assets/images/about/anne.jpg)
 export const BLOG_AUTHOR = {
   name: 'Anne Monteiro',
-  avatar: '/assets/images/about/anne.jpg',
+  avatar: '/assets/images/about/anne-avatar.jpg',
   role: 'Contadora Especialista',
 };
 

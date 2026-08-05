@@ -27,29 +27,6 @@ export function htmlToMarkdown(html) {
   return turndownService.turndown(html);
 }
 
-// ----------------------------------------------------------------------
-
-export function isMarkdownContent(content) {
-  // Checking if the content contains Markdown-specific patterns
-  const markdownPatterns = [
-    /* Heading */
-    /^#+\s/,
-    /* List item */
-    /^(\*|-|\d+\.)\s/,
-    /* Code block */
-    /^```/,
-    /* Table */
-    /^\|/,
-    /* Unordered list */
-    /^(\s*)[*+-] [^\r\n]+/,
-    /* Ordered list */
-    /^(\s*)\d+\. [^\r\n]+/,
-    /* Image */
-    /!\[.*?\]\(.*?\)/,
-    /* Link */
-    /\[.*?\]\(.*?\)/,
-  ];
-
-  // Checking if any of the patterns match
-  return markdownPatterns.some((pattern) => pattern.test(content));
-}
+// isMarkdownContent vive em ./is-markdown para que importá-lo não arraste o
+// turndown junto (este módulo só é carregado sob demanda pelo <Markdown>).
+export { isMarkdownContent } from './is-markdown';

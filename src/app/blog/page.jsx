@@ -3,7 +3,9 @@ import { getBlogPosts, getBlogCategorias } from 'src/actions/blog-ssr';
 
 import { StructuredData } from 'src/components/seo/structured-data';
 
-import { PostListHomeView } from 'src/sections/blog/view';
+// NB: import direto, NÃO pelo barril 'src/sections/blog/view' — ver nota em
+// src/app/blog/[title]/page.jsx.
+import { PostListHomeView } from 'src/sections/blog/view/post-list-home-view';
 
 // ----------------------------------------------------------------------
 
