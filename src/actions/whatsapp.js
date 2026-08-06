@@ -281,8 +281,11 @@ export async function testarConfig(payload = {}) {
 
 /**
  * Config do agente de IA (bot) do atendimento (admin).
- * Ex.: { habilitado, provider: 'claude'|'gemini', modelo, instrucoes,
- *        claudeDisponivel, geminiDisponivel, modelosSugeridos }.
+ * Ex.: { habilitado, provider: 'claude'|'gemini'|'openrouter', modelo, instrucoes,
+ *        claudeDisponivel, geminiDisponivel, openrouterDisponivel, modelosSugeridos,
+ *        setoresDisponiveis, responsaveisSetor: { setor: userId },
+ *        responsaveisSetorDetalhado, vendas: { habilitado, servicos: [id] },
+ *        vendasServicosDetalhado }.
  */
 export async function getAgenteConfig() {
   const res = await axios.get(endpoints.wa.agente);

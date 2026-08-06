@@ -19,18 +19,28 @@ import { getAgenteConfig, salvarAgenteConfig } from 'src/actions/whatsapp';
 import { toast } from 'src/components/snackbar';
 import { Iconify } from 'src/components/iconify';
 
+import { WaBotVendas } from './wa-bot-vendas';
 import { WaBotConhecimento } from './wa-bot-conhecimento';
+import { WaBotResponsaveis } from './wa-bot-responsaveis';
 
 // ----------------------------------------------------------------------
 // Aba "Bot": agente de IA embarcado do atendimento. Liga/desliga, escolhe o
-// provider (Claude/Gemini) e o modelo, e permite instruções adicionais que são
-// anexadas ao comportamento do agente (regras da casa, respostas padrão).
+// provider (Claude/Gemini/OpenRouter) e o modelo, define responsáveis por
+// setor, o modo vendas/SDR e instruções adicionais anexadas ao comportamento
+// do agente (regras da casa, respostas padrão).
 // ----------------------------------------------------------------------
 
 const PROVIDERS = [
   { value: 'claude', label: 'Claude (Anthropic)' },
   { value: 'gemini', label: 'Gemini (Google)' },
+  { value: 'openrouter', label: 'OpenRouter (vários modelos)' },
 ];
+
+const ENV_POR_PROVIDER = {
+  claude: 'ANTHROPIC_API_KEY',
+  gemini: 'GEMINI_API_KEY',
+  openrouter: 'OPENROUTER_API_KEY',
+};
 
 export function WaBotTab() {
   const [config, setConfig] = useState(null);
@@ -41,6 +51,8 @@ export function WaBotTab() {
   const [provider, setProvider] = useState('claude');
   const [modelo, setModelo] = useState('');
   const [instrucoes, setInstrucoes] = useState('');
+  const [responsaveis, setResponsaveis] = useState({});
+  const [vendas, setVendas] = useState({ habilitado: false, servicos: [] });
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -51,6 +63,11 @@ export function WaBotTab() {
       setProvider(res?.provider || 'claude');
       setModelo(res?.modelo || '');
       setInstrucoes(res?.instrucoes || '');
+      setResponsaveis(res?.responsaveisSetor || {});
+      setVendas({
+        habilitado: Boolean(res?.vendas?.habilitado),
+        servicos: res?.vendas?.servicos || [],
+      });
     } catch (error) {
       toast.error(error?.message || 'Falha ao carregar a configuração do bot.');
     } finally {
@@ -64,7 +81,8 @@ export function WaBotTab() {
 
   const providerSemChave =
     (provider === 'claude' && config && !config.claudeDisponivel) ||
-    (provider === 'gemini' && config && !config.geminiDisponivel);
+    (provider === 'gemini' && config && !config.geminiDisponivel) ||
+    (provider === 'openrouter' && config && !config.openrouterDisponivel);
 
   const modelosSugeridos = config?.modelosSugeridos?.[provider] || [];
 
@@ -83,6 +101,8 @@ export function WaBotTab() {
         provider,
         modelo: modelo.trim(),
         instrucoes,
+        responsaveisSetor: responsaveis,
+        vendas,
       });
       setConfig(res || {});
       toast.success('Configuração do bot salva.');
@@ -174,11 +194,22 @@ export function WaBotTab() {
 
           {providerSemChave && (
             <Alert severity="warning" variant="outlined">
-              A chave de API do provedor selecionado (
-              {provider === 'claude' ? 'ANTHROPIC_API_KEY' : 'GEMINI_API_KEY'}) não está
+              A chave de API do provedor selecionado ({ENV_POR_PROVIDER[provider]}) não está
               configurada no servidor — o bot não vai responder até ela ser definida.
             </Alert>
           )}
+
+          <Divider />
+
+          <WaBotResponsaveis
+            value={responsaveis}
+            onChange={setResponsaveis}
+            setores={config?.setoresDisponiveis}
+          />
+
+          <Divider />
+
+          <WaBotVendas value={vendas} onChange={setVendas} />
 
           <Divider />
 
